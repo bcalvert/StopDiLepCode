@@ -78,6 +78,9 @@ typedef struct {
     int     cutNJets;  // -1: inclusive, # > 0: require NJets >= #
     int     cutNBJets;  // -1: inclusive, # > 0: require NBJets >= #
     float   cutMET; // # > 0: require MET >= #
+
+    
+    TString descString;
 } SampleT;
 typedef std::pair<HistogramT, SampleT> histKey;
 inline bool operator<(const histKey &a, const histKey &b)

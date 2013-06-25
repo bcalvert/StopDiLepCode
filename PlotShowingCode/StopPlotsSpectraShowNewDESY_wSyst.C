@@ -192,7 +192,7 @@ int main( int argc, char* argv[]) {
     int  RBNZ[numPlots];
     float XaxisLegendPos[numPlots];
     float YaxisLegendStart[numPlots];
-    for (int i = 0; i < numPlots; ++i) {
+    for (unsigned int i = 0; i < numPlots; ++i) {
         doOverflow[i] = false;
         doUnderflow[i] = false;
         RBNX[i] = 1;
@@ -210,7 +210,7 @@ int main( int argc, char* argv[]) {
     
     TString canvName, systCanvName;
     logYPad1 = true;
-    for (int k = 0; k < numPlots; ++k) {
+    for (unsigned int k = 0; k < numPlots; ++k) {
 //    for (int k = 18; k < 19; ++k) {       
         dataHistVec = new vector<TH1F *>;
         mcIndHistCentValVec = new vector<TH1F *>;
@@ -274,8 +274,8 @@ int main( int argc, char* argv[]) {
             cout << "integral for mcCompCentVal " << mcCompHistCentValVec->at(j)->GetName() << " is " << mcCompHistCentValVec->at(j)->Integral() << endl;
         }   
         cout << "integral for MCComp " << h_MCComp->GetName() << " is " << h_MCComp->Integral() << endl;
-        for (unsigned int k = 0; k < mcCompHistSystVec->size(); ++k) {
-            cout << "integral for syst " << mcCompHistSystVec->at(k)->GetName() << " is " << mcCompHistSystVec->at(k)->Integral() << endl;
+        for (unsigned int kMC = 0; kMC < mcCompHistSystVec->size(); ++kMC) {
+            cout << "integral for syst " << mcCompHistSystVec->at(kMC)->GetName() << " is " << mcCompHistSystVec->at(kMC)->Integral() << endl;
         }
 //        cout << "Data Integral " << h_DataComp->Integral() << endl;
 //        cout << "MC Integral " << h_MCComp->Integral() << endl;
