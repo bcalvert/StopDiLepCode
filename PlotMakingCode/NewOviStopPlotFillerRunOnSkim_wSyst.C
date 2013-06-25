@@ -13,6 +13,7 @@
 #include "TF1.h"
 #include "TTree.h"
 #include "TString.h"
+#include "TRegexp.h"
 #include "TProfile.h"
 #include <fstream>
 #include <string>
@@ -215,7 +216,7 @@ int main( int argc, const char* argv[] ) {
     char Buffer[500];
     char MyRootFile[2000];
     ifstream * outDirFile;
-    
+    TRegexp fCutSlash("[^/]+$");
     if (!grabOutDir) {
         fOutName = "";   
     }
@@ -236,7 +237,7 @@ int main( int argc, const char* argv[] ) {
         fOutName = fInName;
     }
     */
-    fOutName += fInName;
+    fOutName += fInName(fCutSlash);
     if (fInName.Contains("MuEG") || fInName.Contains("DoubleMu") || fInName.Contains("DoubleEl") || fInName.Contains("run2012")) {
         cout << "Running on Data" << endl;
         doData = 1;
