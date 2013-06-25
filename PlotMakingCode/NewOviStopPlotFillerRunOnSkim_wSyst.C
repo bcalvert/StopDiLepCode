@@ -14,7 +14,9 @@
 #include "TTree.h"
 #include "TString.h"
 #include "TProfile.h"
-
+#include <fstream>
+#include <string>
+#include <iostream>
 //#include <exception>                                                                                                      
 #include <sys/stat.h>
 
@@ -162,6 +164,7 @@ int main( int argc, const char* argv[] ) {
     
     ////input cuts/commands    
     //    const double PI = 3.14159265;
+    bool grabOutDir      = 0;      // whether or not to use the file: "outputSavePath.txt" for where to save output
     bool doPhiCorr       = 1;      // whether to do the MetPhi asymmetry correction -- 6/25/13 as of right now parameters need to be updated
     bool doData          = 0;      // Whether you're running on data or not
     bool doVerbosity     = 0;      // prints a lot of debug info if turned on
@@ -175,22 +178,56 @@ int main( int argc, const char* argv[] ) {
     /////loop over inputs
     for (int k = 0; k < argc; ++k) {
         cout << "argv[k] for k = " << k << " is: " << argv[k] << endl;
-        if (strncmp (argv[k],"-i",2) == 0) fInName = TString(argv[k+1]);
-        if (strncmp (argv[k],"noPhiCorr",9) == 0) doPhiCorr = 0;
-        if (strncmp (argv[k],"METSmear",9) == 0) {
+        if (strncmp (argv[k],"-i",2) == 0) {
+            fInName = TString(argv[k+1]);   
+        }
+        else if (strncmp (argv[k],"noPhiCorr",9) == 0) {
+            doPhiCorr = 0;   
+        }
+        else if (strncmp (argv[k],"METSmear",9) == 0) {
             doMETSmear = true;
             METSF = strtod(argv[k+1], NULL);
         }
-        if (strncmp (argv[k],"-w",2) == 0) whichNTupleType = strtol(argv[k+1], NULL, 10);
-        if (strncmp (argv[k],"doVerbosity",11) == 0) doVerbosity = 1;
-        if (strncmp (argv[k],"doPURW",6) == 0) doPURW = 1;        
-        if (strncmp (argv[k],"doHackPURW",10) == 0) doHackPURW = 1;
-        if (strncmp (argv[k],"doPURWOviToDESY",15) == 0) doPURWOviToDESY = 1;
-        if (strncmp (argv[k],"doBookSyst", 10) == 0) doBookSyst = 1;
+        else if (strncmp (argv[k],"-w",2) == 0) {
+            whichNTupleType = strtol(argv[k+1], NULL, 10);   
+        }
+        else if (strncmp (argv[k],"doVerbosity",11) == 0) {
+            doVerbosity = 1;   
+        }
+        else if (strncmp (argv[k],"doPURW",6) == 0) {
+            doPURW = 1;           
+        }
+        else if (strncmp (argv[k],"doHackPURW",10) == 0) {
+            doHackPURW = 1;
+        }
+        else if (strncmp (argv[k],"doPURWOviToDESY",15) == 0) {
+            doPURWOviToDESY = 1;   
+        }
+        else if (strncmp (argv[k],"doBookSyst", 10) == 0) {
+            doBookSyst = 1;
+        }
+        else if (strncmp (argv[k],"gOutDir", 7) == 0) {
+            grabOutDir = 1;
+        }
     }
         ////input cuts/commands    
     
+    char Buffer[500];
+    char MyRootFile[2000];
+    ifstream * outDirFile;
     
+    if (!grabOutDir) {
+        fOutName = "";   
+    }
+    else {
+        outDirFile = new ifstream(TString("outputSavePath.txt"));
+        while( !(outDirFile->eof()) )
+        {
+            outDirFile->getline(Buffer,500);
+            fOutName = TString(string(Buffer));        
+        }
+    }    
+    /*
     if (fInName.Contains("tkolberg")) {
         fOutName = fInName;
         fOutName.Replace(12, 8, "bcalvert");   
@@ -198,6 +235,8 @@ int main( int argc, const char* argv[] ) {
     else {
         fOutName = fInName;
     }
+    */
+    fOutName += fInName;
     if (fInName.Contains("MuEG") || fInName.Contains("DoubleMu") || fInName.Contains("DoubleEl") || fInName.Contains("run2012")) {
         cout << "Running on Data" << endl;
         doData = 1;
@@ -219,6 +258,7 @@ int main( int argc, const char* argv[] ) {
     if (doPURWOviToDESY && !doData) fOutName += "OviToDESY";
     if (doBookSyst) fOutName += "_wSyst";
     fOutName += "_Output.root";
+    cout << "saving to " << fOutName << endl;
     TFile * outputFile;
     outputFile = new TFile(fOutName,"RECREATE");
     if (whichNTupleType == 1) {
