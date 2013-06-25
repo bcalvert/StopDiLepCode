@@ -40,16 +40,16 @@ void relErrSet(TH1F * inputRelErrHist, TH1F * inputErrHist) {
 }
 int main( int argc, char* argv[]) {
     using namespace std;
-    int whichChan     = 0;
-    int whichNTuple   = 1;
-    int whichTTbarGen = 0;
-    bool doPURW       = 0;
-    bool doSyst       = 1;
-    bool addThings    = 1;
-    bool reportChi2   = 0;
-    bool doCDF        = 0;  
-    bool doStats      = 0;
-    bool doAbsRatio   = 0;
+    int whichChan     = 0;          //which "channel" to run on, this doesn't just mean ee, emu, or mumu, but can mean events in the full cut sequence, events in the ZMass window but otherwise full cut sequence, etc.
+    int whichNTuple   = 1;          //as with the plot making code, leave as 1 for now -- 0 is Oviedo, 1 is DESY    
+    int whichTTbarGen = 0;          // 0 is Madgraph, 1 is MC@NLO, 2 is Powheg
+    bool doPURW       = 0;          // grab the nVtx reweighted MC files
+    bool doSyst       = 1;          // look at systematics plots -- (6/25/13) don't turn off for now haven't validated code fully when not making systematics
+    bool addThings    = 1;          // Add together similar kinds of events (for aesthetic reasons) like VV backgrounds -- (6/25/13) don't turn off for now haven't validated code fully when not adding
+    bool reportChi2   = 0;          // nominally, reports data/MC chi2 value in the control region
+    bool doCDF        = 0;          // nominally, reates Cumulative Distribution Functions for MC and Data -- (6/25/13) haven't tested yet
+    bool doStats      = 0;          // show statistics for data and mc spectra on plots -- e.g. mean and RMS -- (6/25/13) haven't tested yet to see how positioning looks
+    bool doAbsRatio   = 0;          // Affects what gets shown in fractional ratio plots -- 0: (MC - Data) / Data, 1: Data/MC
     for (int k = 0; k < argc; ++k) {
         cout << "argv[k] for k = " << k << " is: " << argv[k] << endl;
         if (strncmp (argv[k],"wChan", 5) == 0) {

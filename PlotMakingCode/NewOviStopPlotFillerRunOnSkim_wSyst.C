@@ -159,21 +159,19 @@ int main( int argc, const char* argv[] ) {
     // add 5 GeV safety margin (deltaM = 10 GeV in the FineBin sample)  
     float Nevt_stop_oneMassPoint = 50000 * ( (genStopMassMax-genStopMassMin)/10. ) * ( (genDeltaM_stopChi0_Max-genDeltaM_stopChi0_Min)/10. );  
     // 50k evts per point x Npoints
+    
     ////input cuts/commands    
     //    const double PI = 3.14159265;
-    bool doPhiCorr       = 1;
-    bool doData          = 0;
-    bool doVerbosity     = 0;
-    int  whichNTupleType = 0; //0 IFCA Oviedo; 1 DESY
-    bool ZVeto           = true;
-    bool doMETSmear      = false;
-    bool doPURW          = 0;
-    bool doHackPURW      = 0;
-    bool doPURWOviToDESY = 0;
-    bool doBookSyst      = 0;
+    bool doPhiCorr       = 1;      // whether to do the MetPhi asymmetry correction -- 6/25/13 as of right now parameters need to be updated
+    bool doData          = 0;      // Whether you're running on data or not
+    bool doVerbosity     = 0;      // prints a lot of debug info if turned on
+    int  whichNTupleType = 0;      // 0 IFCA Oviedo; 1 DESY -- 6/25/13 as of right now, doesn't work with Oviedo
+    bool doPURW          = 0;      // run pile up reweighting
+    bool doHackPURW      = 0;      // called a "hack" because it was bin by bin reweighting to get the nVtx distribution in the "inclusive" channel to exactly match between data and MC
+    bool doPURWOviToDESY = 0;      // exactly like doHackPURW but for Oviedo and DESY to enable comparisons across nTuples
+    bool doBookSyst      = 0;      // used for deciding whether or not to book systematics
+    bool doMETSmear      = false;  // early attempt to mimic jet smearing using gaussians -- didn't work, leave off
     double METSF         = 0.0;
-    float ZWindowLB      = 76;
-    float ZWindowUB      = 106;
     /////loop over inputs
     for (int k = 0; k < argc; ++k) {
         cout << "argv[k] for k = " << k << " is: " << argv[k] << endl;
@@ -190,6 +188,9 @@ int main( int argc, const char* argv[] ) {
         if (strncmp (argv[k],"doPURWOviToDESY",15) == 0) doPURWOviToDESY = 1;
         if (strncmp (argv[k],"doBookSyst", 10) == 0) doBookSyst = 1;
     }
+        ////input cuts/commands    
+    
+    
     if (fInName.Contains("tkolberg")) {
         fOutName = fInName;
         fOutName.Replace(12, 8, "bcalvert");   
@@ -231,6 +232,9 @@ int main( int argc, const char* argv[] ) {
     TFile inputFile(fInName + TString(".root"));
     float   BTagCut = 0.679;  //CSV Middle working point, see (remove underscore in address): h_ttps://twiki.cern.ch/twiki/bin/viewauth/CMS/BTagPerformanceOP
     float   JetPtCutforCount = 30;
+    bool ZVeto           = true;
+    float ZWindowLB      = 76;
+    float ZWindowUB      = 106;    
     //////////DESY NTupleStuff
     
     ///Branch definitions

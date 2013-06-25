@@ -1,0 +1,21 @@
+Alright, you've got plot files made (and hadd-ed!!!), now what?
+run makeRoot.sh on StopPlotsSpectraShowNewDESY_wSyst.C
+so in StopDiLepCode, or whatever base directory you happen to be in (the one where "ls" shows PlotMakingCode, PlotShowingCode, etc.)
+> ./makeRoot.sh PlotShowingCode/StopPlotsSpectraShowNewDESY_wSyst.C
+Once it compiles,
+> ./StopPlotsSpectraShowNewDESY_wSyst 
+runs the code (watch out, currently -- 6/25/13 -- a lot of debug statements still active)
+NB!!!! The code assumes you have copied successfully the outputs of the hadding to the RootFIles directory in the StopDiLepCode area (for the love of all that is sacred, please don't git add those dudes to the StopDiLepCode repo)
+Again, see the .C file to see the description of what various options are, but let me suggest the following one
+./StopPlotsSpectraShowNewDESY_wSyst  wChan 28 doPURW wTTbarGen 2
+with an optional include of -b -q at the end if you don't want plots to be shown 
+"wChan 28" gives you FullCut channel
+"doPURW" grabs PURW-ed MC
+"wTTbarGen 2" grabs Powheg plots
+
+
+To see what the channels are, look at the file
+RootFiles/PlotReadMe.txt
+To generate this file automatically, run the following from RootFiles directory
+./genReadMe.sh
+

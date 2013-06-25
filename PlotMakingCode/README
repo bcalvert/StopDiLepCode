@@ -1,0 +1,22 @@
+nominally, you should be able to do the following
+> make
+and the code will compile; I have been running into issues with this super recently, as it complains about double definition of two particular functions, dPhi and deltaR, even though the code compiles just fine in its original directory that I copied it from
+
+once the code has compiled you run it with the following command
+
+./NewOviStopPlotFillerRunOnSkim_wSyst
+additional command line inputs are described in the .C file, but the most important two are
+"-i": input file name. Should be immediately followed by said name, but with no .root appendage
+"-w": which kind of nTuple -- i.e. Oviedo or DESY. Code as of 6/25/13 hasn't been re-validated on Oviedo nTuples (latest and "greatest" ones) so just leave as 1
+so, to run on a DESY nTuple called ttbar.root you would do
+./NewOviStopPlotFillerRunOnSkim_wSyst -i ttbar -w 1
+More commonly, you'll probably want to run with systematics getting booked (put "doBookSyst" as a command line input) and the proper PURW for MC (add in "doPURW doHackPURW")
+Example:
+./NewOviStopPlotFillerRunOnSkim_wSyst -i ttbar -w 1 doPURW doHackPURW doBookSyst
+
+Note, I have also included two shell scripts to submit condor jobs to run on the relevant DESY nTuples (Oviedo will be included once I've revalidated code on Oviedo nTuples)
+DESYMCPlotMaker.sh
+DESYDataPlotMaker.sh
+These files will read the nTuples from the /data/users/tkolberg/new_top directory, but, NB, as you can see in the NewOviblahblah.C file, there's a replacement check (I couldn't save outputs to your directory, Ted). This means that as it is right now, using the DESYblah.sh scripts the code won't actually work right for anyone but me (only I have write permission to /data/users/bcalvert/new_top -- working on this)
+
+Will update this guide more on 6/26/13
