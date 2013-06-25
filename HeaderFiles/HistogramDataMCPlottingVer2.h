@@ -217,7 +217,7 @@ void HistogramGrabber(vector<TFile *> * Files,  vector<TH1 *> * inputHistVec, TS
         NBinsY = inputHistVec->at(k)->GetNbinsY();
         NBinsZ = inputHistVec->at(k)->GetNbinsZ();
         cout << "name " << inputHistVec->at(k)->GetName() << endl;
-        inputHistVec->at(k)->RebinX(RBNX);
+        inputHistVec->at(k)->Rebin(RBNX);
         if (NBinsY > 1) {
             //at least a 2D histogram
             if (NBinsZ > 1) {
@@ -289,7 +289,7 @@ void HistogramGrabber(TFile ** Files,  TH1 ** inputHists, int numInputs, TString
 //        cout << "file name " << Files[k]->GetName() << endl;
 //        cout << "hist name " << inputHists[k]->GetName() << endl;
 //        cout << "hist int " << inputHists[k]->Integral() << endl;
-        inputHists[k]->RebinX(RBNX);
+        inputHists[k]->Rebin(RBNX);
         if (NBinsY > 1) {
             //at least a 2D histogram
             if (NBinsZ > 1) {

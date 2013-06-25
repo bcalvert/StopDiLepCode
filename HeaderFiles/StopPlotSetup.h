@@ -168,7 +168,7 @@ void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH1F *> * dataHist
             NBinsX = currHist->GetNbinsX();
             NBinsY = currHist->GetNbinsY();
             NBinsZ = currHist->GetNbinsZ();
-            currHist->RebinX(RBNX);
+            currHist->Rebin(RBNX);
             if (NBinsY > 1) {
                 if (NBinsZ > 1) {
                 }
@@ -187,7 +187,7 @@ void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH1F *> * dataHist
             NBinsX = currHist->GetNbinsX();
             NBinsY = currHist->GetNbinsY();
             NBinsZ = currHist->GetNbinsZ();
-            currHist->RebinX(RBNX);
+            currHist->Rebin(RBNX);
             if (NBinsY > 1) {
                 if (NBinsZ > 1) {
                 }
@@ -232,7 +232,7 @@ void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH1F *> * dataHist
                 NBinsX = currHist->GetNbinsX();
                 NBinsY = currHist->GetNbinsY();
                 NBinsZ = currHist->GetNbinsZ();
-                currHist->RebinX(RBNX);
+                currHist->Rebin(RBNX);
                 if (NBinsY > 1) {
                     if (NBinsZ > 1) {
                     }
