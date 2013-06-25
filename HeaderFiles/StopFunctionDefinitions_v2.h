@@ -100,13 +100,13 @@ inline SampleT operator+(const SampleT &a, const SampleT &b)
     outSampleT.histZaxisSuffix = a.histZaxisSuffix + b.histZaxisSuffix;
     return outSampleT;
 }
-float dPhi(float phi1, float phi2) {
+inline float dPhi(float phi1, float phi2) {
     float result = phi1-phi2;
     while (result >= TMath::Pi()) result -= 2*TMath::Pi();
     while (result < -1*TMath::Pi()) result += 2*TMath::Pi();
     return fabs(result);
 }
-float deltaR(float eta1, float phi1, float eta2, float phi2) {
+inline float deltaR(float eta1, float phi1, float eta2, float phi2) {
     float dphi = dPhi(phi1,phi2);
     float deta = eta1-eta2;
     float result = dphi*dphi+deta*deta;
@@ -114,14 +114,14 @@ float deltaR(float eta1, float phi1, float eta2, float phi2) {
     return result;
 }
 
-double dPhi(double phi1, double phi2) {
+inline double dPhi(double phi1, double phi2) {
     double result = phi1-phi2;
     while (result >= TMath::Pi()) result -= 2*TMath::Pi();
     while (result < -1*TMath::Pi()) result += 2*TMath::Pi();
     return fabs(result);
 }
 
-double deltaR(double eta1, double phi1, double eta2, double phi2) {
+inline double deltaR(double eta1, double phi1, double eta2, double phi2) {
     double dphi = dPhi(phi1,phi2);
     double deta = eta1-eta2;
     double result = dphi*dphi+deta*deta;
