@@ -234,8 +234,7 @@ int main( int argc, const char* argv[] ) {
     }
     else {
         outDirFile = new ifstream(TString("outputSavePath.txt"));
-        while( !(outDirFile->eof()) )
-        {
+        if (!(outDirFile->eof()) {
             outDirFile->getline(Buffer,500);
             fOutName = TString(string(Buffer));        
         }

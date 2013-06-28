@@ -1520,7 +1520,7 @@ inline vector<SampleT> * SubSampVec() {
         events_LepOutZMassJet2BJet1MET40[j].cutNJets        = 2;
         events_LepOutZMassJet2BJet1MET40[j].cutNBJets       = 1;
         events_LepOutZMassJet2BJet1MET40[j].cutMET          = 40.;
-        events_LepOutZMassJet2BJet1MET40[j].blindDataChannel = 1; // blind emu with MET + ZVeto + jet cuts            
+        events_LepOutZMassJet2BJet1MET40[j].blindDataChannel = 1; // blind with MET + ZVeto + jet cuts            
         
         events_LepInZMassBothinBarrel[j].doZVeto         = 0;
         events_LepInZMassBothinBarrel[j].cutNJets        = -1;
