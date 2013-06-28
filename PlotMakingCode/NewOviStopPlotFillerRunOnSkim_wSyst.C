@@ -480,7 +480,7 @@ int main( int argc, const char* argv[] ) {
             histTitle = H_Current.name + S_Current.histNameSuffix;
             axesTitle = ";"; axesTitle += H_Current.xLabel;// axesTitle += S_Current.histXaxisSuffix;
             axesTitle += ";"; axesTitle += H_Current.yLabel;
-            if (S_Current.doZVeto = 0 && H_Current.xLabel.Contains("M_{ll}")) {
+            if (S_Current.doZVeto == 0 && H_Current.xLabel.Contains("M_{ll}")) {
                 nXBins = 60;
                 xBinMin = ZWindowLB;
                 xBinMax = ZWindowUB;
@@ -503,7 +503,7 @@ int main( int argc, const char* argv[] ) {
             axesTitle += ";"; axesTitle += H_Current.zLabel;
             nXBins = H_Current.xBinN;
             xBinMin = H_Current.xMin;
-            xBinMin = H_Current.xMax;
+            xBinMax = H_Current.xMax;
             nYBins = H_Current.yBinN;
             yBinMin = H_Current.yMin;
             yBinMax = H_Current.yMax;
@@ -521,7 +521,7 @@ int main( int argc, const char* argv[] ) {
                 histTitle = H_Current.name + S_Current.histNameSuffix;
                 axesTitle = ";"; axesTitle += H_Current.xLabel;// axesTitle += S_Current.histXaxisSuffix;
                 axesTitle += ";"; axesTitle += H_Current.yLabel;  
-                if (S_Current.doZVeto = 0 && H_Current.xLabel.Contains("M_{ll}")) {
+                if (S_Current.doZVeto == 0 && H_Current.xLabel.Contains("M_{ll}")) {
                     nXBins = 100;
                     xBinMin = ZWindowLB - 10;
                     xBinMax = ZWindowUB + 10;
