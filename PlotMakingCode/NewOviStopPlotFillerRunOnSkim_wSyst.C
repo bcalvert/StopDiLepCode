@@ -178,6 +178,7 @@ int main( int argc, const char* argv[] ) {
     double METSF         = 0.0;
     
     bool blindData       = 1;      // "Until further notice, leave ON -- cuts MT2ll > 80 is data in full object/event selection
+    int  nEvents         = -1;     // limits total number of events one is running on
     
     /////loop over inputs    
     for (int k = 0; k < argc; ++k) {
@@ -217,6 +218,9 @@ int main( int argc, const char* argv[] ) {
             blindData = 0;
             cout << "RELEASING THE KRAKEN!!! " << endl;
             cout << "http://www.youtube.com/watch?v=gb2zIR2rvRQ " << endl;
+        }
+        else if (strncmp (argv[k],"limStats",8) == 0) {
+            nEvents = strtol(argv[k+1], NULL, 10);   
         }
     }
         ////input cuts/commands    
@@ -266,6 +270,7 @@ int main( int argc, const char* argv[] ) {
     if (doPURW && !doData) fOutName += "_PURW";
     if (doPURWOviToDESY && !doData) fOutName += "OviToDESY";
     if (doBookSyst) fOutName += "_wSyst";
+    if (!blindData && doData) fOutName += "_NOTBLIND";
     fOutName += "_Output.root";
     cout << "saving to " << fOutName << endl;
     TFile * outputFile;
@@ -481,9 +486,9 @@ int main( int argc, const char* argv[] ) {
             axesTitle = ";"; axesTitle += H_Current.xLabel;// axesTitle += S_Current.histXaxisSuffix;
             axesTitle += ";"; axesTitle += H_Current.yLabel;
             if (S_Current.doZVeto == 0 && H_Current.xLabel.Contains("M_{ll}")) {
-                nXBins = 60;
-                xBinMin = ZWindowLB;
-                xBinMax = ZWindowUB;
+                nXBins = 100;
+                xBinMin = ZWindowLB - 10;
+                xBinMax = ZWindowUB + 10;
             }
             else {
                 nXBins = H_Current.xBinN;
@@ -548,7 +553,14 @@ int main( int argc, const char* argv[] ) {
     int jet0Index, jet1Index;
     bool doEvent;
     // cout << "test2 " << endl;
-    /////Iterate over events    
+    /////Iterate over events  
+    if (nEvents > fileTree.GetEntries()) nEvents = fileTree.GetEntries();
+    if (nEvents < 0) {
+        cout << "running over all events " << endl;   
+    }
+    else {
+        cout << "running on just " << nEvents << " events " << endl;
+    }
     for (Long64_t ievt=0; ievt<fileTree.GetEntries();ievt++) {
         //    for (Long64_t ievt=0; ievt<1000;ievt++) 
         diBJetPhi = 0; diBJetPt = 0; diBJetEta = 0; diBJetInvMass = 0;

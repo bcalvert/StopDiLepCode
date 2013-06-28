@@ -12,7 +12,9 @@ int main( int argc, char* argv[]) {
     vector<SampleT> * subSampVec    = SubSampVec();
     cout << "subsamp size " << subSampVec->size() << endl;
     for (unsigned int i = 0; i < subSampVec->size(); ++i) {
-        cout << subSampVec->at(i).histNameSuffix << " is channel " << i << ": " << subSampVec->at(i).descString << endl;
+      cout << "Channel Number: " << i << endl;
+      cout << "Description: " << DescriptorString(subSampVec->at(i)) << endl;
+      cout << endl;
     }
     theApp.Run(retVal);
 }

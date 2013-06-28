@@ -1634,15 +1634,48 @@ inline vector<SystT> * SystVec() {
 }
 inline TString DescriptorString(SampleT inputSubSamp) {
     //descriptor strings
-    TString baseDescString[4] = {"All three flavors of lepton events, inclusive other than ",  "All mumu events, inclusive other than", "All ee events, inclusive other than", "All emu events, inclusive other than"};
-    TString dsZVeto = ", outside of Z Mass window";
-    TString dsAntiZVeto = ", inside of Z Mass window";
+    TString baseDescString[4] = {"All three flavors of lepton events, inclusive other than being/requiring ",  "All mumu events, inclusive other than being/requiring", "All ee events, inclusive other than being/requiring", "All emu events, inclusive other than being/requiring"};
+    TString dsZVeto = ", diLepton system invariant mass outside of Z Mass window (76 GeV:106 GeV)";
+    TString dsAntiZVeto = ", diLepton system invariant mass inside of Z Mass window (76 GeV:106 GeV) ";
     TString dsJetCutStringP1 = ", at least ";
     TString dsJetCutStringP2 = " jet(s)";
     TString dsBJetCutStringP2 = " b jet(s)";
     TString dsMETCutStringP1 = ", at least ";
     TString dsMETCutStringP2 = " GeV of MET";
+    TString etaCutString[3] = {", both leptons in endcap eta range", ", one of the two leptons in barrel eta range", ", both leptons in barrel eta range"};
     //descriptor strings   
+    TString outString;
+    outString += baseDescString[inputSubSamp.whichdiLepType + 1];
+    switch (inputSubSamp.doZVeto) {
+        case 0:
+            outString += dsAntiZVeto;
+            break;
+        case 1:
+            outString += dsZVeto;
+            break;            
+        default:
+            break;
+    }
+    if (inputSubSamp.cutNJets > 0) {
+        outString += dsJetCutStringP1;
+        outString += inputSubSamp.cutNJets;
+        outString += dsJetCutStringP2;
+    }
+    if (inputSubSamp.cutNBJets > 0) {
+        outString += dsJetCutStringP1;
+        outString += inputSubSamp.cutNBJets;
+        outString += dsBJetCutStringP2;
+    }
+    if (inputSubSamp.cutMET > 0) {
+        outString += dsMETCutStringP1;
+        outString += inputSubSamp.cutMET;
+        outString += dsMETCutStringP2;
+    }
+    if (inputSubSamp.histNameSuffix.Contains("BothinEndcap")) outString += etaCutString[0];
+    if (inputSubSamp.histNameSuffix.Contains("OneinBarrel")) outString += etaCutString[1];
+    if (inputSubSamp.histNameSuffix.Contains("BothinBarrel")) outString += etaCutString[2];
+    
+    return outString;
 }
 inline vector<SpecHistBinT> * SpecHistBinVec() {
     SpecHistBinT ZMass; 
