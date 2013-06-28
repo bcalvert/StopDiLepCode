@@ -561,11 +561,13 @@ int main( int argc, const char* argv[] ) {
     /////Iterate over events  
     cout << "--- Total Events in file: " << fileTree.GetEntries() << " events" << endl;
 
-    if (nEvents > fileTree.GetEntries()) nEvents = fileTree.GetEntries();
+
     if (nEvents < 0) {
-        cout << "running over all events " << endl;   
+        cout << "running over all events " << endl;  
+        nEvents = fileTree.GetEntries();
     }
     else {
+        if (nEvents > fileTree.GetEntries()) nEvents = fileTree.GetEntries();
         cout << "running on just " << nEvents << " events " << endl;
     }
     for (Long64_t ievt=0; ievt<nEvents;ievt++) {
