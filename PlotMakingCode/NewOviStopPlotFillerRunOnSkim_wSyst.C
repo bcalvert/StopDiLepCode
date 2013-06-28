@@ -494,6 +494,9 @@ int main( int argc, const char* argv[] ) {
                 xBinMin = H_Current.xMin;
                 xBinMax = H_Current.xMax;
             }
+            if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindData) {
+                xBinMax = xBinMax / 2;
+            }
 //            if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.
             h_1DCurr = new TH1D(histTitle, axesTitle, nXBins, xBinMin, xBinMax); h_1DCurr->Sumw2();
             histMap_1D[histKey(H_Current, S_Current)] = h_1DCurr;
@@ -534,6 +537,9 @@ int main( int argc, const char* argv[] ) {
                     nXBins = H_Current.xBinN;
                     xBinMin = H_Current.xMin;
                     xBinMax = H_Current.xMax;
+                }
+                if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindData) {
+                    xBinMax = xBinMax / 2;
                 }
                 h_1DCurr = new TH1D(histTitle, axesTitle, nXBins, xBinMin, xBinMax); h_1DCurr->Sumw2();
                 histMap_1D[histKey(H_Current, S_Current)] = h_1DCurr;
@@ -1031,10 +1037,9 @@ int main( int argc, const char* argv[] ) {
             if (S_Current.histNameSuffix.Contains("BothinBarrel")) {
                 if (!(TMath::Abs(Lep0Vec.Eta()) < barrelEtaEnd && TMath::Abs(Lep1Vec.Eta()) < barrelEtaEnd)) continue;
             }
-            if (S_Current.histNameSuffix.Contains("OneinBarrel")) {
-                if (!(TMath::Abs(Lep0Vec.Eta()) > barrelEtaEnd || TMath::Abs(Lep1Vec.Eta()) > barrelEtaEnd)) {
-                    if (!(TMath::Abs(Lep0Vec.Eta()) < barrelEtaEnd || TMath::Abs(Lep1Vec.Eta()) < barrelEtaEnd)) continue;                        
-                }
+            if (S_Current.histNameSuffix.Contains("OneinBarrel")) {            
+                if (!(TMath::Abs(Lep0Vec.Eta()) > barrelEtaEnd || TMath::Abs(Lep1Vec.Eta()) > barrelEtaEnd)) continue;
+                if (!(TMath::Abs(Lep0Vec.Eta()) < barrelEtaEnd || TMath::Abs(Lep1Vec.Eta()) < barrelEtaEnd)) continue;                                        
             }   
             if (S_Current.histNameSuffix.Contains("BothinEndcap")) {
                 if (!(TMath::Abs(Lep0Vec.Eta()) > endcapEtaStart && TMath::Abs(Lep1Vec.Eta()) > endcapEtaStart)) continue;
