@@ -1405,66 +1405,77 @@ inline vector<SampleT> * SubSampVec() {
         events_LepInZMass[i].histYaxisSuffix = lepHistXAxisSuffix[i];
         events_LepInZMass[i].histZaxisSuffix = lepHistXAxisSuffix[i];
         events_LepInZMass[i].whichdiLepType  = i;
+        events_LepInZMass[i].blindDataChannel  = 0;
         
         events_LepOutZMass[i].histNameSuffix  = lepNameSuffix[i] + ZVetoString;
         events_LepOutZMass[i].histXaxisSuffix = lepHistXAxisSuffix[i];
         events_LepOutZMass[i].histYaxisSuffix = lepHistXAxisSuffix[i];
         events_LepOutZMass[i].histZaxisSuffix = lepHistXAxisSuffix[i];
         events_LepOutZMass[i].whichdiLepType  = i;
+        events_LepOutZMass[i].blindDataChannel  = 0;
         
         events_LepInZMassJet2[i].histNameSuffix  = lepNameSuffix[i] + JetCutString;
         events_LepInZMassJet2[i].histXaxisSuffix = lepHistXAxisSuffix[i];
         events_LepInZMassJet2[i].histYaxisSuffix = lepHistXAxisSuffix[i];
         events_LepInZMassJet2[i].histZaxisSuffix = lepHistXAxisSuffix[i];
         events_LepInZMassJet2[i].whichdiLepType  = i;
+        events_LepInZMassJet2[i].blindDataChannel  = 0;
         
         events_LepOutZMassJet2[i].histNameSuffix  = lepNameSuffix[i] + ZVetoString + JetCutString;
         events_LepOutZMassJet2[i].histXaxisSuffix = lepHistXAxisSuffix[i];
         events_LepOutZMassJet2[i].histYaxisSuffix = lepHistXAxisSuffix[i];
         events_LepOutZMassJet2[i].histZaxisSuffix = lepHistXAxisSuffix[i];
         events_LepOutZMassJet2[i].whichdiLepType  = i;
+        events_LepOutZMassJet2[i].blindDataChannel  = 0;
         
         events_LepInZMassJet2BJet1[i].histNameSuffix  = lepNameSuffix[i] + JetCutString + BJetCutString;
         events_LepInZMassJet2BJet1[i].histXaxisSuffix = lepHistXAxisSuffix[i];
         events_LepInZMassJet2BJet1[i].histYaxisSuffix = lepHistXAxisSuffix[i];
         events_LepInZMassJet2BJet1[i].histZaxisSuffix = lepHistXAxisSuffix[i];
         events_LepInZMassJet2BJet1[i].whichdiLepType  = i;
+        events_LepInZMassJet2BJet1[i].blindDataChannel  = 0;
         
         events_LepOutZMassJet2BJet1[i].histNameSuffix  = lepNameSuffix[i] + ZVetoString + JetCutString + BJetCutString;
         events_LepOutZMassJet2BJet1[i].histXaxisSuffix = lepHistXAxisSuffix[i];
         events_LepOutZMassJet2BJet1[i].histYaxisSuffix = lepHistXAxisSuffix[i];
         events_LepOutZMassJet2BJet1[i].histZaxisSuffix = lepHistXAxisSuffix[i];
         events_LepOutZMassJet2BJet1[i].whichdiLepType  = i;
+        events_LepOutZMassJet2BJet1[i].blindDataChannel  = 0;
         
         events_LepInZMassJet2BJet1MET40[i].histNameSuffix  = lepNameSuffix[i] + JetCutString + BJetCutString + METCutString;
         events_LepInZMassJet2BJet1MET40[i].histXaxisSuffix = lepHistXAxisSuffix[i];
         events_LepInZMassJet2BJet1MET40[i].histYaxisSuffix = lepHistXAxisSuffix[i];
         events_LepInZMassJet2BJet1MET40[i].histZaxisSuffix = lepHistXAxisSuffix[i];
         events_LepInZMassJet2BJet1MET40[i].whichdiLepType  = i;
+        events_LepInZMassJet2BJet1MET40[i].blindDataChannel  = 0;
         
         events_LepOutZMassJet2BJet1MET40[i].histNameSuffix  = lepNameSuffix[i] + ZVetoString + JetCutString + BJetCutString + METCutString;
         events_LepOutZMassJet2BJet1MET40[i].histXaxisSuffix = lepHistXAxisSuffix[i];
         events_LepOutZMassJet2BJet1MET40[i].histYaxisSuffix = lepHistXAxisSuffix[i];
         events_LepOutZMassJet2BJet1MET40[i].histZaxisSuffix = lepHistXAxisSuffix[i];
         events_LepOutZMassJet2BJet1MET40[i].whichdiLepType  = i;
+        events_LepOutZMassJet2BJet1MET40[i].blindDataChannel  = 0;
         
         events_LepInZMassBothinBarrel[i].histNameSuffix = lepNameSuffix[i] + TString("_BothinBarrel");
         events_LepInZMassBothinBarrel[i].histXaxisSuffix = lepHistXAxisSuffix[i];
         events_LepInZMassBothinBarrel[i].histYaxisSuffix = lepHistXAxisSuffix[i];
         events_LepInZMassBothinBarrel[i].histZaxisSuffix = lepHistXAxisSuffix[i];
         events_LepInZMassBothinBarrel[i].whichdiLepType  = i;
+        events_LepInZMassBothinBarrel[i].blindDataChannel  = 0;
         
         events_LepInZMassOneinBarrel[i].histNameSuffix = lepNameSuffix[i] + TString("_OneinBarrel");
         events_LepInZMassOneinBarrel[i].histXaxisSuffix = lepHistXAxisSuffix[i];
         events_LepInZMassOneinBarrel[i].histYaxisSuffix = lepHistXAxisSuffix[i];
         events_LepInZMassOneinBarrel[i].histZaxisSuffix = lepHistXAxisSuffix[i];
         events_LepInZMassOneinBarrel[i].whichdiLepType  = i;
+        events_LepInZMassOneinBarrel[i].blindDataChannel  = 0;
         
         events_LepInZMassBothinEndcap[i].histNameSuffix = lepNameSuffix[i] + TString("_BothinEndcap");
         events_LepInZMassBothinEndcap[i].histXaxisSuffix = lepHistXAxisSuffix[i];
         events_LepInZMassBothinEndcap[i].histYaxisSuffix = lepHistXAxisSuffix[i];
         events_LepInZMassBothinEndcap[i].histZaxisSuffix = lepHistXAxisSuffix[i];
         events_LepInZMassBothinEndcap[i].whichdiLepType  = i;
+        events_LepInZMassBothinEndcap[i].blindDataChannel  = 0;
         
         
     }
