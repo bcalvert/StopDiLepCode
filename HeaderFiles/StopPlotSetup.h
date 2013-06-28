@@ -74,7 +74,7 @@ vector<TFile *> * StopFiles(int whichNTuple, vector<TString> * fileNames, int wh
 vector<TString> * MCLegends(int whichNTuple, bool addThings) {
     vector<TString> * outVec = new vector<TString>;
     TString mcLegendsOviAdd[6] = {"W + Jets", "VV", "Z/#gamma* #rightarrow l^{+}l^{-}", "Single Top", "t#bar{t}", "Stop Mass: "};
-    TString mcLegendsDESYAdd[6] = {"W + Jets", "VV", "Z/#gamma* #rightarrow l^{+}l^{-}", "Single Top", "t#bar{t}", "QCD multijets"};
+    TString mcLegendsDESYAdd[6] = {"W + Jets", "VV", "Z/#gamma* #rightarrow l^{+}l^{-}", "Single Top", "t#bar{t}", "Multijets"};
     TString mcLegendsDESY[9] = {"W + Jets", "WW", "WZ", "ZZ", "Z/#gamma* #rightarrow l^{+}l^{-}", "Single Top", "t#bar{t} sig", "t#bar{t} bkg", "Multijets"};
     switch (whichNTuple) {
         case 0:

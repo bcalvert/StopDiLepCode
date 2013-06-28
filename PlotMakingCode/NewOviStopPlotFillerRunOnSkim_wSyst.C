@@ -1045,6 +1045,11 @@ int main( int argc, const char* argv[] ) {
             if (S_Current.histNameSuffix.Contains("BothinEndcap")) {
                 if (!(TMath::Abs(Lep0Vec.Eta()) > endcapEtaStart && TMath::Abs(Lep1Vec.Eta()) > endcapEtaStart)) continue;
             }
+            if (S_Current.histNameSuffix.Contains("0BJets")) {
+                if (NBtagJets > 0) {
+                    if (!(S_Current.histNameSuffix.Contains("inZMass") && !ZVeto)) continue;
+                }
+            }
             subSampBool[S_Current] = true;
             /*
              switch (Type) {

@@ -1399,6 +1399,14 @@ inline vector<SampleT> * SubSampVec() {
     SampleT events_LepInZMassBothinBarrel[3];
     SampleT events_LepInZMassOneinBarrel[3];
     SampleT events_LepInZMassBothinEndcap[3];
+    
+    SampleT events_LepInZMassor0BJetsJet2MET40[3];
+    SampleT events_LepInZMass0BJetsJet2MET40[3];
+    SampleT events_LepOutZMass0BJetsJet2MET40[3];
+    
+    SampleT events_LepInZMassor0BJetsJet2[3];
+    SampleT events_LepInZMass0BJetsJet2[3];
+    SampleT events_LepOutZMass0BJetsJet2[3];
     for (int i = 0; i < 3; ++i) {
         events_LepInZMass[i].histNameSuffix  = lepNameSuffix[i];
         events_LepInZMass[i].histXaxisSuffix = lepHistXAxisSuffix[i];
@@ -1478,6 +1486,47 @@ inline vector<SampleT> * SubSampVec() {
         events_LepInZMassBothinEndcap[i].blindDataChannel  = 0;
         
         
+        events_LepInZMassor0BJetsJet2[i].histNameSuffix = lepNameSuffix[i] + JetCutString + TString("_inZMass_or0BJets");
+        events_LepInZMassor0BJetsJet2[i].histXaxisSuffix = lepHistXAxisSuffix[i];
+        events_LepInZMassor0BJetsJet2[i].histYaxisSuffix = lepHistXAxisSuffix[i];
+        events_LepInZMassor0BJetsJet2[i].histZaxisSuffix = lepHistXAxisSuffix[i];
+        events_LepInZMassor0BJetsJet2[i].whichdiLepType  = i;
+        events_LepInZMassor0BJetsJet2[i].blindDataChannel  = 0;
+        
+        events_LepInZMass0BJetsJet2[i].histNameSuffix = lepNameSuffix[i] + JetCutString + TString("_0BJets");
+        events_LepInZMass0BJetsJet2[i].histXaxisSuffix = lepHistXAxisSuffix[i];
+        events_LepInZMass0BJetsJet2[i].histYaxisSuffix = lepHistXAxisSuffix[i];
+        events_LepInZMass0BJetsJet2[i].histZaxisSuffix = lepHistXAxisSuffix[i];
+        events_LepInZMass0BJetsJet2[i].whichdiLepType  = i;
+        events_LepInZMass0BJetsJet2[i].blindDataChannel  = 0;
+        
+        events_LepOutZMass0BJetsJet2[i].histNameSuffix = lepNameSuffix[i] + JetCutString + ZVetoString + TString("_0BJets");
+        events_LepOutZMass0BJetsJet2[i].histXaxisSuffix = lepHistXAxisSuffix[i];
+        events_LepOutZMass0BJetsJet2[i].histYaxisSuffix = lepHistXAxisSuffix[i];
+        events_LepOutZMass0BJetsJet2[i].histZaxisSuffix = lepHistXAxisSuffix[i];
+        events_LepOutZMass0BJetsJet2[i].whichdiLepType  = i;
+        events_LepOutZMass0BJetsJet2[i].blindDataChannel  = 0;        
+                
+        events_LepInZMassor0BJetsJet2MET40[i].histNameSuffix = lepNameSuffix[i] + JetCutString + METCutString + TString("_inZMass_or0BJets");
+        events_LepInZMassor0BJetsJet2MET40[i].histXaxisSuffix = lepHistXAxisSuffix[i];
+        events_LepInZMassor0BJetsJet2MET40[i].histYaxisSuffix = lepHistXAxisSuffix[i];
+        events_LepInZMassor0BJetsJet2MET40[i].histZaxisSuffix = lepHistXAxisSuffix[i];
+        events_LepInZMassor0BJetsJet2MET40[i].whichdiLepType  = i;
+        events_LepInZMassor0BJetsJet2MET40[i].blindDataChannel  = 0;
+        
+        events_LepInZMass0BJetsJet2MET40[i].histNameSuffix = lepNameSuffix[i] + JetCutString + METCutString + TString("_0BJets");
+        events_LepInZMass0BJetsJet2MET40[i].histXaxisSuffix = lepHistXAxisSuffix[i];
+        events_LepInZMass0BJetsJet2MET40[i].histYaxisSuffix = lepHistXAxisSuffix[i];
+        events_LepInZMass0BJetsJet2MET40[i].histZaxisSuffix = lepHistXAxisSuffix[i];
+        events_LepInZMass0BJetsJet2MET40[i].whichdiLepType  = i;
+        events_LepInZMass0BJetsJet2MET40[i].blindDataChannel  = 0;
+        
+        events_LepOutZMass0BJetsJet2MET40[i].histNameSuffix = lepNameSuffix[i] + JetCutString + METCutString + ZVetoString + TString("_0BJets");
+        events_LepOutZMass0BJetsJet2MET40[i].histXaxisSuffix = lepHistXAxisSuffix[i];
+        events_LepOutZMass0BJetsJet2MET40[i].histYaxisSuffix = lepHistXAxisSuffix[i];
+        events_LepOutZMass0BJetsJet2MET40[i].histZaxisSuffix = lepHistXAxisSuffix[i];
+        events_LepOutZMass0BJetsJet2MET40[i].whichdiLepType  = i;
+        events_LepOutZMass0BJetsJet2MET40[i].blindDataChannel  = 0;        
     }
     for (int j = 0; j < 3; ++j) {
 
@@ -1535,7 +1584,37 @@ inline vector<SampleT> * SubSampVec() {
         events_LepInZMassBothinEndcap[j].doZVeto         = 0;
         events_LepInZMassBothinEndcap[j].cutNJets        = -1;
         events_LepInZMassBothinEndcap[j].cutNBJets       = -1;
-        events_LepInZMassBothinEndcap[j].cutMET          = 0.;
+        events_LepInZMassBothinEndcap[j].cutMET          = 0.;                        
+        
+        events_LepInZMassor0BJetsJet2[j].doZVeto   = -1;
+        events_LepInZMassor0BJetsJet2[j].cutNJets  = 2;
+        events_LepInZMassor0BJetsJet2[j].cutNBJets = -1;
+        events_LepInZMassor0BJetsJet2[j].cutMET    = 0.;
+        
+        events_LepInZMass0BJetsJet2[j].doZVeto   = 0;
+        events_LepInZMass0BJetsJet2[j].cutNJets  = 2;
+        events_LepInZMass0BJetsJet2[j].cutNBJets = -1;
+        events_LepInZMass0BJetsJet2[j].cutMET    = 0.;
+
+        events_LepOutZMass0BJetsJet2[j].doZVeto   = 0;
+        events_LepOutZMass0BJetsJet2[j].cutNJets  = 2;
+        events_LepOutZMass0BJetsJet2[j].cutNBJets = -1;
+        events_LepOutZMass0BJetsJet2[j].cutMET    = 0.;
+        
+        events_LepInZMassor0BJetsJet2MET40[j].doZVeto   = -1;
+        events_LepInZMassor0BJetsJet2MET40[j].cutNJets  = 2;
+        events_LepInZMassor0BJetsJet2MET40[j].cutNBJets = -1;
+        events_LepInZMassor0BJetsJet2MET40[j].cutMET    = 40.;
+        
+        events_LepInZMass0BJetsJet2MET40[j].doZVeto   = 0;
+        events_LepInZMass0BJetsJet2MET40[j].cutNJets  = 2;
+        events_LepInZMass0BJetsJet2MET40[j].cutNBJets = -1;
+        events_LepInZMass0BJetsJet2MET40[j].cutMET    = 40.;
+        
+        events_LepOutZMass0BJetsJet2MET40[j].doZVeto   = 0;
+        events_LepOutZMass0BJetsJet2MET40[j].cutNJets  = 2;
+        events_LepOutZMass0BJetsJet2MET40[j].cutNBJets = -1;
+        events_LepOutZMass0BJetsJet2MET40[j].cutMET    = 40.;
         
     }    
     events_LepOutZMassJet2BJet1[2].blindDataChannel = 1; // blind emu with ZVeto + jet cuts
@@ -1550,17 +1629,21 @@ inline vector<SampleT> * SubSampVec() {
     SampleT events_NJetsGeq2; events_NJetsGeq2.histNameSuffix = "_NJetsGeq2";
     events_NJetsGeq2.histXaxisSuffix = ""; events_NJetsGeq2.histYaxisSuffix = "";  events_NJetsGeq2.histZaxisSuffix = "";
     events_NJetsGeq2.whichdiLepType = -1; events_NJetsGeq2.doZVeto = -1; events_NJetsGeq2.cutNJets = 2; events_NJetsGeq2.cutNBJets = -1; events_NJetsGeq2.cutMET = 0.;
+    events_NJetsGeq2.blindDataChannel = 0;
     
     SampleT events_NBJetsGeq1; events_NBJetsGeq1.histNameSuffix = "_NBJetsGeq1";
     events_NBJetsGeq1.histXaxisSuffix = ""; events_NBJetsGeq1.histYaxisSuffix = "";  events_NBJetsGeq1.histZaxisSuffix = "";
     events_NBJetsGeq1.whichdiLepType = -1; events_NBJetsGeq1.doZVeto = -1; events_NBJetsGeq1.cutNJets = -1; events_NBJetsGeq1.cutNBJets = 1; events_NBJetsGeq1.cutMET = 0.;
+    events_NBJetsGeq1.blindDataChannel = 0;
     
     SampleT events_NBJetsGeq2; events_NBJetsGeq2.histNameSuffix = "_NBJetsGeq2";
     events_NBJetsGeq2.histXaxisSuffix = ""; events_NBJetsGeq2.histYaxisSuffix = "";  events_NBJetsGeq2.histZaxisSuffix = "";
     events_NBJetsGeq2.whichdiLepType = -1; events_NBJetsGeq2.doZVeto = -1; events_NBJetsGeq2.cutNJets = -1; events_NBJetsGeq2.cutNBJets = 2; events_NBJetsGeq2.cutMET = 0.;
+    events_NBJetsGeq2.blindDataChannel = 0;
     
     SampleT events_NJetsGeq2_NBJetsGeq1; events_NJetsGeq2_NBJetsGeq1.histNameSuffix = "_Jet2BJet1"; events_NJetsGeq2_NBJetsGeq1.histXaxisSuffix = ""; events_NJetsGeq2_NBJetsGeq1.histYaxisSuffix = ""; events_NJetsGeq2_NBJetsGeq1.histZaxisSuffix = "";
     events_NJetsGeq2_NBJetsGeq1.whichdiLepType = -1; events_NJetsGeq2_NBJetsGeq1.doZVeto = -1; events_NJetsGeq2_NBJetsGeq1.cutNJets = 2; events_NJetsGeq2_NBJetsGeq1.cutNBJets = 1; events_NJetsGeq2_NBJetsGeq1.cutMET = 0.;
+    events_NJetsGeq2_NBJetsGeq1.blindDataChannel = 0;
     
     SampleT events_FullCut; events_FullCut.histNameSuffix = "_FullCut"; events_FullCut.histXaxisSuffix = ""; 
     events_FullCut.histYaxisSuffix = ""; events_FullCut.histZaxisSuffix = "";
@@ -1569,23 +1652,28 @@ inline vector<SampleT> * SubSampVec() {
     //"Inclusive subsample"//
     SampleT allEvents; allEvents.histNameSuffix = "_inclusive"; 
     allEvents.histXaxisSuffix = ""; allEvents.histYaxisSuffix = ""; allEvents.histZaxisSuffix = "";
-    allEvents.whichdiLepType = -1; allEvents.doZVeto = -1; allEvents.cutNJets = -1; allEvents.cutNBJets = -1; allEvents.cutMET = 0.;
+    allEvents.whichdiLepType = -1; allEvents.doZVeto = -1; allEvents.cutNJets = -1; allEvents.cutNBJets = -1; allEvents.cutMET = 0.; allEvents.blindDataChannel = 0;
+    
     //inclusive in ZMass window, w/ and w/out jet cuts    
     SampleT events_inZMass; events_inZMass.histNameSuffix = "_allLep_inZ";
     events_inZMass.histXaxisSuffix = ""; events_inZMass.histYaxisSuffix = ""; events_inZMass.histZaxisSuffix = "";
     events_inZMass.whichdiLepType = -1; events_inZMass.doZVeto = 0; events_inZMass.cutNJets = -1; events_inZMass.cutNBJets = -1; events_inZMass.cutMET = 0.;
+    events_inZMass.blindDataChannel = 0;
     
     SampleT events_inZMassJet2BJet1; events_inZMassJet2BJet1.histNameSuffix = "_allLep_inZ_w_JetCuts";
     events_inZMassJet2BJet1.histXaxisSuffix = ""; events_inZMassJet2BJet1.histYaxisSuffix = ""; events_inZMassJet2BJet1.histZaxisSuffix = "";
     events_inZMassJet2BJet1.whichdiLepType = -1; events_inZMassJet2BJet1.doZVeto = 0; events_inZMassJet2BJet1.cutNJets = 2; events_inZMassJet2BJet1.cutNBJets = 1; events_inZMassJet2BJet1.cutMET = 0.;
+    events_inZMassJet2BJet1.blindDataChannel = 0;
     
     SampleT events_inZMassMET40; events_inZMassMET40.histNameSuffix = "_allLep_inZ_w_METCut";
     events_inZMassMET40.histXaxisSuffix = ""; events_inZMassMET40.histYaxisSuffix = ""; events_inZMassMET40.histZaxisSuffix = "";
     events_inZMassMET40.whichdiLepType = -1; events_inZMassMET40.doZVeto = 0; events_inZMassMET40.cutNJets = -1; events_inZMassMET40.cutNBJets = -1; events_inZMassMET40.cutMET = 40.;
+    events_inZMassMET40.blindDataChannel = 0;
     
     SampleT events_inZMassJet2BJet1MET40; events_inZMassJet2BJet1MET40.histNameSuffix = "_allLep_inZ_w_JetCuts_w_METCut";
     events_inZMassJet2BJet1MET40.histXaxisSuffix = ""; events_inZMassJet2BJet1MET40.histYaxisSuffix = ""; events_inZMassJet2BJet1MET40.histZaxisSuffix = "";
     events_inZMassJet2BJet1MET40.whichdiLepType = -1; events_inZMassJet2BJet1MET40.doZVeto = 0; events_inZMassJet2BJet1MET40.cutNJets = 2; events_inZMassJet2BJet1MET40.cutNBJets = 1; events_inZMassJet2BJet1MET40.cutMET = 40.;
+    events_inZMassJet2BJet1MET40.blindDataChannel = 0;
     
     ///push Sample_Ts into a vector    
     vector<SampleT> * subSampVec = new vector<SampleT>;
@@ -1594,9 +1682,17 @@ inline vector<SampleT> * SubSampVec() {
         subSampVec->push_back(events_LepInZMassJet2[k]); subSampVec->push_back(events_LepOutZMassJet2[k]);
         subSampVec->push_back(events_LepInZMassJet2BJet1[k]); subSampVec->push_back(events_LepOutZMassJet2BJet1[k]);
         subSampVec->push_back(events_LepInZMassJet2BJet1MET40[k]); subSampVec->push_back(events_LepOutZMassJet2BJet1MET40[k]);
+
         subSampVec->push_back(events_LepInZMassBothinBarrel[k]);
         subSampVec->push_back(events_LepInZMassOneinBarrel[k]);
         subSampVec->push_back(events_LepInZMassBothinEndcap[k]);
+        
+        subSampVec->push_back(events_LepInZMassor0BJetsJet2[k]);
+        subSampVec->push_back(events_LepInZMassor0BJetsJet2MET40[k]);
+        subSampVec->push_back(events_LepInZMass0BJetsJet2[k]);
+        subSampVec->push_back(events_LepInZMass0BJetsJet2MET40[k]);
+        subSampVec->push_back(events_LepOutZMass0BJetsJet2[k]);
+        subSampVec->push_back(events_LepOutZMass0BJetsJet2MET40[k]);        
     }
     subSampVec->push_back(events_NJetsGeq2); subSampVec->push_back(events_NBJetsGeq1); subSampVec->push_back(events_NBJetsGeq2); subSampVec->push_back(events_NJetsGeq2_NBJetsGeq1);
     subSampVec->push_back(events_FullCut);

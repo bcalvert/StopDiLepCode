@@ -50,6 +50,7 @@ int main( int argc, char* argv[]) {
     bool doCDF        = 0;          // nominally, reates Cumulative Distribution Functions for MC and Data -- (6/25/13) haven't tested yet
     bool doStats      = 0;          // show statistics for data and mc spectra on plots -- e.g. mean and RMS -- (6/25/13) haven't tested yet to see how positioning looks
     bool doAbsRatio   = 0;          // Affects what gets shown in fractional ratio plots -- 0: (MC - Data) / Data, 1: Data/MC
+    bool saveDotCFile = 0;
     for (int k = 0; k < argc; ++k) {
         cout << "argv[k] for k = " << k << " is: " << argv[k] << endl;
         if (strncmp (argv[k],"wChan", 5) == 0) {
@@ -78,6 +79,9 @@ int main( int argc, char* argv[]) {
         }
         else if (strncmp (argv[k],"doStats", 7) == 0) {
             doStats = 1;
+        }
+        else if (strncmp (argv[k],"sDCF", 4) == 0) {
+            saveDotCFile = 1;
         }
     }
     gROOT->ProcessLine("#include <vector>");
@@ -287,6 +291,7 @@ int main( int argc, char* argv[]) {
         SpectrumDraw(c_Var, h_DataComp, dataLegendComp, h_MCComp, h_FracratioComp, h_ErrComp, mcStack, XaxisLegendPos[k], YaxisLegendStart[k], YAxisLB, YAxisUB, logYPad1, mcLegends, mcCompHistCentValVec, doStats, "", intLumi);
 //        c_Var[k]->SaveAs(canvName + TString(".pdf"));
         c_Var->SaveAs(saveNameAddition + canvName + TString(".pdf"));
+        if (saveDotCFile) c_Var->SaveAs(saveNameAddition + canvName + TString(".C"));
         
         if (doSystCurrPlot) {
             errLepEffSF = GraphSystErrorSet_SingleSource(h_MCComp, mcCompHistSystVec, stringLepEffSF + TString("Shift"), doSymErr, 0);
@@ -339,6 +344,7 @@ int main( int argc, char* argv[]) {
                 c_Var = new TCanvas(systCanvName, systCanvName, wtopx, wtopy, W_, H_);
                 SpectrumDrawSyst(c_Var, h_DataComp, dataLegendComp, h_MCComp, mcStack, errCompSpecSource_pStat->at(iSyst), errCompSpecSource->at(iSyst), h_FracratioComp, fracRatioSystVec->at(iSyst), XaxisLegendPos[k], YaxisLegendStart[k], YAxisLB, YAxisUB, logYPad1, mcLegends, mcCompHistCentValVec, doStats, "", intLumi);
                 c_Var->SaveAs(saveNameAddition + systCanvName + TString(".pdf"));
+                if (saveDotCFile) c_Var->SaveAs(saveNameAddition + systCanvName + TString(".C"));
             }
         }
 
