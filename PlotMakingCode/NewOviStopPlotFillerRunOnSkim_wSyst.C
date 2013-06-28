@@ -176,7 +176,10 @@ int main( int argc, const char* argv[] ) {
     bool doBookSyst      = 0;      // used for deciding whether or not to book systematics
     bool doMETSmear      = false;  // early attempt to mimic jet smearing using gaussians -- didn't work, leave off
     double METSF         = 0.0;
-    /////loop over inputs
+    
+    bool blindData       = 1;      // "Until further notice, leave ON -- cuts MT2ll > 80 is data in full object/event selection
+    
+    /////loop over inputs    
     for (int k = 0; k < argc; ++k) {
         cout << "argv[k] for k = " << k << " is: " << argv[k] << endl;
         if (strncmp (argv[k],"-i",2) == 0) {
@@ -209,6 +212,11 @@ int main( int argc, const char* argv[] ) {
         }
         else if (strncmp (argv[k],"gOutDir", 7) == 0) {
             grabOutDir = 1;
+        }
+        else if (strncmp (argv[k],"ReleaseTheKraken", 16) == 0) {
+            blindData = 0;
+            cout << "RELEASING THE KRAKEN!!! " << endl;
+            cout << "http://www.youtube.com/watch?v=gb2zIR2rvRQ " << endl;
         }
     }
         ////input cuts/commands    
@@ -275,7 +283,8 @@ int main( int argc, const char* argv[] ) {
     float   JetPtCutforCount = 30;
     bool ZVeto           = true;
     float ZWindowLB      = 76;
-    float ZWindowUB      = 106;    
+    float ZWindowUB      = 106;   
+    float barrelEtaEnd = 1.442; float endcapEtaStart = 1.566; 
     //////////DESY NTupleStuff
     
     ///Branch definitions
@@ -452,7 +461,12 @@ int main( int argc, const char* argv[] ) {
     TH1D * h_1DCurr; TH2D * h_2DCurr; TH3D * h_3DCurr;
     HMap_1D histMap_1D; HMap_2D histMap_2D; HMap_3D histMap_3D; passCutMap subSampBool;
     SampleT S_Current;
+    TString histTitle;
     TString axesTitle;
+    float nXBins, nYBins, nZBins;
+    float xBinMin, xBinMax;
+    float yBinMin, yBinMax;
+    float zBinMin, zBinMax;
     if (doBookSyst) {
         histVec_1D_Syst = AddSystHists(histVec_1D, systVec);
 //        addSystHists(histVec_2D, systVec);
@@ -461,20 +475,39 @@ int main( int argc, const char* argv[] ) {
     // cout << "test " << endl;
     for (unsigned int i = 0; i < subSampVec->size(); ++i) {
         S_Current = subSampVec->at(i);
-        for (int j = 0; j < (int) histVec_1D->size(); ++j) {
+        for (int j = 0; j < (int) histVec_1D->size(); ++j) {            
             H_Current = histVec_1D->at(j);
+            histTitle = H_Current.name + S_Current.histNameSuffix;
             axesTitle = ";"; axesTitle += H_Current.xLabel;// axesTitle += S_Current.histXaxisSuffix;
-            axesTitle += ";"; axesTitle += H_Current.yLabel;             
-            h_1DCurr = new TH1D(H_Current.name + S_Current.histNameSuffix, axesTitle, H_Current.xBinN, H_Current.xMin, H_Current.xMax); h_1DCurr->Sumw2();
+            axesTitle += ";"; axesTitle += H_Current.yLabel;
+            if (H_Current.doZVeto = 0) {
+                nXBins = 60;
+                xBinMin = ZWindowLB;
+                xBinMax = ZWindowUB;
+            }
+            else {
+                nXBins = H_Current.xBinN;
+                xBinMin = H_Current.xMin;
+                xBinMax = H_Current.xMax;
+            }
+//            if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.
+            h_1DCurr = new TH1D(histTitle, axesTitle, nXBins, xBinMin, xBinMax); h_1DCurr->Sumw2();
             histMap_1D[histKey(H_Current, S_Current)] = h_1DCurr;
             //will this cause memory leaks?
         }
         for (unsigned int k = 0; k < histVec_2D->size(); ++k) {
             H_Current = histVec_2D->at(k);
+            histTitle = H_Current.name + S_Current.histNameSuffix;
             axesTitle = ";"; axesTitle += H_Current.xLabel;// axesTitle += S_Current.histXaxisSuffix;
             axesTitle += ";"; axesTitle += H_Current.yLabel;// axesTitle += S_Current.histYaxisSuffix;
             axesTitle += ";"; axesTitle += H_Current.zLabel;
-            h_2DCurr = new TH2D(H_Current.name + S_Current.histNameSuffix, axesTitle, H_Current.xBinN, H_Current.xMin, H_Current.xMax, H_Current.yBinN, H_Current.yMin, H_Current.yMax); h_2DCurr->Sumw2();
+            nXBins = H_Current.xBinN;
+            xBinMin = H_Current.xMin;
+            xBinMin = H_Current.xMax;
+            nYBins = H_Current.yBinN;
+            yBinMin = H_Current.yMin;
+            yBinMax = H_Current.yMax;
+            h_2DCurr = new TH2D(histTitle, axesTitle, nXBins, xBinMin, xBinMax, nYBins, yBinMin, yBinMax); h_2DCurr->Sumw2();
             histMap_2D[histKey(H_Current, S_Current)] = h_2DCurr;
         }
         /*
@@ -485,10 +518,20 @@ int main( int argc, const char* argv[] ) {
         if (doBookSyst) {
             for (unsigned int js = 0; js < histVec_1D_Syst->size(); ++js) {                
                 H_Current = histVec_1D_Syst->at(js);
-//                if (H_Current.name.Contains("leadLepPt")) cout << "H_Current name " << H_Current.name << endl;
+                histTitle = H_Current.name + S_Current.histNameSuffix;
                 axesTitle = ";"; axesTitle += H_Current.xLabel;// axesTitle += S_Current.histXaxisSuffix;
-                axesTitle += ";"; axesTitle += H_Current.yLabel;             
-                h_1DCurr = new TH1D(H_Current.name + S_Current.histNameSuffix, axesTitle, H_Current.xBinN, H_Current.xMin, H_Current.xMax); h_1DCurr->Sumw2();
+                axesTitle += ";"; axesTitle += H_Current.yLabel;  
+                if (H_Current.doZVeto = 0) {
+                    nXBins = 100;
+                    xBinMin = ZWindowLB - 10;
+                    xBinMax = ZWindowUB + 10;
+                }
+                else {
+                    nXBins = H_Current.xBinN;
+                    xBinMin = H_Current.xMin;
+                    xBinMax = H_Current.xMax;
+                }
+                h_1DCurr = new TH1D(histTitle, axesTitle, nXBins, xBinMin, xBinMax); h_1DCurr->Sumw2();
                 histMap_1D[histKey(H_Current, S_Current)] = h_1DCurr;
                 //will this cause memory leaks?
             }
@@ -972,11 +1015,22 @@ int main( int argc, const char* argv[] ) {
             if (!(NBtagJets >= S_Current.cutNBJets)) continue;
             if (!(S_Current.doZVeto < 0 || ZVeto == S_Current.doZVeto)) continue;
             if ((Type == 0 || Type == 1) && MET < S_Current.cutMET) continue;
+            if (S_Current.histNameSuffix.Contains("BothinBarrel")) {
+                if (!(TMath::Abs(Lep0Vec.Eta()) < barrelEtaEnd && TMath::Abs(Lep1Vec.Eta()) < barrelEtaEnd)) continue;
+            }
+            if (S_Current.histNameSuffix.Contains("OneinBarrel")) {
+                if (!(TMath::Abs(Lep0Vec.Eta()) > barrelEtaEnd || TMath::Abs(Lep1Vec.Eta()) > barrelEtaEnd)) {
+                    if (!(TMath::Abs(Lep0Vec.Eta()) < barrelEtaEnd || TMath::Abs(Lep1Vec.Eta()) < barrelEtaEnd)) continue;                        
+                }
+            }   
+            if (S_Current.histNameSuffix.Contains("BothinEndcap")) {
+                if (!(TMath::Abs(Lep0Vec.Eta()) > endcapEtaStart && TMath::Abs(Lep1Vec.Eta()) > endcapEtaStart)) continue;
+            }
             subSampBool[S_Current] = true;
             /*
-            switch (Type) {
-                case 0:
-                    if (ZVeto) {
+             switch (Type) {
+             case 0:
+             if (ZVeto) {
                         if (S_Current.histNameSuffix == "_mumu_ZVeto") { 
                             subSampBool[S_Current] = true;   
                         }
@@ -1103,12 +1157,20 @@ int main( int argc, const char* argv[] ) {
                         }
                         ///Some necessary continue checks
                         if (H_Current.xVarKey == "MT2lb" && NJets < 2) continue;
+                        if (S_Current.blindDataChannel && H_Current.xVarKey == "MT2ll") {
+                            if (blindData && doData && MT2ll > MT2llCut) continue;
+                        }
+                        if (S_Current.blindDataChannel && H_Current.xVarKey == "MT2lb") {
+                            if (blindData && doData && MT2lb > MT2lbCut) continue;
+                        }
+                        /*
                         if ((S_Current.histNameSuffix == "_FullCut" || S_Current.histNameSuffix == "_emu_Jet2BJet1" || S_Current.histNameSuffix == "_ee_ZVeto_METGeq40_Jet2BJet1" || S_Current.histNameSuffix == "_mumu_ZVeto_METGeq40_Jet2BJet1") && H_Current.xVarKey == "MT2ll") {
                             if (doData && MT2ll > MT2llCut) continue;                            
                         }
                         if ((S_Current.histNameSuffix == "_FullCut" || S_Current.histNameSuffix == "_emu_Jet2BJet1" || S_Current.histNameSuffix == "_ee_ZVeto_METGeq40_Jet2BJet1" || S_Current.histNameSuffix == "_mumu_ZVeto_METGeq40_Jet2BJet1") && H_Current.xVarKey == "MT2lb") {
                             if (doData && MT2lb > MT2lbCut) continue;                            
                         }
+                        */
                         ///condition for which stuff to run on
 //                        cout << "H_Current Name " << H_Current.name << endl;
                         if (H_Current.name.Contains("LepEffSFShiftUp")) {                            
@@ -1143,12 +1205,20 @@ int main( int argc, const char* argv[] ) {
                          cout << "yiter second " << yIter->second << endl;
                          }
                          */
+                        if (S_Current.blindDataChannel && H_Current.xVarKey == "MT2ll") {
+                            if (blindData && doData && MT2ll > MT2llCut) continue;
+                        }
+                        if (S_Current.blindDataChannel && H_Current.xVarKey == "MT2lb") {
+                            if (blindData && doData && MT2lb > MT2lbCut) continue;
+                        }
+                        /*
                         if ((S_Current.histNameSuffix == "_FullCut" || S_Current.histNameSuffix == "_emu_Jet2BJet1" || S_Current.histNameSuffix == "_ee_ZVeto_METGeq40_Jet2BJet1" || S_Current.histNameSuffix == "_mumu_ZVeto_METGeq40_Jet2BJet1") && H_Current.xVarKey == "MT2ll") {
                             if (doData && MT2ll > MT2llCut) continue;                            
                         }
                         if ((S_Current.histNameSuffix == "_FullCut" || S_Current.histNameSuffix == "_emu_Jet2BJet1" || S_Current.histNameSuffix == "_ee_ZVeto_METGeq40_Jet2BJet1" || S_Current.histNameSuffix == "_mumu_ZVeto_METGeq40_Jet2BJet1") && H_Current.xVarKey == "MT2lb") {
                             if (doData && MT2lb > MT2lbCut) continue;                            
                         }
+                         */
                         histMap_2D[histKey(H_Current, S_Current)]->Fill(xIter->second, yIter->second, weight); //there could be shenanigans with this one
                     }
                 }
@@ -1187,12 +1257,20 @@ int main( int argc, const char* argv[] ) {
                         }
                         ///Some necessary continue checks
                         if (H_Current.xVarKey == "MT2lb" && NJets < 2) continue;
+                        if (S_Current.blindDataChannel && H_Current.xVarKey == "MT2ll") {
+                            if (blindData && doData && MT2ll > MT2llCut) continue;
+                        }
+                        if (S_Current.blindDataChannel && H_Current.xVarKey == "MT2lb") {
+                            if (blindData && doData && MT2lb > MT2lbCut) continue;
+                        }
+                        /*
                         if ((S_Current.histNameSuffix == "_FullCut" || S_Current.histNameSuffix == "_emu_Jet2_BJet1" || S_Current.histNameSuffix == "_ee_ZVeto_Jet2_BJet1_METGeq40" || S_Current.histNameSuffix == "_mumu_ZVeto_Jet2_BJet1_METGeq40") && H_Current.xVarKey == "MT2ll") {
                             if (doData && MT2ll > MT2llCut) continue;                            
                         }
                         if ((S_Current.histNameSuffix == "_FullCut" || S_Current.histNameSuffix == "_emu_Jet2_BJet1" || S_Current.histNameSuffix == "_ee_ZVeto_Jet2_BJet1_METGeq40" || S_Current.histNameSuffix == "_mumu_ZVeto_Jet2_BJet1_METGeq40") && H_Current.xVarKey == "MT2lb") {
                             if (doData && MT2lb > MT2lbCut) continue;                            
                         }
+                        */
                         ///condition for which stuff to run on
                         if (H_Current.name.Contains("LepEffSFShiftUp")) {
                             fillWeight = ((H_Current.name.Contains("preRW")) ? preNVtxRWweight_LepEffSFUp : weight_LepEffSFUp);

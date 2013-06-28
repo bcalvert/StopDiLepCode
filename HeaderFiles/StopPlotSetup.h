@@ -75,7 +75,7 @@ vector<TString> * MCLegends(int whichNTuple, bool addThings) {
     vector<TString> * outVec = new vector<TString>;
     TString mcLegendsOviAdd[6] = {"W + Jets", "VV", "Z/#gamma* #rightarrow l^{+}l^{-}", "Single Top", "t#bar{t}", "Stop Mass: "};
     TString mcLegendsDESYAdd[6] = {"W + Jets", "VV", "Z/#gamma* #rightarrow l^{+}l^{-}", "Single Top", "t#bar{t}", "QCD multijets"};
-    TString mcLegendsDESY[9] = {"W + Jets", "WW", "WZ", "ZZ", "Z/#gamma* #rightarrow l^{+}l^{-}", "Single Top", "t#bar{t} sig", "t#bar{t} bkg", "QCD multijets"};
+    TString mcLegendsDESY[9] = {"W + Jets", "WW", "WZ", "ZZ", "Z/#gamma* #rightarrow l^{+}l^{-}", "Single Top", "t#bar{t} sig", "t#bar{t} bkg", "Multijets"};
     switch (whichNTuple) {
         case 0:
             if (addThings) {
