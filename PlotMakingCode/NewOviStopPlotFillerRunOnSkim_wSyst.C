@@ -494,7 +494,7 @@ int main( int argc, const char* argv[] ) {
                 xBinMin = H_Current.xMin;
                 xBinMax = H_Current.xMax;
             }
-            if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindData) {
+            if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel) {
                 xBinMax = xBinMax / 2;
             }
 //            if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.
@@ -538,7 +538,7 @@ int main( int argc, const char* argv[] ) {
                     xBinMin = H_Current.xMin;
                     xBinMax = H_Current.xMax;
                 }
-                if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindData) {
+                if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel) {
                     xBinMax = xBinMax / 2;
                 }
                 h_1DCurr = new TH1D(histTitle, axesTitle, nXBins, xBinMin, xBinMax); h_1DCurr->Sumw2();
