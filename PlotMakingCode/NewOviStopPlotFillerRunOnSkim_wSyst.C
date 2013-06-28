@@ -253,7 +253,12 @@ int main( int argc, const char* argv[] ) {
         cout << "Running on Data" << endl;
         doData = 1;
     }
-    if (doData) fOutName += "MT2Leq80";
+    if (doData && blindData) {
+        fOutName += "MT2Leq80";   
+    }
+    else if (doData && !blindData) {
+        fOutName += "_NOTBLIND";
+    }
     if (doData) doMETSmear = 0;
     if (doMETSmear) {
         fOutName += "METSmear";
@@ -269,7 +274,6 @@ int main( int argc, const char* argv[] ) {
     if (doPURW && !doData) fOutName += "_PURW";
     if (doPURWOviToDESY && !doData) fOutName += "OviToDESY";
     if (doBookSyst) fOutName += "_wSyst";
-    if (!blindData && doData) fOutName += "_NOTBLIND";
     fOutName += "_Output.root";
     cout << "saving to " << fOutName << endl;
     TFile * outputFile;

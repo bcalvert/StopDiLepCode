@@ -1596,7 +1596,7 @@ inline vector<SampleT> * SubSampVec() {
         events_LepInZMass0BJetsJet2[j].cutNBJets = -1;
         events_LepInZMass0BJetsJet2[j].cutMET    = 0.;
 
-        events_LepOutZMass0BJetsJet2[j].doZVeto   = 0;
+        events_LepOutZMass0BJetsJet2[j].doZVeto   = 1;
         events_LepOutZMass0BJetsJet2[j].cutNJets  = 2;
         events_LepOutZMass0BJetsJet2[j].cutNBJets = -1;
         events_LepOutZMass0BJetsJet2[j].cutMET    = 0.;
@@ -1611,7 +1611,7 @@ inline vector<SampleT> * SubSampVec() {
         events_LepInZMass0BJetsJet2MET40[j].cutNBJets = -1;
         events_LepInZMass0BJetsJet2MET40[j].cutMET    = 40.;
         
-        events_LepOutZMass0BJetsJet2MET40[j].doZVeto   = 0;
+        events_LepOutZMass0BJetsJet2MET40[j].doZVeto   = 1;
         events_LepOutZMass0BJetsJet2MET40[j].cutNJets  = 2;
         events_LepOutZMass0BJetsJet2MET40[j].cutNBJets = -1;
         events_LepOutZMass0BJetsJet2MET40[j].cutMET    = 40.;
