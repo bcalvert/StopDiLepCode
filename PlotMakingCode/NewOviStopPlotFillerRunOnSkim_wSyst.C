@@ -451,7 +451,6 @@ int main( int argc, const char* argv[] ) {
         fileTree.SetBranchAddress("weightGenerator", &GenWeight, &b_GenWeight);
         SysVar = 1.0;
     }
-    cout << "--- Processing: " << fileTree.GetEntries() << " events" << endl;
     ////Book histograms and histogram names
     outputFile->cd();
     vector<HistogramT> * histVec_1D = OneDeeHistTVec();
@@ -554,6 +553,8 @@ int main( int argc, const char* argv[] ) {
     bool doEvent;
     // cout << "test2 " << endl;
     /////Iterate over events  
+    cout << "--- Total Events in file: " << fileTree.GetEntries() << " events" << endl;
+
     if (nEvents > fileTree.GetEntries()) nEvents = fileTree.GetEntries();
     if (nEvents < 0) {
         cout << "running over all events " << endl;   
@@ -561,7 +562,7 @@ int main( int argc, const char* argv[] ) {
     else {
         cout << "running on just " << nEvents << " events " << endl;
     }
-    for (Long64_t ievt=0; ievt<fileTree.GetEntries();ievt++) {
+    for (Long64_t ievt=0; ievt<nEvents;ievt++) {
         //    for (Long64_t ievt=0; ievt<1000;ievt++) 
         diBJetPhi = 0; diBJetPt = 0; diBJetEta = 0; diBJetInvMass = 0;
         diJetPhi = 0; diJetPt = 0; diJetEta = 0; diJetInvMass = 0;
