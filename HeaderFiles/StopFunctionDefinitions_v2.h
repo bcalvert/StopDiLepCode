@@ -101,15 +101,15 @@ typedef struct {
 
 
 typedef std::pair<HistogramT, SampleT> histKey;
-extern bool operator<(const histKey &a, const histKey &b)
+inline bool operator<(const histKey &a, const histKey &b)
 {
     return (a.first.name < b.first.name) || (a.first.name == b.first.name && a.second.histNameSuffix < b.second.histNameSuffix);
 }
-extern bool operator<(const SampleT &a, const SampleT &b)
+inline bool operator<(const SampleT &a, const SampleT &b)
 {
     return (a.histNameSuffix < b.histNameSuffix) || (a.histXaxisSuffix < b.histXaxisSuffix && a.histNameSuffix == b.histNameSuffix);
 }
-extern SampleT operator+(const SampleT &a, const SampleT &b)
+inline SampleT operator+(const SampleT &a, const SampleT &b)
 {
     SampleT outSampleT;
     outSampleT.histNameSuffix = a.histNameSuffix + b.histNameSuffix;
@@ -118,13 +118,13 @@ extern SampleT operator+(const SampleT &a, const SampleT &b)
     outSampleT.histZaxisSuffix = a.histZaxisSuffix + b.histZaxisSuffix;
     return outSampleT;
 }
-extern float dPhi(float phi1, float phi2) {
+inline float dPhi(float phi1, float phi2) {
     float result = phi1-phi2;
     while (result >= TMath::Pi()) result -= 2*TMath::Pi();
     while (result < -1*TMath::Pi()) result += 2*TMath::Pi();
     return fabs(result);
 }
-extern float deltaR(float eta1, float phi1, float eta2, float phi2) {
+inline float deltaR(float eta1, float phi1, float eta2, float phi2) {
     float dphi = dPhi(phi1,phi2);
     float deta = eta1-eta2;
     float result = dphi*dphi+deta*deta;
@@ -132,14 +132,14 @@ extern float deltaR(float eta1, float phi1, float eta2, float phi2) {
     return result;
 }
 
-extern double dPhi(double phi1, double phi2) {
+inline double dPhi(double phi1, double phi2) {
     double result = phi1-phi2;
     while (result >= TMath::Pi()) result -= 2*TMath::Pi();
     while (result < -1*TMath::Pi()) result += 2*TMath::Pi();
     return fabs(result);
 }
 
-extern double deltaR(double eta1, double phi1, double eta2, double phi2) {
+inline double deltaR(double eta1, double phi1, double eta2, double phi2) {
     double dphi = dPhi(phi1,phi2);
     double deta = eta1-eta2;
     double result = dphi*dphi+deta*deta;
@@ -161,14 +161,14 @@ extern double deltaR(double eta1, double phi1, double eta2, double phi2) {
 typedef ROOT::Math::LorentzVector<ROOT::Math::PtEtaPhiM4D<double> > LV;
 typedef std::vector<LV> VLV;
 
-extern void TreeBranchSet(TTree * analTree, int whichNTuple = 0) {
+inline void TreeBranchSet(TTree * analTree, int whichNTuple = 0) {
     
 }
-extern float PileupRW(TH1 * nVtxSFHist, int nVtx) {
+inline float PileupRW(TH1 * nVtxSFHist, int nVtx) {
     return (float) nVtxSFHist->GetBinContent(nVtxSFHist->FindBin(nVtx));
 }
 
-extern vector<float> * SystWeights(TH1 * origHist, TH1 * rwHist) {
+inline vector<float> * SystWeights(TH1 * origHist, TH1 * rwHist) {
     // origHist is histogram for initial distribution, //rwHist is histogram for distribution
     // you wish to RW to -- both should be 1D (functionality for now) and have same nBins
     // reweighting is just bin by bin for now -- another consideration is to do some sort of shape fit
@@ -189,7 +189,7 @@ extern vector<float> * SystWeights(TH1 * origHist, TH1 * rwHist) {
     }
     return weightVec;
 }
-extern TLorentzVector LeptonScaleSystShift(TLorentzVector inputLepVec, int inputLepPDGID, float shiftDirection) {
+inline TLorentzVector LeptonScaleSystShift(TLorentzVector inputLepVec, int inputLepPDGID, float shiftDirection) {
     float barrelEtaEnd = 1.442; float endcapEtaStart = 1.566; 
     float electronESEB = 0.006; float electronESEE = 0.015;
     float muonES = 0.002;
@@ -208,11 +208,11 @@ extern TLorentzVector LeptonScaleSystShift(TLorentzVector inputLepVec, int input
     return outShiftVec;
 }
 /*
-extern TLorentzVector JetScaleSystShift(TLorentzVector inputJetVec) {
+inline TLorentzVector JetScaleSystShift(TLorentzVector inputJetVec) {
     
 }
 */
-extern void METSystShift(vector<TLorentzVector> * inputObjVec, vector<TLorentzVector> * shiftObjVec, float &newMET, float &newMETPhi, float origMET, float origMETPhi) {
+inline void METSystShift(vector<TLorentzVector> * inputObjVec, vector<TLorentzVector> * shiftObjVec, float &newMET, float &newMETPhi, float origMET, float origMETPhi) {
     TVector3 vecMET;
     TVector3 inputObjTotThreeVec; inputObjTotThreeVec.SetPtEtaPhi(0., 0., 0.);
     TVector3 shiftObjTotThreeVec; shiftObjTotThreeVec.SetPtEtaPhi(0., 0., 0.);
@@ -238,7 +238,7 @@ extern void METSystShift(vector<TLorentzVector> * inputObjVec, vector<TLorentzVe
     return;
 }
 
-extern int EventType(vector<int> *lepPdgId, int lep0Index, int lep1Index) {
+inline int EventType(vector<int> *lepPdgId, int lep0Index, int lep1Index) {
     int Lep0Type = lepPdgId->at(lep0Index);
     int Lep1Type = lepPdgId->at(lep1Index);
     int Type;
@@ -267,7 +267,7 @@ extern int EventType(vector<int> *lepPdgId, int lep0Index, int lep1Index) {
     }
     return Type;
 }
-extern float ScaleFactorMC(int Type, int Syst) {
+inline float ScaleFactorMC(int Type, int Syst) {
     
     // Type: 0 MuMu, 1 EE 2 EMu
     // Syst: 0 CentVal, 1 SystShiftUp, 2 SystShiftDown
@@ -292,7 +292,7 @@ extern float ScaleFactorMC(int Type, int Syst) {
             break;
     }
 }
-extern vector<int> * ElectronPickOvi(vector<float> * ElecPt, vector<float> * ElecEta, vector<int> * ElecCharge, vector<float> * ElecNeutHadIso, vector<float> * ElecCharHadIso, vector<float> * ElecPhotHadIso, vector<bool> * passConvVeto, vector<bool> * isPFElectron) {
+inline vector<int> * ElectronPickOvi(vector<float> * ElecPt, vector<float> * ElecEta, vector<int> * ElecCharge, vector<float> * ElecNeutHadIso, vector<float> * ElecCharHadIso, vector<float> * ElecPhotHadIso, vector<bool> * passConvVeto, vector<bool> * isPFElectron) {
 //    cout << "doing electron info" << endl;
     int leadElecIndex = -1; int subElecIndex = -1; int leadPositIndex = -1; int subPositIndex = -1;
     float elecIsoRatioCut = 0.15; float elecEtaCut = 2.5; float leadElecPtCut = 20; float subElecPtCut = 10;
@@ -349,7 +349,7 @@ extern vector<int> * ElectronPickOvi(vector<float> * ElecPt, vector<float> * Ele
 }
 
 
-extern vector<int> * MuonPickOvi(vector<float> * MuonPt, vector<float> * MuonEta, vector<int> * MuonCharge, vector<float> * MuonD0, vector<float> *MuonVertZ, vector<float> * VertexZ, vector<float> * MuonNeutHadIso, vector<float> * MuonCharHadIso, vector<float> * MuonPhotHadIso, vector<float> * MuonSumPUPt, vector<bool> * isGMPT, vector<bool> * isPFMuon) {
+inline vector<int> * MuonPickOvi(vector<float> * MuonPt, vector<float> * MuonEta, vector<int> * MuonCharge, vector<float> * MuonD0, vector<float> *MuonVertZ, vector<float> * VertexZ, vector<float> * MuonNeutHadIso, vector<float> * MuonCharHadIso, vector<float> * MuonPhotHadIso, vector<float> * MuonSumPUPt, vector<bool> * isGMPT, vector<bool> * isPFMuon) {
     int leadMuonIndex = -1; int subMuonIndex = -1; int leadMuBarIndex = -1; int subMuBarIndex = -1;
     float muonIsoRatioCut = 0.12; float muonEtaCut = 2.4; float leadMuonPtCut = 20; float subMuonPtCut = 10;
     float muonD0Cut = 0.2; float muonDZCut = 0.5;
@@ -408,7 +408,7 @@ extern vector<int> * MuonPickOvi(vector<float> * MuonPt, vector<float> * MuonEta
     //indices->push_back(subMuBarIndex);
     return indices;
 }
-extern void LeptonPairOvi(TLorentzVector &Lep0Vec, TLorentzVector &Lep1Vec, int &eventType, bool &doEvent, vector<TLorentzVector> * Leptons, vector<int> * lepPdgId, int &Lep0PdgId,  int &Lep1PdgId) {
+inline void LeptonPairOvi(TLorentzVector &Lep0Vec, TLorentzVector &Lep1Vec, int &eventType, bool &doEvent, vector<TLorentzVector> * Leptons, vector<int> * lepPdgId, int &Lep0PdgId,  int &Lep1PdgId) {
 //    cout << "making lepton pair" << endl;
     int lep0Index = -1; int lep1Index = -1;
 //    int currLeadLepIndex, currSubLepIndex;
@@ -449,7 +449,7 @@ extern void LeptonPairOvi(TLorentzVector &Lep0Vec, TLorentzVector &Lep1Vec, int 
     if (productPdgId == -143) eventType = 2;    
 }
 
-extern vector<TLorentzVector> * JetInfo(vector<TLorentzVector> * Leptons, vector<float> * JetEt, vector<float> * JetEta, vector<float> * JetPx, vector<float> * JetPy, vector<float> * JetPz, vector<float> * JetE, vector<float> *JetNHF, vector<float> * JetNEF, vector<float> * JetCHF, vector<float> * JetCEF, vector<float> * JetBTag, vector<int> * JetNDaug, vector<int> * JetCharMult, int &NJets, int &NBJets, vector<int> * BJetIndices, float &HT) {
+inline vector<TLorentzVector> * JetInfo(vector<TLorentzVector> * Leptons, vector<float> * JetEt, vector<float> * JetEta, vector<float> * JetPx, vector<float> * JetPy, vector<float> * JetPz, vector<float> * JetE, vector<float> *JetNHF, vector<float> * JetNEF, vector<float> * JetCHF, vector<float> * JetCEF, vector<float> * JetBTag, vector<int> * JetNDaug, vector<int> * JetCharMult, int &NJets, int &NBJets, vector<int> * BJetIndices, float &HT) {
     NJets = 0;
     NBJets = 0;
     HT = 0;
@@ -506,7 +506,7 @@ extern vector<TLorentzVector> * JetInfo(vector<TLorentzVector> * Leptons, vector
     }
     return Jets;
 }
-extern void LeptonInfo(VLV * Leptons, vector<int> *lepPdgId, vector<double> *lepPFIso, int &lep0Index, int &lep1Index, bool &doEvent, int &eventType, int &Lep0PdgId, int &Lep1PdgId) {
+inline void LeptonInfo(VLV * Leptons, vector<int> *lepPdgId, vector<double> *lepPFIso, int &lep0Index, int &lep1Index, bool &doEvent, int &eventType, int &Lep0PdgId, int &Lep1PdgId) {
     doEvent = true;
     lep0Index = 0;
     lep1Index = 0;
@@ -602,7 +602,7 @@ extern void LeptonInfo(VLV * Leptons, vector<int> *lepPdgId, vector<double> *lep
     if (productPdgId == -121) eventType = 1;
     if (productPdgId == -143) eventType = 2;
 }
-extern vector<int> * NumJets(VLV * Jets, float jetPtCut, VLV * Leptons, int lep0Index, int lep1Index,  vector<double> *jetBTagParam, float &HT, float bTagCut) {
+inline vector<int> * NumJets(VLV * Jets, float jetPtCut, VLV * Leptons, int lep0Index, int lep1Index,  vector<double> *jetBTagParam, float &HT, float bTagCut) {
     LV CurrentJet;
     LV Lepton0 = Leptons->at(lep0Index);
     LV Lepton1 = Leptons->at(lep1Index);
@@ -655,7 +655,7 @@ extern vector<int> * NumJets(VLV * Jets, float jetPtCut, VLV * Leptons, int lep0
     return eventJetParams;
 }
 
-extern vector<HistogramT> * AddSystHists(vector<HistogramT> * inputHistTVec, vector<SystT> * inputSystTVec) {
+inline vector<HistogramT> * AddSystHists(vector<HistogramT> * inputHistTVec, vector<SystT> * inputSystTVec) {
     HistogramT H_Curr;
     HistogramT H_CurrNewSyst;
     SystT      Syst_Curr;
@@ -693,7 +693,7 @@ extern vector<HistogramT> * AddSystHists(vector<HistogramT> * inputHistTVec, vec
     return histTSystVec;
 }
 
-extern vector<HistogramT> * OneDeeHistTVec() {
+inline vector<HistogramT> * OneDeeHistTVec() {
     const double PI = 3.14159265;
     int EnergyPtBinN = 50;
     int MassBinN     = 200;
@@ -1195,7 +1195,7 @@ extern vector<HistogramT> * OneDeeHistTVec() {
     return histVec_1D;
 }
 
-extern vector<HistogramT> * TwoDeeHistTVec() {
+inline vector<HistogramT> * TwoDeeHistTVec() {
     const double PI = 3.14159265;
 //    int EnergyPtBinN = 400;
 //    int EtaBinN      = 200;
@@ -1274,7 +1274,7 @@ extern vector<HistogramT> * TwoDeeHistTVec() {
     histVec_2D->push_back(H_MT2lb_vs_DeltaPhiLepB0LepB1); histVec_2D->push_back(H_MT2lbControl_vs_DeltaPhiLepB0LepB1);
     return histVec_2D;
 }
-extern vector<SampleT> * SubSampVec() {
+inline vector<SampleT> * SubSampVec() {
     /*
      int     whichdiLepType; // -1: inclusive, 0: MuMu, 1: EE, 2: EMu
      int     doZVeto;   // -1: inclusive, 0: ZMass window, 1: outside ZMass window;
@@ -1511,20 +1511,20 @@ extern vector<SampleT> * SubSampVec() {
         events_LepOutZMassJet2BJet1MET40[j].cutMET          = 40.;
         events_LepOutZMassJet2BJet1MET40[j].blindDataChannel = 1; // blind emu with MET + ZVeto + jet cuts            
         
-        events_LepInZMassBothinBarrel[i].doZVeto         = 0;
-        events_LepInZMassBothinBarrel[i].cutNJets        = -1;
-        events_LepInZMassBothinBarrel[i].cutNBJets       = -1;
-        events_LepInZMassBothinBarrel[i].cutMET          = 0.;
+        events_LepInZMassBothinBarrel[j].doZVeto         = 0;
+        events_LepInZMassBothinBarrel[j].cutNJets        = -1;
+        events_LepInZMassBothinBarrel[j].cutNBJets       = -1;
+        events_LepInZMassBothinBarrel[j].cutMET          = 0.;
         
-        events_LepInZMassOneinBarrel[i].doZVeto         = 0;
-        events_LepInZMassOneinBarrel[i].cutNJets        = -1;
-        events_LepInZMassOneinBarrel[i].cutNBJets       = -1;
-        events_LepInZMassOneinBarrel[i].cutMET          = 0.;
+        events_LepInZMassOneinBarrel[j].doZVeto         = 0;
+        events_LepInZMassOneinBarrel[j].cutNJets        = -1;
+        events_LepInZMassOneinBarrel[j].cutNBJets       = -1;
+        events_LepInZMassOneinBarrel[j].cutMET          = 0.;
         
-        events_LepInZMassBothinEndcap[i].doZVeto         = 0;
-        events_LepInZMassBothinEndcap[i].cutNJets        = -1;
-        events_LepInZMassBothinEndcap[i].cutNBJets       = -1;
-        events_LepInZMassBothinEndcap[i].cutMET          = 0.;
+        events_LepInZMassBothinEndcap[j].doZVeto         = 0;
+        events_LepInZMassBothinEndcap[j].cutNJets        = -1;
+        events_LepInZMassBothinEndcap[j].cutNBJets       = -1;
+        events_LepInZMassBothinEndcap[j].cutMET          = 0.;
         
     }    
     events_LepOutZMassJet2BJet1[2].blindDataChannel = 1; // blind emu with ZVeto + jet cuts
@@ -1595,7 +1595,7 @@ extern vector<SampleT> * SubSampVec() {
     return subSampVec;
 }
 
-extern vector<SystT> * SystVec() {
+inline vector<SystT> * SystVec() {
     //    int     whichSystType;   // 0 = universal systematic, 1 = lepton systematic, 2 = jet systematic, 3 = other systematic
     /*
      systematics considered: MT2ll, Lepton trig/iso SF, Jet ES, Jet ER, Lepton ES, Lepton ER(??)
@@ -1632,19 +1632,19 @@ extern vector<SystT> * SystVec() {
 //    systVec->push_back(JetERShiftUp); systVec->push_back(JetERShiftDown);
     return systVec;
 }
-extern TString DescriptorString(SampleT inputSubSamp) {
+inline TString DescriptorString(SampleT inputSubSamp) {
     //descriptor strings
     TString baseDescString[4] = {"All three flavors of lepton events, inclusive other than ",  "All mumu events, inclusive other than", "All ee events, inclusive other than", "All emu events, inclusive other than"};
     TString dsZVeto = ", outside of Z Mass window";
     TString dsAntiZVeto = ", inside of Z Mass window";
     TString dsJetCutStringP1 = ", at least ";
-    TString dsBJetCutStringP2 = " jet(s)";
+    TString dsJetCutStringP2 = " jet(s)";
     TString dsBJetCutStringP2 = " b jet(s)";
     TString dsMETCutStringP1 = ", at least ";
     TString dsMETCutStringP2 = " GeV of MET";
     //descriptor strings   
 }
-extern vector<SpecHistBinT> * SpecHistBinVec() {
+inline vector<SpecHistBinT> * SpecHistBinVec() {
     SpecHistBinT ZMass; 
     ZMass.HistTXLabel = "M_{ll}";
     ZMass.SampTLabel = "inZ";
