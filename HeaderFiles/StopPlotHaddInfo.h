@@ -41,19 +41,6 @@ TString WhichTTBarString(int whichTTBarSyst) {
     }
     return TTBarSystString;
 }
-vector<double> * WeightBaseVec(vector<TList *> * fileListVec, unsigned int whichFile, TString nEventHistName) {
-    vector<double> * outVec = new vector<double>;
-    /*
-    if (boolVec->at(whichFile)) {
-        WeightVecFiller(fileListVec->at(whichFile), outVec, nEventHistName);
-    }
-    else {
-        cout << "file got turned off!! " << endl;
-    }    
-    */
-    WeightVecFiller(fileListVec->at(whichFile), outVec, nEventHistName);
-    return outVec;
-}
 void WeightVecFiller(TList * sourcelist, vector<double> * weightVec, TString histName) {
     TFile * first_source = (TFile*) sourcelist->First();
     cout << "first_source name = " << first_source->GetName() << endl;
@@ -69,6 +56,19 @@ void WeightVecFiller(TList * sourcelist, vector<double> * weightVec, TString his
         cout << "nEvents " << nEvents << endl;
         weightVec->push_back(nEvents);
     }
+}
+vector<double> * WeightBaseVec(vector<TList *> * fileListVec, unsigned int whichFile, TString nEventHistName) {
+    vector<double> * outVec = new vector<double>;
+    /*
+     if (boolVec->at(whichFile)) {
+     WeightVecFiller(fileListVec->at(whichFile), outVec, nEventHistName);
+     }
+     else {
+     cout << "file got turned off!! " << endl;
+     }    
+     */
+    WeightVecFiller(fileListVec->at(whichFile), outVec, nEventHistName);
+    return outVec;
 }
 vector<double> * WeightVec(float L_data, vector<double> * baseWeightVec, unsigned int whichFile) {
     vector<double> * outVec = new vector<double>;    
@@ -139,7 +139,7 @@ vector<double> * WeightVec(float L_data, vector<double> * baseWeightVec, unsigne
     return outVec;
 }
 vector<TFile *> * OutFileVec(vector<TString> * nameVec, vector<bool> * boolVec) {
-    vector<TFile *> outVec = new vector<TFile *>;
+    vector<TFile *> * outVec = new vector<TFile *>;
     TFile * TargetTTBarSig, * TargetTTBarBkg, * TargetSingTop, * TargetZDY, * TargetWLNu, * TargetWW, * TargetWZ, * TargetZZ, * TargetQCDMu, * TargetQCDEM, * TargetQCDBCEM;
     TString TTBarSystString, whichNTupleString, PURWString, doSystString, suffixString;
     if (nameVec->size() < 5) {
@@ -152,9 +152,9 @@ vector<TFile *> * OutFileVec(vector<TString> * nameVec, vector<bool> * boolVec) 
     suffixString = TString("Haddplots.root");
     if (boolVec->at(0)) {
         TargetTTBarSig = TFile::Open(TString("TTBarSig") + TTBarSystString + whichNTupleString + PURWString + doSystString + suffixString);
-        outVec->push_back(FileListTTBarSig);
+        outVec->push_back(TargetTTBarSig);
         TargetTTBarBkg = TFile::Open(TString("TTBarBkg") + TTBarSystString + whichNTupleString + PURWString + doSystString + suffixString);
-        outVec->push_back(FileListTTBarBkg);
+        outVec->push_back(TargetTTBarBkg);
     }
     if (boolVec->at(2)) {
         TargetSingTop = TFile::Open(TString("SingleTop") + whichNTupleString + PURWString + doSystString + suffixString, "RECREATE");
@@ -184,11 +184,11 @@ vector<TFile *> * OutFileVec(vector<TString> * nameVec, vector<bool> * boolVec) 
         TargetQCDBCEM = TFile::Open(TString("QCDBCEM") + whichNTupleString + PURWString + doSystString + suffixString, "RECREATE");
         outVec->push_back(TargetQCDBCEM);
     }
-    return outVec
+    return outVec;
 }
 
 vector<TList *> * FileListVec(int whichNTuple, vector<TString> * nameVec, vector<bool> * boolVec) {
-    vector<TList *> outVec = new vector<TList *>;
+    vector<TList *> * outVec = new vector<TList *>;
     TList * FileListTTBarSig, * FileListTTBarBkg, * FileListSingTop, * FileListZDY, * FileListWLNu, * FileListWW, * FileListWZ, * FileListZZ, * FileListQCDMu, * FileListQCDEM, * FileListQCDBCEM;
 //    TString TTBarSigPrefix, TTBarBkgPrefix, SingTopPrefix, ZDYPrefix, WLNuPrefix, WWPrefix, WZPrefix, ZZPrefix, QCDMuPrefix, QCDEMPrefix, QCDBCEMPrefix;    
     TString TTBarSystString, whichNTupleString, PURWString, doSystString, suffixString;
