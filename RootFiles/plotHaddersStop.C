@@ -425,7 +425,8 @@ int main( int argc, const char* argv[] ) {
                 break;
         }
         if (boolSampVec->at(j)) {
-            cout << "j " << endl;
+            cout << "j " << j <<  endl;
+            cout << "weight Vec at j Size " << weightVec->at(j)->size() << endl;
             MergeRootfile(outFileVec->at(j), fileListVec->at(j), weightVec->at(j)); //I think this needs some work..
         }
         switch (j) {
