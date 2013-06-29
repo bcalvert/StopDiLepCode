@@ -16,54 +16,7 @@
 #include <cmath>
 #include <sstream>
 #include "../HeaderFiles/StopPlotHaddInfo.h"
-
-
-/*
-#include "TChain.h"
-#include "TLorentzVector.h"
-
-#include "TROOT.h"
-#include "TFile.h"
-#include "TVector3.h"
-#include "TMath.h"
-#include "TRandom.h"
-#include "TH1D.h"
-#include "TH2D.h"
-#include "TH3F.h"
-#include "TF1.h"
-#include "TTree.h"
-#include "TString.h"
-#include "TRegexp.h"
-#include "TProfile.h"
-#include <fstream>
-#include <string>
-#include <iostream>
- */
-
-//TList *FileList;
-//TFile *Target;
-
-//void MergeRootfile( TDirectory *target, TList *sourcelist );
-
-/*
- void hadd() {
- // in an interactive ROOT session, edit the file names
- // Target and FileList, then
- // root > .L hadd.C
- // root > hadd()
- 
- Target = TFile::Open( "result.root", "RECREATE" );
- 
- FileList = new TList();
- FileList->Add( TFile::Open("hsimple1.root") );
- FileList->Add( TFile::Open("hsimple2.root") );
- 
- MergeRootfile( Target, FileList );
- 
- }
- */
-void MergeRootfile( TDirectory *target, TList *sourcelist, vector<double> * weightVec, bool beVerbose) {
-    //  cout << "Target path: " << target->GetPath() << endl;
+void MergeRootfileHists( TDirectory *target, TList *sourcelist, vector<double> * weightVec, bool beVerbose) {
     TString path( (char*)strstr( target->GetPath(), ":" ) );
     path.Remove( 0, 2 );
     
@@ -78,12 +31,10 @@ void MergeRootfile( TDirectory *target, TList *sourcelist, vector<double> * weig
     TChain *globChain = 0;
     TIter nextkey( current_sourcedir->GetListOfKeys() );
     TKey *key, *oldkey=0;
-//    double weight;
     int index;
     while ( (key = (TKey*)nextkey())) {
         //keep only the highest cycle number for each key
         if (oldkey && !strcmp(oldkey->GetName(),key->GetName())) continue;
-        
         // read object from first source file
         first_source->cd( path );
         TObject *obj = key->ReadObj();
@@ -91,9 +42,7 @@ void MergeRootfile( TDirectory *target, TList *sourcelist, vector<double> * weig
         if ( obj->IsA()->InheritsFrom( TH1::Class() ) ) {
             // descendant of TH1 -> merge it
             index = 0;
-            //      cout << "Merging histogram " << obj->GetName() << endl;
             TH1 *h1 = (TH1*)obj;
-            //            cout << "weight being used for h1: " << weights[weightsIndex] << endl;
             char * name = (char *) h1->GetName();
             if (beVerbose) cout << "h1 is " << name << endl;
             if (!strcmp(name, "h_qT_vs_SumEt_nVtx_3d") || !strcmp(name, "h_qT_vs_SumEt_nVtx_3dSmear")) continue;
@@ -109,7 +58,6 @@ void MergeRootfile( TDirectory *target, TList *sourcelist, vector<double> * weig
                 if (key2) {
                     TH1 *h2 = (TH1*)key2->ReadObj();
                     if (!strcmp(name, "h_photonPt")) cout << "Integral of PhotonPt pre-scaling: " << h2->Integral() << endl;
-                    //                    cout << "weight being used for h2: " << weights[weightsIndex] << endl;
                     h2->Scale(weightVec->at(index));
                     if (!strcmp(name, "h_photonPt")) cout << "Integral of PhotonPt post-scaling: " << h2->Integral() << endl;
                     h1->Add( h2 );
@@ -119,44 +67,6 @@ void MergeRootfile( TDirectory *target, TList *sourcelist, vector<double> * weig
                 nextsource = (TFile*)sourcelist->After( nextsource );
             }
         }
-        /*
-        else if ( obj->IsA()->InheritsFrom( TTree::Class() ) ) {
-            
-            // loop over all source files create a chain of Trees "globChain"
-            const char* obj_name= obj->GetName();
-            
-            globChain = new TChain(obj_name);
-            globChain->Add(first_source->GetName());
-            TFile *nextsource = (TFile*)sourcelist->After( first_source );
-            //      const char* file_name = nextsource->GetName();
-            // cout << "file name  " << file_name << endl;
-            while ( nextsource ) {
-                
-                globChain->Add(nextsource->GetName());
-                nextsource = (TFile*)sourcelist->After( nextsource );
-            }
-            
-        } else if ( obj->IsA()->InheritsFrom( TDirectory::Class() ) ) {
-            // it's a subdirectory
-            
-            cout << "Found subdirectory " << obj->GetName() << endl;
-            
-            // create a new subdir of same name and title in the target file
-            target->cd();
-            TDirectory *newdir = target->mkdir( obj->GetName(), obj->GetTitle() );
-            
-            // newdir is now the starting point of another round of merging
-            // newdir still knows its depth within the target file via
-            // GetPath(), so we can still figure out where we are in the recursion
-            MergeRootfile( newdir, sourcelist );
-            
-        } else {
-            
-            // object is of no type that we know or can handle
-            cout << "Unknown object type, name: "
-            << obj->GetName() << " title: " << obj->GetTitle() << endl;
-        }
-        */
         // now write the merged histogram (which is "in" obj) to the target file
         // note that this will just store obj in the current directory level,
         // which is not persistent until the complete directory itself is stored
@@ -172,14 +82,12 @@ void MergeRootfile( TDirectory *target, TList *sourcelist, vector<double> * weig
         }
         
     } // while ( ( TKey *key = (TKey*)nextkey() ) )
-    
     // save modifications to target file
     target->SaveSelf(kTRUE);
     TH1::AddDirectory(status);
 }
 int main( int argc, const char* argv[] ) {
     using namespace std;
-    //plotHaddersStop(bool doPURW = 1, int whichTTBarSyst = 0, bool doSyst)
     int whichNTuple   = 1;          //as with the plot making code, leave as 1 for now -- 0 is Oviedo, 1 is DESY    
     int whichTTBarSyst = 0;          // 0 is Madgraph, 1 is MC@NLO, 2 is Powheg
     bool doPURW       = 0;          // grab the nVtx reweighted MC files
@@ -204,10 +112,7 @@ int main( int argc, const char* argv[] ) {
         }
     }
     gROOT->ProcessLine("#include <vector>");
-//    TRint theApp("App", &argc, argv);
-//    Bool_t retVal = kTRUE;
-    
-    
+
     // set up input/output strings
     vector<TString> * nameStringVec = new vector<TString>;
     TString nTupleString, PURWString, doSystString;
@@ -257,10 +162,11 @@ int main( int argc, const char* argv[] ) {
     boolSampVec->push_back(doWLNu); // one WLNu list
     boolSampVec->push_back(doQCD);
     boolSampVec->push_back(doQCD);
-    boolSampVec->push_back(doQCD); // one QCD list
+    boolSampVec->push_back(doQCD); // three QCD list
     vector<TList*> * fileListVec = FileListVec(whichNTuple, nameStringVec, boolSampVec);
     vector<TFile*> * outFileVec = OutFileVec(nameStringVec, boolSampVec);
     // boolean vector for which files to hadd
+    
     // vectors of vectors of doubles to contain weight factors
     vector<vector<double> *> * weightBasesVec = new vector<vector<double> *>;
     vector<double> * currWeightBaseVec;
@@ -276,9 +182,8 @@ int main( int argc, const char* argv[] ) {
             weightVec->push_back(currWeightVec);
         }
     }
-    cout << "outFile Vec Size " << outFileVec->size() << endl;
-    cout << "fileList Vec Size " << fileListVec->size() << endl;
-    cout << "weight Vec Size " << weightVec->size() << endl;
+    // vectors of vectors of doubles to contain weight factors
+
     for (unsigned int j = 0; j < boolSampVec->size(); ++j) {
         switch (j) {
             case 0:
@@ -303,9 +208,7 @@ int main( int argc, const char* argv[] ) {
                 break;
         }
         if (boolSampVec->at(j)) {
-            cout << "j " << j <<  endl;
-            cout << "weight Vec at j Size " << weightVec->at(j)->size() << endl;
-            MergeRootfile(outFileVec->at(j), fileListVec->at(j), weightVec->at(j), beVerbose); //I think this needs some work..
+            MergeRootfileHists(outFileVec->at(j), fileListVec->at(j), weightVec->at(j), beVerbose); //I think this needs some work..
         }
         switch (j) {
             case 1:
@@ -330,5 +233,4 @@ int main( int argc, const char* argv[] ) {
                 break;
         }
     }
-//    theApp.Run(retVal);
 }

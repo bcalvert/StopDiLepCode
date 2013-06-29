@@ -74,27 +74,27 @@ vector<double> * WeightBaseVec(vector<TList *> * fileListVec, unsigned int which
 vector<double> * WeightVec(float L_data, vector<double> * baseWeightVec, unsigned int whichFile) {
     vector<double> * outVec = new vector<double>;    
     //Cross Sections mostly taken from: https://twiki.cern.ch/twiki/bin/view/CMS/StandardModelCrossSectionsat8TeV
-    double xsecTTbar = 244.849;
-    double xsecSingTop = 11.1;
-    double xsecWW = 54.838;
-    double xsecWZ = 33.21;
-    double xsecZZ = 17.654;
-    double xsecZDY10to50 = 860.5;
-    //double xsecZDY50toInf = 3532.8;
-    double xsecZDY50toInf = 3503.71;
-    double xsecWLNu = 36257.2;
-    double xsecQCDMu15 = 3.640E8*3.7E-4;
-    double xsecQCDMu20to30 = 2.870E8*6.500E-3;
-    double xsecQCDMu30to50 = 6.609E7*12.20E-3;
-    double xsecQCDMu50to80 = 8.802E6*21.80E-3;
-    double xsecQCDMu80to120 = 1.024E6*39.50E-3;
-    double xsecQCDMu120to170 = 1.578E5*47.30E-3;
-    double xsecQCDEM20to30 = 2.886E8*10.10E-3;
-    double xsecQCDEM30to80 = 7.433E7*62.10E-3;
-    double xsecQCDEM80to170 = 1.191E6*153.9E-3;
-    double xsecQCDBCEM20to30 = 2.886E8*5.800E-4;
-    double xsecQCDBCEM30to80 = 7.424E7*2.250E-3;
-    double xsecQCDBCEM80to170 = 1.191E6*10.90E-3;
+    double xsecTTbar                = 244.849;
+    double xsecSingTop              = 11.1;
+    double xsecWW                   = 54.838;
+    double xsecWZ                   = 33.21;
+    double xsecZZ                   = 17.654;
+    double xsecZDY10to50            = 860.5;
+    //double xsecZDY50toInf         = 3532.8;
+    double xsecZDY50toInf           = 3503.71;
+    double xsecWLNu                 = 36257.2;
+    double xsecQCDMu15              = 3.640E8*3.7E-4;
+    double xsecQCDMu20to30          = 2.870E8*6.500E-3;
+    double xsecQCDMu30to50          = 6.609E7*12.20E-3;
+    double xsecQCDMu50to80          = 8.802E6*21.80E-3;
+    double xsecQCDMu80to120         = 1.024E6*39.50E-3;
+    double xsecQCDMu120to170        = 1.578E5*47.30E-3;
+    double xsecQCDEM20to30          = 2.886E8*10.10E-3;
+    double xsecQCDEM30to80          = 7.433E7*62.10E-3;
+    double xsecQCDEM80to170         = 1.191E6*153.9E-3;
+    double xsecQCDBCEM20to30        = 2.886E8*5.800E-4;
+    double xsecQCDBCEM30to80        = 7.424E7*2.250E-3;
+    double xsecQCDBCEM80to170       = 1.191E6*10.90E-3;
     switch (whichFile) {
         case 0:
             outVec->push_back(L_data * xsecTTbar / baseWeightVec->at(0));
@@ -191,8 +191,7 @@ vector<TFile *> * OutFileVec(vector<TString> * nameVec, vector<bool> * boolVec) 
 
 vector<TList *> * FileListVec(int whichNTuple, vector<TString> * nameVec, vector<bool> * boolVec) {
     vector<TList *> * outVec = new vector<TList *>;
-    TList * FileListTTBarSig, * FileListTTBarBkg, * FileListSingTop, * FileListZDY, * FileListWLNu, * FileListWW, * FileListWZ, * FileListZZ, * FileListQCDMu, * FileListQCDEM, * FileListQCDBCEM;
-//    TString TTBarSigPrefix, TTBarBkgPrefix, SingTopPrefix, ZDYPrefix, WLNuPrefix, WWPrefix, WZPrefix, ZZPrefix, QCDMuPrefix, QCDEMPrefix, QCDBCEMPrefix;    
+    TList * FileListTTBarSig, * FileListTTBarBkg, * FileListSingTop, * FileListZDY, * FileListWLNu, * FileListWW, * FileListWZ, * FileListZZ, * FileListQCDMu, * FileListQCDEM, * FileListQCDBCEM;    
     TString TTBarSystString, whichNTupleString, PURWString, doSystString, suffixString;
     if (nameVec->size() < 5) {
         cout << "nameVec size less than 5!!!" << endl;
