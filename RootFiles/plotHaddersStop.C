@@ -380,9 +380,7 @@ int main( int argc, const char* argv[] ) {
     boolSampVec->push_back(doQCD);
     boolSampVec->push_back(doQCD);
     boolSampVec->push_back(doQCD); // one QCD list
-    cout << "debug 1" << endl;
     vector<TList*> * fileListVec = FileListVec(whichNTuple, nameStringVec, boolSampVec);
-    cout << "debug 2" << endl;
     vector<TFile*> * outFileVec = OutFileVec(nameStringVec, boolSampVec);
     // boolean vector for which files to hadd
     // vectors of vectors of doubles to contain weight factors
