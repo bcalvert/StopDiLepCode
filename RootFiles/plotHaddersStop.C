@@ -315,7 +315,7 @@ int main( int argc, const char* argv[] ) {
         if (strncmp (argv[k],"wNTuple", 7) == 0) {
             whichNTuple = strtol(argv[k+1], NULL, 10 );
         }
-        else if (strncmp (argv[k],"wTTbarSyst", 9) == 0) {
+        else if (strncmp (argv[k],"wTTbarSyst", 10) == 0) {
             whichTTBarSyst = strtol(argv[k+1], NULL, 10 );
         }
         else if (strncmp (argv[k],"doPURW", 6) == 0) {
@@ -398,6 +398,9 @@ int main( int argc, const char* argv[] ) {
             weightVec->push_back(currWeightVec);
         }
     }
+    cout << "outFile Vec Size " << outFileVec->size() << endl;
+    cout << "fileList Vec Size " << fileListVec->size() << endl;
+    cout << "weight Vec Size " << weightVec->size() << endl;
     for (unsigned int j = 0; j < boolSampVec->size(); ++j) {
         switch (j) {
             case 0:
@@ -421,8 +424,8 @@ int main( int argc, const char* argv[] ) {
             default:
                 break;
         }
-        if (j == 0) cout << "going to hadd TTBar" << endl;
         if (boolSampVec->at(j)) {
+            cout << "j " << endl;
             MergeRootfile(outFileVec->at(j), fileListVec->at(j), weightVec->at(j)); //I think this needs some work..
         }
         switch (j) {
