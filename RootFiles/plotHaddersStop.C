@@ -62,7 +62,7 @@
  
  }
  */
-void MergeRootfile( TDirectory *target, TList *sourcelist, vector<double> * weightVec ) {
+void MergeRootfile( TDirectory *target, TList *sourcelist, vector<double> * weightVec, bool beVerbose) {
     //  cout << "Target path: " << target->GetPath() << endl;
     TString path( (char*)strstr( target->GetPath(), ":" ) );
     path.Remove( 0, 2 );
@@ -95,7 +95,7 @@ void MergeRootfile( TDirectory *target, TList *sourcelist, vector<double> * weig
             TH1 *h1 = (TH1*)obj;
             //            cout << "weight being used for h1: " << weights[weightsIndex] << endl;
             char * name = (char *) h1->GetName();
-            cout << "h1 is " << name << endl;
+            if (beVerbose) cout << "h1 is " << name << endl;
             if (!strcmp(name, "h_qT_vs_SumEt_nVtx_3d") || !strcmp(name, "h_qT_vs_SumEt_nVtx_3dSmear")) continue;
             h1->Scale(weightVec->at(index));
             // loop over all source files and add the content of the
@@ -177,132 +177,6 @@ void MergeRootfile( TDirectory *target, TList *sourcelist, vector<double> * weig
     target->SaveSelf(kTRUE);
     TH1::AddDirectory(status);
 }
-
-
-
-/*
- void MergeRootfile( TDirectory *target, TList *sourcelist, double weights[] ) {
-    //  cout << "Target path: " << target->GetPath() << endl;
-    TString path( (char*)strstr( target->GetPath(), ":" ) );
-    path.Remove( 0, 2 );
-    
-    TFile *first_source = (TFile*)sourcelist->First();
-    first_source->cd( path );
-    TDirectory *current_sourcedir = gDirectory;
-    //gain time, do not add the objects in the list in memory
-    Bool_t status = TH1::AddDirectoryStatus();
-    TH1::AddDirectory(kFALSE);
-    
-    // loop over all keys in this directory
-    TChain *globChain = 0;
-    TIter nextkey( current_sourcedir->GetListOfKeys() );
-    TKey *key, *oldkey=0;
-    while ( (key = (TKey*)nextkey())) {
-        //keep only the highest cycle number for each key
-        if (oldkey && !strcmp(oldkey->GetName(),key->GetName())) continue;
-        
-        // read object from first source file
-        first_source->cd( path );
-        TObject *obj = key->ReadObj();
-        
-        if ( obj->IsA()->InheritsFrom( TH1::Class() ) ) {
-            // descendant of TH1 -> merge it
-            weightsIndex = 0;
-            //      cout << "Merging histogram " << obj->GetName() << endl;
-            TH1 *h1 = (TH1*)obj;
-            //            cout << "weight being used for h1: " << weights[weightsIndex] << endl;
-            char * name = h1->GetName();
-            cout << "h1 is " << name << endl;
-            if (!strcmp(name, "h_qT_vs_SumEt_nVtx_3d") || !strcmp(name, "h_qT_vs_SumEt_nVtx_3dSmear")) continue;
-            h1->Scale(weights[weightsIndex]);
-            // loop over all source files and add the content of the
-            // correspondant histogram to the one pointed to by "h1"
-            TFile *nextsource = (TFile*)sourcelist->After( first_source );
-            while ( nextsource ) {
-                weightsIndex+=1;
-                // make sure we are at the correct directory level by cd'ing to path
-                nextsource->cd( path );
-                TKey *key2 = (TKey*)gDirectory->GetListOfKeys()->FindObject(h1->GetName());
-                if (key2) {
-                    TH1 *h2 = (TH1*)key2->ReadObj();
-                    if (!strcmp(name, "h_photonPt")) cout << "Integral of PhotonPt pre-scaling: " << h2->Integral() << endl;
-                    //                    cout << "weight being used for h2: " << weights[weightsIndex] << endl;
-                    h2->Scale(weights[weightsIndex]);
-                    if (!strcmp(name, "h_photonPt")) cout << "Integral of PhotonPt post-scaling: " << h2->Integral() << endl;
-                    h1->Add( h2 );
-                    delete h2;
-                }
-                
-                nextsource = (TFile*)sourcelist->After( nextsource );
-            }
-        }
-        else if ( obj->IsA()->InheritsFrom( TTree::Class() ) ) {
-            
-            // loop over all source files create a chain of Trees "globChain"
-            const char* obj_name= obj->GetName();
-            
-            globChain = new TChain(obj_name);
-            globChain->Add(first_source->GetName());
-            TFile *nextsource = (TFile*)sourcelist->After( first_source );
-            //      const char* file_name = nextsource->GetName();
-            // cout << "file name  " << file_name << endl;
-            while ( nextsource ) {
-                
-                globChain->Add(nextsource->GetName());
-                nextsource = (TFile*)sourcelist->After( nextsource );
-            }
-            
-        } else if ( obj->IsA()->InheritsFrom( TDirectory::Class() ) ) {
-            // it's a subdirectory
-            
-            cout << "Found subdirectory " << obj->GetName() << endl;
-            
-            // create a new subdir of same name and title in the target file
-            target->cd();
-            TDirectory *newdir = target->mkdir( obj->GetName(), obj->GetTitle() );
-            
-            // newdir is now the starting point of another round of merging
-            // newdir still knows its depth within the target file via
-            // GetPath(), so we can still figure out where we are in the recursion
-            MergeRootfile( newdir, sourcelist );
-            
-        } else {
-            
-            // object is of no type that we know or can handle
-            cout << "Unknown object type, name: "
-            << obj->GetName() << " title: " << obj->GetTitle() << endl;
-        }
-        
-        // now write the merged histogram (which is "in" obj) to the target file
-        // note that this will just store obj in the current directory level,
-        // which is not persistent until the complete directory itself is stored
-        // by "target->Write()" below
-        if ( obj ) {
-            target->cd();
-            
-            //!!if the object is a tree, it is stored in globChain...
-            if(obj->IsA()->InheritsFrom( TTree::Class() ))
-                globChain->Merge(target->GetFile(),0,"keep");
-            else
-                obj->Write( key->GetName() );
-        }
-        
-    } // while ( ( TKey *key = (TKey*)nextkey() ) )
-    
-    // save modifications to target file
-    target->SaveSelf(kTRUE);
-    TH1::AddDirectory(status);
-}
- */
-/*
- TH1 * hadd(TFile** inputFileArray, float** weights, int ArrayLength, TString HistName) {
- 
- for (int i = 0; i < ArrayLength; ++i) {
- 
- }            
- }
- */
-//int main( int argc, const char* argv[] ) {
 int main( int argc, const char* argv[] ) {
     using namespace std;
     //plotHaddersStop(bool doPURW = 1, int whichTTBarSyst = 0, bool doSyst)
@@ -310,6 +184,7 @@ int main( int argc, const char* argv[] ) {
     int whichTTBarSyst = 0;          // 0 is Madgraph, 1 is MC@NLO, 2 is Powheg
     bool doPURW       = 0;          // grab the nVtx reweighted MC files
     bool doSyst       = 1;          // look at systematics plots -- (6/25/13) don't turn off for now haven't validated code fully when not making systematics
+    bool beVerbose    = 0;
     for (int k = 0; k < argc; ++k) {
         cout << "argv[k] for k = " << k << " is: " << argv[k] << endl;
         if (strncmp (argv[k],"wNTuple", 7) == 0) {
@@ -323,6 +198,9 @@ int main( int argc, const char* argv[] ) {
         }
         else if (strncmp (argv[k],"noSyst", 6) == 0) {
             doSyst = 0;
+        }
+        else if (strncmp (argv[k],"beVerbose", 9) == 0) {
+            beVerbose = 1;
         }
     }
     gROOT->ProcessLine("#include <vector>");
@@ -427,7 +305,7 @@ int main( int argc, const char* argv[] ) {
         if (boolSampVec->at(j)) {
             cout << "j " << j <<  endl;
             cout << "weight Vec at j Size " << weightVec->at(j)->size() << endl;
-            MergeRootfile(outFileVec->at(j), fileListVec->at(j), weightVec->at(j)); //I think this needs some work..
+            MergeRootfile(outFileVec->at(j), fileListVec->at(j), weightVec->at(j), beVerbose); //I think this needs some work..
         }
         switch (j) {
             case 1:
