@@ -55,8 +55,8 @@ void WeightVecFiller(TList * sourcelist, vector<double> * weightVec, TString his
         nEvents = h_eventCount->Integral();
         cout << "nEvents " << nEvents << endl;
         weightVec->push_back(nEvents);
+        nextsource = (TFile*)sourcelist->After( nextsource );
     }
-    nextsource = (TFile*)sourcelist->After( nextsource );
 }
 vector<double> * WeightBaseVec(vector<TList *> * fileListVec, unsigned int whichFile, TString nEventHistName) {
     vector<double> * outVec = new vector<double>;
