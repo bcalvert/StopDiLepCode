@@ -104,6 +104,7 @@ vector<double> * WeightVec(float L_data, vector<double> * baseWeightVec, unsigne
             break;
         case 2:
             outVec->push_back(L_data * xsecSingTop / baseWeightVec->at(0));
+            outVec->push_back(L_data * xsecSingTop / baseWeightVec->at(1));
             break;
         case 3:
             outVec->push_back(L_data * xsecZDY10to50 / baseWeightVec->at(0));
