@@ -153,10 +153,13 @@ vector<TFile *> * OutFileVec(vector<TString> * nameVec, vector<bool> * boolVec) 
     doSystString = nameVec->at(3);
     suffixString = TString("Haddplots.root");
     if (boolVec->at(0)) {
+        cout << "test 3 " << endl;
         TargetTTBarSig = TFile::Open(TString("TTBarSig") + TTBarSystString + whichNTupleString + PURWString + doSystString + suffixString);
         outVec->push_back(TargetTTBarSig);
+        cout << "TargetTTBarSig " << TargetTTBarSig->GetName() << endl;
         TargetTTBarBkg = TFile::Open(TString("TTBarBkg") + TTBarSystString + whichNTupleString + PURWString + doSystString + suffixString);
         outVec->push_back(TargetTTBarBkg);
+        cout << "test 4 " << endl;
     }
     if (boolVec->at(2)) {
         TargetSingTop = TFile::Open(TString("SingleTop") + whichNTupleString + PURWString + doSystString + suffixString, "RECREATE");
