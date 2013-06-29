@@ -146,7 +146,9 @@ vector<TFile *> * OutFileVec(vector<TString> * nameVec, vector<bool> * boolVec) 
         cout << "nameVec size less than 5!!!" << endl;
     }
     TTBarSystString = nameVec->at(0);
+    cout << "test " << TTBarSystString << endl;
     whichNTupleString = nameVec->at(1);
+    cout << "test " << whichNTupleString << endl;
     PURWString = nameVec->at(2);
     doSystString = nameVec->at(3);
     suffixString = TString("Haddplots.root");
