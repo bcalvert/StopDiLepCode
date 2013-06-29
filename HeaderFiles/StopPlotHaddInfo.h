@@ -154,39 +154,39 @@ vector<TFile *> * OutFileVec(vector<TString> * nameVec, vector<bool> * boolVec) 
     suffixString = TString("Haddplots.root");
     if (boolVec->at(0)) {
         cout << "test 3 " << endl;
-        TargetTTBarSig = TFile::Open(TString("TTBarSig") + TTBarSystString + whichNTupleString + PURWString + doSystString + suffixString);
+        TargetTTBarSig = new TFile(TString("TTBarSig") + TTBarSystString + whichNTupleString + PURWString + doSystString + suffixString);
         outVec->push_back(TargetTTBarSig);
         cout << "TargetTTBarSig " << TargetTTBarSig->GetName() << endl;
-        TargetTTBarBkg = TFile::Open(TString("TTBarBkg") + TTBarSystString + whichNTupleString + PURWString + doSystString + suffixString);
+        TargetTTBarBkg = new TFile(TString("TTBarBkg") + TTBarSystString + whichNTupleString + PURWString + doSystString + suffixString);
         outVec->push_back(TargetTTBarBkg);
         cout << "test 4 " << endl;
     }
     if (boolVec->at(2)) {
-        TargetSingTop = TFile::Open(TString("SingleTop") + whichNTupleString + PURWString + doSystString + suffixString, "RECREATE");
+        TargetSingTop = new TFile(TString("SingleTop") + whichNTupleString + PURWString + doSystString + suffixString, "RECREATE");
         outVec->push_back(TargetSingTop);
     }
     if (boolVec->at(3)) {
-        TargetZDY = TFile::Open(TString("ZDY") + whichNTupleString + PURWString + doSystString + suffixString, "RECREATE");
+        TargetZDY = new TFile(TString("ZDY") + whichNTupleString + PURWString + doSystString + suffixString, "RECREATE");
         outVec->push_back(TargetZDY);
     }
     if (boolVec->at(4)) {
-        TargetWW = TFile::Open(TString("WW") + whichNTupleString + PURWString + doSystString + suffixString, "RECREATE");   
+        TargetWW = new TFile(TString("WW") + whichNTupleString + PURWString + doSystString + suffixString, "RECREATE");   
         outVec->push_back(TargetWW);
-        TargetWZ = TFile::Open(TString("WZ") + whichNTupleString + PURWString + doSystString + suffixString, "RECREATE");   
+        TargetWZ = new TFile(TString("WZ") + whichNTupleString + PURWString + doSystString + suffixString, "RECREATE");   
         outVec->push_back(TargetWZ);
-        TargetZZ = TFile::Open(TString("ZZ") + whichNTupleString + PURWString + doSystString + suffixString, "RECREATE"); 
+        TargetZZ = new TFile(TString("ZZ") + whichNTupleString + PURWString + doSystString + suffixString, "RECREATE"); 
         outVec->push_back(TargetZZ);
     }
     if (boolVec->at(7)) {
-        TargetWLNu = TFile::Open(TString("WToLNu") + whichNTupleString + PURWString + doSystString + suffixString, "RECREATE");
+        TargetWLNu = new TFile(TString("WToLNu") + whichNTupleString + PURWString + doSystString + suffixString, "RECREATE");
         outVec->push_back(TargetWLNu);
     }
     if (boolVec->at(8)) {
-        TargetQCDMu = TFile::Open(TString("QCDMu") + whichNTupleString + PURWString + doSystString + suffixString, "RECREATE");   
+        TargetQCDMu = new TFile(TString("QCDMu") + whichNTupleString + PURWString + doSystString + suffixString, "RECREATE");   
         outVec->push_back(TargetQCDMu);
-        TargetQCDEM = TFile::Open(TString("QCDEM") + whichNTupleString + PURWString + doSystString + suffixString, "RECREATE");   
+        TargetQCDEM = new TFile(TString("QCDEM") + whichNTupleString + PURWString + doSystString + suffixString, "RECREATE");   
         outVec->push_back(TargetQCDEM);
-        TargetQCDBCEM = TFile::Open(TString("QCDBCEM") + whichNTupleString + PURWString + doSystString + suffixString, "RECREATE");
+        TargetQCDBCEM = new TFile(TString("QCDBCEM") + whichNTupleString + PURWString + doSystString + suffixString, "RECREATE");
         outVec->push_back(TargetQCDBCEM);
     }
     return outVec;
@@ -212,54 +212,54 @@ vector<TList *> * FileListVec(int whichNTuple, vector<TString> * nameVec, vector
         case 1:
             if (boolVec->at(0)) {
                 FileListTTBarSig = new TList();
-                FileListTTBarSig->Add(TFile::Open(TString("ttbarsignalplustau") + TTBarSystString + whichNTupleString + PURWString + doSystString + suffixString));
+                FileListTTBarSig->Add(new TFile(TString("ttbarsignalplustau") + TTBarSystString + whichNTupleString + PURWString + doSystString + suffixString));
                 outVec->push_back(FileListTTBarSig);
                 FileListTTBarBkg = new TList();
-                FileListTTBarBkg->Add(TFile::Open(TString("ttbarbg") + TTBarSystString + whichNTupleString + PURWString + doSystString + suffixString));
+                FileListTTBarBkg->Add(new TFile(TString("ttbarbg") + TTBarSystString + whichNTupleString + PURWString + doSystString + suffixString));
                 outVec->push_back(FileListTTBarBkg);
             }
             if (boolVec->at(2)) {
                 FileListSingTop = new TList();
-                FileListSingTop->Add(TFile::Open(TString("singletop_tw") + whichNTupleString + PURWString + doSystString + suffixString));
-                FileListSingTop->Add(TFile::Open(TString("singleantitop_tw") + whichNTupleString + PURWString + doSystString + suffixString));
+                FileListSingTop->Add(new TFile(TString("singletop_tw") + whichNTupleString + PURWString + doSystString + suffixString));
+                FileListSingTop->Add(new TFile(TString("singleantitop_tw") + whichNTupleString + PURWString + doSystString + suffixString));
                 outVec->push_back(FileListSingTop);
             }
             if (boolVec->at(3)) {
                 FileListZDY = new TList();
-                FileListZDY->Add(TFile::Open(TString("dy1050") + whichNTupleString + PURWString + doSystString + suffixString));
-                FileListZDY->Add(TFile::Open(TString("dy50inf") + whichNTupleString + PURWString + doSystString + suffixString));
+                FileListZDY->Add(new TFile(TString("dy1050") + whichNTupleString + PURWString + doSystString + suffixString));
+                FileListZDY->Add(new TFile(TString("dy50inf") + whichNTupleString + PURWString + doSystString + suffixString));
                 outVec->push_back(FileListZDY);
             }
             if (boolVec->at(4)) {
                 FileListWW = new TList();
-                FileListWW->Add(TFile::Open(TString("wwtoall") + whichNTupleString + PURWString + doSystString + suffixString));
+                FileListWW->Add(new TFile(TString("wwtoall") + whichNTupleString + PURWString + doSystString + suffixString));
                 outVec->push_back(FileListWW);
                 FileListWZ = new TList();
-                FileListWZ->Add(TFile::Open(TString("wztoall") + whichNTupleString + PURWString + doSystString + suffixString));
+                FileListWZ->Add(new TFile(TString("wztoall") + whichNTupleString + PURWString + doSystString + suffixString));
                 outVec->push_back(FileListWZ);
                 FileListZZ = new TList();
-                FileListZZ->Add(TFile::Open(TString("zztoall") + whichNTupleString + PURWString + doSystString + suffixString));
+                FileListZZ->Add(new TFile(TString("zztoall") + whichNTupleString + PURWString + doSystString + suffixString));
                 outVec->push_back(FileListZZ);
             }
             if (boolVec->at(7)) {
                 FileListWLNu = new TList();
-                FileListWLNu->Add(TFile::Open(TString("wtolnu") + whichNTupleString + PURWString + doSystString + suffixString));
+                FileListWLNu->Add(new TFile(TString("wtolnu") + whichNTupleString + PURWString + doSystString + suffixString));
                 outVec->push_back(FileListWLNu);
             }
             if (boolVec->at(8)) {
                 FileListQCDMu = new TList();
-                FileListQCDMu->Add(TFile::Open(TString("qcdmu15") + whichNTupleString + PURWString + doSystString + suffixString));
-                //        FileListQCDMu->Add(TFile::Open(TString("qcdmu15") + whichNTupleString + PURWString + doSystString + suffixString));                
+                FileListQCDMu->Add(new TFile(TString("qcdmu15") + whichNTupleString + PURWString + doSystString + suffixString));
+                //        FileListQCDMu->Add(new TFile(TString("qcdmu15") + whichNTupleString + PURWString + doSystString + suffixString));                
                 outVec->push_back(FileListQCDMu);
                 FileListQCDEM = new TList();
-                FileListQCDEM->Add(TFile::Open(TString("qcdem2030") + whichNTupleString + PURWString + doSystString + suffixString));
-                FileListQCDEM->Add(TFile::Open(TString("qcdem3080") + whichNTupleString + PURWString + doSystString + suffixString));
-                FileListQCDEM->Add(TFile::Open(TString("qcdem80170") + whichNTupleString + PURWString + doSystString + suffixString));                
+                FileListQCDEM->Add(new TFile(TString("qcdem2030") + whichNTupleString + PURWString + doSystString + suffixString));
+                FileListQCDEM->Add(new TFile(TString("qcdem3080") + whichNTupleString + PURWString + doSystString + suffixString));
+                FileListQCDEM->Add(new TFile(TString("qcdem80170") + whichNTupleString + PURWString + doSystString + suffixString));                
                 outVec->push_back(FileListQCDEM);
                 FileListQCDBCEM = new TList();
-                FileListQCDBCEM->Add(TFile::Open(TString("qcdbcem2030") + whichNTupleString + PURWString + doSystString + suffixString));
-                FileListQCDBCEM->Add(TFile::Open(TString("qcdbcem3080") + whichNTupleString + PURWString + doSystString + suffixString));
-                FileListQCDBCEM->Add(TFile::Open(TString("qcdbcem80170") + whichNTupleString + PURWString + doSystString + suffixString));
+                FileListQCDBCEM->Add(new TFile(TString("qcdbcem2030") + whichNTupleString + PURWString + doSystString + suffixString));
+                FileListQCDBCEM->Add(new TFile(TString("qcdbcem3080") + whichNTupleString + PURWString + doSystString + suffixString));
+                FileListQCDBCEM->Add(new TFile(TString("qcdbcem80170") + whichNTupleString + PURWString + doSystString + suffixString));
                 outVec->push_back(FileListQCDBCEM);
             }
             break;    
