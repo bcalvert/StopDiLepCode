@@ -1019,8 +1019,10 @@ int main( int argc, const char* argv[] ) {
             stringKeyToVar["diLepEta_LepESShiftDown"] = diLepEta_LepESDown;
             stringKeyToVar["diLepPhi_LepESShiftUp"] = diLepPhi_LepESUp;
             stringKeyToVar["diLepPhi_LepESShiftDown"] = diLepPhi_LepESDown;
-            stringKeyToVar["ELepEJet_LepESShiftUp"] = Lep0Vec_LepESUp.E() + Lep1Vec_LepESUp.E() - Jet0Vec.E() - Jet1Vec.E();
-            stringKeyToVar["ELepEJet_LepESShiftDown"] = Lep0Vec_LepESDown.E() + Lep1Vec_LepESDown.E() - Jet0Vec.E() - Jet1Vec.E();
+            if (NJets > 1) {
+                stringKeyToVar["ELepEJet_LepESShiftUp"] = Lep0Vec_LepESUp.E() + Lep1Vec_LepESUp.E() - Jet0Vec.E() - Jet1Vec.E();
+                stringKeyToVar["ELepEJet_LepESShiftDown"] = Lep0Vec_LepESDown.E() + Lep1Vec_LepESDown.E() - Jet0Vec.E() - Jet1Vec.E();
+            }
             stringKeyToVar["MT2ll_MT2llShiftUp"] = MT2ll_ShiftUp;            
             stringKeyToVar["MET_LepESShiftUp"] = MET_LepESUp;
             stringKeyToVar["MET_LepESShiftDown"] = MET_LepESDown;
