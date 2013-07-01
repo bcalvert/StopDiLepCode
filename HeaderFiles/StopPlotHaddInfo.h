@@ -58,8 +58,28 @@ void WeightVecFiller(TList * sourcelist, vector<double> * weightVec, TString his
         nextsource = (TFile*)sourcelist->After( nextsource );
     }
 }
-vector<double> * WeightBaseVec(vector<TList *> * fileListVec, unsigned int whichFile, TString nEventHistName) {
+vector<double> * WeightBaseVec(vector<TList *> * fileListVec, unsigned int whichFile, TString nEventHistName, TString nParFileHistName, vector<int> * numParFilesVec) {
     vector<double> * outVec = new vector<double>;
+    TFile * first_source = (TFile*) fileListVec->at(whichFile)->First();
+    cout << "first_source name = " << first_source->GetName() << endl;
+    TH1F * h_eventCount = (TH1F*) first_source->Get(nEventHistName);
+    TH1F * h_numParFiles = (TH1F*) first_source->Get(nParFileHistName);
+    float nEvents = h_eventCount->Integral();
+    int numParFiles = (int) h_numParFiles->GetEntries();
+    cout << "nEvents " << nEvents << endl;
+    outVec->push_back(nEvents);
+    TFile * nextsource = (TFile*) fileListVec->at(whichFile)->After(first_source);
+    while (nextsource) {
+        cout << "nextsource " << nextsource->GetName() << endl;
+        h_eventCount = (TH1F*) nextsource->Get(nEventHistName);
+        nEvents = h_eventCount->Integral();
+        cout << "nEvents " << nEvents << endl;
+        h_numParFiles = (TH1F*) nextsource->Get(nParFileHistName);
+        numParFiles = (int) h_numParFiles->GetEntries();
+        outVec->push_back(nEvents);
+        numParFilesVec->push_back(numParFiles);
+        nextsource = (TFile*)fileListVec->at(whichFile)->After( nextsource );
+    }
     /*
      if (boolVec->at(whichFile)) {
      WeightVecFiller(fileListVec->at(whichFile), outVec, nEventHistName);
@@ -68,11 +88,12 @@ vector<double> * WeightBaseVec(vector<TList *> * fileListVec, unsigned int which
      cout << "file got turned off!! " << endl;
      }    
      */
-    WeightVecFiller(fileListVec->at(whichFile), outVec, nEventHistName);
+//    WeightVecFiller(fileListVec->at(whichFile), outVec, nEventHistName);
     return outVec;
 }
-vector<double> * WeightVec(float L_data, vector<double> * baseWeightVec, unsigned int whichFile) {
+vector<double> * WeightVec(float L_data, vector<double> * baseWeightVec, unsigned int whichFile, vector<int> * numParFilesVec) {
     vector<double> * outVec = new vector<double>;    
+    int numParFiles;
     //Cross Sections mostly taken from: https://twiki.cern.ch/twiki/bin/view/CMS/StandardModelCrossSectionsat8TeV
     double xsecTTbar                = 244.849;
     double xsecSingTop              = 11.1;
@@ -97,43 +118,60 @@ vector<double> * WeightVec(float L_data, vector<double> * baseWeightVec, unsigne
     double xsecQCDBCEM80to170       = 1.191E6*10.90E-3;
     switch (whichFile) {
         case 0:
-            outVec->push_back(L_data * xsecTTbar / baseWeightVec->at(0));
+            numParFiles = numParFilesVec->at(0);
+            outVec->push_back(numParFiles * L_data * xsecTTbar / baseWeightVec->at(0));
             break;
         case 1:
-            outVec->push_back(L_data * xsecTTbar / baseWeightVec->at(0));
+            numParFiles = numParFilesVec->at(0);
+            outVec->push_back(numParFiles * L_data * xsecTTbar / baseWeightVec->at(0));
             break;
         case 2:
-            outVec->push_back(L_data * xsecSingTop / baseWeightVec->at(0));
-            outVec->push_back(L_data * xsecSingTop / baseWeightVec->at(1));
+            numParFiles = numParFilesVec->at(0);
+            outVec->push_back(numParFiles * L_data * xsecSingTop / baseWeightVec->at(0));
+            numParFiles = numParFilesVec->at(1);
+            outVec->push_back(numParFiles * L_data * xsecSingTop / baseWeightVec->at(1));
             break;
         case 3:
-            outVec->push_back(L_data * xsecZDY10to50 / baseWeightVec->at(0));
-            outVec->push_back(L_data * xsecZDY50toInf / baseWeightVec->at(1));
+            numParFiles = numParFilesVec->at(0);
+            outVec->push_back(numParFiles * L_data * xsecZDY10to50 / baseWeightVec->at(0));
+            numParFiles = numParFilesVec->at(1);
+            outVec->push_back(numParFiles * L_data * xsecZDY50toInf / baseWeightVec->at(1));
             break;
         case 4:
-            outVec->push_back(L_data * xsecWW / baseWeightVec->at(0));
+            numParFiles = numParFilesVec->at(0);
+            outVec->push_back(numParFiles * L_data * xsecWW / baseWeightVec->at(0));
             break;
         case 5:
-            outVec->push_back(L_data * xsecWZ / baseWeightVec->at(0));
+            numParFiles = numParFilesVec->at(0);
+            outVec->push_back(numParFiles * L_data * xsecWZ / baseWeightVec->at(0));
             break;
         case 6:
-            outVec->push_back(L_data * xsecZZ / baseWeightVec->at(0));
+            numParFiles = numParFilesVec->at(0);
+            outVec->push_back(numParFiles * L_data * xsecZZ / baseWeightVec->at(0));
             break;
         case 7:
-            outVec->push_back(L_data * xsecWLNu / baseWeightVec->at(0));
+            numParFiles = numParFilesVec->at(0);
+            outVec->push_back(numParFiles * L_data * xsecWLNu / baseWeightVec->at(0));
             break;
         case 8:            
-            outVec->push_back(L_data * xsecQCDMu15 / baseWeightVec->at(0));
+            numParFiles = numParFilesVec->at(0);
+            outVec->push_back(numParFiles * L_data * xsecQCDMu15 / baseWeightVec->at(0));
             break;            
         case 9:            
-            outVec->push_back(L_data * xsecQCDEM20to30 / baseWeightVec->at(0));
-            outVec->push_back(L_data * xsecQCDEM30to80 / baseWeightVec->at(1));
-            outVec->push_back(L_data * xsecQCDEM80to170 / baseWeightVec->at(2));
+            numParFiles = numParFilesVec->at(0);
+            outVec->push_back(numParFiles * L_data * xsecQCDEM20to30 / baseWeightVec->at(0));
+            numParFiles = numParFilesVec->at(1);
+            outVec->push_back(numParFiles * L_data * xsecQCDEM30to80 / baseWeightVec->at(1));
+            numParFiles = numParFilesVec->at(2);
+            outVec->push_back(numParFiles * L_data * xsecQCDEM80to170 / baseWeightVec->at(2));
             break; 
         case 10:            
-            outVec->push_back(L_data * xsecQCDBCEM20to30 / baseWeightVec->at(0));
-            outVec->push_back(L_data * xsecQCDBCEM30to80 / baseWeightVec->at(1));
-            outVec->push_back(L_data * xsecQCDBCEM80to170 / baseWeightVec->at(2));
+            numParFiles = numParFilesVec->at(0);
+            outVec->push_back(numParFiles * L_data * xsecQCDBCEM20to30 / baseWeightVec->at(0));
+            numParFiles = numParFilesVec->at(1);
+            outVec->push_back(numParFiles * L_data * xsecQCDBCEM30to80 / baseWeightVec->at(1));
+            numParFiles = numParFilesVec->at(2);
+            outVec->push_back(numParFiles * L_data * xsecQCDBCEM80to170 / baseWeightVec->at(2));
             break; 
         default:
             break;

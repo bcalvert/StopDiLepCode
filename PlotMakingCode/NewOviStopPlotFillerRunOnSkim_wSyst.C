@@ -585,22 +585,25 @@ int main( int argc, const char* argv[] ) {
     int endBreakPoint = -1;
     breakPoints->push_back(0);
     if (numBreakPoints > 0) {
-        endBreakPoint = (numBreakPoints+1 > nEvents) ? nEvents : numBreakPoints + 1;
+        endBreakPoint = (numBreakPoints + 1 > nEvents) ? nEvents : numBreakPoints + 1;
         for (int i = 1; i < endBreakPoint; ++i) {
             currBreakPoint = i * nEvents / endBreakPoint;
             breakPoints->push_back(currBreakPoint);
         }
     }
+    if (startPointNum > (int) breakPoints->size()) return 0;
     startPoint = breakPoints->at(startPointNum - 1);
-    endPoint = (endBreakPoint > 0) ? breakPoints->at(startPointNum) : nEvents + 1;
+    cout << " startpoint (event number 'startpoint'): " << startPoint << endl;
+    endPoint = ((int) breakPoints->size() <= startPointNum) ? nEvents : breakPoints->at(startPointNum);
+    cout << " endpoint (the 'endpoint + 1' th event won't be run over -- i.e. event number 'endpoint'): " << endPoint << endl;
     for (Long64_t ievt = startPointNum; ievt < nEvents;ievt++) {
         //    for (Long64_t ievt=0; ievt<1000;ievt++)
         if (startPoint > 0 ) {
-            if (ievt%startPoint == 0) cout << "ievt at start point: " << ievt << endl;
+            if ((ievt / startPoint == 1) && (ievt % startPoint == 0)) cout << "ievt at start point: " << ievt << endl;
         }
         if (ievt%10000 == 0) cout << ievt << endl;
         if (ievt == endPoint) {
-            cout << "ievt " << ievt << endl;
+            cout << "ievt at end point (note, not running on this event!):" << ievt << endl;
             break;
         }
         diBJetPhi = 0; diBJetPt = 0; diBJetEta = 0; diBJetInvMass = 0;
@@ -1349,10 +1352,21 @@ int main( int argc, const char* argv[] ) {
     cout << "All events done" << endl;
     outputFile->cd();
     cout << "cd-ing to output directory" << endl;
-    
+    TH1F * h_numParFiles = new TH1F("h_numParFiles", "", 2, -0.5, 1.5);
+    h_numParFiles->Fill(1);
+    h_numParFiles->SetEntries(1);
+    /*
+    if (endBreakPoint > 0) {
+        h_numParFiles->SetEntries(1);
+    }
+    else {
+        h_numParFiles->SetEntries(0);
+    }
+    */
+    h_numParFiles->Write();
     if (whichNTupleType == 1 && !doData) {
         eventCount = (TH1F*) inputFile.Get("EventsBeforeSelection/weightedEvents");
-        if (numBreakPoints > 0) eventCount->Scale(1/endBreakPoint);
+//        if (numBreakPoints > 0) eventCount->Scale(1./endBreakPoint);
         eventCount->Write();
     }
     

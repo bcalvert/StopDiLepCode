@@ -173,12 +173,14 @@ int main( int argc, const char* argv[] ) {
     vector<vector<double> *> * weightVec = new vector<vector<double> *>;
     vector<double> * currWeightVec;
     TString nEventHistName = "weightedEvents";
+    TString nParFileHistName = "h_numParFiles";
+    vector<int> * numParFilesVec = new vector<int>:
     float L_data = 19602.901;
     for (unsigned int i = 0; i < boolSampVec->size(); ++i) {
         if (boolSampVec->at(i)) {
-            currWeightBaseVec = WeightBaseVec(fileListVec, i, nEventHistName);
+            currWeightBaseVec = WeightBaseVec(fileListVec, i, nEventHistName, nParFileHistName, numParFilesVec);
             weightBasesVec->push_back(currWeightBaseVec);
-            currWeightVec = WeightVec(L_data, currWeightBaseVec, i);
+            currWeightVec = WeightVec(L_data, currWeightBaseVec, i, numParFilesVec);
             weightVec->push_back(currWeightVec);
         }
     }
