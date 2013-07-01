@@ -37,7 +37,7 @@ Channel Number: 6
 Description: All mumu events, inclusive other than being/requiring, diLepton system invariant mass inside of Z Mass window (76 GeV:106 GeV) , at least 2 jet(s), at least 1 b jet(s), at least 40 GeV of MET
 
 Channel Number: 7
-Description: All mumu events, inclusive other than being/requiring, diLepton system invariant mass outside of Z Mass window (76 GeV:106 GeV), at least 2 jet(s), at least 1 b jet(s), at least 40 GeV of MET
+Description: All mumu events, inclusive other than being/requiring, diLepton system invariant mass outside of Z Mass window (76 GeV:106 GeV), at least 2 jet(s), at least 1 b jet(s), at least 40 GeV of MET, note blinded channel
 
 Channel Number: 8
 Description: All mumu events, inclusive other than being/requiring, diLepton system invariant mass inside of Z Mass window (76 GeV:106 GeV) , both leptons in barrel eta range
@@ -49,22 +49,22 @@ Channel Number: 10
 Description: All mumu events, inclusive other than being/requiring, diLepton system invariant mass inside of Z Mass window (76 GeV:106 GeV) , both leptons in endcap eta range
 
 Channel Number: 11
-Description: All mumu events, inclusive other than being/requiring, at least 2 jet(s)
+Description: All mumu events, inclusive other than being/requiring, at least 2 jet(s), with NO BJets
 
 Channel Number: 12
-Description: All mumu events, inclusive other than being/requiring, at least 2 jet(s), at least 40 GeV of MET
+Description: All mumu events, inclusive other than being/requiring, at least 2 jet(s), at least 40 GeV of MET, with NO BJets
 
 Channel Number: 13
-Description: All mumu events, inclusive other than being/requiring, diLepton system invariant mass inside of Z Mass window (76 GeV:106 GeV) , at least 2 jet(s)
+Description: All mumu events, inclusive other than being/requiring, diLepton system invariant mass inside of Z Mass window (76 GeV:106 GeV) , at least 2 jet(s), with NO BJets
 
 Channel Number: 14
-Description: All mumu events, inclusive other than being/requiring, diLepton system invariant mass inside of Z Mass window (76 GeV:106 GeV) , at least 2 jet(s), at least 40 GeV of MET
+Description: All mumu events, inclusive other than being/requiring, diLepton system invariant mass inside of Z Mass window (76 GeV:106 GeV) , at least 2 jet(s), at least 40 GeV of MET, with NO BJets
 
 Channel Number: 15
-Description: All mumu events, inclusive other than being/requiring, diLepton system invariant mass outside of Z Mass window (76 GeV:106 GeV), at least 2 jet(s)
+Description: All mumu events, inclusive other than being/requiring, diLepton system invariant mass outside of Z Mass window (76 GeV:106 GeV), at least 2 jet(s), with NO BJets
 
 Channel Number: 16
-Description: All mumu events, inclusive other than being/requiring, diLepton system invariant mass outside of Z Mass window (76 GeV:106 GeV), at least 2 jet(s), at least 40 GeV of MET
+Description: All mumu events, inclusive other than being/requiring, diLepton system invariant mass outside of Z Mass window (76 GeV:106 GeV), at least 2 jet(s), at least 40 GeV of MET, with NO BJets
 
 Channel Number: 17
 Description: All ee events, inclusive other than being/requiring, diLepton system invariant mass inside of Z Mass window (76 GeV:106 GeV) 
@@ -88,7 +88,7 @@ Channel Number: 23
 Description: All ee events, inclusive other than being/requiring, diLepton system invariant mass inside of Z Mass window (76 GeV:106 GeV) , at least 2 jet(s), at least 1 b jet(s), at least 40 GeV of MET
 
 Channel Number: 24
-Description: All ee events, inclusive other than being/requiring, diLepton system invariant mass outside of Z Mass window (76 GeV:106 GeV), at least 2 jet(s), at least 1 b jet(s), at least 40 GeV of MET
+Description: All ee events, inclusive other than being/requiring, diLepton system invariant mass outside of Z Mass window (76 GeV:106 GeV), at least 2 jet(s), at least 1 b jet(s), at least 40 GeV of MET, note blinded channel
 
 Channel Number: 25
 Description: All ee events, inclusive other than being/requiring, diLepton system invariant mass inside of Z Mass window (76 GeV:106 GeV) , both leptons in barrel eta range
@@ -100,22 +100,22 @@ Channel Number: 27
 Description: All ee events, inclusive other than being/requiring, diLepton system invariant mass inside of Z Mass window (76 GeV:106 GeV) , both leptons in endcap eta range
 
 Channel Number: 28
-Description: All ee events, inclusive other than being/requiring, at least 2 jet(s)
+Description: All ee events, inclusive other than being/requiring, at least 2 jet(s), with NO BJets
 
 Channel Number: 29
-Description: All ee events, inclusive other than being/requiring, at least 2 jet(s), at least 40 GeV of MET
+Description: All ee events, inclusive other than being/requiring, at least 2 jet(s), at least 40 GeV of MET, with NO BJets
 
 Channel Number: 30
-Description: All ee events, inclusive other than being/requiring, diLepton system invariant mass inside of Z Mass window (76 GeV:106 GeV) , at least 2 jet(s)
+Description: All ee events, inclusive other than being/requiring, diLepton system invariant mass inside of Z Mass window (76 GeV:106 GeV) , at least 2 jet(s), with NO BJets
 
 Channel Number: 31
-Description: All ee events, inclusive other than being/requiring, diLepton system invariant mass inside of Z Mass window (76 GeV:106 GeV) , at least 2 jet(s), at least 40 GeV of MET
+Description: All ee events, inclusive other than being/requiring, diLepton system invariant mass inside of Z Mass window (76 GeV:106 GeV) , at least 2 jet(s), at least 40 GeV of MET, with NO BJets
 
 Channel Number: 32
-Description: All ee events, inclusive other than being/requiring, diLepton system invariant mass outside of Z Mass window (76 GeV:106 GeV), at least 2 jet(s)
+Description: All ee events, inclusive other than being/requiring, diLepton system invariant mass outside of Z Mass window (76 GeV:106 GeV), at least 2 jet(s), with NO BJets
 
 Channel Number: 33
-Description: All ee events, inclusive other than being/requiring, diLepton system invariant mass outside of Z Mass window (76 GeV:106 GeV), at least 2 jet(s), at least 40 GeV of MET
+Description: All ee events, inclusive other than being/requiring, diLepton system invariant mass outside of Z Mass window (76 GeV:106 GeV), at least 2 jet(s), at least 40 GeV of MET, with NO BJets
 
 Channel Number: 34
 Description: All emu events, inclusive other than being/requiring, diLepton system invariant mass inside of Z Mass window (76 GeV:106 GeV) 
@@ -133,13 +133,13 @@ Channel Number: 38
 Description: All emu events, inclusive other than being/requiring, diLepton system invariant mass inside of Z Mass window (76 GeV:106 GeV) , at least 2 jet(s), at least 1 b jet(s)
 
 Channel Number: 39
-Description: All emu events, inclusive other than being/requiring, diLepton system invariant mass outside of Z Mass window (76 GeV:106 GeV), at least 2 jet(s), at least 1 b jet(s)
+Description: All emu events, inclusive other than being/requiring, diLepton system invariant mass outside of Z Mass window (76 GeV:106 GeV), at least 2 jet(s), at least 1 b jet(s), note blinded channel
 
 Channel Number: 40
 Description: All emu events, inclusive other than being/requiring, diLepton system invariant mass inside of Z Mass window (76 GeV:106 GeV) , at least 2 jet(s), at least 1 b jet(s), at least 40 GeV of MET
 
 Channel Number: 41
-Description: All emu events, inclusive other than being/requiring, diLepton system invariant mass outside of Z Mass window (76 GeV:106 GeV), at least 2 jet(s), at least 1 b jet(s), at least 40 GeV of MET
+Description: All emu events, inclusive other than being/requiring, diLepton system invariant mass outside of Z Mass window (76 GeV:106 GeV), at least 2 jet(s), at least 1 b jet(s), at least 40 GeV of MET, note blinded channel
 
 Channel Number: 42
 Description: All emu events, inclusive other than being/requiring, diLepton system invariant mass inside of Z Mass window (76 GeV:106 GeV) , both leptons in barrel eta range
@@ -151,22 +151,22 @@ Channel Number: 44
 Description: All emu events, inclusive other than being/requiring, diLepton system invariant mass inside of Z Mass window (76 GeV:106 GeV) , both leptons in endcap eta range
 
 Channel Number: 45
-Description: All emu events, inclusive other than being/requiring, at least 2 jet(s)
+Description: All emu events, inclusive other than being/requiring, at least 2 jet(s), with NO BJets
 
 Channel Number: 46
-Description: All emu events, inclusive other than being/requiring, at least 2 jet(s), at least 40 GeV of MET
+Description: All emu events, inclusive other than being/requiring, at least 2 jet(s), at least 40 GeV of MET, with NO BJets
 
 Channel Number: 47
-Description: All emu events, inclusive other than being/requiring, diLepton system invariant mass inside of Z Mass window (76 GeV:106 GeV) , at least 2 jet(s)
+Description: All emu events, inclusive other than being/requiring, diLepton system invariant mass inside of Z Mass window (76 GeV:106 GeV) , at least 2 jet(s), with NO BJets
 
 Channel Number: 48
-Description: All emu events, inclusive other than being/requiring, diLepton system invariant mass inside of Z Mass window (76 GeV:106 GeV) , at least 2 jet(s), at least 40 GeV of MET
+Description: All emu events, inclusive other than being/requiring, diLepton system invariant mass inside of Z Mass window (76 GeV:106 GeV) , at least 2 jet(s), at least 40 GeV of MET, with NO BJets
 
 Channel Number: 49
-Description: All emu events, inclusive other than being/requiring, diLepton system invariant mass outside of Z Mass window (76 GeV:106 GeV), at least 2 jet(s)
+Description: All emu events, inclusive other than being/requiring, diLepton system invariant mass outside of Z Mass window (76 GeV:106 GeV), at least 2 jet(s), with NO BJets
 
 Channel Number: 50
-Description: All emu events, inclusive other than being/requiring, diLepton system invariant mass outside of Z Mass window (76 GeV:106 GeV), at least 2 jet(s), at least 40 GeV of MET
+Description: All emu events, inclusive other than being/requiring, diLepton system invariant mass outside of Z Mass window (76 GeV:106 GeV), at least 2 jet(s), at least 40 GeV of MET, with NO BJets
 
 Channel Number: 51
 Description: All three flavors of lepton events, inclusive other than being/requiring , at least 2 jet(s)
@@ -181,7 +181,7 @@ Channel Number: 54
 Description: All three flavors of lepton events, inclusive other than being/requiring , at least 2 jet(s), at least 1 b jet(s)
 
 Channel Number: 55
-Description: All three flavors of lepton events, inclusive other than being/requiring , diLepton system invariant mass outside of Z Mass window (76 GeV:106 GeV), at least 2 jet(s), at least 1 b jet(s), at least 40 GeV of MET
+Description: All three flavors of lepton events, inclusive other than being/requiring , diLepton system invariant mass outside of Z Mass window (76 GeV:106 GeV), at least 2 jet(s), at least 1 b jet(s), at least 40 GeV of MET, note blinded channel
 
 Channel Number: 56
 Description: All three flavors of lepton events, inclusive other than being/requiring 

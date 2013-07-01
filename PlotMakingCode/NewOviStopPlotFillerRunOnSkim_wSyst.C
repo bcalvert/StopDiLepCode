@@ -180,6 +180,11 @@ int main( int argc, const char* argv[] ) {
     bool blindData       = 1;      // "Until further notice, leave ON -- cuts MT2ll > 80 is data in full object/event selection
     int  nEvents         = -1;     // limits total number of events one is running on
     
+    bool doParallel      = 0;      // Whether or not to run parallel jobs for a given input file. If done, you have to do an additional hadding step
+    int  startPointNum   = 1;
+    int  numBreakPoints  = 0;
+    int  startPoint, endPoint;
+    ////input cuts/commands    
     /////loop over inputs    
     for (int k = 0; k < argc; ++k) {
         cout << "argv[k] for k = " << k << " is: " << argv[k] << endl;
@@ -222,6 +227,12 @@ int main( int argc, const char* argv[] ) {
         else if (strncmp (argv[k],"limStats",8) == 0) {
             nEvents = strtol(argv[k+1], NULL, 10);   
         }
+        else if (strncmp (argv[k],"doParallel",10) == 0) {
+            doParallel = 1;
+            cout << "Make sure you input two numbers after 'doParallel': First is number of break points -- second is which to start on" << endl;
+            numBreakPoints = strtol(argv[k+1], NULL, 10 );
+            startPointNum = strtol(argv[k+2], NULL, 10 );
+        }
     }
         ////input cuts/commands    
     
@@ -229,25 +240,15 @@ int main( int argc, const char* argv[] ) {
     char MyRootFile[2000];
     ifstream * outDirFile;
     TRegexp fCutSlash("[^/]+$");
-    if (!grabOutDir) {
-        fOutName = "";   
-    }
-    else {
+    fOutName = "";
+    if (grabOutDir) {
         outDirFile = new ifstream(TString("outputSavePath.txt"));
         if (!(outDirFile->eof())) {
             outDirFile->getline(Buffer,500);
-            fOutName = TString(string(Buffer));        
+            fOutName += TString(string(Buffer));
+            fOutName += "/"; //in case user forgot a slash
         }
-    }    
-            /*
-    if (fInName.Contains("tkolberg")) {
-        fOutName = fInName;
-        fOutName.Replace(12, 8, "bcalvert");   
     }
-    else {
-        fOutName = fInName;
-    }
-    */
     fOutName += fInName(fCutSlash);
     if (fInName.Contains("MuEG") || fInName.Contains("DoubleMu") || fInName.Contains("DoubleEl") || fInName.Contains("run2012")) {
         cout << "Running on Data" << endl;
@@ -274,7 +275,15 @@ int main( int argc, const char* argv[] ) {
     if (doPURW && !doData) fOutName += "_PURW";
     if (doPURWOviToDESY && !doData) fOutName += "OviToDESY";
     if (doBookSyst) fOutName += "_wSyst";
-    fOutName += "_Output.root";
+    if (doParallel) {
+        fOutName += "_Parallel_";
+        fOutName += startPointNum;
+        fOutName += ".root";
+    }
+    else {
+        fOutName += "_Output.root";        
+    }
+
     cout << "saving to " << fOutName << endl;
     TFile * outputFile;
     outputFile = new TFile(fOutName,"RECREATE");
@@ -563,8 +572,6 @@ int main( int argc, const char* argv[] ) {
     // cout << "test2 " << endl;
     /////Iterate over events  
     cout << "--- Total Events in file: " << fileTree.GetEntries() << " events" << endl;
-
-
     if (nEvents < 0) {
         cout << "running over all events " << endl;  
         nEvents = fileTree.GetEntries();
@@ -573,8 +580,29 @@ int main( int argc, const char* argv[] ) {
         if (nEvents > fileTree.GetEntries()) nEvents = fileTree.GetEntries();
         cout << "running on just " << nEvents << " events " << endl;
     }
-    for (Long64_t ievt=0; ievt<nEvents;ievt++) {
-        //    for (Long64_t ievt=0; ievt<1000;ievt++) 
+    vector<int> * breakPoints = new vector<int>;
+    int currBreakPoint;
+    int endBreakPoint = -1;
+    breakPoints->push_back(0);
+    if (numBreakPoints > 0) {
+        endBreakPoint = (numBreakPoints+1 > nEvents) ? nEvents : numBreakPoints + 1;
+        for (int i = 1; i < endBreakPoint; ++i) {
+            currBreakPoint = i * nEvents / endBreakPoint;
+            breakPoints->push_back(currBreakPoint);
+        }
+    }
+    startPoint = breakPoints->at(startPointNum - 1);
+    endPoint = (endBreakPoint > 0) ? breakPoints->at(startPointNum) : nEvents + 1;
+    for (Long64_t ievt = startPointNum; ievt < nEvents;ievt++) {
+        //    for (Long64_t ievt=0; ievt<1000;ievt++)
+        if (startPoint > 0 ) {
+            if (ievt%startPoint == 0) cout << "ievt at start point: " << ievt << endl;
+        }
+        if (ievt%10000 == 0) cout << ievt << endl;
+        if (ievt == endPoint) {
+            cout << "ievt " << ievt << endl;
+            break;
+        }
         diBJetPhi = 0; diBJetPt = 0; diBJetEta = 0; diBJetInvMass = 0;
         diJetPhi = 0; diJetPt = 0; diJetEta = 0; diJetInvMass = 0;
         MT2lb = 0; MT2lbPair1 = 0; MT2lbPair2 = 0;
@@ -1324,6 +1352,7 @@ int main( int argc, const char* argv[] ) {
     
     if (whichNTupleType == 1 && !doData) {
         eventCount = (TH1F*) inputFile.Get("EventsBeforeSelection/weightedEvents");
+        if (numBreakPoints > 0) eventCount->Scale(1/endBreakPoint);
         eventCount->Write();
     }
     

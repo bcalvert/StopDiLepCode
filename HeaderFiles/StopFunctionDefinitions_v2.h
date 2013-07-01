@@ -1781,7 +1781,8 @@ inline TString DescriptorString(SampleT inputSubSamp) {
     if (inputSubSamp.histNameSuffix.Contains("BothinEndcap")) outString += etaCutString[0];
     if (inputSubSamp.histNameSuffix.Contains("OneinBarrel")) outString += etaCutString[1];
     if (inputSubSamp.histNameSuffix.Contains("BothinBarrel")) outString += etaCutString[2];
-    
+    if (inputSubSamp.histNameSuffix.Contains("0BJets")) outString += TString(", with NO BJets");
+    if (inputSubSamp.blindDataChannel) outString += TString(", note blinded channel");
     return outString;
 }
 inline vector<SpecHistBinT> * SpecHistBinVec() {
