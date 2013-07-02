@@ -65,9 +65,10 @@ vector<double> * WeightBaseVec(vector<TList *> * fileListVec, unsigned int which
     TH1F * h_eventCount = (TH1F*) first_source->Get(nEventHistName);
     TH1F * h_numParFiles = (TH1F*) first_source->Get(nParFileHistName);
     float nEvents = h_eventCount->Integral();
-    int numParFiles = (int) h_numParFiles->GetEntries();
+    int numParFiles = (h_numParFiles == NULL) ? 1 : (int) h_numParFiles->GetEntries();
     cout << "nEvents " << nEvents << endl;
     outVec->push_back(nEvents);
+    numParFilesVec->push_back(numParFiles);
     TFile * nextsource = (TFile*) fileListVec->at(whichFile)->After(first_source);
     while (nextsource) {
         cout << "nextsource " << nextsource->GetName() << endl;
@@ -75,7 +76,7 @@ vector<double> * WeightBaseVec(vector<TList *> * fileListVec, unsigned int which
         nEvents = h_eventCount->Integral();
         cout << "nEvents " << nEvents << endl;
         h_numParFiles = (TH1F*) nextsource->Get(nParFileHistName);
-        numParFiles = (int) h_numParFiles->GetEntries();
+        numParFiles = (h_numParFiles == NULL) ? 1 : (int) h_numParFiles->GetEntries(); 
         outVec->push_back(nEvents);
         numParFilesVec->push_back(numParFiles);
         nextsource = (TFile*)fileListVec->at(whichFile)->After( nextsource );

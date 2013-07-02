@@ -174,7 +174,7 @@ int main( int argc, const char* argv[] ) {
     vector<double> * currWeightVec;
     TString nEventHistName = "weightedEvents";
     TString nParFileHistName = "h_numParFiles";
-    vector<int> * numParFilesVec = new vector<int>:
+    vector<int> * numParFilesVec = new vector<int>;
     float L_data = 19602.901;
     for (unsigned int i = 0; i < boolSampVec->size(); ++i) {
         if (boolSampVec->at(i)) {
