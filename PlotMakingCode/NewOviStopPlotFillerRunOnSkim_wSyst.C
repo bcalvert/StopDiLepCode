@@ -596,7 +596,7 @@ int main( int argc, const char* argv[] ) {
     cout << " startpoint (event number 'startpoint'): " << startPoint << endl;
     endPoint = ((int) breakPoints->size() <= startPointNum) ? nEvents : breakPoints->at(startPointNum);
     cout << " endpoint (the 'endpoint + 1' th event won't be run over -- i.e. event number 'endpoint'): " << endPoint << endl;
-    for (Long64_t ievt = startPointNum; ievt < nEvents;ievt++) {
+    for (Long64_t ievt = startPoint; ievt < nEvents;ievt++) {
         //    for (Long64_t ievt=0; ievt<1000;ievt++)
         if (startPoint > 0 ) {
             if ((ievt / startPoint == 1) && (ievt % startPoint == 0)) cout << "ievt at start point: " << ievt << endl;
