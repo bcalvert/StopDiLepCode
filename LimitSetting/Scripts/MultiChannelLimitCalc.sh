@@ -2,6 +2,7 @@
 cd ~/CMSSW525HiggsLimit/
 cmsenv
 cd -
+mkdir ../RootLimitFiles
 doT2TT=$1
 whichChan=0
 doSyst=0
