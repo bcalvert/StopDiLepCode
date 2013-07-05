@@ -1,2 +1,2 @@
 #! /bin/bash
-runCondor.sh ./SimpleLimitCalc.sh
+../../PlotMakingCode/runCondor.sh ./SimpleLimitCalc.sh
