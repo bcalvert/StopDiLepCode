@@ -1,0 +1,22 @@
+# Simple counting experiment, with one signal and a few background processes 
+# Simplified version of the 35/pb H->WW analysis for mH = 160 GeV
+# Mass of Stop Considered is STOPMASS GeV; Mass of LSP Considered is CHI0MASS GeV
+imax 1  number of channels
+jmax 1  number of backgrounds
+kmax 2  number of nuisance parameters (sources of systematical uncertainties)
+------------
+# we have just one channel, in which we observe 0 events
+bin LepBin
+observation BackNum
+------------
+# now we list the expected events for signal and all backgrounds in that bin
+# the second 'process' line must have a positive number for backgrounds, and 0 for signal
+# then we list the independent sources of uncertainties, and give their effect (syst. error)
+# on each process and bin
+bin              LepBin	     LepBin
+process         ggStSt  background 
+process          0           1
+rate           StopNum     BackNum
+------------
+lumi       lnN    1.LumiUncert    -  lumi affects both signal and gg->WW (mc-driven). lnN = lognormal
+xs_ggStSt  lnN    1.XSecUncert    -  gg->StSt cross section Uncertainty

@@ -1,0 +1,3 @@
+Using the Limit Setting code is a multi-stage process.
+First you need to,
+1) Generate the datacards from initial template cards. There are currently (7/5/13) two different template initial cards: one for the individual channels listed out (for example, for handling lepton specific systematics) and one for the "combination" of all three dilepton channels into one agglomerate result. In order to generate the cards from the templates, run the script
