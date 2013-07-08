@@ -1,3 +1,32 @@
 Using the Limit Setting code is a multi-stage process.
 First you need to,
-1) Generate the datacards from initial template cards. There are currently (7/5/13) two different template initial cards: one for the individual channels listed out (for example, for handling lepton specific systematics) and one for the "combination" of all three dilepton channels into one agglomerate result. In order to generate the cards from the templates, run the script
+1) Generate the datacards from initial template cards. There are currently (as of 7/5/13) two different template initial cards: one for the individual channels listed out (for example, for handling lepton specific systematics) and one for the "combination" of all three dilepton channels into one agglomerate result. In order to generate the cards from the templates, run the script(s)
+./StopCrossToDataCardSimple.sh
+for the agglomerated version
+or
+./StopCrossToDataCardMulti.sh doT2TT
+for the multichannel version, where "doT2TT" is either 1 or 0 for where doT2TT is 1 for yes (Stop->LSP + Top->b + W->LNu) and 0 is for no (Stop->b + chargino-> L + Snu->LSP + Nu | Nu + Slep -> L + LSP). This affects the relative contributions of background to the separate channels (accounting for W->LNu branching ratios or doing democratic combinations)
+
+There's currently a number of hard-coded in numbers (like integrated luminosity or signal efficiency). Ultimately, some of these like signal efficiency and background contributions will have to be updated as the final numbers come in, but for now, the code is able to run on the data cards produced with these scripts
+
+These datacards will be saved in folders in the same directory as the Scripts directory. In order to run on them in order to produce root files to make plots from, you need to then run one of the following scripts
+
+./SimpleLimitCalc.sh (./SimpleLimitCalcCondor.sh for running ./SimpleLimitCalc.sh in Condor)
+for generating agglomerated results
+or
+./MultiChannelLimitCalc.sh doT2TT whichChan doSyst (./MultiChannelLimitCalcCondor.sh doT2TT doSyst for Condor, as above. NB the difference in how things are called between condor and non-condor version -- i.e. no note of "whichChan" for condor version; it runs over all of them)
+where, 
+doT2TT should be same as above 
+whichChan is which channel to run on (0 for Multichannel combination, 1 for ee, 2 for emu, 3 for mumu)
+doSyst is 1 (0) for running with(out) systematics
+
+The resulting root files should be saved in the RootLimitFiles folder
+
+You plot them by calling the macro
+root -l 'LimitPlotGraphMakerMultiChannel.C(whichStat, StartIndex, doT2TT, whichChan)'
+where
+whichStat is 0 for Asymptotic, 1 for HybridNew (just use 0)
+StartIndex is for a particular starting mass point index (I believe there's 380, 5 GeV per bin from 100-2000 GeV)
+doT2TT is 1 or 0 as above
+whichChan is as above
+Note that I'll be writing up a compiled version of this for faster plotting -- also note that it doesn't currently plot the version with systematics, just the version without (but that's a quick fix I will do asap)
