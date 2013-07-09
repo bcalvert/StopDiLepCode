@@ -94,9 +94,10 @@ int main( int argc, const char* argv[] ) {
     float PUWeight;
     float weight, preNVtxRWweight;
     float fillWeight;
-    float MET,MET_Phi,METSig, MET_Phi_preCorr;
+    float GenMET,MET,MET_Phi,METSig, MET_Phi_preCorr;
+    GenMET = 0.;
     float METX, METY, METX_preCorr, METY_preCorr;
-    float MT2ll, MT2lb, MT2lbPair1, MT2lbPair2;
+    float MT2ll, GenLepMT2, GenMT2, MT2lb, MT2lbPair1, MT2lbPair2;
     float MT2llCut = 80;
     float MT2lbCut = 172;
     float Lep0Px,Lep0Py,Lep0Pz,Lep0E,Lep1Px,Lep1Py,Lep1Pz,Lep1E;
@@ -370,6 +371,38 @@ int main( int argc, const char* argv[] ) {
     TBranch        *b_met_fCoordinates_fPhi;   //!
     TBranch        *b_met_fCoordinates_fM;   //!
     LV             *met = 0;
+    TBranch        *b_genmet;
+    TBranch        *b_genmet_fCoordinates_fPt;   //!
+    TBranch        *b_genmet_fCoordinates_fEta;   //!
+    TBranch        *b_genmet_fCoordinates_fPhi;   //!
+    TBranch        *b_genmet_fCoordinates_fM;   //!
+    LV             *genmet = 0;
+
+    // taus
+    TBranch        *b_GenTau;
+    TBranch        *b_GenTau_fCoordinates_fPt;   //!
+    TBranch        *b_GenTau_fCoordinates_fEta;   //!
+    TBranch        *b_GenTau_fCoordinates_fPhi;   //!
+    TBranch        *b_GenTau_fCoordinates_fM;   //!
+    LV * GenTau;
+    TBranch        *b_GenAntiTau;
+    TBranch        *b_GenAntiTau_fCoordinates_fPt;   //!
+    TBranch        *b_GenAntiTau_fCoordinates_fEta;   //!
+    TBranch        *b_GenAntiTau_fCoordinates_fPhi;   //!
+    TBranch        *b_GenAntiTau_fCoordinates_fM;   //!
+    LV * GenAntiTau;
+    TBranch        *b_GenLepton;
+    TBranch        *b_GenLepton_fCoordinates_fPt;   //!
+    TBranch        *b_GenLepton_fCoordinates_fEta;   //!
+    TBranch        *b_GenLepton_fCoordinates_fPhi;   //!
+    TBranch        *b_GenLepton_fCoordinates_fM;   //!
+    LV * GenLepton;
+    TBranch        *b_GenAntiLepton;
+    TBranch        *b_GenAntiLepton_fCoordinates_fPt;   //!
+    TBranch        *b_GenAntiLepton_fCoordinates_fEta;   //!
+    TBranch        *b_GenAntiLepton_fCoordinates_fPhi;   //!
+    TBranch        *b_GenAntiLepton_fCoordinates_fM;   //!
+    LV * GenAntiLepton;
     
     TBranch        *b_GenWeight;
     double         GenWeight;
@@ -460,6 +493,11 @@ int main( int argc, const char* argv[] ) {
         fileTree.SetBranchAddress("leptons", &leptons, &b_lepton );
         fileTree.SetBranchAddress("jetBTagCSV", &jetBTagCSV, &b_jetBTagCSV );
         fileTree.SetBranchAddress("met", &met, &b_met );
+        fileTree.SetBranchAddress("GenTau", &GenTau, &b_GenTau );
+        fileTree.SetBranchAddress("GenAntiTau", &GenAntiTau, &b_GenAntiTau );
+        fileTree.SetBranchAddress("GenLepton", &GenLepton, &b_GenLepton );
+        fileTree.SetBranchAddress("GenAntiLepton", &GenAntiLepton, &b_GenAntiLepton );
+        fileTree.SetBranchAddress("GenMET", &genmet, &b_genmet );
         fileTree.SetBranchAddress("weightGenerator", &GenWeight, &b_GenWeight);
         SysVar = 1.0;
     }
@@ -721,6 +759,7 @@ int main( int argc, const char* argv[] ) {
             NJets = eventJetParams->at(0);
             NBtagJets = eventJetParams->at(1);
             MET = met->Pt();
+            GenMET = genmet->Pt();
             MET_Phi = met->Phi();
             nVtx = vertMulti;
             nVtxTrue = vertMultiTrue;
@@ -826,6 +865,10 @@ int main( int argc, const char* argv[] ) {
         MET_Phi = TMath::ATan2(METY, METX);
         MET = TMath::Sqrt(METX * METX + METY * METY);
         MT2ll=getMT2(Lep0Vec, Lep1Vec, MET, MET_Phi);
+        GenMT2=getMT2(Lep0Vec,Lep1Vec, genmet->Pt(), genmet->Phi());
+        TLorentzVector genlepTLV;  genlepTLV.SetPtEtaPhiM(GenLepton->Pt(), GenLepton->Eta(), GenLepton->Phi(), GenLepton->M());
+        TLorentzVector genantilepTLV;  genantilepTLV.SetPtEtaPhiM(GenAntiLepton->Pt(), GenAntiLepton->Eta(), GenAntiLepton->Phi(), GenAntiLepton->M());
+        GenLepMT2=getMT2(genlepTLV,genantilepTLV, genmet->Pt(), genmet->Phi());
         /******************************************************/
         //Systematics//
         Lep0Vec_LepESUp = LeptonScaleSystShift(Lep0Vec, Lep0PdgId, 1.0);
@@ -982,8 +1025,12 @@ int main( int argc, const char* argv[] ) {
         stringKeyToVar["diLepEta"] = diLepEta;
         stringKeyToVar["diLepPhi"] = diLepPhi;
         stringKeyToVar["MT2ll"] = MT2ll;
+        stringKeyToVar["GenMT2"] = GenMT2;
+        stringKeyToVar["GenLepMT2"] = GenLepMT2;
         stringKeyToVar["MT2lb"] = MT2lb;
         stringKeyToVar["MET"] = MET;
+        stringKeyToVar["GenMET"] = GenMET;
+        stringKeyToVar["DeltaMET"] = MET-GenMET;
         stringKeyToVar["METPhi"] = MET_Phi;
         stringKeyToVar["METPhi_noPhiCorr"] = MET_Phi_preCorr;
         stringKeyToVar["NJets"] = NJets;
@@ -1081,6 +1128,12 @@ int main( int argc, const char* argv[] ) {
             }   
             if (S_Current.histNameSuffix.Contains("BothinEndcap")) {
                 if (!(TMath::Abs(Lep0Vec.Eta()) > endcapEtaStart && TMath::Abs(Lep1Vec.Eta()) > endcapEtaStart)) continue;
+            }
+            if (S_Current.histNameSuffix.Contains("MT2llGr80")) {
+                if (MT2ll < 80.) continue;
+            }
+            if (S_Current.histNameSuffix.Contains("NoTaus")) {
+                if (GenTau->Pt() != 0. || GenAntiTau->Pt() != 0.) continue;
             }
             if (S_Current.histNameSuffix.Contains("0BJets")) {
                 if (NBtagJets > 0) {

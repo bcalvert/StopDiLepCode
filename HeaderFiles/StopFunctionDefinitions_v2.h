@@ -701,6 +701,8 @@ inline vector<HistogramT> * OneDeeHistTVec() {
     int PhiBinN      = 50;
     int METBinN      = 40;    
     int METXYBinN    = 200;    
+    int GenMETBinN      = 40;    
+    int GenMETXYBinN    = 200;    
     int NJetsBinN    = 11;
     int nVtxBinN     = 60;
 
@@ -712,6 +714,10 @@ inline vector<HistogramT> * OneDeeHistTVec() {
     float METBinUB      = 400;
     float METXYBinLB    = -200;
     float METXYBinUB    = 200;
+    float GenMETBinLB      = 0;
+    float GenMETBinUB      = 400;
+    float GenMETXYBinLB    = -200;
+    float GenMETXYBinUB    = 200;
     float NJetsBinLB    = -0.5;
     float NJetsBinUB    = 10.5;
     float nVtxBinLB     = 0.5;
@@ -904,6 +910,55 @@ inline vector<HistogramT> * OneDeeHistTVec() {
     H_MET.yLabel += "NUM"; H_MET.yLabel += " GeV";
     H_MET.xVarKey = "MET";
     H_MET.doXSyst = true;
+
+    // Ted histos
+    
+    vector<HistogramT> * histVec_1D = new vector<HistogramT>;
+
+
+    HistogramT H_GenMET; H_GenMET.name = "h_GenMET"; 
+    H_GenMET.xLabel = "#slash{E}_{T} [GeV]"; H_GenMET.xBinN = GenMETBinN; H_GenMET.xMin = GenMETBinLB; H_GenMET.xMax = GenMETBinUB; 
+    H_GenMET.yLabel = "Number of Events / ";
+    numDivs = (H_GenMET.xMax - H_GenMET.xMin) / (float) H_GenMET.xBinN;
+    H_GenMET.yLabel += "NUM"; H_GenMET.yLabel += " GeV";
+    H_GenMET.xVarKey = "GenMET";
+    H_GenMET.doXSyst = true;
+
+    HistogramT H_DeltaMET; H_DeltaMET.name = "h_DeltaMET"; 
+    H_DeltaMET.xLabel = "#slash{E}_{T}^{reco} - #slash{E}_{T}^{gen} [GeV]"; H_DeltaMET.xBinN = 50; H_DeltaMET.xMin = -100; H_DeltaMET.xMax = 100; 
+    H_DeltaMET.yLabel = "Number of Events / ";
+    numDivs = (100) / (float) H_DeltaMET.xBinN;
+    H_DeltaMET.yLabel += "NUM"; H_DeltaMET.yLabel += " GeV";
+    H_DeltaMET.xVarKey = "DeltaMET";
+    H_DeltaMET.doXSyst = true;
+
+    HistogramT H_GenMT2;
+    H_GenMT2.name = "h_GenMT2";
+    H_GenMT2.xLabel = "Gen MT2(ll)";
+    H_GenMT2.xBinN  = 2*METBinN;
+    H_GenMT2.xMin   = METBinLB;
+    H_GenMT2.xMax   = METBinUB;
+    numDivs = (H_GenMT2.xMax - H_GenMT2.xMin) / (float) H_GenMT2.xBinN;
+    H_GenMT2.yLabel += "NUM";
+    H_GenMT2.yLabel += " GeV";
+    H_GenMT2.xVarKey = "GenMT2";
+    H_GenMT2.doXSyst = true;
+    histVec_1D->push_back(H_GenMT2);
+
+    HistogramT H_GenLepMT2;
+    H_GenLepMT2.name = "h_GenLepMT2";
+    H_GenLepMT2.xLabel = "Gen MT2(ll)";
+    H_GenLepMT2.xBinN  = 2*METBinN;
+    H_GenLepMT2.xMin   = METBinLB;
+    H_GenLepMT2.xMax   = METBinUB;
+    numDivs = (H_GenLepMT2.xMax - H_GenLepMT2.xMin) / (float) H_GenLepMT2.xBinN;
+    H_GenLepMT2.yLabel += "NUM";
+    H_GenLepMT2.yLabel += " GeV";
+    H_GenLepMT2.xVarKey = "GenLepMT2";
+    H_GenLepMT2.doXSyst = true;
+    histVec_1D->push_back(H_GenLepMT2);
+
+    // end Ted histos
     
     HistogramT H_METX; H_METX.name = "h_METX";
     H_METX.xLabel = "#slash{E}_{x} [GeV]"; H_METX.xBinN = METXYBinN; H_METX.xMin = METXYBinLB; H_METX.xMax = METXYBinUB;
@@ -1171,14 +1226,14 @@ inline vector<HistogramT> * OneDeeHistTVec() {
     H_nVtxTrue_preRW.doXSyst = false;
     
     //push the 1D histograms structures into a vector for eventual use in booking histograms
-    vector<HistogramT> * histVec_1D = new vector<HistogramT>;
     histVec_1D->push_back(H_leadLepPt); histVec_1D->push_back(H_leadLepEta); histVec_1D->push_back(H_subLepPt); histVec_1D->push_back(H_subLepEta);
     histVec_1D->push_back(H_leadJetPt); histVec_1D->push_back(H_leadJetEta); histVec_1D->push_back(H_subJetPt); histVec_1D->push_back(H_subJetEta);
     histVec_1D->push_back(H_leadBJetPt); histVec_1D->push_back(H_leadBJetEta); histVec_1D->push_back(H_leadBJetEn); histVec_1D->push_back(H_subBJetPt); histVec_1D->push_back(H_subBJetEta); histVec_1D->push_back(H_subBJetEn);
     histVec_1D->push_back(H_diLepPt); histVec_1D->push_back(H_diLepInvMass); histVec_1D->push_back(H_diLepEta); histVec_1D->push_back(H_diLepPhi); 
     histVec_1D->push_back(H_MT2ll); histVec_1D->push_back(H_MT2lb);
     histVec_1D->push_back(H_MT2llCont); histVec_1D->push_back(H_MT2lbCont);
-    histVec_1D->push_back(H_MET); histVec_1D->push_back(H_METX); histVec_1D->push_back(H_METY); histVec_1D->push_back(H_METPhi); histVec_1D->push_back(H_METPhi_noCorr); histVec_1D->push_back(H_METX_noPhiCorr); histVec_1D->push_back(H_METY_noPhiCorr);
+    histVec_1D->push_back(H_MET); histVec_1D->push_back(H_GenMET); histVec_1D->push_back(H_METX); histVec_1D->push_back(H_METY); histVec_1D->push_back(H_METPhi); histVec_1D->push_back(H_METPhi_noCorr); histVec_1D->push_back(H_METX_noPhiCorr); histVec_1D->push_back(H_METY_noPhiCorr);
+    histVec_1D->push_back(H_DeltaMET);
     histVec_1D->push_back(H_NJets); histVec_1D->push_back(H_NJetswBTag);
     histVec_1D->push_back(H_diJetPt); histVec_1D->push_back(H_diJetInvMass); histVec_1D->push_back(H_diJetEta); histVec_1D->push_back(H_diJetPhi); 
     histVec_1D->push_back(H_diBJetPt); histVec_1D->push_back(H_diBJetInvMass); histVec_1D->push_back(H_diBJetEta); histVec_1D->push_back(H_diBJetPhi); 
@@ -1674,9 +1729,36 @@ inline vector<SampleT> * SubSampVec() {
     events_inZMassJet2BJet1MET40.histXaxisSuffix = ""; events_inZMassJet2BJet1MET40.histYaxisSuffix = ""; events_inZMassJet2BJet1MET40.histZaxisSuffix = "";
     events_inZMassJet2BJet1MET40.whichdiLepType = -1; events_inZMassJet2BJet1MET40.doZVeto = 0; events_inZMassJet2BJet1MET40.cutNJets = 2; events_inZMassJet2BJet1MET40.cutNBJets = 1; events_inZMassJet2BJet1MET40.cutMET = 40.;
     events_inZMassJet2BJet1MET40.blindDataChannel = 0;
+
+    SampleT events_MT2llGr80;
+    events_MT2llGr80.histNameSuffix = "_MT2llGr80";
+    events_MT2llGr80.histXaxisSuffix = "";
+    events_MT2llGr80.histYaxisSuffix = "";
+    events_MT2llGr80.histZaxisSuffix = "";
+    events_MT2llGr80.whichdiLepType  = -1;
+    events_MT2llGr80.doZVeto         =  1;
+    events_MT2llGr80.cutNJets        =  2;
+    events_MT2llGr80.cutNBJets       =  1;
+    events_MT2llGr80.cutMET          = 40;
+    events_MT2llGr80.blindDataChannel=  1;
+
+    SampleT events_NoTaus;
+    events_NoTaus.histNameSuffix = "_NoTaus";
+    events_NoTaus.histXaxisSuffix = "";
+    events_NoTaus.histYaxisSuffix = "";
+    events_NoTaus.histZaxisSuffix = "";
+    events_NoTaus.whichdiLepType  = -1;
+    events_NoTaus.doZVeto         =  1;
+    events_NoTaus.cutNJets        =  2;
+    events_NoTaus.cutNBJets       =  1;
+    events_NoTaus.cutMET          = 40;
+    events_NoTaus.blindDataChannel=  1;
+
     
     ///push Sample_Ts into a vector    
     vector<SampleT> * subSampVec = new vector<SampleT>;
+    subSampVec->push_back(events_MT2llGr80);
+    subSampVec->push_back(events_NoTaus);
     for (int k = 0; k < 3; ++k) {
         subSampVec->push_back(events_LepInZMass[k]); subSampVec->push_back(events_LepOutZMass[k]);
         subSampVec->push_back(events_LepInZMassJet2[k]); subSampVec->push_back(events_LepOutZMassJet2[k]);
