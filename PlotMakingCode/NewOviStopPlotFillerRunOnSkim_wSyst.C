@@ -530,7 +530,7 @@ int main( int argc, const char* argv[] ) {
             histMap_2D[histKey(H_Current, S_Current)] = h_2DCurr;
         }
         
-         for (int l = 0; l < histVec_3D->size(); ++l) {
+         for (unsigned int l = 0; l < histVec_3D->size(); ++l) {
              H_Current = histVec_3D->at(l);
              histTitle = H_Current.name + S_Current.histNameSuffix;
              axesTitle = ";"; axesTitle += H_Current.xLabel;// axesTitle += S_Current.histXaxisSuffix;
@@ -1007,6 +1007,7 @@ int main( int argc, const char* argv[] ) {
         stringKeyToVar["DPhiLep1MET"] = dPhi((float) Lep0Vec.Phi(), MET_Phi);
         stringKeyToVar["DPhiLep0MET_PreCorr"] = dPhi((float) Lep0Vec.Phi(), MET_Phi_preCorr);
         stringKeyToVar["DPhiLep1MET_PreCorr"] = dPhi((float) Lep0Vec.Phi(), MET_Phi_preCorr);
+        stringKeyToVar["DPhiZMET"] = dPhi((float) (Lep0Vec + Lep1Vec).Phi(), MET_Phi);
         stringKeyToVar["nVtx"] = (float) nVtx;
         stringKeyToVar["nVtxTrue"] = (float) nVtxTrue;
         stringKeyToVar["METX"] = METX;
