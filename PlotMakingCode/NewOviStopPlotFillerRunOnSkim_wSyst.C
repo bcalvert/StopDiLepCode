@@ -467,7 +467,7 @@ int main( int argc, const char* argv[] ) {
     outputFile->cd();
     vector<HistogramT> * histVec_1D = OneDeeHistTVec();
     vector<HistogramT> * histVec_2D = TwoDeeHistTVec();
-    //    vector<HistogramT> * histVec_3D;
+    vector<HistogramT> * histVec_3D = ThreeDeeHistTVec();
     vector<SampleT> * subSampVec    = SubSampVec();    ///Define things necessary for booking histograms
     vector<SystT> * systVec         = SystVec();
     vector<HistogramT> * histVec_1D_Syst = new vector<HistogramT>;
@@ -529,11 +529,25 @@ int main( int argc, const char* argv[] ) {
             h_2DCurr = new TH2D(histTitle, axesTitle, nXBins, xBinMin, xBinMax, nYBins, yBinMin, yBinMax); h_2DCurr->Sumw2();
             histMap_2D[histKey(H_Current, S_Current)] = h_2DCurr;
         }
-        /*
+        
          for (int l = 0; l < histVec_3D->size(); ++l) {
-         H_Current = histVec_3D->at(l);
+             H_Current = histVec_3D->at(l);
+             histTitle = H_Current.name + S_Current.histNameSuffix;
+             axesTitle = ";"; axesTitle += H_Current.xLabel;// axesTitle += S_Current.histXaxisSuffix;
+             axesTitle += ";"; axesTitle += H_Current.yLabel;// axesTitle += S_Current.histYaxisSuffix;
+             axesTitle += ";"; axesTitle += H_Current.zLabel;
+             nXBins = H_Current.xBinN;
+             xBinMin = H_Current.xMin;
+             xBinMax = H_Current.xMax;
+             nYBins = H_Current.yBinN;
+             yBinMin = H_Current.yMin;
+             yBinMax = H_Current.yMax;
+             nZBins = H_Current.zBinN;
+             zBinMin = H_Current.zMin;
+             zBinMax = H_Current.zMax;
+             h_3DCurr = new TH3D(histTitle, axesTitle, nXBins, xBinMin, xBinMax, nYBins, yBinMin, yBinMax, nZBins, zBinMin, zBinMax); h_3DCurr->Sumw2(); 
+             histMap_3D[histKey(H_Current, S_Current)] = h_3DCurr;
          }
-         */
         if (doBookSyst) {
             for (unsigned int js = 0; js < histVec_1D_Syst->size(); ++js) {                
                 H_Current = histVec_1D_Syst->at(js);
@@ -1283,17 +1297,23 @@ int main( int argc, const char* argv[] ) {
                         histMap_2D[histKey(H_Current, S_Current)]->Fill(xIter->second, yIter->second, weight); //there could be shenanigans with this one
                     }
                 }
-                /*
-                 for (unsigned int m = 0; m < histVec_3D->size(); ++m) {
-                 H_Current = histVec_3D->at(m);
-                 xIter = stringKeyToVar.find(H_Current.xVarKey);
-                 yIter = stringKeyToVar.find(H_Current.yVarKey); 
-                 zIter = stringKeyToVar.find(H_Current.zVarKey);
-                 if (xIter != stringKeyToVar.end() && yIter != stringKeyToVar.end() && zIter != stringKeyToVar.end()) {
-                 histMap_3D[histKey(H_Current, S_Current)]->Fill(xIter->second, yIter->second, zIter->second, weight); //there could be shenanigans with this one   
-                 }
-                 }
-                 */
+                
+                for (unsigned int m = 0; m < histVec_3D->size(); ++m) {
+                    H_Current = histVec_3D->at(m);
+                    xIter = stringKeyToVar.find(H_Current.xVarKey);
+                    yIter = stringKeyToVar.find(H_Current.yVarKey); 
+                    zIter = stringKeyToVar.find(H_Current.zVarKey);
+                    if (xIter != stringKeyToVar.end() && yIter != stringKeyToVar.end() && zIter != stringKeyToVar.end()) {
+                        if (H_Current.xVarKey == "MT2lb" && NJets < 2) continue;
+                        if (S_Current.blindDataChannel && H_Current.xVarKey == "MT2ll") {
+                            if (blindData && doData && MT2ll > MT2llCut) continue;
+                        }
+                        if (S_Current.blindDataChannel && H_Current.xVarKey == "MT2lb") {
+                            if (blindData && doData && MT2lb > MT2lbCut) continue;
+                        }
+                        histMap_3D[histKey(H_Current, S_Current)]->Fill(xIter->second, yIter->second, zIter->second, weight); //there could be shenanigans with this one   
+                    }
+                }
                 for (unsigned int js = 0; js < histVec_1D_Syst->size(); ++js) {
                     H_Current = histVec_1D_Syst->at(js);
                     xIter = stringKeyToVar.find(H_Current.xVarKey);

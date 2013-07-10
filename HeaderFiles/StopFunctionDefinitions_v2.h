@@ -957,13 +957,13 @@ inline vector<HistogramT> * OneDeeHistTVec() {
     
     HistogramT H_NJets; H_NJets.name = "h_NJets"; 
     H_NJets.xLabel = "N_{jets}"; H_NJets.xBinN = NJetsBinN; H_NJets.xMin = NJetsBinLB; H_NJets.xMax = NJetsBinUB; 
-    H_NJets.yLabel = "Number of Events with a given N_{jets}";
+    H_NJets.yLabel = "Events / N_{jets}";
     H_NJets.xVarKey = "NJets";
     H_NJets.doXSyst = true;
     
     HistogramT H_NJetswBTag; H_NJetswBTag.name = "h_NJetswBTag"; 
     H_NJetswBTag.xLabel = "N_{b-jets}"; H_NJetswBTag.xBinN = NJetsBinN; H_NJetswBTag.xMin = NJetsBinLB; H_NJetswBTag.xMax = NJetsBinUB; 
-    H_NJetswBTag.yLabel = "Number of Events with a given N_{b-jets}";
+    H_NJetswBTag.yLabel = "Events / N_{b-jets}";
     H_NJetswBTag.xVarKey = "NBJets";
     H_NJetswBTag.doXSyst = true;
     
@@ -1196,6 +1196,9 @@ inline vector<HistogramT> * OneDeeHistTVec() {
 }
 
 inline vector<HistogramT> * TwoDeeHistTVec() {
+    
+    vector<HistogramT> * histVec_2D = new vector<HistogramT>;
+    
     const double PI = 3.14159265;
 //    int EnergyPtBinN = 400;
 //    int EtaBinN      = 200;
@@ -1267,13 +1270,72 @@ inline vector<HistogramT> * TwoDeeHistTVec() {
     H_MT2lbControl_vs_DeltaPhiLepB0LepB1.xVarKey = "MT2lb";
     H_MT2lbControl_vs_DeltaPhiLepB0LepB1.yVarKey = "DPhiLepB0LepB1";
     //push the 2D histograms structures into a vector for eventual use in booking histograms
-    vector<HistogramT> * histVec_2D = new vector<HistogramT>;
     histVec_2D->push_back(H_METX_vs_nVtx); histVec_2D->push_back(H_METY_vs_nVtx);
     histVec_2D->push_back(H_METX_vs_nVtx_noPhiCorr); histVec_2D->push_back(H_METY_vs_nVtx_noPhiCorr);
     histVec_2D->push_back(H_MT2ll_vs_DeltaPhiLep0Lep1); histVec_2D->push_back(H_MT2llControl_vs_DeltaPhiLep0Lep1);
     histVec_2D->push_back(H_MT2lb_vs_DeltaPhiLepB0LepB1); histVec_2D->push_back(H_MT2lbControl_vs_DeltaPhiLepB0LepB1);
     return histVec_2D;
 }
+
+inline vector<HistogramT> * ThreeDeeHistTVec() {
+    
+    vector<HistogramT> * histVec_3D = new vector<HistogramT>;
+    
+    const double PI = 3.14159265;
+    //    int EnergyPtBinN = 400;
+    //    int EtaBinN      = 200;
+    int PhiBinN      = 200;
+    int METBinN      = 40;    
+    int METXYBinN    = 200;    
+    int NJetsBinN    = 11;
+    int nVtxBinN     = 35;
+    
+    //    float EnergyPtBinLB = 0;
+    //    float EnergyPtBinUB = 400;
+    //    float EtaBinLB      = -6;
+    //    float EtaBinUB      = 6;
+    float METBinLB      = 0;
+    float METBinUB      = 400;
+    float METXYBinLB    = -200;
+    float METXYBinUB    = 200;
+    float NJetsBinLB    = -0.5;
+    float NJetsBinUB    = 10.5;
+    float nVtxBinLB     = 0.5;
+    float nVtxBinUB     = 35.5;
+    
+    ///////analogous case for 2D histograms///////
+    HistogramT H_MT2ll_vs_DeltaPhiZMET_vs_nVtx; H_MT2ll_vs_DeltaPhiZMET_vs_nVtx.name = "h_MT2ll_vs_DeltaPhiZMET_vs_nVtx"; 
+    H_MT2ll_vs_DeltaPhiZMET_vs_nVtx.xLabel = "MT2_{ll} [GeV]"; H_MT2ll_vs_DeltaPhiZMET_vs_nVtx.xBinN = METBinN; H_MT2ll_vs_DeltaPhiZMET_vs_nVtx.xMin = METBinLB; H_MT2ll_vs_DeltaPhiZMET_vs_nVtx.xMax = METBinUB;
+    H_MT2ll_vs_DeltaPhiZMET_vs_nVtx.yLabel = "#Delta #phi_{Z, #slash{E}_{T}}"; H_MT2ll_vs_DeltaPhiZMET_vs_nVtx.yBinN = PhiBinN; H_MT2ll_vs_DeltaPhiZMET_vs_nVtx.yMin = 0.; H_MT2ll_vs_DeltaPhiZMET_vs_nVtx.yMax = PI;
+    H_MT2ll_vs_DeltaPhiZMET_vs_nVtx.zLabel = "N_{vtx}^{reco}"; H_MT2ll_vs_DeltaPhiZMET_vs_nVtx.zBinN = nVtxBinN; H_MT2ll_vs_DeltaPhiZMET_vs_nVtx.zMin = nVtxBinLB; H_MT2ll_vs_DeltaPhiZMET_vs_nVtx.zMax = nVtxBinUB;
+    H_MT2ll_vs_DeltaPhiZMET_vs_nVtx.xVarKey = "MT2ll";
+    H_MT2ll_vs_DeltaPhiZMET_vs_nVtx.yVarKey = "DPhiZMET";
+    H_MT2ll_vs_DeltaPhiZMET_vs_nVtx.zVarKey = "nVtx";
+    
+    HistogramT H_MT2ll_vs_DeltaPhiZMET_vs_NJets; H_MT2ll_vs_DeltaPhiZMET_vs_NJets.name = "h_MT2ll_vs_DeltaPhiZMET_vs_NJets"; 
+    H_MT2ll_vs_DeltaPhiZMET_vs_NJets.xLabel = "MT2_{ll} [GeV]"; H_MT2ll_vs_DeltaPhiZMET_vs_NJets.xBinN = METBinN; H_MT2ll_vs_DeltaPhiZMET_vs_NJets.xMin = METBinLB; H_MT2ll_vs_DeltaPhiZMET_vs_NJets.xMax = METBinUB;
+    H_MT2ll_vs_DeltaPhiZMET_vs_NJets.yLabel = "#Delta #phi_{Z, #slash{E}_{T}}"; H_MT2ll_vs_DeltaPhiZMET_vs_NJets.yBinN = PhiBinN; H_MT2ll_vs_DeltaPhiZMET_vs_NJets.yMin = 0.; H_MT2ll_vs_DeltaPhiZMET_vs_NJets.yMax = PI;
+    H_MT2ll_vs_DeltaPhiZMET_vs_NJets.zLabel = "N_{jets}"; H_MT2ll_vs_DeltaPhiZMET_vs_NJets.zBinN = NJetsBinN; H_MT2ll_vs_DeltaPhiZMET_vs_NJets.zMin = NJetsBinLB; H_MT2ll_vs_DeltaPhiZMET_vs_NJets.zMax = NJetsBinUB;
+    H_MT2ll_vs_DeltaPhiZMET_vs_NJets.xVarKey = "MT2ll";
+    H_MT2ll_vs_DeltaPhiZMET_vs_NJets.yVarKey = "DPhiZMET";
+    H_MT2ll_vs_DeltaPhiZMET_vs_NJets.zVarKey = "NJets";
+    
+    HistogramT H_MT2ll_vs_DeltaPhiZMET_vs_NBJets; H_MT2ll_vs_DeltaPhiZMET_vs_NBJets.name = "h_MT2ll_vs_DeltaPhiZMET_vs_NBJets"; 
+    H_MT2ll_vs_DeltaPhiZMET_vs_NBJets.xLabel = "MT2_{ll} [GeV]"; H_MT2ll_vs_DeltaPhiZMET_vs_NBJets.xBinN = METBinN; H_MT2ll_vs_DeltaPhiZMET_vs_NBJets.xMin = METBinLB; H_MT2ll_vs_DeltaPhiZMET_vs_NBJets.xMax = METBinUB;
+    H_MT2ll_vs_DeltaPhiZMET_vs_NBJets.yLabel = "#Delta #phi_{Z, #slash{E}_{T}}"; H_MT2ll_vs_DeltaPhiZMET_vs_NBJets.yBinN = PhiBinN; H_MT2ll_vs_DeltaPhiZMET_vs_NBJets.yMin = 0.; H_MT2ll_vs_DeltaPhiZMET_vs_NBJets.yMax = PI;
+    H_MT2ll_vs_DeltaPhiZMET_vs_NBJets.zLabel = "N_{b-jets}"; H_MT2ll_vs_DeltaPhiZMET_vs_NBJets.zBinN = NJetsBinN; H_MT2ll_vs_DeltaPhiZMET_vs_NBJets.zMin = NJetsBinLB; H_MT2ll_vs_DeltaPhiZMET_vs_NBJets.zMax = NJetsBinUB;
+    H_MT2ll_vs_DeltaPhiZMET_vs_NBJets.xVarKey = "MT2ll";
+    H_MT2ll_vs_DeltaPhiZMET_vs_NBJets.yVarKey = "DPhiZMET";
+    H_MT2ll_vs_DeltaPhiZMET_vs_NBJets.zVarKey = "NBJets";
+    
+    //push the 2D histograms structures into a vector for eventual use in booking histograms
+    histVec_3D->push_back(H_MT2ll_vs_DeltaPhiZMET_vs_nVtx);
+    histVec_3D->push_back(H_MT2ll_vs_DeltaPhiZMET_vs_NJets);
+    histVec_3D->push_back(H_MT2ll_vs_DeltaPhiZMET_vs_NBJets);
+    return histVec_3D;
+}
+
+
 inline vector<SampleT> * SubSampVec() {
     /*
      int     whichdiLepType; // -1: inclusive, 0: MuMu, 1: EE, 2: EMu
