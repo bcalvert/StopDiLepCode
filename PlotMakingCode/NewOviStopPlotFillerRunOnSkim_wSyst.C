@@ -526,6 +526,9 @@ int main( int argc, const char* argv[] ) {
             nYBins = H_Current.yBinN;
             yBinMin = H_Current.yMin;
             yBinMax = H_Current.yMax;
+            if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel) {
+                xBinMax = xBinMax / 2;
+            }
             h_2DCurr = new TH2D(histTitle, axesTitle, nXBins, xBinMin, xBinMax, nYBins, yBinMin, yBinMax); h_2DCurr->Sumw2();
             histMap_2D[histKey(H_Current, S_Current)] = h_2DCurr;
         }
@@ -545,6 +548,9 @@ int main( int argc, const char* argv[] ) {
              nZBins = H_Current.zBinN;
              zBinMin = H_Current.zMin;
              zBinMax = H_Current.zMax;
+             if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel) {
+                 xBinMax = xBinMax / 2;
+             }
              h_3DCurr = new TH3D(histTitle, axesTitle, nXBins, xBinMin, xBinMax, nYBins, yBinMin, yBinMax, nZBins, zBinMin, zBinMax); h_3DCurr->Sumw2(); 
              histMap_3D[histKey(H_Current, S_Current)] = h_3DCurr;
          }

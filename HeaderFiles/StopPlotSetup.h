@@ -168,7 +168,7 @@ void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH1F *> * dataHist
             NBinsX = currHist->GetNbinsX();
             NBinsY = currHist->GetNbinsY();
             NBinsZ = currHist->GetNbinsZ();
-            currHist->Rebin(RBNX);
+            currHist->RebinX(RBNX);
             if (NBinsY > 1) {
                 if (NBinsZ > 1) {
                 }
@@ -187,7 +187,7 @@ void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH1F *> * dataHist
             NBinsX = currHist->GetNbinsX();
             NBinsY = currHist->GetNbinsY();
             NBinsZ = currHist->GetNbinsZ();
-            currHist->Rebin(RBNX);
+            currHist->RebinX(RBNX);
             if (NBinsY > 1) {
                 if (NBinsZ > 1) {
                 }
@@ -232,7 +232,7 @@ void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH1F *> * dataHist
                 NBinsX = currHist->GetNbinsX();
                 NBinsY = currHist->GetNbinsY();
                 NBinsZ = currHist->GetNbinsZ();
-                currHist->Rebin(RBNX);
+                currHist->RebinX(RBNX);
                 if (NBinsY > 1) {
                     if (NBinsZ > 1) {
                     }
@@ -259,6 +259,386 @@ void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH1F *> * dataHist
         }
     }
 }
+void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH2F *> * dataHistVec, vector<TH2F *> * mcIndHistCentValVec, vector<TH2F *> * mcCompHistSystVec, vector<float> * nVtxBackScaleVec, vector<SystT> * systVec, TString dataPlotName, TString mcPlotName, TString subSampName, int RBNX, int RBNY, int RBNZ, bool doOverflow, bool doUnderflow, bool doSyst) {
+    cout << "inside Histogram Vec Grabber line: 144" << endl;
+    int NBinsX, NBinsY, NBinsZ;
+    TString fileName, systName, mcGrabName;
+    TH2F * currHist;
+    TH2F * systCompHist = NULL;
+    cout << "inside Histogram Vec Grabber line: 149" << endl;
+    cout << "inputFiles size " << inputFiles->size() << endl;
+    cout << "nVtxBackScale size " << nVtxBackScaleVec->size() << endl;
+    TString mcSystPlotName, systCompHistName;
+    for (unsigned int k = 0; k < inputFiles->size(); ++k) {
+        mcGrabName = "";
+        cout << "k " << k << endl;
+        fileName = inputFiles->at(k)->GetName();
+        cout << "fileName" << " is " << fileName << endl;
+        if (fileName.Contains("Data")) {
+            cout << "contains data " << endl;
+            cout << "trying to grab " << dataPlotName << endl;
+            currHist = (TH2F *) inputFiles->at(k)->Get(dataPlotName);
+            NBinsX = currHist->GetNbinsX();
+            NBinsY = currHist->GetNbinsY();
+            NBinsZ = currHist->GetNbinsZ();
+            currHist->RebinX(RBNX);
+            if (NBinsY > 1) {
+                if (NBinsZ > 1) {
+                }
+                else {
+                }
+            }
+            else {
+            }
+            dataHistVec->push_back(currHist);
+        }
+        else {
+            mcGrabName += mcPlotName;
+            mcGrabName += subSampName;
+            currHist = (TH2F *) inputFiles->at(k)->Get(mcGrabName);
+            currHist->Scale(nVtxBackScaleVec->at(k)); // correct for PURW changes to integral
+            NBinsX = currHist->GetNbinsX();
+            NBinsY = currHist->GetNbinsY();
+            NBinsZ = currHist->GetNbinsZ();
+            currHist->RebinX(RBNX);
+            if (NBinsY > 1) {
+                if (NBinsZ > 1) {
+                }
+                else {
+                }
+            }
+            else {
+            }
+            mcIndHistCentValVec->push_back(currHist);
+        }
+    }
+    if (doSyst) {
+        cout << "inside Histogram Vec Grabber line: 187" << endl;
+        for (unsigned int j = 0; j < systVec->size(); ++j) {
+            systCompHist = NULL;
+            mcGrabName = "";
+            mcGrabName += mcPlotName;
+            cout << "j " << j << endl;
+            //        if (!systVec->at(j).doXSyst) continue;
+            systName = systVec->at(j).name;
+            cout << "systName " << systName << endl;
+            cout << "mcGrabName " << mcGrabName << endl;
+            if (!mcGrabName.Contains("MT2ll") && systName.Contains("MT2ll")) continue;
+            mcSystPlotName = mcGrabName;
+            mcSystPlotName += systName;
+            mcGrabName += subSampName;
+            mcSystPlotName += subSampName;
+            for (unsigned int k = 0; k < inputFiles->size(); ++k) {
+                cout << "k " << k << endl;            
+                fileName = inputFiles->at(k)->GetName();
+                cout << "fileName " << fileName << endl;
+                cout << "mcSystPlotName " << mcSystPlotName << endl;
+                if (fileName.Contains("Data")) continue;
+                if (systName.Contains("MT2ll") && !fileName.Contains("TTBar")) {
+                    currHist = (TH2F *) inputFiles->at(k)->Get(mcGrabName);   
+                }
+                else {
+                    currHist = (TH2F *) inputFiles->at(k)->Get(mcSystPlotName);   
+                }
+                cout << "grabbed hist " << endl;
+                currHist->Scale(nVtxBackScaleVec->at(k)); // correct for PURW changes to integral
+                NBinsX = currHist->GetNbinsX();
+                NBinsY = currHist->GetNbinsY();
+                NBinsZ = currHist->GetNbinsZ();
+                currHist->RebinX(RBNX);
+                if (NBinsY > 1) {
+                    if (NBinsZ > 1) {
+                    }
+                    else {
+                    }
+                }
+                else {
+                }
+                cout << "rebinned hist " << endl;
+                if (systCompHist == NULL) {
+                    cout << "cloning syst " << endl;
+                    systCompHistName = currHist->GetName();
+                    systCompHistName += "_Comp";
+                    systCompHist = (TH2F *) currHist->Clone(systCompHistName);
+                }
+                else {
+                    cout << "adding syst " << endl;
+                    cout << "systCompHist nBins " << systCompHist->GetNbinsX() << endl;
+                    cout << "currHist nBins " << currHist->GetNbinsX() << endl;
+                    systCompHist->Add(currHist);
+                }
+            }
+            mcCompHistSystVec->push_back(systCompHist);
+        }
+    }
+}
+void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH3F *> * dataHistVec, vector<TH3F *> * mcIndHistCentValVec, vector<TH3F *> * mcCompHistSystVec, vector<float> * nVtxBackScaleVec, vector<SystT> * systVec, TString dataPlotName, TString mcPlotName, TString subSampName, int RBNX, int RBNY, int RBNZ, bool doOverflow, bool doUnderflow, bool doSyst) {
+    cout << "inside Histogram Vec Grabber line: 144" << endl;
+    int NBinsX, NBinsY, NBinsZ;
+    TString fileName, systName, mcGrabName;
+    TH3F * currHist;
+    TH3F * systCompHist = NULL;
+    cout << "inside Histogram Vec Grabber line: 149" << endl;
+    cout << "inputFiles size " << inputFiles->size() << endl;
+    cout << "nVtxBackScale size " << nVtxBackScaleVec->size() << endl;
+    TString mcSystPlotName, systCompHistName;
+    for (unsigned int k = 0; k < inputFiles->size(); ++k) {
+        mcGrabName = "";
+        cout << "k " << k << endl;
+        fileName = inputFiles->at(k)->GetName();
+        cout << "fileName" << " is " << fileName << endl;
+        if (fileName.Contains("Data")) {
+            cout << "contains data " << endl;
+            cout << "trying to grab " << dataPlotName << endl;
+            currHist = (TH3F *) inputFiles->at(k)->Get(dataPlotName);
+            NBinsX = currHist->GetNbinsX();
+            NBinsY = currHist->GetNbinsY();
+            NBinsZ = currHist->GetNbinsZ();
+            currHist->RebinX(RBNX);
+            if (NBinsY > 1) {
+                if (NBinsZ > 1) {
+                }
+                else {
+                }
+            }
+            else {
+            }
+            dataHistVec->push_back(currHist);
+        }
+        else {
+            mcGrabName += mcPlotName;
+            mcGrabName += subSampName;
+            currHist = (TH3F *) inputFiles->at(k)->Get(mcGrabName);
+            currHist->Scale(nVtxBackScaleVec->at(k)); // correct for PURW changes to integral
+            NBinsX = currHist->GetNbinsX();
+            NBinsY = currHist->GetNbinsY();
+            NBinsZ = currHist->GetNbinsZ();
+            currHist->RebinX(RBNX);
+            if (NBinsY > 1) {
+                if (NBinsZ > 1) {
+                }
+                else {
+                }
+            }
+            else {
+            }
+            mcIndHistCentValVec->push_back(currHist);
+        }
+    }
+    if (doSyst) {
+        cout << "inside Histogram Vec Grabber line: 187" << endl;
+        for (unsigned int j = 0; j < systVec->size(); ++j) {
+            systCompHist = NULL;
+            mcGrabName = "";
+            mcGrabName += mcPlotName;
+            cout << "j " << j << endl;
+            //        if (!systVec->at(j).doXSyst) continue;
+            systName = systVec->at(j).name;
+            cout << "systName " << systName << endl;
+            cout << "mcGrabName " << mcGrabName << endl;
+            if (!mcGrabName.Contains("MT2ll") && systName.Contains("MT2ll")) continue;
+            mcSystPlotName = mcGrabName;
+            mcSystPlotName += systName;
+            mcGrabName += subSampName;
+            mcSystPlotName += subSampName;
+            for (unsigned int k = 0; k < inputFiles->size(); ++k) {
+                cout << "k " << k << endl;            
+                fileName = inputFiles->at(k)->GetName();
+                cout << "fileName " << fileName << endl;
+                cout << "mcSystPlotName " << mcSystPlotName << endl;
+                if (fileName.Contains("Data")) continue;
+                if (systName.Contains("MT2ll") && !fileName.Contains("TTBar")) {
+                    currHist = (TH3F *) inputFiles->at(k)->Get(mcGrabName);   
+                }
+                else {
+                    currHist = (TH3F *) inputFiles->at(k)->Get(mcSystPlotName);   
+                }
+                cout << "grabbed hist " << endl;
+                currHist->Scale(nVtxBackScaleVec->at(k)); // correct for PURW changes to integral
+                NBinsX = currHist->GetNbinsX();
+                NBinsY = currHist->GetNbinsY();
+                NBinsZ = currHist->GetNbinsZ();
+                currHist->RebinX(RBNX);
+                if (NBinsY > 1) {
+                    if (NBinsZ > 1) {
+                    }
+                    else {
+                    }
+                }
+                else {
+                }
+                cout << "rebinned hist " << endl;
+                if (systCompHist == NULL) {
+                    cout << "cloning syst " << endl;
+                    systCompHistName = currHist->GetName();
+                    systCompHistName += "_Comp";
+                    systCompHist = (TH3F *) currHist->Clone(systCompHistName);
+                }
+                else {
+                    cout << "adding syst " << endl;
+                    cout << "systCompHist nBins " << systCompHist->GetNbinsX() << endl;
+                    cout << "currHist nBins " << currHist->GetNbinsX() << endl;
+                    systCompHist->Add(currHist);
+                }
+            }
+            mcCompHistSystVec->push_back(systCompHist);
+        }
+    }
+}
+/*
+void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH1 *> * dataHistVec, vector<TH1 *> * mcIndHistCentValVec, vector<TH1 *> * mcCompHistSystVec, int nDims, vector<float> * nVtxBackScaleVec, vector<SystT> * systVec, TString dataPlotName, TString mcPlotName, TString subSampName, int RBNX, int RBNY, int RBNZ, bool doOverflow, bool doUnderflow, bool doSyst) {
+    cout << "inside Histogram Vec Grabber line: 144" << endl;
+    int NBinsX, NBinsY, NBinsZ;
+    TString fileName, systName, mcGrabName;
+    TH1F * currHist;
+    TH1F * systCompHist = NULL;
+    cout << "inside Histogram Vec Grabber line: 149" << endl;
+    cout << "inputFiles size " << inputFiles->size() << endl;
+    cout << "nVtxBackScale size " << nVtxBackScaleVec->size() << endl;
+    TString mcSystPlotName, systCompHistName;
+    for (unsigned int k = 0; k < inputFiles->size(); ++k) {
+        mcGrabName = "";
+        cout << "k " << k << endl;
+        fileName = inputFiles->at(k)->GetName();
+        cout << "fileName" << " is " << fileName << endl;
+        if (fileName.Contains("Data")) {
+            cout << "contains data " << endl;
+            cout << "trying to grab " << dataPlotName << endl;
+            switch (nDims) {
+                case 1:
+                    currHist = (TH1F *) inputFiles->at(k)->Get(dataPlotName);
+                    break;
+                case 2:
+                    currHist = (TH2F *) inputFiles->at(k)->Get(dataPlotName);
+                    break;
+                case 3:
+                    currHist = (TH3F *) inputFiles->at(k)->Get(dataPlotName);
+                    break;
+                default:
+                    break;
+            }
+            NBinsX = currHist->GetNbinsX();
+            NBinsY = currHist->GetNbinsY();
+            NBinsZ = currHist->GetNbinsZ();
+            currHist->RebinX(RBNX);
+            if (NBinsY > 1) currHist->RebinY(RBNY);
+            if (NBinsZ > 1) currHist->RebinZ(RBNZ);
+            dataHistVec->push_back(currHist);
+        }
+        else {
+            mcGrabName += mcPlotName;
+            mcGrabName += subSampName;
+            switch (nDims) {
+                case 1:
+                    currHist = (TH1F *) inputFiles->at(k)->Get(mcGrabName);
+                    break;
+                case 2:
+                    currHist = (TH2F *) inputFiles->at(k)->Get(mcGrabName);
+                    break;
+                case 3:
+                    currHist = (TH3F *) inputFiles->at(k)->Get(mcGrabName);
+                    break;
+                default:
+                    break;
+            }
+            currHist->Scale(nVtxBackScaleVec->at(k)); // correct for PURW changes to integral
+            NBinsX = currHist->GetNbinsX();
+            NBinsY = currHist->GetNbinsY();
+            NBinsZ = currHist->GetNbinsZ();
+            currHist->RebinX(RBNX);
+            if (NBinsY > 1) currHist->RebinY(RBNY);
+            if (NBinsZ > 1) currHist->RebinZ(RBNZ);
+            mcIndHistCentValVec->push_back(currHist);
+        }
+    }
+    if (doSyst) {
+        cout << "inside Histogram Vec Grabber line: 187" << endl;
+        for (unsigned int j = 0; j < systVec->size(); ++j) {
+            systCompHist = NULL;
+            mcGrabName = "";
+            mcGrabName += mcPlotName;
+            cout << "j " << j << endl;
+            //        if (!systVec->at(j).doXSyst) continue;
+            systName = systVec->at(j).name;
+            cout << "systName " << systName << endl;
+            cout << "mcGrabName " << mcGrabName << endl;
+            if (!mcGrabName.Contains("MT2ll") && systName.Contains("MT2ll")) continue;
+            mcSystPlotName = mcGrabName;
+            mcSystPlotName += systName;
+            mcGrabName += subSampName;
+            mcSystPlotName += subSampName;
+            for (unsigned int k = 0; k < inputFiles->size(); ++k) {
+                cout << "k " << k << endl;            
+                fileName = inputFiles->at(k)->GetName();
+                cout << "fileName " << fileName << endl;
+                cout << "mcSystPlotName " << mcSystPlotName << endl;
+                if (fileName.Contains("Data")) continue;
+                switch (nDims) {
+                    case 1:                        
+                        if (systName.Contains("MT2ll") && !fileName.Contains("TTBar")) {
+                            currHist = (TH1F *) inputFiles->at(k)->Get(mcGrabName);   
+                        }
+                        else {
+                            currHist = (TH1F *) inputFiles->at(k)->Get(mcSystPlotName);   
+                        }
+                        break;
+                    case 2:                        
+                        if (systName.Contains("MT2ll") && !fileName.Contains("TTBar")) {
+                            currHist = (TH2F *) inputFiles->at(k)->Get(mcGrabName);   
+                        }
+                        else {
+                            currHist = (TH2F *) inputFiles->at(k)->Get(mcSystPlotName);   
+                        }                        break;
+                    case 3:                        
+                        if (systName.Contains("MT2ll") && !fileName.Contains("TTBar")) {
+                            currHist = (TH3F *) inputFiles->at(k)->Get(mcGrabName);   
+                        }
+                        else {
+                            currHist = (TH3F *) inputFiles->at(k)->Get(mcSystPlotName);   
+                        } 
+                        break;
+                    default:
+                        break;
+                }
+                cout << "grabbed hist " << endl;
+                currHist->Scale(nVtxBackScaleVec->at(k)); // correct for PURW changes to integral
+                NBinsX = currHist->GetNbinsX();
+                NBinsY = currHist->GetNbinsY();
+                NBinsZ = currHist->GetNbinsZ();                
+                currHist->RebinX(RBNX);
+                if (NBinsY > 1) currHist->RebinY(RBNY);
+                if (NBinsZ > 1) currHist->RebinZ(RBNZ);
+                cout << "rebinned hist " << endl;
+                if (systCompHist == NULL) {
+                    cout << "cloning syst " << endl;
+                    systCompHistName = currHist->GetName();
+                    systCompHistName += "_Comp";
+                    switch (nDims) {
+                        case 1:
+                            systCompHist = (TH1F *) currHist->Clone(systCompHistName);
+                            break;
+                        case 2:
+                            systCompHist = (TH2F *) currHist->Clone(systCompHistName);
+                            break;
+                        case 3:
+                            systCompHist = (TH3F *) currHist->Clone(systCompHistName);
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                else {
+                    cout << "adding syst " << endl;
+                    cout << "systCompHist nBins " << systCompHist->GetNbinsX() << endl;
+                    cout << "currHist nBins " << currHist->GetNbinsX() << endl;
+                    systCompHist->Add(currHist);
+                }
+            }
+            mcCompHistSystVec->push_back(systCompHist);
+        }
+    }
+}
+ */
 void HistogramAdderSyst(vector<TH1F *> * dataHistVec, vector<TH1F *> * mcIndHistCentValVec, vector<TH1F *> * mcCompHistCentValVec, TH1F * &DataComp, TH1F * &MCComp, TH1F * &FracComp, bool doAbsRatio, float yAxisRange) {
     cout << "inside Histogram Adder Syst line: 232" << endl;
     /*
@@ -391,6 +771,7 @@ void HistogramAdderSyst(vector<TH1F *> * dataHistVec, vector<TH1F *> * mcIndHist
 //    if (StopComp->Integral() > 0) mcCompHistCentValVec->push_back(StopComp);
     cout << "inside Histogram Adder Syst line: 344" << endl;
 }
+
 vector<float> * ScaleBackVecCalc(vector<TFile *> * inputFiles) {
     vector<float> * outVec = new vector<float>;
     TString mcplot = "h_nVtx_inclusive";

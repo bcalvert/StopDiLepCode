@@ -1304,6 +1304,7 @@ inline vector<HistogramT> * ThreeDeeHistTVec() {
     float nVtxBinUB     = 35.5;
     
     ///////analogous case for 2D histograms///////
+    
     HistogramT H_MT2ll_vs_DeltaPhiZMET_vs_nVtx; H_MT2ll_vs_DeltaPhiZMET_vs_nVtx.name = "h_MT2ll_vs_DeltaPhiZMET_vs_nVtx"; 
     H_MT2ll_vs_DeltaPhiZMET_vs_nVtx.xLabel = "MT2_{ll} [GeV]"; H_MT2ll_vs_DeltaPhiZMET_vs_nVtx.xBinN = METBinN; H_MT2ll_vs_DeltaPhiZMET_vs_nVtx.xMin = METBinLB; H_MT2ll_vs_DeltaPhiZMET_vs_nVtx.xMax = METBinUB;
     H_MT2ll_vs_DeltaPhiZMET_vs_nVtx.yLabel = "#Delta #phi_{Z, #slash{E}_{T}}"; H_MT2ll_vs_DeltaPhiZMET_vs_nVtx.yBinN = PhiBinN; H_MT2ll_vs_DeltaPhiZMET_vs_nVtx.yMin = 0.; H_MT2ll_vs_DeltaPhiZMET_vs_nVtx.yMax = PI;
@@ -1855,6 +1856,246 @@ inline vector<SpecHistBinT> * SpecHistBinVec() {
     specHistBinVec->push_back(ZMass); 
     return specHistBinVec;
 }
+
+
+inline TString HistProjection1D(vector<TH2F *> * inputHistVec, vector<TH1F *> * outputHistVec, TString plotName, int whichCase) {
+    const double PI = 3.14159265;
+    TString outString = "Nothin";
+    TH1F * currOutHist;
+    TH2F * currInHist;
+    TAxis * XAxis, * YAxis;
+    int XAxisLB, XAxisUB, YAxisLB, YAxisUB;
+    TString outHistName;
+    TString outHistPlusName;
+    double YAxisLBFind, YAxisUBFind;
+    if (plotName.Contains("h_MT2ll_vs_DeltaPhiLep0Lep1")) {
+        switch (whichCase) {
+            case 0: // plot for DeltaPhiZMET > 2./3. Pi
+                outHistPlusName = "_XAxis_DPhiGt2/3_";
+                YAxisLBFind = 2./3. * PI;
+                YAxisUBFind = PI;
+                outString = "#Delta #phi_{ll} #in {2/3#pi:#pi}";
+                break;
+            case 1: // plot for 1./3. Pi < DeltaPhiZMET < 2/3 Pi
+                outHistPlusName = "_XAxis_DPhiGt1/3Lt2/3_";
+                YAxisLBFind = 1./3. * PI;
+                YAxisUBFind = 2./3. * PI;
+                outString = "#Delta #phi_{ll} #in {1/3#pi:2/3#pi}";
+                break;   
+            case 2: // plot for DeltaPhiZMET < 1/3 Pi
+                outHistPlusName = "_XAxis_DPhiLt1/3_";
+                YAxisLBFind = 0.;
+                YAxisUBFind = 1./3. * PI;
+                outString = "#Delta #phi_{ll} #in {0:1/3#pi}";
+                break; 
+            default:
+                break;
+        }
+    }
+    if (outString.Contains("Nothin")) return outString;
+    for (unsigned int iHist = 0; iHist < inputHistVec->size(); ++iHist) {
+        currInHist = (TH2F*) inputHistVec->at(iHist);
+        outHistName = plotName;
+        outHistName += outHistPlusName;
+        outHistName += iHist;
+        YAxis = currInHist->GetYaxis();
+        YAxisLB = YAxis->FindBin(YAxisLBFind);
+        YAxisUB = YAxis->FindBin(YAxisUBFind);
+        cout << "case " << whichCase << endl;
+        cout << "YAxisLBFind " << YAxisLBFind << endl;
+        cout << "YAxisUBFind " << YAxisUBFind << endl;
+        cout << "YAxisLB " << YAxisLB << endl;
+        cout << "YAxisUB " << YAxisUB << endl;
+        currOutHist = (TH1F*) currInHist->ProjectionX(outHistName, YAxisLB, YAxisUB, "e");
+        outputHistVec->push_back(currOutHist);        
+    }
+    return outString;
+}
+
+inline TString HistProjection1D(vector<TH3F *> * inputHistVec, vector<TH1F *> * outputHistVec, TString plotName, int whichCase) {
+    const double PI = 3.14159265;
+    TString outString = "Nothin";
+    TH1F * currOutHist;
+    TH3F * currInHist;
+    TAxis * XAxis, * YAxis, * ZAxis;
+    int XAxisLB, XAxisUB, YAxisLB, YAxisUB, ZAxisLB, ZAxisUB;
+    TString outHistName;
+    TString outHistPlusName;
+    float YAxisLBFind, YAxisUBFind, ZAxisLBFind, ZAxisUBFind;
+    if (plotName.Contains("h_MT2ll_vs_DeltaPhiZMET_vs_nVtx")) {
+        switch (whichCase) {
+            case 0: // plot for DeltaPhiZMET > 2./3. Pi and nVtx = 1-10
+                outHistPlusName = "_XAxis_DPhiZMETGt2/3_nVtx1to10_";
+                YAxisLBFind = 2./3. * PI;
+                YAxisUBFind = PI;
+                ZAxisLBFind = 1.;
+                ZAxisUBFind = 10.;
+                outString = "#Delta #phi_{Z, #slash{E}_{T}} #in {2/3#pi:#pi}, N_{vtx}^{reco} #in {1:10}";
+                break;
+            case 1: // plot for 1./3. Pi < DeltaPhiZMET < 2/3 Pi and nVtx = 1-10
+                outHistPlusName = "_XAxis_DPhiZMETGt1/3Lt2/3_nVtx1to10_";
+                YAxisLBFind = 1./3. * PI;
+                YAxisUBFind = 2./3. * PI;
+                ZAxisLBFind = 1.;
+                ZAxisUBFind = 10.;
+                outString = "#Delta #phi_{Z, #slash{E}_{T}} #in {1/3#pi:2/3 #pi}, N_{vtx}^{reco} #in {1:10}";
+                break;   
+            case 2: // plot for DeltaPhiZMET < 1/3 Pi and nVtx = 1-10
+                outHistPlusName = "_XAxis_DPhiZMETLt1/3_nVtx1to10_";
+                YAxisLBFind = 0;
+                YAxisUBFind = 1./3. * PI;
+                ZAxisLBFind = 1.;
+                ZAxisUBFind = 10.;
+                outString = "#Delta #phi_{Z, #slash{E}_{T}} #in {0:1/3#pi}, N_{vtx}^{reco} #in {1:10}";
+                break; 
+            case 3: // plot for DeltaPhiZMET > 2./3. Pi and nVtx = 11-20
+                outHistPlusName = "_XAxis_DPhiZMETGt2/3_nVtx11to20_";
+                YAxisLBFind = 2./3. * PI;
+                YAxisUBFind = PI;
+                ZAxisLBFind = 11.;
+                ZAxisUBFind = 20.;
+                outString = "#Delta #phi_{Z, #slash{E}_{T}} #in {2/3#pi:#pi}, N_{vtx}^{reco} #in {11:20}";
+                break;
+            case 4: // plot for 1./3. Pi < DeltaPhiZMET < 2/3 Pi and nVtx = 11-20
+                outHistPlusName = "_XAxis_DPhiZMETGt1/3Lt2/3_nVtx11to20_";
+                YAxisLBFind = 1./3. * PI;
+                YAxisUBFind = 2./3. * PI;
+                ZAxisLBFind = 11.;
+                ZAxisUBFind = 20.;
+                outString = "#Delta #phi_{Z, #slash{E}_{T}} #in {1/3#pi:2/3 #pi}, N_{vtx}^{reco} #in {11:20}";
+                break;   
+            case 5: // plot for DeltaPhiZMET < 1/3 Pi and nVtx = 11-20
+                outHistPlusName = "_XAxis_DPhiZMETLt1/3_nVtx11to20_";
+                YAxisLBFind = 0;
+                YAxisUBFind = 1./3. * PI;
+                ZAxisLBFind = 11.;
+                ZAxisUBFind = 20.;
+                outString = "#Delta #phi_{Z, #slash{E}_{T}} #in {0:1/3#pi}, N_{vtx}^{reco} #in {11:20}";
+                break; 
+            case 6: // plot for DeltaPhiZMET > 2./3. Pi and nVtx = 21-30
+                outHistPlusName = "_XAxis_DPhiZMETGt2/3_nVtx21to30_";
+                YAxisLBFind = 2./3. * PI;
+                YAxisUBFind = PI;
+                ZAxisLBFind = 21.;
+                ZAxisUBFind = 30.;
+                outString = "#Delta #phi_{Z, #slash{E}_{T}} #in {2/3#pi:#pi}, N_{vtx}^{reco} #in {21:30}";
+                break;
+            case 7: // plot for 1./3. Pi < DeltaPhiZMET < 2/3 Pi and nVtx = 21-30
+                outHistPlusName = "_XAxis_DPhiZMETGt1/3Lt2/3_nVtx21to30_";
+                YAxisLBFind = 1./3. * PI;
+                YAxisUBFind = 2./3. * PI;
+                ZAxisLBFind = 21.;
+                ZAxisUBFind = 30.;
+                outString = "#Delta #phi_{Z, #slash{E}_{T}} #in {1/3#pi:2/3 #pi}, N_{vtx}^{reco} #in {21:30}";
+                break;   
+            case 8: // plot for DeltaPhiZMET < 1/3 Pi and nVtx = 21-30
+                outHistPlusName = "_XAxis_DPhiZMETLt1/3_nVtx21to30_";
+                YAxisLBFind = 0;
+                YAxisUBFind = 1./3. * PI;
+                ZAxisLBFind = 21.;
+                ZAxisUBFind = 30.;
+                outString = "#Delta #phi_{Z, #slash{E}_{T}} #in {0:1/3#pi}, N_{vtx}^{reco} #in {21:30}";
+                break;
+            default:
+                break;
+        }
+    }    
+    else if (plotName.Contains("h_MT2ll_vs_DeltaPhiZMET_vs_NJets")) {
+        switch (whichCase) {
+            case 0: // plot for DeltaPhiZMET > 2./3. Pi and N_{Jets} #in {0}
+                outHistPlusName = "_XAxis_DPhiZMETGt2/3_nJets0_";
+                YAxisLBFind = 2./3. * PI;
+                YAxisUBFind = PI;
+                ZAxisLBFind = 0.;
+                ZAxisUBFind = 0.;
+                outString = "#Delta #phi_{Z, #slash{E}_{T}} #in {2/3#pi:#pi}, N_{Jets} #in {0}";
+                break;
+            case 1: // plot for 1./3. Pi < DeltaPhiZMET < 2/3 Pi and N_{Jets} #in {0}
+                outHistPlusName = "_XAxis_DPhiZMETGt1/3Lt2/3_nJets0_";
+                YAxisLBFind = 1./3. * PI;
+                YAxisUBFind = 2./3. * PI;
+                ZAxisLBFind = 0.;
+                ZAxisUBFind = 0.;
+                outString = "#Delta #phi_{Z, #slash{E}_{T}} #in {1/3#pi:2/3 #pi}, N_{Jets} #in {0}";
+                break;   
+            case 2: // plot for DeltaPhiZMET < 1/3 Pi and N_{Jets} #in {0}
+                outHistPlusName = "_XAxis_DPhiZMETLt1/3_nJets0_";
+                YAxisLBFind = 0;
+                YAxisUBFind = 1./3. * PI;
+                ZAxisLBFind = 0.;
+                ZAxisUBFind = 0.;
+                outString = "#Delta #phi_{Z, #slash{E}_{T}} #in {0:1/3#pi}, N_{Jets} #in {0}";
+                break; 
+            case 3: // plot for DeltaPhiZMET > 2./3. Pi and N_{Jets} #in {1}
+                outHistPlusName = "_XAxis_DPhiZMETGt2/3_nJets1_";
+                YAxisLBFind = 2./3. * PI;
+                YAxisUBFind = PI;
+                ZAxisLBFind = 1.;
+                ZAxisUBFind = 1.;
+                outString = "#Delta #phi_{Z, #slash{E}_{T}} #in {2/3#pi:#pi}, N_{Jets} #in {1}";
+                break;
+            case 4: // plot for 1./3. Pi < DeltaPhiZMET < 2/3 Pi and N_{Jets} #in {1}
+                outHistPlusName = "_XAxis_DPhiZMETGt1/3Lt2/3_nJets1_";
+                YAxisLBFind = 1./3. * PI;
+                YAxisUBFind = 2./3. * PI;
+                ZAxisLBFind = 1.;
+                ZAxisUBFind = 1.;
+                outString = "#Delta #phi_{Z, #slash{E}_{T}} #in {1/3#pi:2/3 #pi}, N_{Jets} #in {1}";
+                break;   
+            case 5: // plot for DeltaPhiZMET < 1/3 Pi and N_{Jets} #in {1}
+                outHistPlusName = "_XAxis_DPhiZMETLt1/3_nJets1_";
+                YAxisLBFind = 0;
+                YAxisUBFind = 1./3. * PI;
+                ZAxisLBFind = 1.;
+                ZAxisUBFind = 1.;
+                outString = "#Delta #phi_{Z, #slash{E}_{T}} #in {0:1/3#pi}, N_{Jets} #in {1}";
+                break; 
+            case 6: // plot for DeltaPhiZMET > 2./3. Pi and N_{Jets} #in {2:#infty}
+                outHistPlusName = "_XAxis_DPhiZMETGt2/3_nJetsGt1_";
+                YAxisLBFind = 2./3. * PI;
+                YAxisUBFind = PI;
+                ZAxisLBFind = 2.;
+                ZAxisUBFind = 20.;
+                outString = "#Delta #phi_{Z, #slash{E}_{T}} #in {2/3#pi:#pi}, N_{Jets} #in {2:#infty}";
+                break;
+            case 7: // plot for 1./3. Pi < DeltaPhiZMET < 2/3 Pi and N_{Jets} #in {2:#infty}
+                outHistPlusName = "_XAxis_DPhiZMETGt1/3Lt2/3_nJetsGt1_";
+                YAxisLBFind = 1./3. * PI;
+                YAxisUBFind = 2./3. * PI;
+                ZAxisLBFind = 2.;
+                ZAxisUBFind = 20.;
+                outString = "#Delta #phi_{Z, #slash{E}_{T}} #in {1/3#pi:2/3 #pi}, N_{Jets} #in {2:#infty}";
+                break;   
+            case 8: // plot for DeltaPhiZMET < 1/3 Pi and N_{Jets} #in {2:#infty}
+                outHistPlusName = "_XAxis_DPhiZMETLt1/3_nJetsGt1_";
+                YAxisLBFind = 0;
+                YAxisUBFind = 1./3. * PI;
+                ZAxisLBFind = 2.;
+                ZAxisUBFind = 20.;
+                outString = "#Delta #phi_{Z, #slash{E}_{T}} #in {0:1/3#pi}, N_{Jets} #in {2:#infty}";
+                break;
+        }
+    }
+    if (outString.Contains("Nothin")) return outString;
+    for (unsigned int iHist = 0; iHist < inputHistVec->size(); ++iHist) {
+        currInHist = (TH3F*) inputHistVec->at(iHist);
+        outHistName = plotName;
+        outHistName += outHistPlusName;
+        outHistName += iHist;
+        YAxis = currInHist->GetYaxis();
+        YAxisLB = YAxis->FindBin(YAxisLBFind);
+        YAxisUB = YAxis->FindBin(YAxisUBFind);
+        ZAxis = currInHist->GetZaxis();
+        ZAxisLB = ZAxis->FindBin(ZAxisLBFind);
+        ZAxisUB = ZAxis->FindBin(ZAxisUBFind);
+        currOutHist = (TH1F*) currInHist->ProjectionX(outHistName, YAxisLB, YAxisUB, ZAxisLB, ZAxisUB, "e");
+        outputHistVec->push_back(currOutHist);        
+    }
+    return outString;
+}
+
+
+
 /*
 float * RebinArray() {
     float
