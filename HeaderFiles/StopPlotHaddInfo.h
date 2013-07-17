@@ -111,7 +111,7 @@ float OviedoNEvents(TString sourceName) {
     if (sourceName.Contains("TTWWJets")) return 197820;
     if (sourceName.Contains("TTGJets")) return 71598;
     cout << "didn't MATCH ANY" << endl;
-    return 0:
+    return 0;
 }
 vector<double> * WeightBaseVec(int whichNTuple, vector<TList *> * fileListVec, unsigned int whichFile, TString nEventHistName, TString nParFileHistName, vector<int> * numParFilesVec) {
     vector<double> * outVec = new vector<double>;

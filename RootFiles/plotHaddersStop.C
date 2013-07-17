@@ -175,7 +175,7 @@ int main( int argc, const char* argv[] ) {
         boolSampVec->push_back(doHiggs);        
     }
     vector<TList*> * fileListVec = FileListVec(whichNTuple, nameStringVec, boolSampVec);
-    vector<TFile*> * outFileVec = OutFileVec(int whichNTuple, nameStringVec, boolSampVec);
+    vector<TFile*> * outFileVec = OutFileVec(whichNTuple, nameStringVec, boolSampVec);
     // boolean vector for which files to hadd
     
     // vectors of vectors of doubles to contain weight factors
