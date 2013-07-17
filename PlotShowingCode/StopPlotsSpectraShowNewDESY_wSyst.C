@@ -194,8 +194,8 @@ int main( int argc, char* argv[]) {
     vector<float> * nVtxBackScaleVec = ScaleBackVecCalc(inputFiles);
     
     TGraphAsymmErrors * errCompCentVal, * errQuadSum, * errQuadSum_pStat;
-    TGraphAsymmErrors * errLepEnSc, * errLepEffSF, * errMT21l;
-    TGraphAsymmErrors * errLepEnSc_pStat, * errLepEffSF_pStat, * errMT21l_pStat;
+    TGraphAsymmErrors * errLepEnSc, * errLepEffSF, * errMT2ll;
+    TGraphAsymmErrors * errLepEnSc_pStat, * errLepEffSF_pStat, * errMT2ll_pStat;
     TString stringLepEffSF = "LepEffSF";
     TString stringLepEnSc = "LepES";
     TString stringMT2ll = "MT2ll";  
@@ -351,18 +351,18 @@ int main( int argc, char* argv[]) {
                 fracRatioSystVec->push_back(currFracRatioGraph);
                 cout << "test 3c" << endl;
                 if (plotVarName.Contains("MT2ll")) {
-                    errMT21l = GraphSystErrorSet_SingleSource(h_MCComp, mcCompHist1DSystVec, stringMT2ll + TString("Shift"), doSymErr, 1);
-                    errMT21l_pStat = GraphSystErrorSumErrors(errCompCentVal, errMT21l, h_MCComp);
-                    GraphMainAttSet(errMT21l, kGray+1, 3001, kGray+1, 2, kWhite, 0, 0); 
-                    GraphMainAttSet(errMT21l_pStat, kGray+1, 3001, kGray+1, 2, kWhite, 0, 0); 
-                    errCompSpecSource->push_back(errMT21l);
-                    errCompSpecSource_pStat->push_back(errMT21l_pStat);
+                    errMT2ll = GraphSystErrorSet_SingleSource(h_MCComp, mcCompHist1DSystVec, stringMT2ll + TString("Shift"), doSymErr, 1);
+                    errMT2ll_pStat = GraphSystErrorSumErrors(errCompCentVal, errMT2ll, h_MCComp);
+                    GraphMainAttSet(errMT2ll, kGray+1, 3001, kGray+1, 2, kWhite, 0, 0); 
+                    GraphMainAttSet(errMT2ll_pStat, kGray+1, 3001, kGray+1, 2, kWhite, 0, 0); 
+                    errCompSpecSource->push_back(errMT2ll);
+                    errCompSpecSource_pStat->push_back(errMT2ll_pStat);
                     systCanvNameVec->push_back(stringMT2ll);
-                    currFracRatioGraph = fracGraph(h_MCComp, errMT21l, doAbsRatio, fracRatioYAxisRange);
+                    currFracRatioGraph = fracGraph(h_MCComp, errMT2ll, doAbsRatio, fracRatioYAxisRange);
                     fracRatioSystVec->push_back(currFracRatioGraph);
                 }        
                 else {
-                    errMT21l = NULL;
+                    errMT2ll = NULL;
                 }
                 cout << "test 3d" << endl;
                 errQuadSum = GraphSystErrorSumErrors(errCompCentVal, errCompSpecSource, false, h_MCComp);

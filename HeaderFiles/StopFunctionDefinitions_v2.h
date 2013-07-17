@@ -292,6 +292,16 @@ inline float ScaleFactorMC(int Type, int Syst) {
             break;
     }
 }
+inline bool FilterMET(vector<bool> * regFilterVec, vector<bool> * oppFilterVec) {
+    for (unsigned int iReg = 0; iReg < regFilterVec->size(); ++iReg) {
+        if (!regFilterVec->at(iReg)) return false;
+    }
+    for (unsigned int iOpp = 0; iOpp < oppFilterVec->size(); ++iOpp) {
+        if (oppFilterVec->at(iOpp)) return false;
+    }
+    
+}
+
 inline vector<int> * ElectronPickOvi(vector<float> * ElecPt, vector<float> * ElecEta, vector<int> * ElecCharge, vector<float> * ElecNeutHadIso, vector<float> * ElecCharHadIso, vector<float> * ElecPhotHadIso, vector<bool> * passConvVeto, vector<bool> * isPFElectron) {
 //    cout << "doing electron info" << endl;
     int leadElecIndex = -1; int subElecIndex = -1; int leadPositIndex = -1; int subPositIndex = -1;
@@ -351,7 +361,7 @@ inline vector<int> * ElectronPickOvi(vector<float> * ElecPt, vector<float> * Ele
 
 inline vector<int> * MuonPickOvi(vector<float> * MuonPt, vector<float> * MuonEta, vector<int> * MuonCharge, vector<float> * MuonD0, vector<float> *MuonVertZ, vector<float> * VertexZ, vector<float> * MuonNeutHadIso, vector<float> * MuonCharHadIso, vector<float> * MuonPhotHadIso, vector<float> * MuonSumPUPt, vector<bool> * isGMPT, vector<bool> * isPFMuon) {
     int leadMuonIndex = -1; int subMuonIndex = -1; int leadMuBarIndex = -1; int subMuBarIndex = -1;
-    float muonIsoRatioCut = 0.12; float muonEtaCut = 2.4; float leadMuonPtCut = 20; float subMuonPtCut = 10;
+    float muonIsoRatioCut = 0.15; float muonEtaCut = 2.4; float leadMuonPtCut = 20; float subMuonPtCut = 10;
     float muonD0Cut = 0.2; float muonDZCut = 0.5;
     
     float muonPFIso;
@@ -444,9 +454,23 @@ inline void LeptonPairOvi(TLorentzVector &Lep0Vec, TLorentzVector &Lep1Vec, int 
     Lep0PdgId = lepPdgId->at(lep0Index);
     Lep1PdgId = lepPdgId->at(lep1Index);
     productPdgId = Lep0PdgId * Lep1PdgId;
-    if (productPdgId == -169) eventType = 0;
-    if (productPdgId == -121) eventType = 1;
-    if (productPdgId == -143) eventType = 2;    
+    switch (productPdgId) {
+        case -169:
+            eventType = 0;
+            break;
+        case -121:
+            eventType = 1;
+            break;
+        case -143:
+            eventType = 2;
+            break;
+        default:
+            eventType = -1;
+            cout << "something funky with event Type!!" << endl;
+            cout << "Lep0PdgId " << Lep0PdgId << endl;
+            cout << "Lep1PdgId " << Lep1PdgId << endl;
+            break;
+    }    
 }
 
 inline vector<TLorentzVector> * JetInfo(vector<TLorentzVector> * Leptons, vector<float> * JetEt, vector<float> * JetEta, vector<float> * JetPx, vector<float> * JetPy, vector<float> * JetPz, vector<float> * JetE, vector<float> *JetNHF, vector<float> * JetNEF, vector<float> * JetCHF, vector<float> * JetCEF, vector<float> * JetBTag, vector<int> * JetNDaug, vector<int> * JetCharMult, int &NJets, int &NBJets, vector<int> * BJetIndices, float &HT) {
