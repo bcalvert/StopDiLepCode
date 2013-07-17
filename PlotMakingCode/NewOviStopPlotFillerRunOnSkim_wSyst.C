@@ -716,9 +716,9 @@ int main( int argc, const char* argv[] ) {
                     cout << "Type " << Type << endl;
                     cout << "weight pre scale " << weight << endl;
                 }
-                cout << "ScaleFactorMC_0 for Type " << Type << " is " << ScaleFactorMC(Type, 0);
-                cout << "ScaleFactorMC_+ for Type " << Type << " is " << ScaleFactorMC(Type, +1);
-                cout << "ScaleFactorMC_- for Type " << Type << " is " << ScaleFactorMC(Type, -1);
+//                cout << "ScaleFactorMC_0 for Type " << Type << " is " << ScaleFactorMC(Type, 0);
+//                cout << "ScaleFactorMC_+ for Type " << Type << " is " << ScaleFactorMC(Type, +1);
+//                cout << "ScaleFactorMC_- for Type " << Type << " is " << ScaleFactorMC(Type, -1);
                 weight *= ScaleFactorMC(Type, 0);
                 weight_LepEffSFUp *= ScaleFactorMC(Type, 1);
                 weight_LepEffSFDown *= ScaleFactorMC(Type, -1);
