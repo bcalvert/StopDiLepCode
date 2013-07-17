@@ -79,13 +79,45 @@ void WeightVecFiller(TList * sourcelist, vector<double> * weightVec, TString his
         nextsource = (TFile*)sourcelist->After( nextsource );
     }
 }
+float OviedoNEvents(TString sourceName) {
+    // Numbers taken from https://docs.google.com/spreadsheet/ccc?key=0Aq5OAopf_dtsdDJqREJReGQyY21wbERldVFSZVJHbFE&hl=en_US&pli=1#gid=57
+    if (sourceName.Contains("TTBar_Powheg")) return 28150723;
+    if (sourceName.Contains("TTBar_Madgraph")) return 6923750;
+    if (sourceName.Contains("TTbar_MCatNLO")) return 32852589;
+    if (sourceName.Contains("TTJetsFullHadrMG")) return 28123821;
+    if (sourceName.Contains("TTJetsSemiLeptMG")) return 24424818;
+    if (sourceName.Contains("TWDilep")) return 2976510;
+    if (sourceName.Contains("TbarWDilep")) return 2971482;
+    if (sourceName.Contains("DYJets_Madgraph")) return 7132223;
+    if (sourceName.Contains("ZJets_Madgraph")) return 30459503;
+    if (sourceName.Contains("ggWWto2L")) return 109987;
+    if (sourceName.Contains("WWTo2L2Nu_Madgraph")) return 1933235;
+    if (sourceName.Contains("WZ")) return 10000283;
+    if (sourceName.Contains("ZZ")) return 9799908;
+    if (sourceName.Contains("WJets_Madgraph")) return 76102995;
+    if (sourceName.Contains("ZgammaToLLG")) return 6588161;
+    if (sourceName.Contains("WgammaToLNuG")) return 4802358;
+    if (sourceName.Contains("HWW125")) return 299975;
+    if (sourceName.Contains("VBF125")) return 299687;
+    if (sourceName.Contains("HZZ4L")) return 995117;
+    if (sourceName.Contains("T2tt_FineBin")) return 97050784;
+    if (sourceName.Contains("WWGJets")) return 215121;
+    if (sourceName.Contains("WZZJets")) return 219835;
+    if (sourceName.Contains("ZZZJets")) return 224904;
+    if (sourceName.Contains("WWZJets")) return 222234;
+    if (sourceName.Contains("WWWJets")) return 220549;
+    if (sourceName.Contains("TTWJets")) return 196046;
+    if (sourceName.Contains("TTZJets")) return 210160;
+    if (sourceName.Contains("TTWWJets")) return 197820;
+    if (sourceName.Contains("TTGJets")) return 71598;
+}
 vector<double> * WeightBaseVec(int whichNTuple, vector<TList *> * fileListVec, unsigned int whichFile, TString nEventHistName, TString nParFileHistName, vector<int> * numParFilesVec) {
     vector<double> * outVec = new vector<double>;
     TH1F * h_eventCount;
     float nEvents;
     TString sourceName;
     TFile * first_source = (TFile*) fileListVec->at(whichFile)->First();
-    sourceName = first_source->GetName() << endl;
+    sourceName = first_source->GetName();
     cout << "first_source name = " << sourceName << endl;
     if (whichNTuple == 1) {
         h_eventCount = (TH1F*) first_source->Get(nEventHistName);
@@ -118,38 +150,6 @@ vector<double> * WeightBaseVec(int whichNTuple, vector<TList *> * fileListVec, u
         nextsource = (TFile*)fileListVec->at(whichFile)->After( nextsource );
     }
     return outVec;
-}
-float OviedoNEvents(TString sourceName) {
-    // Numbers taken from https://docs.google.com/spreadsheet/ccc?key=0Aq5OAopf_dtsdDJqREJReGQyY21wbERldVFSZVJHbFE&hl=en_US&pli=1#gid=57
-    if (sourceName.Contains("TTBar_Powheg")) return 28150723;
-    if (sourceName.Contains("TTBar_Madgraph")) return 6923750;
-    if (sourceName.Contains("TTbar_MCatNLO")) return 32852589;
-    if (sourceName.Contains("TTJetsFullHadrMG")) return 28123821;
-    if (sourceName.Contains("TTJetsSemiLeptMG")) return 24424818;
-    if (sourceName.Contains("TWDilep")) return 2976510;
-    if (sourceName.Contains("TbarWDilep")) return 2971482;
-    if (sourceName.Contains("DYJets_Madgraph")) return 7132223;
-    if (sourceName.Contains("ZJets_Madgraph")) return 30459503;
-    if (sourceName.Contains("ggWWto2L")) return 109987;
-    if (sourceName.Contains("WWTo2L2Nu_Madgraph")) return 1933235;
-    if (sourceName.Contains("WZ")) return 10000283;
-    if (sourceName.Contains("ZZ")) return 9799908;
-    if (sourceName.Contains("WJets_Madgraph")) return 76102995;
-    if (sourceName.Contains("ZgammaToLLG")) return 6588161;
-    if (sourceName.Contains("WgammaToLNuG")) return 4802358;
-    if (sourceName.Contains("HWW125")) return 299975;
-    if (sourceName.Contains("VBF125")) return 299687;
-    if (sourceName.Contains("HZZ4L")) return 995117;
-    if (sourceName.Contains("T2tt_FineBin")) return 97050784;
-    if (sourceName.Contains("WWGJets")) return 215121;
-    if (sourceName.Contains("WZZJets")) return 219835;
-    if (sourceName.Contains("ZZZJets")) return 224904;
-    if (sourceName.Contains("WWZJets")) return 222234;
-    if (sourceName.Contains("WWWJets")) return 220549;
-    if (sourceName.Contains("TTWJets")) return 196046;
-    if (sourceName.Contains("TTZJets")) return 210160;
-    if (sourceName.Contains("TTWWJets")) return 197820;
-    if (sourceName.Contains("TTGJets")) return 71598;
 }
 vector<double> * WeightVec(int whichNTuple, float L_data, vector<double> * baseWeightVec, unsigned int whichFileList, vector<int> * numParFilesVec) {
     vector<double> * outVec = new vector<double>;    
@@ -188,7 +188,7 @@ vector<double> * WeightVec(int whichNTuple, float L_data, vector<double> * baseW
     double xsecHiggsWW = 0.444;
     if (whichNTuple == 0) {
         // for xsecs that are different between the two types of nTuples
-        xsecZDY50toInf = 3532.8
+        xsecZDY50toInf = 3532.8;
         xsecSingTop = 1.17334824;
         xsecWZ = 22.44;
         xsecZZ = 9.03;
@@ -320,7 +320,7 @@ vector<double> * WeightVec(int whichNTuple, float L_data, vector<double> * baseW
     
     return outVec;
 }
-vector<TFile *> * OutFileVec(vector<TString> * nameVec, vector<bool> * boolVec) {
+vector<TFile *> * OutFileVec(int whichNTuple, vector<TString> * nameVec, vector<bool> * boolVec) {
     vector<TFile *> * outVec = new vector<TFile *>;
     TFile * TargetTTBarSig, * TargetTTBarBkg, * TargetSingTop, * TargetZDY, * TargetWLNu, * TargetWW, * TargetWZ, * TargetZZ;
     TFile * TargetQCDMu, * TargetQCDEM, * TargetQCDBCEM;
