@@ -112,11 +112,11 @@ int main( int argc, const char* argv[] ) {
         }
     }
     gROOT->ProcessLine("#include <vector>");
-
+    
     // set up input/output strings
     vector<TString> * nameStringVec = new vector<TString>;
     TString nTupleString, PURWString, doSystString;
-    TString TTBarSystString = WhichTTBarString(whichTTBarSyst);
+    TString TTBarSystString = WhichTTBarString(whichTTBarSyst, whichNTuple);
     switch (whichNTuple) {
         case 0:
             nTupleString = "_Oviedo";
@@ -139,18 +139,22 @@ int main( int argc, const char* argv[] ) {
     
     // boolean vector for which files to hadd
     vector<bool> * boolSampVec = new vector<bool>;
-    bool doTTBar =          1;
-    bool doSingTop =        1;
-    bool doWLNu =           1;
-    bool doVV =             1;
-    bool doZDY =            1;
-    bool doQCD =            1;
+    bool doTTBar            = 1;
+    bool doSingTop          = 1;
+    bool doWLNu             = 1;
+    bool doVV               = 1;
+    bool doZDY              = 1;
+    bool doQCD              = 1;
+    bool doVG               = 1;
+    bool doHiggs            = 1;
     if (whichTTBarSyst != 2) {
         doSingTop = 0;
         doWLNu = 0;
         doVV = 0;
         doZDY = 0;
         doQCD = 0;
+        doVG = 0;
+        doHiggs = 0;
     }
     boolSampVec->push_back(doTTBar);
     boolSampVec->push_back(doTTBar); // two ttbar lists
@@ -160,9 +164,16 @@ int main( int argc, const char* argv[] ) {
     boolSampVec->push_back(doVV);
     boolSampVec->push_back(doVV);  // three VV lists
     boolSampVec->push_back(doWLNu); // one WLNu list
-    boolSampVec->push_back(doQCD);
-    boolSampVec->push_back(doQCD);
-    boolSampVec->push_back(doQCD); // three QCD list
+    if (whichNTuple == 1) {
+        boolSampVec->push_back(doQCD);
+        boolSampVec->push_back(doQCD);
+        boolSampVec->push_back(doQCD); // three QCD list
+    }
+    else {
+        boolSampVec->push_back(doVG);
+        boolSampVec->push_back(doVG);
+        boolSampVec->push_back(doHiggs);        
+    }
     vector<TList*> * fileListVec = FileListVec(whichNTuple, nameStringVec, boolSampVec);
     vector<TFile*> * outFileVec = OutFileVec(nameStringVec, boolSampVec);
     // boolean vector for which files to hadd
@@ -175,64 +186,94 @@ int main( int argc, const char* argv[] ) {
     TString nEventHistName = "weightedEvents";
     TString nParFileHistName = "h_numParFiles";
     vector<int> * numParFilesVec = new vector<int>;
+    float indLumiDESY[4] = {892, 4404, 7032, 7274};
+    float indLumiOvi[4] = {892, 4404, 7032, 7274};
     float L_data = 19602.901;
+    if (whichNTuple == 0) {
+        L_data = indLumiOvi[0] + indLumiOvi[1] + indLumiOvi[2] + indLumiOvi[3];
+    }
+    else {
+        L_data = indLumiDESY[0] + indLumiDESY[1] + indLumiDESY[2] + indLumiDESY[3];
+    }
     for (unsigned int i = 0; i < boolSampVec->size(); ++i) {
         if (boolSampVec->at(i)) {
-            currWeightBaseVec = WeightBaseVec(fileListVec, i, nEventHistName, nParFileHistName, numParFilesVec);
+            currWeightBaseVec = WeightBaseVec(whichNTuple, fileListVec, i, nEventHistName, nParFileHistName, numParFilesVec);
             weightBasesVec->push_back(currWeightBaseVec);
-            currWeightVec = WeightVec(L_data, currWeightBaseVec, i, numParFilesVec);
+            currWeightVec = WeightVec(whichNTuple, L_data, currWeightBaseVec, i, numParFilesVec);
             weightVec->push_back(currWeightVec);
         }
     }
     // vectors of vectors of doubles to contain weight factors
-
+    
     for (unsigned int j = 0; j < boolSampVec->size(); ++j) {
-        switch (j) {
-            case 0:
-                cout << "going to hadd TTBar" << endl;
-                break;
-            case 2:
-                cout << "going to hadd SingTop" << endl;
-                break; 
-            case 3:
-                cout << "going to hadd ZDY" << endl;
-                break; 
-            case 4:
-                cout << "going to hadd VV" << endl;
-                break; 
-            case 7:
-                cout << "going to hadd WLNu" << endl;
-                break; 
-            case 8:
-                cout << "going to hadd QCD" << endl;
-                break; 
-            default:
-                break;
+        if (boolSampVec->at(j)) {
+            switch (j) {
+                case 0:
+                    cout << "going to hadd TTBar" << endl;
+                    break;
+                case 2:
+                    cout << "going to hadd SingTop" << endl;
+                    break; 
+                case 3:
+                    cout << "going to hadd ZDY" << endl;
+                    break; 
+                case 4:
+                    cout << "going to hadd VV" << endl;
+                    break; 
+                case 7:
+                    cout << "going to hadd WLNu" << endl;
+                    break;                 
+                case 8:
+                    if (whichNTuple == 1) {
+                        cout << "going to hadd QCD" << endl;
+                    }
+                    else {
+                        cout << "going to hadd VG" << endl;
+                    }
+                    break; 
+                case 10:
+                    if (whichNTuple == 0) {
+                        cout << "going to hadd Higgs" << endl;
+                    }
+                default:
+                    break;
+            }
         }
         if (boolSampVec->at(j)) {
             MergeRootfileHists(outFileVec->at(j), fileListVec->at(j), weightVec->at(j), beVerbose); //I think this needs some work..
         }
-        switch (j) {
-            case 1:
-                cout << "done hadd TTBar" << endl;
-                break;
-            case 2:
-                cout << "done hadd SingTop" << endl;
-                break; 
-            case 3:
-                cout << "done hadd ZDY" << endl;
-                break; 
-            case 6:
-                cout << "done hadd VV" << endl;
-                break; 
-            case 7:
-                cout << "done hadd WLNu" << endl;
-                break; 
-            case 8:
-                cout << "done hadd QCD" << endl;
-                break; 
-            default:
-                break;
+        if (boolSampVec->at(j)) {
+            switch (j) {
+                case 1:
+                    cout << "done hadd TTBar" << endl;
+                    break;
+                case 2:
+                    cout << "done hadd SingTop" << endl;
+                    break; 
+                case 3:
+                    cout << "done hadd ZDY" << endl;
+                    break; 
+                case 6:
+                    cout << "done hadd VV" << endl;
+                    break; 
+                case 7:
+                    cout << "done hadd WLNu" << endl;
+                    break; 
+                case 8:
+                    if (whichNTuple == 1) {
+                        cout << "done hadd QCD" << endl;
+                    }
+                    else {
+                        cout << "done hadd VG" << endl;
+                    }                
+                    break; 
+                case 10:
+                    if (whichNTuple == 0) {
+                        cout << "done hadd Higgs" << endl;
+                    }
+                default:
+                    break;
+            }
         }
     }
 }

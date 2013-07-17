@@ -4,10 +4,13 @@ strNTup="Ovi"
 if [ $whichNTuple -gt 0 ]
 then
     strPURW="DESY"
+
+    hadd -f DataEE_${strPURW}Haddplots.root ee_run2012*MT2Leq80_${strPURW}_Output.root
+    hadd -f DataEMu_${strPURW}Haddplots.root emu_run2012*MT2Leq80_${strPURW}_Output.root
+    hadd -f DataMuMu_${strPURW}Haddplots.root mumu_run2012*MT2Leq80_${strPURW}_Output.root
+else
+    strPURW="Oviedo"
 fi
-hadd -f DataEE_${strPURW}Haddplots.root ee_run2012*MT2Leq80_${strPURW}_Output.root
-hadd -f DataEMu_${strPURW}Haddplots.root emu_run2012*MT2Leq80_${strPURW}_Output.root
-hadd -f DataMuMu_${strPURW}Haddplots.root mumu_run2012*MT2Leq80_${strPURW}_Output.root
 for a in ${strPURW}_PURW ${strPURW}
 do
     for b in _wSystHadd Hadd

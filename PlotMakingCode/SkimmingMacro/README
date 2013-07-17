@@ -1,0 +1,9 @@
+In order to compile the skimming macro, after setting your CMSSW environment (command 'cmsenv' within a SCRAM based CMSSW release area)
+you should only have to do the command 'make' in the directory containing the skimming macro NewOviStopPlotSkimmer.C
+
+Once the code has compiled, you then submit some condor jobs to process the skimming by using the script OviedoNTupleSkimmer.sh
+i.e.
+./OviedoNTupleSkimmer.sh
+
+Note that, as of 7/17/13, it will save the output skim files to the same location they were loaded in from, so currently, 
+/data/users/bcalvert/new_oviedo_ntuples_5_14_13
