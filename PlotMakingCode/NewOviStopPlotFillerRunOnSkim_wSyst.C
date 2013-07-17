@@ -104,6 +104,7 @@ int main( int argc, const char* argv[] ) {
     float HT,Btag_j0,Btag_j1;
     float Jet0Px,Jet0Py,Jet0Pz,Jet0E,Jet0Et,Jet1Px,Jet1Py,Jet1Pz,Jet1E,Jet1Et;
     float BtagJet0Px,BtagJet0Py,BtagJet0Pz,BtagJet0E,BtagJet0Et,BtagJet1Px,BtagJet1Py,BtagJet1Pz,BtagJet1E,BtagJet1Et;
+    int   BtagJet0Index, BtagJet1Index;
     float BDT,BDTDis;
     
     float TGenStopMass0,TGenStopMass1,TGenChi0Mass0,TGenChi0Mass1;
@@ -421,12 +422,14 @@ int main( int argc, const char* argv[] ) {
         fileTree.SetBranchAddress( "TBtagJet0Px", &BtagJet0Px );
         fileTree.SetBranchAddress( "TBtagJet0Py", &BtagJet0Py );
         fileTree.SetBranchAddress( "TBtagJet0Pz", &BtagJet0Pz );
-        fileTree.SetBranchAddress( "TBtagJet0E", &BtagJet0E );                                                               
+        fileTree.SetBranchAddress( "TBtagJet0E", &BtagJet0E ); 
+        fileTree.SetBranchAddress( "TBtagJet0Index", &BtagJet0Index );
         
         fileTree.SetBranchAddress( "TBtagJet1Px", &BtagJet1Px );
         fileTree.SetBranchAddress( "TBtagJet1Py", &BtagJet1Py );
         fileTree.SetBranchAddress( "TBtagJet1Pz", &BtagJet1Pz );
         fileTree.SetBranchAddress( "TBtagJet1E", &BtagJet1E );
+        fileTree.SetBranchAddress( "TBtagJet1Index", &BtagJet1Index );
         
         if (fileTree.GetBranch("TGenStopMass0")){
             fileTree.SetBranchAddress( "TGenStopMass0", &TGenStopMass0 );
@@ -898,7 +901,8 @@ int main( int argc, const char* argv[] ) {
                 //                cout << "BLep1Vec Energy " << BLep1Vec.E() << endl;
             }
             else if (NBtagJets == 1) {
-                if (eventJetParams->at(2) == 0) { //Btag jet is lead jet
+                if (whichNTupleType == 1) BtagJet0Index = eventJetParams->at(2);
+                if (BtagJet0Index == 0) { //Btag jet is lead jet
                     MT2lbPair1 = getMT2(Lep0Vec + BtagJet0Vec, Lep1Vec + Jet1Vec, MET, MET_Phi);
                     MT2lbPair2 = getMT2(Lep0Vec + Jet1Vec, Lep1Vec + BtagJet0Vec, MET, MET_Phi);
                     if (MT2lbPair1 > MT2lbPair2) {
@@ -912,7 +916,7 @@ int main( int argc, const char* argv[] ) {
                     //                    cout << "BLep0Vec Energy " << BLep0Vec.E() << endl;
                     //                    cout << "BLep1Vec Energy " << BLep1Vec.E() << endl;
                 }
-                else if (eventJetParams->at(2) != 0) { //Btag jet is not lead jet
+                else if (BtagJet0Index != 0) { //Btag jet is not lead jet
                     MT2lbPair1 = getMT2(Lep0Vec + BtagJet0Vec, Lep1Vec + Jet0Vec, MET, MET_Phi);
                     MT2lbPair2 = getMT2(Lep0Vec + Jet0Vec, Lep1Vec + BtagJet0Vec, MET, MET_Phi);
                     if (MT2lbPair1 > MT2lbPair2) {
