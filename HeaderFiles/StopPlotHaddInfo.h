@@ -110,6 +110,8 @@ float OviedoNEvents(TString sourceName) {
     if (sourceName.Contains("TTZJets")) return 210160;
     if (sourceName.Contains("TTWWJets")) return 197820;
     if (sourceName.Contains("TTGJets")) return 71598;
+    cout << "didn't MATCH ANY" << endl;
+    return 0:
 }
 vector<double> * WeightBaseVec(int whichNTuple, vector<TList *> * fileListVec, unsigned int whichFile, TString nEventHistName, TString nParFileHistName, vector<int> * numParFilesVec) {
     vector<double> * outVec = new vector<double>;
@@ -133,7 +135,7 @@ vector<double> * WeightBaseVec(int whichNTuple, vector<TList *> * fileListVec, u
     numParFilesVec->push_back(numParFiles);
     TFile * nextsource = (TFile*) fileListVec->at(whichFile)->After(first_source);
     while (nextsource) {
-        sourceName = nextsource->GetName()
+        sourceName = nextsource->GetName();
         cout << "nextsource " << sourceName << endl;
         if (whichNTuple == 1) {
             h_eventCount = (TH1F*) nextsource->Get(nEventHistName);
@@ -192,7 +194,7 @@ vector<double> * WeightVec(int whichNTuple, float L_data, vector<double> * baseW
         xsecSingTop = 1.17334824;
         xsecWZ = 22.44;
         xsecZZ = 9.03;
-        xsecWLNu = 37509
+        xsecWLNu = 37509;
     }
     switch (whichNTuple) {
         case 0:
