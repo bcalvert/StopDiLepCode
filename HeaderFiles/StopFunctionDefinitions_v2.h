@@ -299,7 +299,7 @@ inline bool FilterMET(vector<bool> * regFilterVec, vector<bool> * oppFilterVec) 
     for (unsigned int iOpp = 0; iOpp < oppFilterVec->size(); ++iOpp) {
         if (oppFilterVec->at(iOpp)) return false;
     }
-    
+    return true;
 }
 
 inline vector<int> * ElectronPickOvi(vector<float> * ElecPt, vector<float> * ElecEta, vector<int> * ElecCharge, vector<float> * ElecNeutHadIso, vector<float> * ElecCharHadIso, vector<float> * ElecPhotHadIso, vector<bool> * passConvVeto, vector<bool> * isPFElectron) {
