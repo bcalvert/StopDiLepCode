@@ -276,8 +276,8 @@ int main( int argc, const char* argv[] ) {
     /////loop over inputs
     for (int k = 0; k < argc; ++k) {
         cout << "argv[k] for k = " << k << " is: " << argv[k] << endl;
-        if (strncmp (argv[k],"-i",2) == 0) { f
-            InName = TString(argv[k+1]);
+        if (strncmp (argv[k],"-i",2) == 0) { 
+            fInName = TString(argv[k+1]);
         }
         else if (strncmp (argv[k],"-w",2) == 0) {
             whichNTupleType = strtol(argv[k+1], NULL, 10);   
