@@ -144,7 +144,109 @@ int main( int argc, const char* argv[] ) {
     int   BtagJet0Index, BtagJet1Index;
     float BDT,BDTDis;
     
-    float TGenStopMass0,TGenStopMass1,TGenChi0Mass0,TGenChi0Mass1;
+    float genStopMass0,genStopMass1,genChi0Mass0,genChi0Mass1;
+    
+// Gen info
+    vector<float> * genStopMass; * genChi0Mass, * genCharginoMass;
+    vector<double> * genPolWeights;
+    genStopMass = new vector<float>;
+    genChi0Mass = new vector<float>;
+    genCharginoMass = new vector<float>;
+    genPolWeights = new vector<double>;  
+    
+    float StopMass0, StopMass1, Chi0Mass0, Chi0Mass1;
+    /*
+    vector<float> * genStopEn, * genStopPt, * genStopEta, * genStopPhi;
+    vector<int> * genStop_i, * genStop_firstMom, * genStop_pdgId;
+    genStopEn = new vector<float>;
+    genStopEta = new vector<float>;
+    genStopPhi = new vector<float>;
+    genStopPt = new vector<float>; 
+    
+    vector<float> * genChi0En, * genChi0Pt, * genChi0Eta, * genChi0Phi;
+    vector<int> * genChi0_i, * genChi0_firstMom, * genChi0_pdgId;
+    genChi0En = new vector<float>;
+    genChi0Eta = new vector<float>;
+    genChi0Phi = new vector<float>;
+    genChi0Pt = new vector<float>; 
+    
+    vector<float> * genChiPMEn, * genChiPMPt, * genChiPMEta, * genChiPMPhi;
+    vector<int> * genChiPM_i, * genChiPM_firstMom, * genChiPM_pdgId;
+    genChiPMEn = new vector<float>;
+    genChiPMEta = new vector<float>;
+    genChiPMPhi = new vector<float>;
+    genChiPMPt = new vector<float>; 
+    
+    vector<float> * genTopEn, * genTopPt, * genTopEta, * genTopPhi;
+    vector<int> * genTop_i, * genTop_firstMom, * genTop_pdgId;
+    genTopEn = new vector<float>;
+    genTopEta = new vector<float>;
+    genTopPhi = new vector<float>;
+    genTopPt = new vector<float>;    
+    
+    vector<float> * genBEn, * genBPt, * genBEta, * genBPhi;
+    vector<int> * genB_i, * genB_firstMom, * genB_pdgId;
+    genBEn = new vector<float>;
+    genBEta = new vector<float>;
+    genBPhi = new vector<float>;
+    genBPt = new vector<float>;  
+    
+    vector<float> * genWEn, * genWPt, * genWEta, * genWPhi;
+    vector<int> * genW_i, * genW_firstMom, * genW_pdgId;
+    genWEn = new vector<float>;
+    genWEta = new vector<float>;
+    genWPhi = new vector<float>;
+    genWPt = new vector<float>;
+    
+    genW_i = new vector<int>;
+    genW_firstMom = new vector<int>;
+    genW_pdgId = new vector<int>;
+    
+    vector<float> * genTauLepPx, * genTauLepPy, * genTauLepPz, * genTauLepEn;
+    vector<int> * genTauLepPID;
+    vector<bool> * genTauLepisLepDecay;
+    genTauLepPx = new vector<float>;
+    genTauLepPy = new vector<float>;
+    genTauLepPz = new vector<float>;
+    genTauLepEn = new vector<float>;
+    genTauLepPID = new vector<int>;
+    genTauLepisLepDecay = new vector<bool>;
+    
+    
+    vector<float> * genTauEn, * genTauPt, * genTauEta, * genTauPhi;
+    vector<int> * genTau_i, * genTau_firstMom, * genTau_pdgId;
+    genTauEn = new vector<float>;
+    genTauEta = new vector<float>;
+    genTauPhi = new vector<float>;
+    genTauPt = new vector<float>; 
+    
+    vector<float> * genElecEn, * genElecPt, * genElecEta, * genElecPhi;
+    vector<int> * genElec_i, * genElec_firstMom, * genElec_pdgId;
+    genElecEn = new vector<float>;
+    genElecEta = new vector<float>;
+    genElecPhi = new vector<float>;
+    genElecPt = new vector<float>; 
+    
+    vector<float> * genMuonEn, * genMuonPt, * genMuonEta, * genMuonPhi;
+    vector<int> * genMuon_i, * genMuon_firstMom, * genMuon_pdgId;
+    genMuonEn = new vector<float>;
+    genMuonEta = new vector<float>;
+    genMuonPhi = new vector<float>;
+    genMuonPt = new vector<float>; 
+    
+    vector<float> * genJetPx, * genJetPy, * genJetPz, * genJetEt, * genJetEta, * genJetEn, * genJetInvisE, 
+    vector<bool> * genJetIsGenJet;
+    genJetPx = new vector<float>;
+    genJetPy = new vector<float>;
+    genJetPz = new vector<float>;
+    genJetEn = new vector<float>;
+    genJetEt = new vector<float>;
+    genJetEta = new vector<float>;
+    genJetInvisE = new vector<float>;
+    genJetIsGenJet = new vector<bool>;
+    */
+    
+    float genMET, genMETPhi;
     
     float SysVar;
     
@@ -278,6 +380,12 @@ int main( int argc, const char* argv[] ) {
     fileTree.SetBranchAddress( "T_EventF_manystripclus", &filterManyStripClus );
     fileTree.SetBranchAddress( "T_EventF_eeBadSc", &filterEEBadSC );
     
+    //generator information
+    fileTree.SetBranchAddress( "T_Gen_StopMass", &genStopMass );
+    fileTree.SetBranchAddress( "T_Gen_Chi0Mass", &genChi0Mass );
+    fileTree.SetBranchAddress( "T_METgen_ET", &genMET );
+    fileTree.SetBranchAddress( "T_METgen_Phi", &genMETPhi );
+    
     outTree->Branch("TWeight",   &weight);
     outTree->Branch("TChannel",  &Type);
     outTree->Branch("TNPV",      &nVtx);
@@ -321,6 +429,15 @@ int main( int argc, const char* argv[] ) {
     outTree->Branch("TBtagJet1E",    &BtagJet1E);
     outTree->Branch("TBtagJet1Index",    &BtagJet1Index);
     
+    if (fInName.Contains("FineBin") {
+        outTree->Branch("TGenStopMass0", &genStopMass0);
+        outTree->Branch("TGenStopMass1", &genStopMass1);
+        outTree->Branch("TGenChi0Mass0", &genChi0Mass0);
+        outTree->Branch("TGenChi0Mass1", &genChi0Mass1);
+    }
+    outTree->Branch("TGenMET", &genMET);
+    outTree->Branch("TGenMETPhi", &genMETPhi);
+
     cout << "--- Processing: " << fileTree.GetEntries() << " events" << endl;
     outputFile->cd();
 //    int lep0Index, lep1Index;
@@ -348,7 +465,13 @@ int main( int argc, const char* argv[] ) {
 //        lep0Index = 0; lep1Index = 1;
         doEvent = true;
         map<string, float> stringKeyToVar;
-        fileTree.GetEntry(ievt);                                                                                                         
+        fileTree.GetEntry(ievt);
+        if (fInName.Contains("FineBin")) {
+            genStopMass0 = genStopMass->at(0);
+            genStopMass1 = genStopMass->at(1);
+            genChi0Mass0 = genChi0Mass->at(0);
+            genChi0Mass1 = genChi0Mass->at(1);
+        }
         weight = 1.;
         float preNVtxRWweight = 1;  
         
