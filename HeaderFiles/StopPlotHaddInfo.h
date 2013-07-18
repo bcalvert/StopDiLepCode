@@ -255,6 +255,7 @@ vector<double> * WeightVec(int whichNTuple, float L_data, vector<double> * baseW
                     break;
             }
             break;
+        case 1:
             switch (whichFileList) {
                 case 0:
                     numParFiles = numParFilesVec->at(0);
