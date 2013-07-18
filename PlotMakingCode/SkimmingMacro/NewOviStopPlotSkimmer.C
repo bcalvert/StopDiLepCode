@@ -429,7 +429,7 @@ int main( int argc, const char* argv[] ) {
     outTree->Branch("TBtagJet1E",    &BtagJet1E);
     outTree->Branch("TBtagJet1Index",    &BtagJet1Index);
     
-    if (fInName.Contains("FineBin") {
+    if (fInName.Contains("FineBin")) {
         outTree->Branch("TGenStopMass0", &genStopMass0);
         outTree->Branch("TGenStopMass1", &genStopMass1);
         outTree->Branch("TGenChi0Mass0", &genChi0Mass0);
