@@ -190,6 +190,7 @@ vector<double> * WeightVec(int whichNTuple, float L_data, vector<double> * baseW
     double xsecHiggsWW = 0.444;
     if (whichNTuple == 0) {
         // for xsecs that are different between the two types of nTuples
+        cout << "whichNTuple is 0 " << endl;
         xsecZDY50toInf = 3532.8;
         xsecSingTop = 1.17334824;
         xsecWZ = 22.44;
