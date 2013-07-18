@@ -13,6 +13,7 @@
 #include "TF1.h"
 #include "TTree.h"
 #include "TString.h"
+#include "TRegexp.h"
 #include "TProfile.h"
 
 //#include <exception>                                                                                                      
@@ -262,6 +263,7 @@ int main( int argc, const char* argv[] ) {
     ////input cuts/commands    
     //    const double PI = 3.14159265;
     bool doPFElecMu      = 0;
+    bool grabOutDir      = 0;      // whether or not to use the file: "outputSavePath.txt" for where to save output
     bool doData          = 0;
     bool doVerbosity     = 0;
     int  whichNTupleType = 0; //0 IFCA Oviedo; 1 DESY
@@ -271,20 +273,43 @@ int main( int argc, const char* argv[] ) {
     /////loop over inputs
     for (int k = 0; k < argc; ++k) {
         cout << "argv[k] for k = " << k << " is: " << argv[k] << endl;
-        if (strncmp (argv[k],"-i",2) == 0) fInName = TString(argv[k+1]);
-        if (strncmp (argv[k],"-w",2) == 0) whichNTupleType = strtol(argv[k+1], NULL, 10);
-        if (strncmp (argv[k],"doVerbosity",11) == 0) doVerbosity = 1;
-        if (strncmp (argv[k],"doPURW",6) == 0) doPURW = 1;        
-        if (strncmp (argv[k],"doHackPURW",10) == 0) doHackPURW = 1;
-        if (strncmp (argv[k],"doPURWOviToDESY",15) == 0) doPURWOviToDESY = 1;
+        if (strncmp (argv[k],"-i",2) == 0) { f
+            InName = TString(argv[k+1]);
+        }
+        else if (strncmp (argv[k],"-w",2) == 0) {
+            whichNTupleType = strtol(argv[k+1], NULL, 10);   
+        }
+        else if (strncmp (argv[k],"doVerbosity",11) == 0) {
+            doVerbosity = 1;   
+        }
+        else if (strncmp (argv[k],"doPURW",6) == 0) {
+            doPURW = 1;           
+        }
+        else if (strncmp (argv[k],"doHackPURW",10) == 0) {
+            doHackPURW = 1;   
+        }
+        else if (strncmp (argv[k],"doPURWOviToDESY",15) == 0) {
+            doPURWOviToDESY = 1;   
+        }
+        else if (strncmp (argv[k],"gOutDir", 7) == 0) {
+            grabOutDir = 1;
+        }
     }
-    if (fInName.Contains("tkolberg")) {
-        fOutName = fInName;
-        fOutName.Replace(12, 8, "bcalvert");   
+    char Buffer[500];
+    char MyRootFile[2000];
+    ifstream * outDirFile;
+    TRegexp fCutSlash("[^/]+$");
+    fOutName = "";
+    if (grabOutDir) {
+        outDirFile = new ifstream(TString("outputSavePath.txt"));
+        if (!(outDirFile->eof())) {
+            outDirFile->getline(Buffer,500);
+            fOutName += TString(string(Buffer));
+            fOutName += "/"; //in case user forgot a slash
+        }
     }
-    else {
-        fOutName = fInName;
-    }
+    fOutName += fInName(fCutSlash);
+    
     if (fInName.Contains("MuEG") || fInName.Contains("DoubleMu") || fInName.Contains("DoubleEl")) {
         cout << "Running on Data" << endl;
         doData = 1;
