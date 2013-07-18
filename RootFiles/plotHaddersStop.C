@@ -195,6 +195,7 @@ int main( int argc, const char* argv[] ) {
     else {
         L_data = indLumiDESY[0] + indLumiDESY[1] + indLumiDESY[2] + indLumiDESY[3];
     }
+    cout << "L_data " << L_data << endl;
     for (unsigned int i = 0; i < boolSampVec->size(); ++i) {
         if (boolSampVec->at(i)) {
             currWeightBaseVec = WeightBaseVec(whichNTuple, fileListVec, i, nEventHistName, nParFileHistName, numParFilesVec);
