@@ -430,7 +430,7 @@ vector<TList *> * FileListVec(int whichNTuple, vector<TString> * nameVec, vector
             }
             if (boolVec->at(4)) {
                 FileListWW = new TList();
-                FileListWW->Add(TFile::Open(TString("WWTo2L2Nu") + whichNTupleString + PURWString + doSystString + suffixString));
+                FileListWW->Add(TFile::Open(TString("WWTo2L2Nu_Madgraph") + whichNTupleString + PURWString + doSystString + suffixString));
                 FileListWW->Add(TFile::Open(TString("ggWWto2L") + whichNTupleString + PURWString + doSystString + suffixString));
                 outVec->push_back(FileListWW);
                 FileListWZ = new TList();
