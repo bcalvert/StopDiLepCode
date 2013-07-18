@@ -117,6 +117,7 @@ int main( int argc, const char* argv[] ) {
     vector<TString> * nameStringVec = new vector<TString>;
     TString nTupleString, PURWString, doSystString;
     TString TTBarSystString = WhichTTBarString(whichTTBarSyst, whichNTuple);
+    cout << "TTBarstring " << TTBarSystString << endl;
     switch (whichNTuple) {
         case 0:
             nTupleString = "_Oviedo";

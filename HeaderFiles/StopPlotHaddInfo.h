@@ -81,8 +81,8 @@ void WeightVecFiller(TList * sourcelist, vector<double> * weightVec, TString his
 }
 float OviedoNEvents(TString sourceName) {
     // Numbers taken from https://docs.google.com/spreadsheet/ccc?key=0Aq5OAopf_dtsdDJqREJReGQyY21wbERldVFSZVJHbFE&hl=en_US&pli=1#gid=57
-    if (sourceName.Contains("TTBar_Powheg")) return 28150723;
-    if (sourceName.Contains("TTBar_Madgraph")) return 6923750;
+    if (sourceName.Contains("TTbar_Powheg")) return 28150723;
+    if (sourceName.Contains("TTbar_Madgraph")) return 6923750;
     if (sourceName.Contains("TTbar_MCatNLO")) return 32852589;
     if (sourceName.Contains("TTJetsFullHadrMG")) return 28123821;
     if (sourceName.Contains("TTJetsSemiLeptMG")) return 24424818;
