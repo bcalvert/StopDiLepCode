@@ -8,7 +8,7 @@ TString WhichTTBarString(int whichTTBarSyst, int whichNTuple) {
     TString TTBarSystString;
     switch (whichNTuple) {
         case 0:
-            switch (whichNTuple) {
+            switch (whichTTBarSyst) {
                 case 0:
                     TTBarSystString = "_Powheg";
                     break;
