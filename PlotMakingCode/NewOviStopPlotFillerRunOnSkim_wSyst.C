@@ -108,6 +108,8 @@ int main( int argc, const char* argv[] ) {
     float BDT,BDTDis;
     
     float TGenStopMass0,TGenStopMass1,TGenChi0Mass0,TGenChi0Mass1;
+    int   grabStopMass, grabChi0Mass;
+    int   massDiffThresh = 25;
     int NJets, NBtagJets;
     float SysVar;
     
@@ -184,6 +186,7 @@ int main( int argc, const char* argv[] ) {
     bool doParallel      = 0;      // Whether or not to run parallel jobs for a given input file. If done, you have to do an additional hadding step
     int  startPointNum   = 1;
     int  numBreakPoints  = 0;
+    bool isSignal        = 0;      // Whether or not one is running on signal -- if this is turned on the next two arguments have to be the stop mass to grab and the chi0 mass to grab respectively
     int  startPoint, endPoint;
     ////input cuts/commands    
     /////loop over inputs    
@@ -220,6 +223,11 @@ int main( int argc, const char* argv[] ) {
         else if (strncmp (argv[k],"gOutDir", 7) == 0) {
             grabOutDir = 1;
         }
+        else if (strncmp (argv[k],"isSig", 5) == 0) {
+            isSignal = 1;
+            grabStopMass = strtol(argv[k+1], NULL, 10);
+            grabChi0Mass = strtol(argv[k+2], NULL, 10);
+        }
         else if (strncmp (argv[k],"ReleaseTheKraken", 16) == 0) {
             blindData = 0;
             cout << "RELEASING THE KRAKEN!!! " << endl;
@@ -255,6 +263,7 @@ int main( int argc, const char* argv[] ) {
         cout << "Running on Data" << endl;
         doData = 1;
     }
+    
     if (doData && blindData) {
         fOutName += "MT2Leq80";   
     }
@@ -276,6 +285,12 @@ int main( int argc, const char* argv[] ) {
     if (doPURW && !doData) fOutName += "_PURW";
     if (doPURWOviToDESY && !doData) fOutName += "OviToDESY";
     if (doBookSyst) fOutName += "_wSyst";
+    if (isSignal) {
+        fOutName += "_SignalStop";
+        fOutName += grabStopMass;
+        fOutName += "_Chi0";
+        fOutName += grabChi0Mass;
+    }
     if (doParallel) {
         fOutName += "_Parallel_";
         fOutName += startPointNum;
@@ -636,6 +651,13 @@ int main( int argc, const char* argv[] ) {
         doEvent = true;
         map<string, float> stringKeyToVar;
         fileTree.GetEntry(ievt);
+        if (isSignal) {
+            if (!fInName.Contains("FineBin")) continue;
+            if (abs(TGenStopMass0 - grabStopMass) > massDiffThresh) continue;
+            if (abs(TGenStopMass1 - grabStopMass) > massDiffThresh) continue;
+            if (abs(TGenChi0Mass0 - grabChi0Mass) > massDiffThresh) continue;
+            if (abs(TGenChi0Mass1 - grabChi0Mass) > massDiffThresh) continue;
+        }
         //        cout << "Lep0 Px " << Lep0Px << endl;
         ZVeto = true;
         //*****************************************                                                                                                                   
@@ -660,7 +682,7 @@ int main( int argc, const char* argv[] ) {
                        float roundedStopMass = floor((TGenStopMass0+12.5)/25.)*25.; 
                        // assuming delta_Mstop = 25 GeV, this rounds the stop mass to the closest value divisible by 25                                                                                                                                                              
                        StopXSec theStopXSec = getCrossSectionStop(roundedStopMass);
-                       stopWeight = theStopXSec.stopProdXsec * lumi / Nevt_stop_oneMassPoint; 
+                       stopWeight = theStopXSec.stopProdXsec;   /// * lumi / Nevt_stop_oneMassPoint; 
                        //equivalent to G_Event_Weight= dm->GetCrossSection()* G_Event_Lumi/ dm->GetEventsInTheSample();                                                                                                                                                    
                    }
                    
