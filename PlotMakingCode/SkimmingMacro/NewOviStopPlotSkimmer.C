@@ -147,7 +147,7 @@ int main( int argc, const char* argv[] ) {
     float genStopMass0,genStopMass1,genChi0Mass0,genChi0Mass1;
     
 // Gen info
-    vector<float> * genStopMass; * genChi0Mass, * genCharginoMass;
+    vector<float> * genStopMass, * genChi0Mass, * genCharginoMass;
     vector<double> * genPolWeights;
     genStopMass = new vector<float>;
     genChi0Mass = new vector<float>;
