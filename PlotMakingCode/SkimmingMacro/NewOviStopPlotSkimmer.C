@@ -25,6 +25,9 @@
 #include "../../HeaderFiles/StopFunctionDefinitions_v2.h"
 
 //#include "PileUpMC.h"
+
+#include <fstream>
+#include <string>
 #include <iostream>
 #include <vector>
 #include <cmath>
