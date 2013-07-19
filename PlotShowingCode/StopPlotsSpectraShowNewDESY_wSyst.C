@@ -126,6 +126,7 @@ int main( int argc, char* argv[]) {
     
     //some relevant things for saving names
     TString TTBarGenNameDESY[3] = {"_madgraph", "_mcatnlo", "_powheg"};
+    TString nameNTuple = (whichNTuple == 0) ? "_Ovi" : "_DESY";
     bool doSymErr = 0;
     TString AsymmErrString = "AsymmErr.pdf";
     if (doSymErr) {
@@ -248,6 +249,7 @@ int main( int argc, char* argv[]) {
             cout << "test " << endl;
 //            if (whichNTuple == 1) canvName += TTBarGenNameDESY[whichTTbarGen];
             canvName += TTBarGenNameDESY[whichTTbarGen];
+            canvName += nameNTuple;
             mcStackName = "mcStack_";
             mcStackName += plotVarName;
             mcStackName += subSampName;
@@ -443,6 +445,7 @@ int main( int argc, char* argv[]) {
             canvName += subSampName;
 //            if (whichNTuple == 1) canvName += TTBarGenNameDESY[whichTTbarGen];
             canvName += TTBarGenNameDESY[whichTTbarGen];
+            canvName += nameNTuple;
             mcStackName = "mcStack_";
             mcStackName += plotVarName;
             mcStackName += subSampName;
@@ -541,6 +544,7 @@ int main( int argc, char* argv[]) {
             canvName += subSampName;
 //            if (whichNTuple == 1) canvName += TTBarGenNameDESY[whichTTbarGen];
             canvName += TTBarGenNameDESY[whichTTbarGen];
+            canvName += nameNTuple;
             mcStackName = "mcStack_";
             mcStackName += plotVarName;
             mcStackName += subSampName;

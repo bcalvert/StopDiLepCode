@@ -110,7 +110,7 @@ int main( int argc, const char* argv[] ) {
     
     float TGenStopMass0,TGenStopMass1,TGenChi0Mass0,TGenChi0Mass1;
     int   grabStopMass, grabChi0Mass;
-    int   massDiffThresh = 25;
+    int   massDiffThresh = 5;
     int NJets, NBtagJets;
     float SysVar;
     
@@ -251,8 +251,9 @@ int main( int argc, const char* argv[] ) {
     ifstream * outDirFile;
     TRegexp fCutSlash("[^/]+$");
     fOutName = "";
+    TString outputPathName = (isSignal) ? "signalOutputSavePath.txt" : "outputSavePath.txt";
     if (grabOutDir) {
-        outDirFile = new ifstream(TString("outputSavePath.txt"));
+        outDirFile = new ifstream(TString(outputPathName));
         if (!(outDirFile->eof())) {
             outDirFile->getline(Buffer,500);
             fOutName += TString(string(Buffer));
@@ -402,7 +403,7 @@ int main( int argc, const char* argv[] ) {
         fileTree.SetBranchAddress( "TNPV",     &nVtx );
         
         fileTree.SetBranchAddress( "TMET",     &MET );
-        fileTree.SetBranchAddress( "TMETPhi", &METPhi );
+        fileTree.SetBranchAddress( "TMET_Phi", &METPhi );
         fileTree.SetBranchAddress( "TMETSig",  &METSig );
         
         fileTree.SetBranchAddress( "TLep0Px", &Lep0Px );
@@ -656,6 +657,12 @@ int main( int argc, const char* argv[] ) {
         doEvent = true;
         map<string, float> stringKeyToVar;
         fileTree.GetEntry(ievt);
+        /*
+        cout << "TGenStopMass0 " << TGenStopMass0 << endl;
+        cout << "TGenChi0Mass0 " << TGenChi0Mass0 << endl;
+        cout << "TGenStopMass1 " << TGenStopMass1 << endl;
+        cout << "TGenChi0Mass1 " << TGenChi0Mass1 << endl;
+        */
         if (isSignal) {
             if (!fInName.Contains("FineBin")) continue;
             if (abs(TGenStopMass0 - grabStopMass) > massDiffThresh) continue;
