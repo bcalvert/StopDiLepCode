@@ -16,6 +16,7 @@
 #include "TGraphAsymmErrors.h"
 #include "TMath.h"
 using namespace std;
+/*
 ////Matthieu's Pad Thing////////////////
 void FixPad(TPad * &inputPad, int whichPad, TCanvas * &inputCanvas) {
 //    cout << "inputPad " << inputPad << endl;
@@ -82,6 +83,7 @@ void FixPad(TPad * &inputPad, int whichPad, TCanvas * &inputCanvas) {
         inputPad->SetFrameBorderMode(0);
     }
 }
+*/
 /*
  vector<vector<TPad*> > PreparePadsWithRatio(int npad, TCanvas * InputCanvas) {
  

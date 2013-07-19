@@ -24,20 +24,6 @@
 #include <sstream>
 
 using namespace std;
-void relErrMaker( TH1F * &inputErrHist) {
-    int NBins = inputErrHist->GetNbinsX();
-    float binRelErr;
-    for (int i = 1; i < NBins+1; ++i) {
-        binRelErr = inputErrHist->GetBinError(i)/inputErrHist->GetBinContent(i);    
-        inputErrHist->SetBinError(i, binRelErr);
-    }
-}
-void relErrSet(TH1F * inputRelErrHist, TH1F * inputErrHist) {
-    int NBins = inputErrHist->GetNbinsX();
-    for (int i = 1; i<NBins+1; ++i) {
-        inputErrHist->SetBinError(i, inputErrHist->GetBinContent(i)*inputRelErrHist->GetBinError(i));
-    }
-}
 int main( int argc, char* argv[]) {
     using namespace std;
     int whichChan     = 0;          //which "channel" to run on, this doesn't just mean ee, emu, or mumu, but can mean events in the full cut sequence, events in the ZMass window but otherwise full cut sequence, etc.
@@ -125,21 +111,6 @@ int main( int argc, char* argv[]) {
     
     //Set up the file input
     //    vector<TFile *> * inFiles = new vector<TFile*>;
-    TString fileInNameBase;
-    TString fileNameSuffix;
-    TString specNTupString;
-    
-    if (whichNTuple == 0) {
-        fileInNameBase = "TreeAnalysisTop_5311pb-1_";
-        specNTupString = "_Oviedo";
-        fileNameSuffix =  "_Output.root";
-    }
-    else {
-        fileInNameBase = "";
-        specNTupString = "_DESY";
-        fileNameSuffix =  "Haddplots.root";
-    }
-    
     vector<TString> * fileInNames = StopFileNames(whichNTuple);
     vector<TFile *> * inputFiles  = StopFiles(whichNTuple, fileInNames, whichTTbarGen, doPURW, doSyst);
     vector<TString> * mcLegends   = MCLegends(whichNTuple, addThings);
@@ -275,7 +246,8 @@ int main( int argc, char* argv[]) {
             canvName += plotVarName;
             canvName += subSampName;
             cout << "test " << endl;
-            if (whichNTuple == 1) canvName += TTBarGenNameDESY[whichTTbarGen];
+//            if (whichNTuple == 1) canvName += TTBarGenNameDESY[whichTTbarGen];
+            canvName += TTBarGenNameDESY[whichTTbarGen];
             mcStackName = "mcStack_";
             mcStackName += plotVarName;
             mcStackName += subSampName;
@@ -287,7 +259,7 @@ int main( int argc, char* argv[]) {
             doSystCurrPlot = (doSyst && histVec_1D->at(k).doXSyst);
             HistogramVecGrabber(inputFiles, dataHist1DVec, mcIndHist1DCentValVec, mcCompHist1DSystVec, nVtxBackScaleVec, systVec, dataplot, mcplot, subSampName, RBNX[k], RBNY[k], RBNZ[k], doOverflow[k], doUnderflow[k], doSystCurrPlot);
             cout << "test 2a" << endl;
-            HistogramAdderSyst(dataHist1DVec, mcIndHist1DCentValVec, mcCompHist1DCentValVec, h_DataComp, h_MCComp, h_FracratioComp, doAbsRatio, fracRatioYAxisRange);
+            HistogramAdderSyst(dataHist1DVec, mcIndHist1DCentValVec, mcCompHist1DCentValVec, h_DataComp, h_MCComp, h_FracratioComp, whichNTuple, doAbsRatio, fracRatioYAxisRange);
             cout << "test 3" << endl;
             //        cout << "QCD " << h_QCDComp->Integral() << endl;
             h_ErrComp = (TH1F *) h_MCComp->Clone();
@@ -308,7 +280,10 @@ int main( int argc, char* argv[]) {
              TH1F * mcPlotHistsDESY[9] = {h_WJComp, OneDeeHistsDESY[5], OneDeeHistsDESY[6], OneDeeHistsDESY[7], h_ZDYComp, h_SingTopComp, OneDeeHistsDESY[3], OneDeeHistsDESY[4], h_QCDComp};
              }
              */
+            cout << "mcCompHist1DCentValVec->size() " << mcCompHist1DCentValVec->size() << endl;
+            cout << "mcColors->size() " << mcColors->size() << endl;
             for (unsigned int j = 0; j < mcCompHist1DCentValVec->size(); ++j) {
+                cout << "test " << j << endl;
                 HistMainAttSet(mcCompHist1DCentValVec->at(j), mcColors->at(j), 1001, mcColors->at(j), 2, kWhite, 0, 0);
                 mcStack->Add(mcCompHist1DCentValVec->at(j));
                 cout << "integral for mcCompCentVal " << mcCompHist1DCentValVec->at(j)->GetName() << " is " << mcCompHist1DCentValVec->at(j)->Integral() << endl;
@@ -466,7 +441,8 @@ int main( int argc, char* argv[]) {
             canvName = "c_";
             canvName += plotVarName;
             canvName += subSampName;
-            if (whichNTuple == 1) canvName += TTBarGenNameDESY[whichTTbarGen];
+//            if (whichNTuple == 1) canvName += TTBarGenNameDESY[whichTTbarGen];
+            canvName += TTBarGenNameDESY[whichTTbarGen];
             mcStackName = "mcStack_";
             mcStackName += plotVarName;
             mcStackName += subSampName;
@@ -492,7 +468,7 @@ int main( int argc, char* argv[]) {
                 if (cutString.Contains("Nothin")) continue;      
                 mcStack = new THStack(caseStackName, "");
                 c_Var = new TCanvas(caseCanvName, caseCanvName, wtopx, wtopy, W_, H_);          
-                HistogramAdderSyst(dataHist1DVec, mcIndHist1DCentValVec, mcCompHist1DCentValVec, h_DataComp, h_MCComp, h_FracratioComp, doAbsRatio, fracRatioYAxisRange);
+                HistogramAdderSyst(dataHist1DVec, mcIndHist1DCentValVec, mcCompHist1DCentValVec, h_DataComp, h_MCComp, h_FracratioComp, whichNTuple, doAbsRatio, fracRatioYAxisRange);
                 h_ErrComp = (TH1F *) h_MCComp->Clone();
                 errCompCentVal = clonePoints(h_ErrComp);
                 HistMainAttSet(h_DataComp, kWhite, 0, kBlack, 2, kBlack, 20, 0.9);
@@ -563,7 +539,8 @@ int main( int argc, char* argv[]) {
             canvName = "c_";
             canvName += plotVarName;
             canvName += subSampName;
-            if (whichNTuple == 1) canvName += TTBarGenNameDESY[whichTTbarGen];
+//            if (whichNTuple == 1) canvName += TTBarGenNameDESY[whichTTbarGen];
+            canvName += TTBarGenNameDESY[whichTTbarGen];
             mcStackName = "mcStack_";
             mcStackName += plotVarName;
             mcStackName += subSampName;
@@ -594,7 +571,7 @@ int main( int argc, char* argv[]) {
                 if (cutString.Contains("Nothin")) continue;      
                 mcStack = new THStack(caseStackName, "");
                 c_Var = new TCanvas(caseCanvName, caseCanvName, wtopx, wtopy, W_, H_);          
-                HistogramAdderSyst(dataHist1DVec, mcIndHist1DCentValVec, mcCompHist1DCentValVec, h_DataComp, h_MCComp, h_FracratioComp, doAbsRatio, fracRatioYAxisRange);
+                HistogramAdderSyst(dataHist1DVec, mcIndHist1DCentValVec, mcCompHist1DCentValVec, h_DataComp, h_MCComp, h_FracratioComp, whichNTuple, doAbsRatio, fracRatioYAxisRange);
                 h_ErrComp = (TH1F *) h_MCComp->Clone();
                 errCompCentVal = clonePoints(h_ErrComp);
                 HistMainAttSet(h_DataComp, kWhite, 0, kBlack, 2, kBlack, 20, 0.9);

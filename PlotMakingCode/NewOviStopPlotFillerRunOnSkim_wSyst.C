@@ -94,8 +94,9 @@ int main( int argc, const char* argv[] ) {
     float PUWeight;
     float weight, preNVtxRWweight;
     float fillWeight;
-    float MET,MET_Phi,METSig, MET_Phi_preCorr;
+    float MET,METPhi,METSig, METPhi_preCorr;
     float METX, METY, METX_preCorr, METY_preCorr;
+    float genMET, genMETPhi;
     float MT2ll, MT2lb, MT2lbPair1, MT2lbPair2;
     float MT2llCut = 80;
     float MT2lbCut = 172;
@@ -130,7 +131,7 @@ int main( int argc, const char* argv[] ) {
     float preNVtxRWweight_LepEffSFUp, preNVtxRWweight_LepEffSFDown;
     float MT2ll_ShiftUp, MT2ll_ShiftDown;
     float MET_LepESUp, MET_LepESDown, MET_JetESUp, MET_JetESDown, MET_JetERUp, MET_JetERDown;
-    float MET_Phi_LepESUp, MET_Phi_LepESDown, MET_Phi_JetESUp, MET_Phi_JetESDown, MET_Phi_JetERUp, MET_Phi_JetERDown;
+    float METPhi_LepESUp, METPhi_LepESDown, METPhi_JetESUp, METPhi_JetESDown, METPhi_JetERUp, METPhi_JetERDown;
     float MT2lb_LepESUp, MT2lb_LepESDown, MT2lb_JetESUp, MT2lb_JetESDown, MT2lb_JetERUp, MT2lb_JetERDown;
     TFile * MT2llSmearFile = new TFile("MT2llSmear.root");
     TH1D * MT2llMeanSmear = (TH1D*) MT2llSmearFile->Get("MT2llSmear");
@@ -401,7 +402,7 @@ int main( int argc, const char* argv[] ) {
         fileTree.SetBranchAddress( "TNPV",     &nVtx );
         
         fileTree.SetBranchAddress( "TMET",     &MET );
-        fileTree.SetBranchAddress( "TMET_Phi", &MET_Phi );
+        fileTree.SetBranchAddress( "TMETPhi", &METPhi );
         fileTree.SetBranchAddress( "TMETSig",  &METSig );
         
         fileTree.SetBranchAddress( "TLep0Px", &Lep0Px );
@@ -446,6 +447,10 @@ int main( int argc, const char* argv[] ) {
         fileTree.SetBranchAddress( "TBtagJet1E", &BtagJet1E );
         fileTree.SetBranchAddress( "TBtagJet1Index", &BtagJet1Index );
         
+        if (fileTree.GetBranch("TGenMET")) {
+            fileTree.SetBranchAddress("TGenMET", &genMET);
+            fileTree.SetBranchAddress("TGenMETPhi", &genMETPhi);
+        }
         if (fileTree.GetBranch("TGenStopMass0")){
             fileTree.SetBranchAddress( "TGenStopMass0", &TGenStopMass0 );
             fileTree.SetBranchAddress( "TGenStopMass1", &TGenStopMass1 );
@@ -766,7 +771,7 @@ int main( int argc, const char* argv[] ) {
             NJets = eventJetParams->at(0);
             NBtagJets = eventJetParams->at(1);
             MET = met->Pt();
-            MET_Phi = met->Phi();
+            METPhi = met->Phi();
             nVtx = vertMulti;
             nVtxTrue = vertMultiTrue;
             if (doPURW && !doData) {
@@ -858,9 +863,9 @@ int main( int argc, const char* argv[] ) {
         diLepPt = DiLepVec.Pt();
         diLepEta = DiLepVec.Eta();
         diLepPhi = DiLepVec.Phi();
-        MET_Phi_preCorr = MET_Phi;
-        METX_preCorr = MET*TMath::Cos(MET_Phi_preCorr);
-        METY_preCorr = MET*TMath::Sin(MET_Phi_preCorr);
+        METPhi_preCorr = METPhi;
+        METX_preCorr = MET*TMath::Cos(METPhi_preCorr);
+        METY_preCorr = MET*TMath::Sin(METPhi_preCorr);
         METX = METX_preCorr;
         METY = METY_preCorr;
         if (doPhiCorr) MetPhiCorrect(doData, METX, METY, nVtx);        
@@ -868,9 +873,9 @@ int main( int argc, const char* argv[] ) {
             METX *= rand.Gaus(1, METSF * METX);   
             METY *= rand.Gaus(1, METSF * METY);   
         }
-        MET_Phi = TMath::ATan2(METY, METX);
+        METPhi = TMath::ATan2(METY, METX);
         MET = TMath::Sqrt(METX * METX + METY * METY);
-        MT2ll=getMT2(Lep0Vec, Lep1Vec, MET, MET_Phi);
+        MT2ll=getMT2(Lep0Vec, Lep1Vec, MET, METPhi);
         /******************************************************/
         //Systematics//
         Lep0Vec_LepESUp = LeptonScaleSystShift(Lep0Vec, Lep0PdgId, 1.0);
@@ -894,10 +899,10 @@ int main( int argc, const char* argv[] ) {
         leptonVec->push_back(Lep0Vec); leptonVec->push_back(Lep1Vec);
         leptonVecEnUp->push_back(Lep0Vec_LepESUp); leptonVecEnUp->push_back(Lep1Vec_LepESUp);
         leptonVecEnDown->push_back(Lep0Vec_LepESDown); leptonVecEnDown->push_back(Lep1Vec_LepESDown);
-        MET_LepESUp = MET; MET_Phi_LepESUp = MET_Phi;
-        MET_LepESDown = MET; MET_Phi_LepESDown = MET_Phi;
-        METSystShift(leptonVec, leptonVecEnUp, MET_LepESUp, MET_Phi_LepESUp, MET, MET_Phi);
-        METSystShift(leptonVec, leptonVecEnDown, MET_LepESDown, MET_Phi_LepESDown, MET, MET_Phi);
+        MET_LepESUp = MET; METPhi_LepESUp = METPhi;
+        MET_LepESDown = MET; METPhi_LepESDown = METPhi;
+        METSystShift(leptonVec, leptonVecEnUp, MET_LepESUp, METPhi_LepESUp, MET, METPhi);
+        METSystShift(leptonVec, leptonVecEnDown, MET_LepESDown, METPhi_LepESDown, MET, METPhi);
         MT2llSmearFactorBin = MT2llMeanSmear->FindBin(MT2ll);
         if (MT2llSmearFactorBin > 20) MT2llSmearFactorBin = 21;
         MT2llSmearFactor = MT2llMeanSmear->GetBinContent(MT2llSmearFactorBin);
@@ -905,12 +910,12 @@ int main( int argc, const char* argv[] ) {
 //        cout << "MT2ll Smear " << MT2llSmearFactor << endl;
         MT2ll_ShiftUp = MT2ll + rand.Gaus(0, MT2llSmearFactor);
         /******************************************************/
-        //        MT2lb=getMT2(Lep0Vec, BtagJet0Vec, MET, MET_Phi);  
+        //        MT2lb=getMT2(Lep0Vec, BtagJet0Vec, MET, METPhi);  
         //        cout << "NJets " << NJets << endl;
         if (NJets > 1) {
             if (NBtagJets > 1) {
-                MT2lbPair1 = getMT2(Lep0Vec + BtagJet0Vec, Lep1Vec + BtagJet1Vec, MET, MET_Phi);
-                MT2lbPair2 = getMT2(Lep0Vec + BtagJet1Vec, Lep1Vec + BtagJet0Vec, MET, MET_Phi);
+                MT2lbPair1 = getMT2(Lep0Vec + BtagJet0Vec, Lep1Vec + BtagJet1Vec, MET, METPhi);
+                MT2lbPair2 = getMT2(Lep0Vec + BtagJet1Vec, Lep1Vec + BtagJet0Vec, MET, METPhi);
                 if (MT2lbPair1 > MT2lbPair2) {
                     BLep0Vec = Lep0Vec + BtagJet1Vec;
                     BLep1Vec = Lep1Vec + BtagJet0Vec;
@@ -925,8 +930,8 @@ int main( int argc, const char* argv[] ) {
             else if (NBtagJets == 1) {
                 if (whichNTupleType == 1) BtagJet0Index = eventJetParams->at(2);
                 if (BtagJet0Index == 0) { //Btag jet is lead jet
-                    MT2lbPair1 = getMT2(Lep0Vec + BtagJet0Vec, Lep1Vec + Jet1Vec, MET, MET_Phi);
-                    MT2lbPair2 = getMT2(Lep0Vec + Jet1Vec, Lep1Vec + BtagJet0Vec, MET, MET_Phi);
+                    MT2lbPair1 = getMT2(Lep0Vec + BtagJet0Vec, Lep1Vec + Jet1Vec, MET, METPhi);
+                    MT2lbPair2 = getMT2(Lep0Vec + Jet1Vec, Lep1Vec + BtagJet0Vec, MET, METPhi);
                     if (MT2lbPair1 > MT2lbPair2) {
                         BLep0Vec = Lep0Vec + Jet1Vec;
                         BLep1Vec = Lep1Vec + BtagJet0Vec;
@@ -939,8 +944,8 @@ int main( int argc, const char* argv[] ) {
                     //                    cout << "BLep1Vec Energy " << BLep1Vec.E() << endl;
                 }
                 else if (BtagJet0Index != 0) { //Btag jet is not lead jet
-                    MT2lbPair1 = getMT2(Lep0Vec + BtagJet0Vec, Lep1Vec + Jet0Vec, MET, MET_Phi);
-                    MT2lbPair2 = getMT2(Lep0Vec + Jet0Vec, Lep1Vec + BtagJet0Vec, MET, MET_Phi);
+                    MT2lbPair1 = getMT2(Lep0Vec + BtagJet0Vec, Lep1Vec + Jet0Vec, MET, METPhi);
+                    MT2lbPair2 = getMT2(Lep0Vec + Jet0Vec, Lep1Vec + BtagJet0Vec, MET, METPhi);
                     if (MT2lbPair1 > MT2lbPair2) {
                         BLep0Vec = Lep0Vec + Jet0Vec;
                         BLep1Vec = Lep1Vec + BtagJet0Vec;
@@ -952,8 +957,8 @@ int main( int argc, const char* argv[] ) {
                 }
             }
             else {
-                MT2lbPair1 = getMT2(Lep0Vec + Jet0Vec, Lep1Vec + Jet1Vec, MET, MET_Phi);
-                MT2lbPair2 = getMT2(Lep0Vec + Jet1Vec, Lep1Vec + Jet0Vec, MET, MET_Phi);
+                MT2lbPair1 = getMT2(Lep0Vec + Jet0Vec, Lep1Vec + Jet1Vec, MET, METPhi);
+                MT2lbPair2 = getMT2(Lep0Vec + Jet1Vec, Lep1Vec + Jet0Vec, MET, METPhi);
                 if (MT2lbPair1 > MT2lbPair2) {
                     BLep0Vec = Lep0Vec + Jet1Vec;
                     BLep1Vec = Lep1Vec + Jet0Vec;
@@ -1030,16 +1035,16 @@ int main( int argc, const char* argv[] ) {
         stringKeyToVar["MT2ll"] = MT2ll;
         stringKeyToVar["MT2lb"] = MT2lb;
         stringKeyToVar["MET"] = MET;
-        stringKeyToVar["METPhi"] = MET_Phi;
-        stringKeyToVar["METPhi_noPhiCorr"] = MET_Phi_preCorr;
+        stringKeyToVar["METPhi"] = METPhi;
+        stringKeyToVar["METPhi_noPhiCorr"] = METPhi_preCorr;
         stringKeyToVar["NJets"] = NJets;
         stringKeyToVar["NBJets"] = NBtagJets;
         stringKeyToVar["DPhiLep0Lep1"] = dPhi(Lep0Vec.Phi(), Lep1Vec.Phi());
-        stringKeyToVar["DPhiLep0MET"] = dPhi((float) Lep0Vec.Phi(), MET_Phi);
-        stringKeyToVar["DPhiLep1MET"] = dPhi((float) Lep0Vec.Phi(), MET_Phi);
-        stringKeyToVar["DPhiLep0MET_PreCorr"] = dPhi((float) Lep0Vec.Phi(), MET_Phi_preCorr);
-        stringKeyToVar["DPhiLep1MET_PreCorr"] = dPhi((float) Lep0Vec.Phi(), MET_Phi_preCorr);
-        stringKeyToVar["DPhiZMET"] = dPhi((float) (Lep0Vec + Lep1Vec).Phi(), MET_Phi);
+        stringKeyToVar["DPhiLep0MET"] = dPhi((float) Lep0Vec.Phi(), METPhi);
+        stringKeyToVar["DPhiLep1MET"] = dPhi((float) Lep0Vec.Phi(), METPhi);
+        stringKeyToVar["DPhiLep0MET_PreCorr"] = dPhi((float) Lep0Vec.Phi(), METPhi_preCorr);
+        stringKeyToVar["DPhiLep1MET_PreCorr"] = dPhi((float) Lep0Vec.Phi(), METPhi_preCorr);
+        stringKeyToVar["DPhiZMET"] = dPhi((float) (Lep0Vec + Lep1Vec).Phi(), METPhi);
         stringKeyToVar["nVtx"] = (float) nVtx;
         stringKeyToVar["nVtxTrue"] = (float) nVtxTrue;
         stringKeyToVar["METX"] = METX;
@@ -1104,8 +1109,8 @@ int main( int argc, const char* argv[] ) {
             stringKeyToVar["MT2ll_MT2llShiftUp"] = MT2ll_ShiftUp;            
             stringKeyToVar["MET_LepESShiftUp"] = MET_LepESUp;
             stringKeyToVar["MET_LepESShiftDown"] = MET_LepESDown;
-            stringKeyToVar["METPhi_LepESShiftUp"] = MET_Phi_LepESUp;
-            stringKeyToVar["METPhi_LepESShiftDown"] = MET_Phi_LepESDown;
+            stringKeyToVar["METPhi_LepESShiftUp"] = METPhi_LepESUp;
+            stringKeyToVar["METPhi_LepESShiftDown"] = METPhi_LepESDown;
         }
         /*#######################
          MAKE SELECTION CUTS

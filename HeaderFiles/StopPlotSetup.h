@@ -7,8 +7,8 @@ using namespace std;
 
 vector<TString> * StopFileNames(int whichNTuple) {
     vector<TString> * outVec = new vector<TString>;
-    const int numOviTypes = 12;
-    TString fileInNameSpecOviedo[numOviTypes] = {"DataMu12MT2Leq80", "DataEG12MT2Leq80", "DataMuEG12MT2Leq80", "TTbar_MassiveBinDECAY", "TTbar_MassiveBinDECAYBkg", "WWTo2L2Nu_Madgraph", "WZ", "ZZ", "SingTop", "WJets_Madgraph", "ZDY", "Stop"};
+    const int numOviTypes = 14;
+    TString fileInNameSpecOviedo[numOviTypes] = {"DataMuMu", "DataEMu", "DataEE", "TTBarSig", "TTBarBkg", "WW", "WZ", "ZZ", "SingleTop", "WToLNu", "ZDY", "WG", "ZG", "HiggsWW"};
         const int numDESYTypes = 12;
     TString fileInNameSpecDESY[numDESYTypes] = {"DataMuMu", "DataEMu", "DataEE", "TTBarSig", "TTBarBkg", "WW", "WZ", "ZZ", "SingleTop", "WToLNu", "ZDY", "QCD"};
     switch (whichNTuple) {
@@ -33,11 +33,24 @@ vector<TFile *> * StopFiles(int whichNTuple, vector<TString> * fileNames, int wh
     TFile * outTFile;
     TString addPath, fileInNameBase, specNTupString, fileNameSuffix, fileName, TTBarGenString, PURWString, SystString;
     if (whichNTuple == 0) {
-        addPath        = "";
-        fileInNameBase = "TreeAnalysisTop_5311pb-1_";
+        addPath        = "../RootFiles/";
+        fileInNameBase = "";
         specNTupString = "_Oviedo";
-        fileNameSuffix = "_Output.root";
+        fileNameSuffix = "Haddplots.root";
         TTBarGenString = "";
+        switch (whichTTBarGen) {
+            case 0:
+                TTBarGenString = "_Madgraph";
+                break;
+            case 1:
+                TTBarGenString = "_MCatNLO";
+                break;
+            case 2:
+                TTBarGenString = "_Powheg";
+                break;                
+            default:
+                break;
+        }
     }
     else {
         addPath        = "../RootFiles/";
@@ -73,7 +86,7 @@ vector<TFile *> * StopFiles(int whichNTuple, vector<TString> * fileNames, int wh
 
 vector<TString> * MCLegends(int whichNTuple, bool addThings) {
     vector<TString> * outVec = new vector<TString>;
-    TString mcLegendsOviAdd[6] = {"W + Jets", "VV", "Z/#gamma* #rightarrow l^{+}l^{-}", "Single Top", "t#bar{t}", "Stop Mass: "};
+    TString mcLegendsOviAdd[7] = {"Higgs", "W + Jets", "VG", "VV", "Z/#gamma* #rightarrow l^{+}l^{-}", "Single Top", "t#bar{t}"};
     TString mcLegendsDESYAdd[6] = {"W + Jets", "VV", "Z/#gamma* #rightarrow l^{+}l^{-}", "Single Top", "t#bar{t}", "Multijets"};
     TString mcLegendsDESY[9] = {"W + Jets", "WW", "WZ", "ZZ", "Z/#gamma* #rightarrow l^{+}l^{-}", "Single Top", "t#bar{t} sig", "t#bar{t} bkg", "Multijets"};
     switch (whichNTuple) {
@@ -111,13 +124,17 @@ vector<TString> * MCLegends(int whichNTuple, bool addThings) {
 
 vector<Color_t> * MCColors(int whichNTuple, bool addThings) {
     vector<Color_t> * outVec = new vector<Color_t>;
-    Color_t mcColorsOviAdd[6] = {kGreen + 2, kOrange + 2, kBlue, kRed - 10, kRed, kGreen - 2};
-    Color_t mcColorsDESYAdd[6] = {kGreen + 2, kOrange + 2, kBlue, kRed - 10, kRed, kCyan -4};
-    Color_t mcColorsDESY[9] = {kGreen + 2, kOrange + 2, kPink+9, kPink - 8, kBlue, kRed - 10, kRed-5, kRed, kCyan -4};
+    const int numColorsOviAdd = 7;
+//    const int numColorsOvi = 10;    
+    const int numColorsDESYAdd = 6;
+    const int numColorsDESY= 9;
+    Color_t mcColorsOviAdd[numColorsOviAdd] = {kCyan - 2, kGreen + 2, kOrange - 5, kOrange + 2, kBlue, kRed - 10, kRed};
+    Color_t mcColorsDESYAdd[numColorsDESYAdd] = {kGreen + 2, kOrange + 2, kBlue, kRed - 10, kRed, kCyan -4};
+    Color_t mcColorsDESY[numColorsDESY] = {kGreen + 2, kOrange + 2, kPink + 9, kPink - 8, kBlue, kRed - 10, kRed-5, kRed, kCyan - 4};
     switch (whichNTuple) {
         case 0:
             if (addThings) {
-                for (int i = 0; i < 6; ++i) {
+                for (int i = 0; i < numColorsOviAdd; ++i) {
                     outVec->push_back(mcColorsOviAdd[i]);
                 }
             }
@@ -131,15 +148,17 @@ vector<Color_t> * MCColors(int whichNTuple, bool addThings) {
             break;
         case 1:
             if (addThings) {
-                for (int i = 0; i < 6; ++i) {
+                for (int i = 0; i <  numColorsDESYAdd; ++i) {
                     outVec->push_back(mcColorsDESYAdd[i]);
                 }
             }
+            /*
             else {
                 for (int i = 0; i < 6; ++i) {
                     outVec->push_back(mcColorsDESY[i]);
                 }
             }
+            */
             break;            
         default:
             break;
@@ -639,7 +658,7 @@ void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH1 *> * dataHistV
     }
 }
  */
-void HistogramAdderSyst(vector<TH1F *> * dataHistVec, vector<TH1F *> * mcIndHistCentValVec, vector<TH1F *> * mcCompHistCentValVec, TH1F * &DataComp, TH1F * &MCComp, TH1F * &FracComp, bool doAbsRatio, float yAxisRange) {
+void HistogramAdderSyst(vector<TH1F *> * dataHistVec, vector<TH1F *> * mcIndHistCentValVec, vector<TH1F *> * mcCompHistCentValVec, TH1F * &DataComp, TH1F * &MCComp, TH1F * &FracComp, int whichNTuple, bool doAbsRatio, float yAxisRange) {
     cout << "inside Histogram Adder Syst line: 232" << endl;
     /*
     bool cloneTTBar = false;
@@ -652,6 +671,7 @@ void HistogramAdderSyst(vector<TH1F *> * dataHistVec, vector<TH1F *> * mcIndHist
     */
     TString MCName;
     TH1F * TTbarComp, * VVComp, * SingTopComp, * WJComp, * ZDYComp, * QCDComp;
+    TH1F * VGComp, * HiggsComp;
     TH1F * StopComp;
     cout << "inside Histogram Adder Syst line: 242" << endl;
     DataComp = (TH1F *) dataHistVec->at(0)->Clone(dataHistVec->at(0)->GetName() + TString("_DataComp"));
@@ -674,75 +694,17 @@ void HistogramAdderSyst(vector<TH1F *> * dataHistVec, vector<TH1F *> * mcIndHist
     SingTopComp = (TH1F *) mcIndHistCentValVec->at(5)->Clone(mcIndHistCentValVec->at(5)->GetName() + TString("_SingTop"));
     WJComp = (TH1F *) mcIndHistCentValVec->at(6)->Clone(mcIndHistCentValVec->at(6)->GetName() + TString("_WJ"));
     ZDYComp = (TH1F *) mcIndHistCentValVec->at(7)->Clone(mcIndHistCentValVec->at(7)->GetName() + TString("_ZDY"));
-    QCDComp = (TH1F *) mcIndHistCentValVec->at(8)->Clone(mcIndHistCentValVec->at(8)->GetName() + TString("_QCD"));
+    if (whichNTuple == 1) {
+        QCDComp = (TH1F *) mcIndHistCentValVec->at(8)->Clone(mcIndHistCentValVec->at(8)->GetName() + TString("_QCD"));
+    }
+    else {
+        VGComp = (TH1F *) mcIndHistCentValVec->at(8)->Clone(mcIndHistCentValVec->at(8)->GetName() + TString("_VG"));
+        VGComp->Add(mcIndHistCentValVec->at(9));
+        HiggsComp = (TH1F *) mcIndHistCentValVec->at(10)->Clone(mcIndHistCentValVec->at(10)->GetName() + TString("_Higgs"));
+    }
     for (unsigned int j = 0; j < mcIndHistCentValVec->size(); ++j) {
 //        MCName = mcIndHistCentValVec->at(j)->GetName();
         if (j != 0) MCComp->Add(mcIndHistCentValVec->at(j));
-        /*
-        if (MCName.Contains("TTBar")) { 
-            if (!cloneTTBar) {
-                cloneTTBar = true;
-                TTbarComp = (TH1F *) mcIndHistCentValVec->at(j)->Clone(mcIndHistCentValVec->at(j)->GetName() + TString("_TTbar"));
-            }
-            else {
-                TTbarComp->Add(mcIndHistCentValVec->at(j));
-            }
-        }
-        else if (MCName.Contains("SingTop")) { 
-            if (!cloneSingTop) {
-                cloneSingTop = true;
-                SingTopComp = (TH1F *) mcIndHistCentValVec->at(j)->Clone(mcIndHistCentValVec->at(j)->GetName() + TString("_SingTop"));
-            }
-            else {
-                SingTopComp->Add(mcIndHistCentValVec->at(j));
-            }
-        }
-        else if (MCName.Contains("WJ")) { 
-            if (!cloneWJ) {
-                cloneWJ = true;
-                WJComp = (TH1F *) mcIndHistCentValVec->at(j)->Clone(mcIndHistCentValVec->at(j)->GetName() + TString("_WJ"));
-            }
-            else {
-                WJComp->Add(mcIndHistCentValVec->at(j));
-            }
-        }
-        else if (MCName.Contains("ZDY")) {
-            if (!cloneZDY) {
-                cloneZDY = true;
-                ZDYComp = (TH1F *) mcIndHistCentValVec->at(j)->Clone(mcIndHistCentValVec->at(j)->GetName() + TString("_ZDY"));
-            }
-            else {
-                ZDYComp->Add(mcIndHistCentValVec->at(j));
-            }
-        }
-        else if (MCName.Contains("QCD")) {            
-            if (!cloneQCD) {
-                cloneQCD = true;
-                QCDComp = (TH1F *) mcIndHistCentValVec->at(j)->Clone(mcIndHistCentValVec->at(j)->GetName() + TString("_QCD"));
-            }
-            else {
-                QCDComp->Add(mcIndHistCentValVec->at(j));
-            }
-        }
-        else if ((MCName.Contains("WW") || MCName.Contains("WZ") || MCName.Contains("ZZ"))) {
-            if (!cloneVV) {
-                cloneVV = true;
-                VVComp = (TH1F *) mcIndHistCentValVec->at(j)->Clone(mcIndHistCentValVec->at(j)->GetName() + TString("_VV"));
-            }
-            else {
-                VVComp->Add(mcIndHistCentValVec->at(j));                
-            }
-        }
-        else if (MCName.Contains("Stop")) {            
-            if (!cloneStop) {
-                cloneStop = true;
-                StopComp = (TH1F *) mcIndHistCentValVec->at(j)->Clone(mcIndHistCentValVec->at(j)->GetName() + TString("_Stop"));
-            }
-            else {
-                StopComp->Add(mcIndHistCentValVec->at(j));
-            }
-        }
-         */
     }
     cout << "inside Histogram Adder Syst line: 317" << endl;
     if (doAbsRatio) {
@@ -756,17 +718,29 @@ void HistogramAdderSyst(vector<TH1F *> * dataHistVec, vector<TH1F *> * mcIndHist
         FracComp->Divide(FracComp, DataComp, 1, 1, "");
         HistAxisAttSet(FracComp->GetYaxis(), TString("(MC-Data)/Data"), .15, .54, .14, .011, -1.0 * yAxisRange, 1.0 * yAxisRange);
 
-    }  
-    mcCompHistCentValVec->push_back(WJComp);
-    mcCompHistCentValVec->push_back(VVComp);
-    mcCompHistCentValVec->push_back(ZDYComp);
-    mcCompHistCentValVec->push_back(SingTopComp);
-    mcCompHistCentValVec->push_back(TTbarComp);
-    cout << "inside Histogram Adder Syst line: 340 " << endl;
-    cout << "QCDComp->GetName()  " << QCDComp->GetName()  << endl;
-    cout << "QCDComp->Integral()  " << QCDComp->Integral()  << endl;
+    } 
+    cout << "inside Histogram Adder Syst line: 322" << endl;
+    if (whichNTuple == 0) {
+        mcCompHistCentValVec->push_back(HiggsComp);
+        mcCompHistCentValVec->push_back(WJComp);
+        mcCompHistCentValVec->push_back(VGComp);
+        mcCompHistCentValVec->push_back(VVComp);
+        mcCompHistCentValVec->push_back(ZDYComp);
+        mcCompHistCentValVec->push_back(SingTopComp);
+        mcCompHistCentValVec->push_back(TTbarComp);
+    }
+    else {
+        mcCompHistCentValVec->push_back(WJComp);
+        mcCompHistCentValVec->push_back(VVComp);
+        mcCompHistCentValVec->push_back(ZDYComp);
+        mcCompHistCentValVec->push_back(SingTopComp);
+        mcCompHistCentValVec->push_back(TTbarComp);  
+        mcCompHistCentValVec->push_back(QCDComp);
+        
+        cout << "QCDComp->GetName()  " << QCDComp->GetName()  << endl;
+        cout << "QCDComp->Integral()  " << QCDComp->Integral()  << endl;
+    }
 //    if (QCDComp->Integral() > 0) mcCompHistCentValVec->push_back(QCDComp); put this in later
-    mcCompHistCentValVec->push_back(QCDComp);
     cout << "inside Histogram Adder Syst line: 342" << endl;
 //    if (StopComp->Integral() > 0) mcCompHistCentValVec->push_back(StopComp);
     cout << "inside Histogram Adder Syst line: 344" << endl;

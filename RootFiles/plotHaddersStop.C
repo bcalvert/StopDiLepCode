@@ -93,6 +93,7 @@ int main( int argc, const char* argv[] ) {
     bool doPURW       = 0;          // grab the nVtx reweighted MC files
     bool doSyst       = 1;          // look at systematics plots -- (6/25/13) don't turn off for now haven't validated code fully when not making systematics
     bool beVerbose    = 0;
+    bool doHardCodeNumParFiles = 0;   // fix for an issue with Oviedo nTuples -- temporary (put in 7/18/13
     for (int k = 0; k < argc; ++k) {
         cout << "argv[k] for k = " << k << " is: " << argv[k] << endl;
         if (strncmp (argv[k],"wNTuple", 7) == 0) {
@@ -112,7 +113,8 @@ int main( int argc, const char* argv[] ) {
         }
     }
     gROOT->ProcessLine("#include <vector>");
-    
+    if (whichNTuple == 0) doHardCodeNumParFiles = 1;
+    int hardCodeNumParFiles = 10;
     // set up input/output strings
     vector<TString> * nameStringVec = new vector<TString>;
     TString nTupleString, PURWString, doSystString;
@@ -201,6 +203,11 @@ int main( int argc, const char* argv[] ) {
         if (boolSampVec->at(i)) {
             currWeightBaseVec = WeightBaseVec(whichNTuple, fileListVec, i, nEventHistName, nParFileHistName, numParFilesVec);
             weightBasesVec->push_back(currWeightBaseVec);
+            if (doHardCodeNumParFiles) {
+                for (unsigned iHardCode = 0; iHardCode < numParFilesVec->size(); ++iHardCode) {
+                    numParFilesVec->at(iHardCode) = hardCodeNumParFiles;
+                }
+            }
             currWeightVec = WeightVec(whichNTuple, L_data, currWeightBaseVec, i, numParFilesVec);
             weightVec->push_back(currWeightVec);
         }
