@@ -114,7 +114,7 @@ int main( int argc, const char* argv[] ) {
     }
     gROOT->ProcessLine("#include <vector>");
     if (whichNTuple == 0) doHardCodeNumParFiles = 1;
-    int hardCodeNumParFiles = 10;
+    int hardCodeNumParFiles = 1;
     // set up input/output strings
     vector<TString> * nameStringVec = new vector<TString>;
     TString nTupleString, PURWString, doSystString;
