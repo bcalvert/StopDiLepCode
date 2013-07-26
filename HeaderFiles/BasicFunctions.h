@@ -3,7 +3,7 @@
 #include "TH1F.h"
 #include "TPad.h"
 #include "TCanvas.h"
-#include "/Users/BrianCalvert/Desktop/LocalRootRunArea/HistogramStyleFunctions.h"
+#include "./HistogramStyleFunctions.h"
 float nDigits(float number, int digits) {
   return round(number * std::pow(10.,digits)) / std::pow(10.,digits);
 }
