@@ -64,7 +64,7 @@ int main( int argc, const char* argv[] ) {
     TString fileTreeName;    
     TString fInName;
     TString fOutName;    
-    TH1F * eventCount;
+    TH1F * h_eventCount = new TH1F("h_eventCount", "; numEvents (# of Entries);", 2, -0.5, 1.5);
     
     /////Event Variables/////////////////////
     
@@ -137,6 +137,7 @@ int main( int argc, const char* argv[] ) {
     VertZ = new vector<float>;
     
     int   Type, nVtx, nVtxTrue;
+    int   RunNum, EventNum, LumiBlock;
     float MET,MET_Phi,METSig;
     float METX, METY;
     float Lep0Px,Lep0Py,Lep0Pz,Lep0E,Lep1Px,Lep1Py,Lep1Pz,Lep1E;
@@ -148,8 +149,11 @@ int main( int argc, const char* argv[] ) {
     int   BtagJet0Index, BtagJet1Index;
     float BDT,BDTDis;
     
-    float genStopMass0,genStopMass1,genChi0Mass0,genChi0Mass1;
-    
+    int genStopMass0, genStopMass1, genChi0Mass0, genChi0Mass1, genCharginoMass0, genCharginoMass1;
+    float genStopMassCut, genChi0MassCut, genCharginoMassCut;
+    genStopMassCut = 0;
+    genChi0MassCut = 0;
+    genCharginoMassCut = 0;
 // Gen info
     vector<float> * genStopMass, * genChi0Mass, * genCharginoMass;
     vector<double> * genPolWeights;
@@ -273,6 +277,9 @@ int main( int argc, const char* argv[] ) {
     bool doPURW          = 0;
     bool doHackPURW      = 0;
     bool doPURWOviToDESY = 0;
+    bool doSignal        = 0;
+    bool printEventNum   = 0;
+    bool doMassCut       = 0;
     /////loop over inputs
     for (int k = 0; k < argc; ++k) {
         cout << "argv[k] for k = " << k << " is: " << argv[k] << endl;
@@ -296,6 +303,18 @@ int main( int argc, const char* argv[] ) {
         }
         else if (strncmp (argv[k],"gOutDir", 7) == 0) {
             grabOutDir = 1;
+        }
+        else if (strncmp (argv[k],"isSig", 5) == 0) {
+            doSignal = 1;
+        }
+        else if (strncmp (argv[k],"pEvNum", 6) == 0) {
+            printEventNum = 1;
+        }
+        else if (strncmp (argv[k],"doMassCut", 9) == 0) {
+            doMassCut = 1;
+            genStopMassCut = strtol(argv[k+1], NULL, 10);   
+            genChi0MassCut = strtol(argv[k+2], NULL, 10);   
+            genCharginoMassCut = strtol(argv[k+3], NULL, 10);   
         }
     }
     char Buffer[500];
@@ -411,12 +430,24 @@ int main( int argc, const char* argv[] ) {
     //generator information
     fileTree.SetBranchAddress( "T_Gen_StopMass", &genStopMass );
     fileTree.SetBranchAddress( "T_Gen_Chi0Mass", &genChi0Mass );
+    fileTree.SetBranchAddress( "T_Gen_CharginoMass", &genCharginoMass );
     fileTree.SetBranchAddress( "T_METgen_ET", &genMET );
     fileTree.SetBranchAddress( "T_METgen_Phi", &genMETPhi );
+    
+    //run information
+    fileTree.SetBranchAddress( "T_Event_RunNumber", &RunNum );
+    fileTree.SetBranchAddress( "T_Event_EventNumber", &EventNum );
+    fileTree.SetBranchAddress( "T_Event_LuminosityBlock", &LumiBlock );
+    
+    
+    ///Out tree information
     
     outTree->Branch("TWeight",   &weight);
     outTree->Branch("TChannel",  &Type);
     outTree->Branch("TNPV",      &nVtx);
+    outTree->Branch("TRunNum",   &RunNum);
+    outTree->Branch("TEventNum", &EventNum);
+    outTree->Branch("TLumiBlock",&LumiBlock);
     outTree->Branch("TMET",      &MET);
     outTree->Branch("TMET_Phi",  &MET_Phi);
     outTree->Branch("TMETSig",   &METSig);
@@ -457,16 +488,20 @@ int main( int argc, const char* argv[] ) {
     outTree->Branch("TBtagJet1E",    &BtagJet1E);
     outTree->Branch("TBtagJet1Index",    &BtagJet1Index);
     
-    if (fInName.Contains("FineBin")) {
+    if (doSignal) {
         outTree->Branch("TGenStopMass0", &genStopMass0);
         outTree->Branch("TGenStopMass1", &genStopMass1);
         outTree->Branch("TGenChi0Mass0", &genChi0Mass0);
         outTree->Branch("TGenChi0Mass1", &genChi0Mass1);
+        outTree->Branch("TGenCharginoMass0", &genCharginoMass0);
+        outTree->Branch("TGenCharginoMass1", &genCharginoMass1);
     }
     outTree->Branch("TGenMET", &genMET);
     outTree->Branch("TGenMETPhi", &genMETPhi);
 
     cout << "--- Processing: " << fileTree.GetEntries() << " events" << endl;
+    h_eventCount->Fill(1);
+    h_eventCount->SetEntries(fileTree.GetEntries());
     outputFile->cd();
 //    int lep0Index, lep1Index;
     bool doEvent;
@@ -482,6 +517,14 @@ int main( int argc, const char* argv[] ) {
     TLorentzVector patsyVec;
     /////Iterate over events    
     
+    
+    float roundNum = 1.0;
+    int roundMult = 1;
+    if (doSignal) {
+        roundNum = (fInName.Contains("to") || fInName.Contains("FineBin")) ? 10.0 : 1.0;
+        roundMult = (fInName.Contains("to") || fInName.Contains("FineBin")) ? 10 : 1;
+    }
+    
     for (Long64_t ievt=0; ievt<fileTree.GetEntries();ievt++) {
 //    for (Long64_t ievt=0; ievt<100;ievt++) {
         Leptons = new vector<TLorentzVector>;
@@ -494,11 +537,34 @@ int main( int argc, const char* argv[] ) {
         doEvent = true;
         map<string, float> stringKeyToVar;
         fileTree.GetEntry(ievt);
-        if (fInName.Contains("FineBin")) {
-            genStopMass0 = genStopMass->at(0);
-            genStopMass1 = genStopMass->at(1);
-            genChi0Mass0 = genChi0Mass->at(0);
-            genChi0Mass1 = genChi0Mass->at(1);
+        genStopMass0 = -1.;
+        genStopMass1 = -1.;
+        genChi0Mass0 = -1.;
+        genChi0Mass1 = -1.;
+        genCharginoMass0 = -1.;
+        genCharginoMass1 = -1.;
+        if (doSignal) {
+            if (genStopMass->size() > 1) {
+                genStopMass0 = TMath::Nint(genStopMass->at(0)/roundNum) * roundMult;
+                genStopMass1 = TMath::Nint(genStopMass->at(1)/roundNum) * roundMult;
+            }
+            if (genChi0Mass->size() > 1) {
+                genChi0Mass0 = TMath::Nint(genChi0Mass->at(0)/roundNum) * roundMult;
+                genChi0Mass1 = TMath::Nint(genChi0Mass->at(1)/roundNum) * roundMult;
+            }
+            if (genCharginoMass->size() > 1) {
+                genCharginoMass0 = TMath::Nint(genCharginoMass->at(0)/roundNum) * roundMult;
+                genCharginoMass0 = TMath::Nint(genCharginoMass->at(1)/roundNum) * roundMult;
+            }
+            if (doMassCut) {
+                if (genStopMass0 >=0 && abs(genStopMassCut - genStopMass0) < 2.5) continue;
+                if (genChi0Mass0 >=0 && abs(genChi0MassCut - genChi0Mass0) < 2.5) continue;
+                if (genCharginoMass0 >=0 && abs(genCharginoMassCut - genCharginoMass0) < 2.5) continue;
+            }
+        }
+        if (printEventNum) {
+            cout << "in format EventNum:genStopMass:genChi0Mass:genCharginoMass ";
+            cout << EventNum << ":" << genStopMass0 << ":" << genChi0Mass0 << ":" <<  genCharginoMass0 << endl;
         }
         weight = 1.;
         float preNVtxRWweight = 1;  
@@ -671,6 +737,7 @@ int main( int argc, const char* argv[] ) {
     outputFile->cd();
     cout << "cd-ing to output directory" << endl;
     outputFile->Write();
+    h_eventCount->Write();    
     cout << "Writing of output file done" << endl;
     outputFile->Close();
     cout << "end of code" << endl;
