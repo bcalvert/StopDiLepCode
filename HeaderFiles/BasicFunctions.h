@@ -3,6 +3,7 @@
 #include "TH1F.h"
 #include "TPad.h"
 #include "TCanvas.h"
+#include "/Users/BrianCalvert/Desktop/LocalRootRunArea/HistogramStyleFunctions.h"
 float nDigits(float number, int digits) {
   return round(number * std::pow(10.,digits)) / std::pow(10.,digits);
 }
@@ -21,7 +22,27 @@ void relErrSet(TH1F * inputRelErrHist, TH1F * inputErrHist) {
         inputErrHist->SetBinError(i, inputErrHist->GetBinContent(i)*inputRelErrHist->GetBinError(i));
     }
 }
-
+TH1F * FracRatioHist(TH1F * hist1, TH1F * hist2, TString numString, TString denomString, bool doAbsRatio, TString fracratioBaseName, float fracRatioYAxisRange) {
+    TString fracratioName = hist1->GetName();
+    fracratioName += fracratioBaseName;
+    TString fracRatioTitle = numString;
+    fracRatioTitle += "/";
+    fracRatioTitle += denomString;
+    TH1F * fracRatioHist;
+    if (doAbsRatio) {
+        fracRatioHist = (TH1F *) hist1->Clone(fracratioName);
+        fracRatioHist->Divide(fracRatioHist, hist2, 1, 1, "");
+        HistAxisAttSet(fracRatioHist->GetYaxis(), fracRatioTitle, .15, .54, .14, .011, 1.0 - fracRatioYAxisRange, 1.0 + fracRatioYAxisRange); 
+        
+    }
+    else {
+        fracRatioHist = (TH1F *) hist2->Clone(fracratioName);
+        fracRatioHist->Add(hist1, -1);
+        fracRatioHist->Divide(fracRatioHist, hist1, 1, 1, "");        
+        HistAxisAttSet(fracRatioHist->GetYaxis(), fracRatioTitle, .15, .54, .14, .011, -1.0 * fracRatioYAxisRange, 1.0 * fracRatioYAxisRange);        
+    }
+    return fracRatioHist;
+}
 void FixPad(TPad * &inputPad, int whichPad, TCanvas * &inputCanvas) {
     //    cout << "inputPad " << inputPad << endl;
     float m = 1.3;
@@ -86,4 +107,36 @@ void FixPad(TPad * &inputPad, int whichPad, TCanvas * &inputCanvas) {
         inputPad->SetFrameLineWidth(2);
         inputPad->SetFrameBorderMode(0);
     }
+}
+void FixPadSingle(TPad * &inputPad, TCanvas * &inputCanvas) {
+    //    cout << "inputPad " << inputPad << endl;
+    Double_t padLeftMargin = 0.17;
+    Double_t padRightMargin = 0.03;
+    Double_t padTopMargin = 0.03;
+    Double_t padBottomMargin = 0.11;
+    Double_t canvWidth = 800.;
+    Double_t canvHeight = 800.;
+    
+    inputCanvas->SetWindowSize(canvWidth, canvHeight);    
+    TString padname_ = "Pad_";
+    padname_ += inputCanvas->GetTitle();
+    Double_t xLow = 0.;
+    Double_t xUp = 1.;
+    Double_t yLow = 0.;
+    Double_t yUp = 1.;
+    Color_t borderColor = kWhite;
+    Short_t borderSize = 0;
+    Short_t borderMode = 0;
+    
+    inputPad->SetPad(padname_, padname_, xLow, yLow, xUp, yUp, borderColor, borderSize, borderMode);
+    inputPad->SetLeftMargin(padLeftMargin);
+    inputPad->SetRightMargin(padRightMargin);
+    inputPad->SetBottomMargin(padBottomMargin);
+    inputPad->SetTopMargin(padTopMargin);
+    inputPad->SetFillColor(0);
+    inputPad->SetTickx(1);
+    inputPad->SetTicky(1);
+    inputPad->SetFrameFillStyle(0);
+    inputPad->SetFrameLineWidth(2);
+    inputPad->SetFrameBorderMode(0);
 }
