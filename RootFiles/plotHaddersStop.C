@@ -175,7 +175,8 @@ int main( int argc, const char* argv[] ) {
     else {
         boolSampVec->push_back(doVG);
         boolSampVec->push_back(doVG);
-        boolSampVec->push_back(doHiggs);        
+        boolSampVec->push_back(doHiggs);
+        boolSampVec->push_back(doHiggs);
     }
     vector<TList*> * fileListVec = FileListVec(whichNTuple, nameStringVec, boolSampVec);
     vector<TFile*> * outFileVec = OutFileVec(whichNTuple, nameStringVec, boolSampVec);
@@ -199,6 +200,7 @@ int main( int argc, const char* argv[] ) {
         L_data = indLumiDESY[0] + indLumiDESY[1] + indLumiDESY[2] + indLumiDESY[3];
     }
     cout << "L_data " << L_data << endl;
+    cout << "bool samp size " << boolSampVec->size() << endl;
     for (unsigned int i = 0; i < boolSampVec->size(); ++i) {
         if (boolSampVec->at(i)) {
             currWeightBaseVec = WeightBaseVec(whichNTuple, fileListVec, i, nEventHistName, nParFileHistName, numParFilesVec);

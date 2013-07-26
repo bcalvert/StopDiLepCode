@@ -448,6 +448,10 @@ int main( int argc, const char* argv[] ) {
         fileTree.SetBranchAddress( "TBtagJet1E", &BtagJet1E );
         fileTree.SetBranchAddress( "TBtagJet1Index", &BtagJet1Index );
         
+        fileTree.SetBranchAddress( "TRunNum", &runNumber );
+        fileTree.SetBranchAddress( "TEventNum", &eventNumber );
+        fileTree.SetBranchAddress( "TLumiBlock", &lumiBlock );
+        
         if (fileTree.GetBranch("TGenMET")) {
             fileTree.SetBranchAddress("TGenMET", &genMET);
             fileTree.SetBranchAddress("TGenMETPhi", &genMETPhi);
@@ -530,7 +534,7 @@ int main( int argc, const char* argv[] ) {
                 xBinMin = H_Current.xMin;
                 xBinMax = H_Current.xMax;
             }
-            if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel) {
+            if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !(H_Current.name.Contains("h_MT2llControl"))) {
                 xBinMax = xBinMax / 2;
             }
 //            if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.
@@ -550,7 +554,7 @@ int main( int argc, const char* argv[] ) {
             nYBins = H_Current.yBinN;
             yBinMin = H_Current.yMin;
             yBinMax = H_Current.yMax;
-            if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel) {
+            if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !(H_Current.name.Contains("h_MT2llControl"))) {
                 xBinMax = xBinMax / 2;
             }
             h_2DCurr = new TH2D(histTitle, axesTitle, nXBins, xBinMin, xBinMax, nYBins, yBinMin, yBinMax); h_2DCurr->Sumw2();
@@ -572,7 +576,7 @@ int main( int argc, const char* argv[] ) {
              nZBins = H_Current.zBinN;
              zBinMin = H_Current.zMin;
              zBinMax = H_Current.zMax;
-             if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel) {
+             if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !(H_Current.name.Contains("h_MT2llControl"))) {
                  xBinMax = xBinMax / 2;
              }
              h_3DCurr = new TH3D(histTitle, axesTitle, nXBins, xBinMin, xBinMax, nYBins, yBinMin, yBinMax, nZBins, zBinMin, zBinMax); h_3DCurr->Sumw2(); 
@@ -594,7 +598,7 @@ int main( int argc, const char* argv[] ) {
                     xBinMin = H_Current.xMin;
                     xBinMax = H_Current.xMax;
                 }
-                if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel) {
+                if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !(H_Current.name.Contains("h_MT2llControl"))) {
                     xBinMax = xBinMax / 2;
                 }
                 h_1DCurr = new TH1D(histTitle, axesTitle, nXBins, xBinMin, xBinMax); h_1DCurr->Sumw2();
@@ -664,7 +668,6 @@ int main( int argc, const char* argv[] ) {
         cout << "TGenChi0Mass1 " << TGenChi0Mass1 << endl;
         */
         if (isSignal) {
-            if (!fInName.Contains("FineBin")) continue;
             if (abs(TGenStopMass0 - grabStopMass) > massDiffThresh) continue;
             if (abs(TGenStopMass1 - grabStopMass) > massDiffThresh) continue;
             if (abs(TGenChi0Mass0 - grabChi0Mass) > massDiffThresh) continue;
@@ -1129,7 +1132,10 @@ int main( int argc, const char* argv[] ) {
             if (!(S_Current.whichdiLepType < 0 || Type == S_Current.whichdiLepType)) continue;
             if (!(NJets >= S_Current.cutNJets)) continue;
             if (!(NBtagJets >= S_Current.cutNBJets)) continue;
-            if (!(S_Current.doZVeto < 0 || ZVeto == S_Current.doZVeto)) continue;
+            if (!(S_Current.doZVeto < 0 || ZVeto == S_Current.doZVeto)) {
+                if (Type == 0 || Type == 1) continue;
+                if (!S_Current.histNameSuffix.Contains("FullCut")) continue;                                                     
+            }
             if ((Type == 0 || Type == 1) && MET < S_Current.cutMET) continue;
             if (S_Current.histNameSuffix.Contains("BothinBarrel")) {
                 if (!(TMath::Abs(Lep0Vec.Eta()) < barrelEtaEnd && TMath::Abs(Lep1Vec.Eta()) < barrelEtaEnd)) continue;
@@ -1355,6 +1361,17 @@ int main( int argc, const char* argv[] ) {
                         }
                         if (S_Current.blindDataChannel && H_Current.xVarKey == "MT2lb") {
                             if (blindData && doData && MT2lb > MT2lbCut) continue;
+                        }
+                        if (H_Current.name.Contains("h_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx")) {
+                            if (H_Current.name.Contains("21to30")) {
+                                if ((nVtx > 30 || nVtx < 21)) continue;
+                            }
+                            else if (H_Current.name.Contains("11to20")) {
+                                if ((nVtx > 20 || nVtx < 11)) continue;
+                            }
+                            else if (H_Current.name.Contains("1to10")) {
+                                if ((nVtx > 10 || nVtx < 1)) continue;
+                            }
                         }
                         histMap_3D[histKey(H_Current, S_Current)]->Fill(xIter->second, yIter->second, zIter->second, weight); //there could be shenanigans with this one   
                     }

@@ -1,7 +1,7 @@
 #include <iostream>
 #include "../HeaderFiles/BasicFunctions.h"
-#include "../HeaderFiles/HistogramStyleFunctions.h"
-#include "../HeaderFiles/HistogramDataMCPlottingVer2.h"
+//#include "../HeaderFiles/HistogramStyleFunctions.h"
+//#include "../HeaderFiles/HistogramDataMCPlottingVer2.h"
 #include "../HeaderFiles/HistogramSystematics2.h"
 #include "../HeaderFiles/StopPlotSetup.h"
 #include "../HeaderFiles/StopFunctionDefinitions_v2.h"
@@ -22,6 +22,9 @@
 #include <vector>
 #include <cmath>
 #include <sstream>
+#include <fstream>
+#include <string>
+#include <iostream>
 
 using namespace std;
 int main( int argc, char* argv[]) {
@@ -30,8 +33,10 @@ int main( int argc, char* argv[]) {
     int whichNTuple   = 1;          //as with the plot making code, leave as 1 for now -- 0 is Oviedo, 1 is DESY    
     int whichTTbarGen = 0;          // 0 is Madgraph, 1 is MC@NLO, 2 is Powheg
     bool doPURW       = 0;          // grab the nVtx reweighted MC files
-    bool doSyst       = 1;          // look at systematics plots -- (6/25/13) don't turn off for now haven't validated code fully when not making systematics
+    bool doSyst       = 1;          // look at systematics plots -- (6/25/13) don't turn off for now haven't validated code fully when not making systematicslumi
     bool addThings    = 1;          // Add together similar kinds of events (for aesthetic reasons) like VV backgrounds -- (6/25/13) don't turn off for now haven't validated code fully when not adding
+    bool calcTTBarNorm = 0;         // calculate TTBar normalization by utilizing integral to data - (other backgrounds) for MT2ll < 80 in the "Full Cut region"
+    bool useDDEstimate = 0;         // whether or not to use data-driven estimates for appropriate backgrounds -- as of right now it is just the TTBar norm to MT2ll < 80 GeV (7/22/13)
     bool doOneDee     = 1;          // Plots 1D histograms, as in the 1D HistTs defined in StopFunctionDefinitions_v2.h
     bool doTwoDee     = 0;          // Plots 2D histograms, as in the 2D HistTs defined in StopFunctionDefinitions_v2.h -- note, this involves making projections and what-not so there (as of 7/10/13) isn't actual plotting of 2D histograms
     bool doThreeDee   = 0;          // Plots 3D histograms, as in the 3D HistTs defined in StopFunctionDefinitions_v2.h -- note, this involves making projections and what-not so there (as of 7/10/13) isn't actual plotting of 3D histograms
@@ -40,6 +45,12 @@ int main( int argc, char* argv[]) {
     bool doStats      = 0;          // show statistics for data and mc spectra on plots -- e.g. mean and RMS -- (6/25/13) haven't tested yet to see how positioning looks
     bool doAbsRatio   = 0;          // Affects what gets shown in fractional ratio plots -- 0: (MC - Data) / Data, 1: Data/MC
     bool saveDotCFile = 0;          // If on, saves a .C version of every plot that is made
+    
+    bool singSampCompare  = 0;          // For doing comparisons between some set of two single samples (for example, given SM bkgds); can be just a single sample to see what it looks like
+    bool diffFilesSingSampCompare = 0;  // For grabbing same sample across different files
+    TString firstSampSetupFile = "";     // file name for the first file containing the information for what sample/histogram to look at
+    TString secondSampSetupFile = "";     // file name for the second file containing the information for what sample/histogram to look at
+    bool multHistsSingSampCompare = 1;  // if there will be multiple histograms to look at
     for (int k = 0; k < argc; ++k) {
         cout << "argv[k] for k = " << k << " is: " << argv[k] << endl;
         if (strncmp (argv[k],"wChan", 5) == 0) {
@@ -60,13 +71,19 @@ int main( int argc, char* argv[]) {
         else if (strncmp (argv[k],"noAdd", 5) == 0) {
             addThings = 0;
         }
+        else if (strncmp (argv[k],"calcTTBarNorm", 13) == 0) {
+            calcTTBarNorm = 1;
+        }
+        else if (strncmp (argv[k],"useDDEst", 8) == 0) {
+            useDDEstimate = 1;
+        }
         else if (strncmp (argv[k],"noOneDee", 8) == 0) {
             doOneDee = 0;
         }
-        else if (strncmp (argv[k],"TwoDee", 6) == 0) {
+        else if (strncmp (argv[k],"doTwoDee", 6) == 0) {
             doTwoDee = 1;
         }
-        else if (strncmp (argv[k],"ThreeDee", 8) == 0) {
+        else if (strncmp (argv[k],"doThreeDee", 8) == 0) {
             doThreeDee = 1;
         }
         else if (strncmp (argv[k],"Chi2", 4) == 0) {
@@ -80,6 +97,16 @@ int main( int argc, char* argv[]) {
         }
         else if (strncmp (argv[k],"sDCF", 4) == 0) {
             saveDotCFile = 1;
+        }
+        else if (strncmp (argv[k],"SSComp", 6) == 0) {
+            singSampCompare = 1;
+            firstSampSetupFile = TString(argv[k+1]);
+            firstSampSetupFile += ".txt";
+        }
+        else if (strncmp (argv[k],"diffFileSSComp", 14) == 0) {
+            diffFilesSingSampCompare = 1;
+            secondSampSetupFile = TString(argv[k+1]);
+            secondSampSetupFile += ".txt";
         }
     }
     gROOT->ProcessLine("#include <vector>");
@@ -176,20 +203,135 @@ int main( int argc, char* argv[]) {
     vector<TGraphAsymmErrors *> * errCompSpecSource_pStat; // for each specific source, will contain Stat + respective systematic error -- note, will contain errQuadSum_pStat as a final dude
     vector<TString> * systCanvNameVec;
     
-    //plotting stuff
+    ////Single sample plot looks
+    char Buffer[500];
+    bool doAllPlots = false;
+    bool scaleTosame = true;
+    TString s2sName = (scaleTosame) ? "ON!" : "OFF!";
+    cout << "Scaling compared things to same integral is turned " << s2sName << endl;
+    float histOneIntegral, histTwoIntegral;
+    TString addPath = "../RootFiles/";
+    TString singPlot2MakeFirstFile = "";
+    TString singPlot2MakeSecondFile = "";
+    TString firstSampInFileName = "";
+    TString firstSampInFileBaseName = "";
+    TFile * firstSampInFile;
+    ifstream * firstSampFileStream;
+    TString secondSampInFileName = "";
+    TString secondSampInFileBaseName = "";
+    TFile * secondSampInFile;
+    ifstream * secondSampFileStream;
+    
+    TH1F * histOne1D, * histTwo1D;
+    TH2F * histOne2D, * histTwo2D;
+    TH3F * histOne3D, * histTwo3D;
+    vector<TH1F *> * histOne1DSystVec, * histTwo1DSystVec;
+    vector<TH2F *> * histOne2DSystVec, * histTwo2DSystVec;
+    vector<TH3F *> * histOne3DSystVec, * histTwo3DSystVec;
+    
+    vector<TH1F *> * histOneCDF1DSystVec, * histTwoCDF1DSystVec;
+    vector<TH2F *> * histOneCDF2DSystVec, * histTwoCDF2DSystVec;
+    vector<TH3F *> * histOneCDF3DSystVec, * histTwoCDF3DSystVec;
+    
+    Color_t histColors[2] = {kBlue, kRed};
+    /*
+     //Note these will get used in the comparison but don't mean anything otherwise
+     fracRatioSystVec = new vector<TGraphAsymmErrors *>;
+     errCompSpecSource = new vector<TGraphAsymmErrors *>;
+     errCompSpecSource_pStat = new vector<TGraphAsymmErrors *>;
+     systCanvNameVec = new vector<TString>;
+     */
+    TString histOneplot, histOneplot_preRW, histTwoplot, histTwoplot_preRW;
+    TString addPlotVarName;
+    
+    if (singSampCompare) {
+        firstSampFileStream = new ifstream(firstSampSetupFile);
+        if (!(firstSampFileStream->eof())) {
+            firstSampFileStream->getline(Buffer, 500);
+            firstSampInFileBaseName += TString(string(Buffer));
+            firstSampInFileName += TString(string(Buffer));
+            firstSampInFileName += (doPURW) ? "_PURW": "";
+            firstSampInFileName += (doSyst) ? "_wSyst": "";
+            firstSampInFileName += "Haddplots.root";
+            firstSampInFile = new TFile(addPath + firstSampInFileName);
+            if (!(firstSampFileStream->eof())) {
+                firstSampFileStream->getline(Buffer, 500);
+                singPlot2MakeFirstFile += TString(string(Buffer));
+                cout << "singPlot2MakeFirstFile from second line " << singPlot2MakeFirstFile << endl;
+                if (!(firstSampFileStream->eof()) && !diffFilesSingSampCompare) {
+                    firstSampFileStream->getline(Buffer, 500);
+                    singPlot2MakeSecondFile += TString(string(Buffer));
+                    cout << "singPlot2MakeSecondFile from third line " << singPlot2MakeSecondFile << endl;
+                }
+                if (singPlot2MakeFirstFile == "") doAllPlots = true;
+            }
+            else {
+                doAllPlots = true;
+            }
+        }
+    }
+    if (diffFilesSingSampCompare) {
+        secondSampFileStream = new ifstream(secondSampSetupFile);
+        if (!(secondSampFileStream->eof())) {
+            secondSampFileStream->getline(Buffer, 500);
+            secondSampInFileBaseName += TString(string(Buffer));
+            secondSampInFileName += TString(string(Buffer));
+            secondSampInFileName += (doPURW) ? "_PURW": "";
+            secondSampInFileName += (doSyst) ? "_wSyst": "";
+            secondSampInFileName += "Haddplots.root";
+            secondSampInFile = new TFile(addPath + secondSampInFileName);
+            if (!(secondSampFileStream->eof())) {
+                secondSampFileStream->getline(Buffer, 500);
+                singPlot2MakeSecondFile += TString(string(Buffer));
+            }
+        }
+    }
+    if (singPlot2MakeFirstFile != singPlot2MakeSecondFile) {
+        cout << "###############" << endl;
+        cout << "###############" << endl;
+        cout << "plots that are being compared are not the same -- do you want this????" << endl;
+        cout << "###############" << endl;
+        cout << "###############" << endl;
+    }
+    TString fracRatioNumName = (doAbsRatio) ? "1st" : "(1st - 2nd)";
+    TString fracRatioDenomName = (doAbsRatio) ? "2nd" : "1st";
+    TString canvNameAdd = "";
+    canvNameAdd += firstSampInFileBaseName;
+    if (diffFilesSingSampCompare) {
+        canvNameAdd += "_vs_";
+        canvNameAdd += secondSampInFileBaseName;
+    }
+    else {
+//nothing in here for now
+    }
+    
+    ///Data-Driven systematics stuff
+    float TTBarFullCutSFOvi[3] = {0.738946, 0.776429, 0.832783};
+    float TTBarFullCutSFDESY[3] = {0.800047, 0.849983, 0.911382};
+    float TTBarSF = (whichNTuple == 0) ? TTBarFullCutSFOvi[whichTTbarGen] : TTBarFullCutSFDESY[whichTTbarGen];
     
     
+    //plotting stuff        
     //    double KFactor = 1;
     //    bool KFactorScale =      1;
     //    bool DataIntegralScale = 0;
     bool doSystCurrPlot;
-    float intLumi = 19300;
+    float indLumiDESY[4] = {892, 4404, 7032, 7274};
+    float indLumiOvi[4] = {892, 4404, 7032, 7274};
+    float intLumi = 19602.901;       
+    if (whichNTuple == 0) {
+        intLumi = indLumiOvi[0] + indLumiOvi[1] + indLumiOvi[2] + indLumiOvi[3];
+    }
+    else {
+        intLumi = indLumiDESY[0] + indLumiDESY[1] + indLumiDESY[2] + indLumiDESY[3];
+    }    
+    
     TString mcplot, mcplot_preRW, dataplot;
     TString plotVarName, subSampName;;
     TString dataLegendComp = "Data";
     THStack * mcStack;
     TString mcStackName;
-    float   fracRatioYAxisRange = (doAbsRatio) ? 0.6 : 1.5;
+    float   fracRatioYAxisRange = (doAbsRatio) ? 0.21 : 0.26;
     unsigned int num1DPlots = histVec_1D->size(); 
     unsigned int num2DPlots = histVec_2D->size(); 
     unsigned int num3DPlots = histVec_3D->size(); 
@@ -221,194 +363,292 @@ int main( int argc, char* argv[]) {
     TString canvName, systCanvName;
     logYPad1 = true;
     if (doOneDee) {
-        for (unsigned int k = 0; k < num1DPlots; ++k) {
-            //    for (int k = 18; k < 19; ++k) {       
-            dataHist1DVec = new vector<TH1F *>;
-            mcIndHist1DCentValVec = new vector<TH1F *>;
-            mcCompHist1DCentValVec = new vector<TH1F *>;
-            mcCompHist1DSystVec = new vector<TH1F *>;
+        if (singSampCompare) {
+            histOne1D = new TH1F();
+            histTwo1D = new TH1F();
+            histOne1DSystVec = new vector<TH1F *>;
+            histTwo1DSystVec = new vector<TH1F *>;
+            histOneCDF1DSystVec = new vector<TH1F *>;
+            histTwoCDF1DSystVec = new vector<TH1F *>;
             fracRatioSystVec = new vector<TGraphAsymmErrors *>;
-            mcCDFSystVec = new vector<TH1F *>;
             errCompSpecSource = new vector<TGraphAsymmErrors *>;
             errCompSpecSource_pStat = new vector<TGraphAsymmErrors *>;
             systCanvNameVec = new vector<TString>;
-            plotVarName = "";
-            plotVarName += histVec_1D->at(k).name;
-            plotVarName.Replace(0, 2, "");
             subSampName = "";
             subSampName += subSampVec->at(whichChan).histNameSuffix;
-            cout << "subSampName " << subSampName << endl;
-            cout << "Doing " << plotVarName << endl;
-            dataplot = histVec_1D->at(k).name;
-            dataplot += subSampName;
-            cout << "dataplot " << dataplot << endl;
-            mcplot = histVec_1D->at(k).name;
-            canvName = "c_";
-            canvName += plotVarName;
-            canvName += subSampName;
-            cout << "test " << endl;
-//            if (whichNTuple == 1) canvName += TTBarGenNameDESY[whichTTbarGen];
-            canvName += TTBarGenNameDESY[whichTTbarGen];
-            canvName += nameNTuple;
-            mcStackName = "mcStack_";
-            mcStackName += plotVarName;
-            mcStackName += subSampName;
-            //        c_Var[k] = new TCanvas(canvName, canvName, wtopx, wtopy, W_, H_);
-            c_Var = new TCanvas(canvName, canvName, wtopx, wtopy, W_, H_);
-            mcStack = new THStack(mcStackName, "");
-            cout << "test 2" << endl;
-            //        doSystCurrPlot = (doSyst && histVec_1D->at(k).doXSyst)  ? true : false;
-            doSystCurrPlot = (doSyst && histVec_1D->at(k).doXSyst);
-            HistogramVecGrabber(inputFiles, dataHist1DVec, mcIndHist1DCentValVec, mcCompHist1DSystVec, nVtxBackScaleVec, systVec, dataplot, mcplot, subSampName, RBNX[k], RBNY[k], RBNZ[k], doOverflow[k], doUnderflow[k], doSystCurrPlot);
-            cout << "test 2a" << endl;
-            HistogramAdderSyst(dataHist1DVec, mcIndHist1DCentValVec, mcCompHist1DCentValVec, h_DataComp, h_MCComp, h_FracratioComp, whichNTuple, doAbsRatio, fracRatioYAxisRange);
-            cout << "test 3" << endl;
-            //        cout << "QCD " << h_QCDComp->Integral() << endl;
-            h_ErrComp = (TH1F *) h_MCComp->Clone();
-            errCompCentVal = clonePoints(h_ErrComp);
-            cout << "test 3a" << endl;
-            // calculate systematics error tgraphs              
-            HistMainAttSet(h_DataComp, kWhite, 0, kBlack, 2, kBlack, 20, 0.9);
-            //        HistMainAttSet(h_MCComp, kWhite, 0, kRed, 2, kWhite, 0, 0);
-            HistMainAttSet(h_MCComp, kWhite, 0, kWhite, 2, kWhite, 0, 0);
-            HistMainAttSet(h_ErrComp, kGray+1, 3001, kGray+1, 2, kWhite, 0, 0);
-            histMax = TMath::Max(h_DataComp->GetMaximum(), h_MCComp->GetMaximum());
-            YAxisUB = (YAxisUBBase > 1) ? histMax * 2.5E2 : histMax * 2.5;
-            /*
-             if (addThings) {
-             TH1F * mcPlotHistsOvi[6] = {h_WJComp, h_VVComp, h_ZDYComp, h_SingTopComp, h_TTbarComp};
-             }
-             else {
-             TH1F * mcPlotHistsDESY[9] = {h_WJComp, OneDeeHistsDESY[5], OneDeeHistsDESY[6], OneDeeHistsDESY[7], h_ZDYComp, h_SingTopComp, OneDeeHistsDESY[3], OneDeeHistsDESY[4], h_QCDComp};
-             }
-             */
-            cout << "mcCompHist1DCentValVec->size() " << mcCompHist1DCentValVec->size() << endl;
-            cout << "mcColors->size() " << mcColors->size() << endl;
-            for (unsigned int j = 0; j < mcCompHist1DCentValVec->size(); ++j) {
-                cout << "test " << j << endl;
-                HistMainAttSet(mcCompHist1DCentValVec->at(j), mcColors->at(j), 1001, mcColors->at(j), 2, kWhite, 0, 0);
-                mcStack->Add(mcCompHist1DCentValVec->at(j));
-                cout << "integral for mcCompCentVal " << mcCompHist1DCentValVec->at(j)->GetName() << " is " << mcCompHist1DCentValVec->at(j)->Integral() << endl;
-            }   
-            cout << "integral for MCComp " << h_MCComp->GetName() << " is " << h_MCComp->Integral() << endl;
-            for (unsigned int kMC = 0; kMC < mcCompHist1DSystVec->size(); ++kMC) {
-                cout << "integral for syst " << mcCompHist1DSystVec->at(kMC)->GetName() << " is " << mcCompHist1DSystVec->at(kMC)->Integral() << endl;
+            if (doAllPlots) {
+                for (unsigned int k = 0; k < num1DPlots; ++k) {
+                    plotVarName = "";
+                    plotVarName += histVec_1D->at(k).name;
+                    plotVarName.Replace(0, 2, "");                                
+                    histOneplot = histVec_1D->at(k).name;
+                    histOneplot += subSampName;                
+                    if (multHistsSingSampCompare) {
+                        histTwoplot = histVec_1D->at(k).name;
+                        histTwoplot += subSampName;
+                    }
+                    else {
+                        histTwoplot = "";
+                    }
+                    canvName = "c_";
+                    canvName += plotVarName;
+                    canvName += subSampName;
+                    canvName += canvNameAdd;
+                    c_Var = new TCanvas(canvName, canvName, wtopx, wtopy, W_, H_);
+                    doSystCurrPlot = (doSyst && histVec_1D->at(k).doXSyst);
+                    SingSampCompHistogramGrabber(firstSampInFile, histOne1D, histOne1DSystVec, histOneplot, secondSampInFile, histTwo1D, histTwo1DSystVec, histTwoplot, subSampName, RBNX[k], RBNY[k], RBNZ[k], doOverflow[k], doUnderflow[k], doSystCurrPlot);
+                    /*
+                    cout << "histOne1D name " << histOne1D->GetName() << endl;
+                    cout << "histTwo1D name " << histTwo1D->GetName() << endl;
+                    cout << "histOne1D integral " << histOne1D->Integral() << endl;
+                    cout << "histTwo1D integral " << histTwo1D->Integral() << endl;
+                    */
+                    histMax = (multHistsSingSampCompare) ? TMath::Max(histOne1D->GetMaximum(), histTwo1D->GetMaximum()) : histOne1D->GetMaximum();
+                    YAxisUB = (YAxisUBBase > 1) ? histMax * 2.5E2 : histMax * 2.5;
+                    HistMainAttSet(histOne1D, kWhite, 0, histColors[0], 2, histColors[0], 20, 0.9);
+                    histOneIntegral = histOne1D->Integral();
+                    if (multHistsSingSampCompare) {
+                        HistMainAttSet(histTwo1D, histColors[1], 1001, histColors[1], 2, kWhite, 0, 0);
+                        histTwoIntegral = histTwo1D->Integral();
+                        histTwo1D->Scale(histOneIntegral/histTwoIntegral);
+                        h_FracratioComp = FracRatioHist(histOne1D, histTwo1D, fracRatioNumName, fracRatioDenomName, doAbsRatio, histOne1D->GetName() + TString("ratioComp"), fracRatioYAxisRange);
+                    }
+                    else {
+                        h_FracratioComp = NULL;   
+                    }                    
+                    SpectrumDrawSingSampCompare(c_Var, histOne1D, firstSampInFileBaseName, histTwo1D, secondSampInFileBaseName, h_FracratioComp, XaxisLegendPos[k] - 0.2, YaxisLegendStart[k], YAxisLB, YAxisUB, logYPad1, doStats, "", intLumi);
+                }
             }
-            //        cout << "Data Integral " << h_DataComp->Integral() << endl;
-            //        cout << "MC Integral " << h_MCComp->Integral() << endl;
-            if (plotVarName == "MT2ll" ) {
-                cout << "DataIntegral for MT2ll > " << h_DataComp->GetBinLowEdge(21) << " is " << h_DataComp->Integral(21, h_DataComp->GetNbinsX()+1) << endl;
-                cout << "MCIntegral for MT2ll > " << h_MCComp->GetBinLowEdge(21) << " is " << h_MCComp->Integral(21, h_DataComp->GetNbinsX()+1) << endl;
-            }
-            //        SpectrumDraw(c_Var[k], h_DataComp, dataLegendComp, h_MCComp, h_FracratioComp, h_ErrComp, mcStack, XaxisLegendPos[k], YaxisLegendStart[k], YAxisLB, YAxisUB, mcLegends, mcCompHist1DCentValVec, doStats, "", intLumi);
-            SpectrumDraw(c_Var, h_DataComp, dataLegendComp, h_MCComp, h_FracratioComp, h_ErrComp, mcStack, XaxisLegendPos[k], YaxisLegendStart[k], YAxisLB, YAxisUB, logYPad1, mcLegends, mcCompHist1DCentValVec, doStats, "", intLumi);
-            //        c_Var[k]->SaveAs(canvName + TString(".pdf"));
-            c_Var->SaveAs(saveNameAddition + canvName + TString(".pdf"));
-            if (saveDotCFile) c_Var->SaveAs(saveNameAddition + canvName + TString(".C"));
-            
-            if (doSystCurrPlot) {
-                errLepEffSF = GraphSystErrorSet_SingleSource(h_MCComp, mcCompHist1DSystVec, stringLepEffSF + TString("Shift"), doSymErr, 0);
-                errLepEffSF_pStat = GraphSystErrorSumErrors(errCompCentVal, errLepEffSF, h_MCComp);
-                GraphMainAttSet(errLepEffSF, kGray+1, 3001, kGray+1, 2, kWhite, 0, 0); 
-                GraphMainAttSet(errLepEffSF_pStat, kGray+1, 3001, kGray+1, 2, kWhite, 0, 0); 
-                errCompSpecSource->push_back(errLepEffSF);
-                errCompSpecSource_pStat->push_back(errLepEffSF_pStat);
-                systCanvNameVec->push_back(stringLepEffSF); 
-                currFracRatioGraph = fracGraph(h_MCComp, errLepEffSF, doAbsRatio, fracRatioYAxisRange);
-                fracRatioSystVec->push_back(currFracRatioGraph);
-                cout << "test 3b" << endl;
-                errLepEnSc = GraphSystErrorSet_SingleSource(h_MCComp, mcCompHist1DSystVec, stringLepEnSc + TString("Shift"), doSymErr, 0);
-                errLepEnSc_pStat = GraphSystErrorSumErrors(errCompCentVal, errLepEnSc, h_MCComp);
-                GraphMainAttSet(errLepEnSc, kGray+1, 3001, kGray+1, 2, kWhite, 0, 0); 
-                GraphMainAttSet(errLepEnSc_pStat, kGray+1, 3001, kGray+1, 2, kWhite, 0, 0); 
-                errCompSpecSource->push_back(errLepEnSc);
-                errCompSpecSource_pStat->push_back(errLepEnSc_pStat);
-                systCanvNameVec->push_back(stringLepEnSc);
-                currFracRatioGraph = fracGraph(h_MCComp, errLepEnSc, doAbsRatio, fracRatioYAxisRange);
-                fracRatioSystVec->push_back(currFracRatioGraph);
-                cout << "test 3c" << endl;
-                if (plotVarName.Contains("MT2ll")) {
-                    errMT2ll = GraphSystErrorSet_SingleSource(h_MCComp, mcCompHist1DSystVec, stringMT2ll + TString("Shift"), doSymErr, 1);
-                    errMT2ll_pStat = GraphSystErrorSumErrors(errCompCentVal, errMT2ll, h_MCComp);
-                    GraphMainAttSet(errMT2ll, kGray+1, 3001, kGray+1, 2, kWhite, 0, 0); 
-                    GraphMainAttSet(errMT2ll_pStat, kGray+1, 3001, kGray+1, 2, kWhite, 0, 0); 
-                    errCompSpecSource->push_back(errMT2ll);
-                    errCompSpecSource_pStat->push_back(errMT2ll_pStat);
-                    systCanvNameVec->push_back(stringMT2ll);
-                    currFracRatioGraph = fracGraph(h_MCComp, errMT2ll, doAbsRatio, fracRatioYAxisRange);
-                    fracRatioSystVec->push_back(currFracRatioGraph);
-                }        
+            else {
+                
+                /// not commissioned yet! (7/23/13)
+                doSystCurrPlot = true;
+                
+                histOneplot = singPlot2MakeFirstFile;
+                histOneplot += subSampName;
+                
+                plotVarName = "";
+                plotVarName += singPlot2MakeFirstFile;
+                plotVarName.Replace(0, 2, "");
+                if (multHistsSingSampCompare) {
+                    addPlotVarName = "";
+                    addPlotVarName += singPlot2MakeSecondFile;
+                    addPlotVarName.Replace(0, 2, "");
+                    if (addPlotVarName != plotVarName) {
+                        plotVarName += "_vs_";
+                        plotVarName += addPlotVarName;
+                    }
+                    histTwoplot = singPlot2MakeSecondFile;
+                    histTwoplot += subSampName;
+                }
                 else {
-                    errMT2ll = NULL;
+                    histTwoplot = "";
                 }
-                cout << "test 3d" << endl;
-                errQuadSum = GraphSystErrorSumErrors(errCompCentVal, errCompSpecSource, false, h_MCComp);
-                errQuadSum_pStat = GraphSystErrorSumErrors(errCompCentVal, errCompSpecSource, true, h_MCComp);
-                GraphMainAttSet(errQuadSum, kGray+1, 3001, kGray+1, 2, kWhite, 0, 0); 
-                GraphMainAttSet(errQuadSum_pStat, kGray+1, 3001, kGray+1, 2, kWhite, 0, 0); 
-                errCompSpecSource->push_back(errQuadSum);
-                errCompSpecSource_pStat->push_back(errQuadSum_pStat);
-                systCanvNameVec->push_back("FullSyst");
-                cout << "test 3e" << endl;
-                currFracRatioGraph = fracGraph(h_MCComp, errQuadSum, doAbsRatio, fracRatioYAxisRange);
-                fracRatioSystVec->push_back(currFracRatioGraph);
-                for (unsigned int iSyst = 0; iSyst < systCanvNameVec->size(); ++iSyst) {
-                    systCanvName = canvName + systCanvNameVec->at(iSyst);
-                    c_Var = new TCanvas(systCanvName, systCanvName, wtopx, wtopy, W_, H_);
-                    SpectrumDrawSyst(c_Var, h_DataComp, dataLegendComp, h_MCComp, mcStack, errCompSpecSource_pStat->at(iSyst), errCompSpecSource->at(iSyst), h_FracratioComp, fracRatioSystVec->at(iSyst), XaxisLegendPos[k], YaxisLegendStart[k], YAxisLB, YAxisUB, logYPad1, mcLegends, mcCompHist1DCentValVec, doStats, "", intLumi);
-                    c_Var->SaveAs(saveNameAddition + systCanvName + TString(".pdf"));
-                    if (saveDotCFile) c_Var->SaveAs(saveNameAddition + systCanvName + TString(".C"));
-                }
+                canvName = "c_";
+                canvName += plotVarName;
+                canvName += subSampName;
+                c_Var = new TCanvas(canvName, canvName, wtopx, wtopy, W_, H_); 
+                SingSampCompHistogramGrabber(firstSampInFile, histOne1D, histOne1DSystVec, histOneplot, secondSampInFile, histTwo1D, histTwo1DSystVec, histTwoplot, subSampName, 1, 1, 1, false, false, doSystCurrPlot);
+//                SpectrumDrawSingSampCompare(c_Var, histOne1D, firstSampInFileBaseName, histTwo1D, secondSampInFileBaseName, h_FracratioComp, XaxisLegendPos[k], YaxisLegendStart[k], YAxisLB, YAxisUB, logYPad1, doStats, "", intLumi);
             }
-            
-            //        cout << "Data Integral " << h_DataComp->Integral() << endl;
-            //        HistMainAttSet(h_StopComp, mcColors[5], 1001, mcColors[5], 2, kWhite, 0, 0); 
-            /*
-             if (whichNTuple == 0) {
-             DataMCSpectrumDrawSplit(c_Var[k], h_DataComp, mcStack, h_MCComp, h_ErrComp, h_FracratioComp, XaxisLegendPos[k], YaxisLegendStart[k], YAxisLB, YAxisUB, dataLegendComp, mcLegendsOvi, mcPlotHistsOvi, endJ, doAbsRatio, doStats, "", intLumi[whichNTuple]);
-             }
-             else if (whichNTuple == 1) {
-             DataMCSpectrumDrawSplit(c_Var[k], h_DataComp, mcStack, h_MCComp, h_ErrComp, h_FracratioComp, XaxisLegendPos[k], YaxisLegendStart[k], YAxisLB, YAxisUB, dataLegendComp, mcLegendsDESY, mcPlotHistsDESY, endJ, doAbsRatio, doStats, "", intLumi[whichNTuple]);
-             }
-             c_Var[k]->SaveAs(canvName + TString(".pdf"));
-             if (plotVar[k] == "MT2llControl" || plotVar[k] == "MT2ll") {
-             doCDF = 1;
-             }
-             else {
-             doCDF = 0;
-             }
-             if (plotVar[k] == "MT2llControl") {
-             reportChi2 = 1;
-             }
-             else {
-             reportChi2 = 0;
-             }
-             if (doCDF) {
-             c_Var[k] = new TCanvas(canvName + TString("_CDF_Data"), canvName + TString("_CDF_Data"), wtopx, wtopy, W_, H_);
-             CDFRight(h_DataComp, h_CDF_Data);
-             h_CDF_Data->Draw("hist");
-             c_Var[k]->SaveAs(canvName + TString("_CDF_Data") + TString(".pdf"));
-             c_Var[k] = new TCanvas(canvName + TString("_CDF_Sim"), canvName + TString("_CDF_Sim"), wtopx, wtopy, W_, H_);
-             CDFRight(h_MCComp, h_CDF_MC);
-             h_CDF_MC->Draw("hist");
-             c_Var[k]->SaveAs(canvName + TString("_CDF_Sim") + TString(".pdf"));
-             }
-             if (reportChi2) {
-             int N = h_DataComp->GetNbinsX();
-             Double_t res[20];
-             cout << "Chi2 WW for histogram " << h_DataComp->GetName() << " is " << h_DataComp->Chi2Test(h_MCComp, "WW P", res) << endl;
-             cout << "Chi2 UW for histogram " << h_DataComp->GetName() << " is " << h_DataComp->Chi2Test(h_MCComp, "UW P", res) << endl;
-             }
-             */
-            delete dataHist1DVec;
-            delete mcIndHist1DCentValVec;
-            delete mcCompHist1DCentValVec;
-            delete mcCompHist1DSystVec;
-            delete fracRatioSystVec;
-            delete mcCDFSystVec;
-            delete errCompSpecSource;
-            delete errCompSpecSource_pStat;
-            delete systCanvNameVec;
+            //multHistsSingSampCompare
+        }
+        else {
+            for (unsigned int k = 0; k < num1DPlots; ++k) {
+                //    for (int k = 18; k < 19; ++k) {       
+                dataHist1DVec = new vector<TH1F *>;
+                mcIndHist1DCentValVec = new vector<TH1F *>;
+                mcCompHist1DCentValVec = new vector<TH1F *>;
+                mcCompHist1DSystVec = new vector<TH1F *>;
+                fracRatioSystVec = new vector<TGraphAsymmErrors *>;
+                mcCDFSystVec = new vector<TH1F *>;
+                errCompSpecSource = new vector<TGraphAsymmErrors *>;
+                errCompSpecSource_pStat = new vector<TGraphAsymmErrors *>;
+                systCanvNameVec = new vector<TString>;
+                plotVarName = "";
+                plotVarName += histVec_1D->at(k).name;
+                plotVarName.Replace(0, 2, "");
+                subSampName = "";
+                subSampName += subSampVec->at(whichChan).histNameSuffix;
+                cout << "subSampName " << subSampName << endl;
+                cout << "Doing " << plotVarName << endl;
+                dataplot = histVec_1D->at(k).name;
+                dataplot += subSampName;
+                cout << "dataplot " << dataplot << endl;
+                mcplot = histVec_1D->at(k).name;
+                canvName = "c_";
+                canvName += plotVarName;
+                canvName += subSampName;
+                cout << "test " << endl;
+                //            if (whichNTuple == 1) canvName += TTBarGenNameDESY[whichTTbarGen];
+                canvName += TTBarGenNameDESY[whichTTbarGen];
+                canvName += nameNTuple;
+                mcStackName = "mcStack_";
+                mcStackName += plotVarName;
+                mcStackName += subSampName;
+                //        c_Var[k] = new TCanvas(canvName, canvName, wtopx, wtopy, W_, H_);
+                c_Var = new TCanvas(canvName, canvName, wtopx, wtopy, W_, H_);
+                mcStack = new THStack(mcStackName, "");
+                cout << "test 2" << endl;
+                //        doSystCurrPlot = (doSyst && histVec_1D->at(k).doXSyst)  ? true : false;
+                doSystCurrPlot = (doSyst && histVec_1D->at(k).doXSyst);
+                HistogramVecGrabber(inputFiles, dataHist1DVec, mcIndHist1DCentValVec, mcCompHist1DSystVec, nVtxBackScaleVec, systVec, dataplot, mcplot, subSampName, RBNX[k], RBNY[k], RBNZ[k], doOverflow[k], doUnderflow[k], doSystCurrPlot, useDDEstimate, TTBarSF);
+                cout << "test 2a" << endl;
+                HistogramAdderSyst(dataHist1DVec, mcIndHist1DCentValVec, mcCompHist1DCentValVec, h_DataComp, h_MCComp, h_FracratioComp, whichNTuple, doAbsRatio, fracRatioYAxisRange);
+                cout << "test 3" << endl;
+                //        cout << "QCD " << h_QCDComp->Integral() << endl;
+                h_ErrComp = (TH1F *) h_MCComp->Clone();
+                errCompCentVal = clonePoints(h_ErrComp);
+                cout << "test 3a" << endl;
+                // calculate systematics error tgraphs              
+                HistMainAttSet(h_DataComp, kWhite, 0, kBlack, 2, kBlack, 20, 0.9);
+                //        HistMainAttSet(h_MCComp, kWhite, 0, kRed, 2, kWhite, 0, 0);
+                HistMainAttSet(h_MCComp, kWhite, 0, kWhite, 2, kWhite, 0, 0);
+                HistMainAttSet(h_ErrComp, kGray+1, 3001, kGray+1, 2, kWhite, 0, 0);
+                histMax = TMath::Max(h_DataComp->GetMaximum(), h_MCComp->GetMaximum());
+                YAxisUB = (YAxisUBBase > 1) ? histMax * 2.5E2 : histMax * 2.5;
+                /*
+                 if (addThings) {
+                 TH1F * mcPlotHistsOvi[6] = {h_WJComp, h_VVComp, h_ZDYComp, h_SingTopComp, h_TTbarComp};
+                 }
+                 else {
+                 TH1F * mcPlotHistsDESY[9] = {h_WJComp, OneDeeHistsDESY[5], OneDeeHistsDESY[6], OneDeeHistsDESY[7], h_ZDYComp, h_SingTopComp, OneDeeHistsDESY[3], OneDeeHistsDESY[4], h_QCDComp};
+                 }
+                 */
+                cout << "mcCompHist1DCentValVec->size() " << mcCompHist1DCentValVec->size() << endl;
+                cout << "mcColors->size() " << mcColors->size() << endl;
+                for (unsigned int j = 0; j < mcCompHist1DCentValVec->size(); ++j) {
+                    cout << "test " << j << endl;
+                    HistMainAttSet(mcCompHist1DCentValVec->at(j), mcColors->at(j), 1001, mcColors->at(j), 2, kWhite, 0, 0);
+                    mcStack->Add(mcCompHist1DCentValVec->at(j));
+                    cout << "integral for mcCompCentVal " << mcCompHist1DCentValVec->at(j)->GetName() << " is " << mcCompHist1DCentValVec->at(j)->Integral() << endl;
+                }   
+                cout << "integral for DataComp " << h_DataComp->GetName() << " is " << h_DataComp->Integral() << endl;            
+                cout << "integral for MCComp " << h_MCComp->GetName() << " is " << h_MCComp->Integral() << endl;
+                for (unsigned int kMC = 0; kMC < mcCompHist1DSystVec->size(); ++kMC) {
+                    cout << "integral for syst " << mcCompHist1DSystVec->at(kMC)->GetName() << " is " << mcCompHist1DSystVec->at(kMC)->Integral() << endl;
+                }
+                //        cout << "Data Integral " << h_DataComp->Integral() << endl;
+                //        cout << "MC Integral " << h_MCComp->Integral() << endl;
+                cout << "mcplot " << mcplot << endl;
+                if (mcplot.Contains("h_MT2llControl") && subSampName.Contains("FullCut") && calcTTBarNorm) {
+                    TTBarSF = DataDrivenTTBarScaleFactor(h_DataComp, h_MCComp, mcCompHist1DCentValVec); 
+                    cout << "For TTBarGen " << whichTTbarGen << " and nTuple " << whichNTuple << ", calculated TTBar SF is " << TTBarSF << endl;
+                }
+                if (plotVarName == "MT2ll" ) {
+                    cout << "DataIntegral for MT2ll > " << h_DataComp->GetBinLowEdge(21) << " is " << h_DataComp->Integral(21, h_DataComp->GetNbinsX()+1) << endl;
+                    cout << "MCIntegral for MT2ll > " << h_MCComp->GetBinLowEdge(21) << " is " << h_MCComp->Integral(21, h_DataComp->GetNbinsX()+1) << endl;
+                }
+                //        SpectrumDraw(c_Var[k], h_DataComp, dataLegendComp, h_MCComp, h_FracratioComp, h_ErrComp, mcStack, XaxisLegendPos[k], YaxisLegendStart[k], YAxisLB, YAxisUB, mcLegends, mcCompHist1DCentValVec, doStats, "", intLumi);
+                SpectrumDraw(c_Var, h_DataComp, dataLegendComp, h_MCComp, h_FracratioComp, h_ErrComp, mcStack, XaxisLegendPos[k], YaxisLegendStart[k], YAxisLB, YAxisUB, logYPad1, mcLegends, mcCompHist1DCentValVec, doStats, "", intLumi);
+                //        c_Var[k]->SaveAs(canvName + TString(".pdf"));
+                c_Var->SaveAs(saveNameAddition + canvName + TString(".pdf"));
+                if (saveDotCFile) c_Var->SaveAs(saveNameAddition + canvName + TString(".C"));
+                
+                if (doSystCurrPlot) {
+                    errLepEffSF = GraphSystErrorSet_SingleSource(h_MCComp, mcCompHist1DSystVec, stringLepEffSF + TString("Shift"), doSymErr, 0);
+                    errLepEffSF_pStat = GraphSystErrorSumErrors(errCompCentVal, errLepEffSF, h_MCComp);
+                    GraphMainAttSet(errLepEffSF, kGray+1, 3001, kGray+1, 2, kWhite, 0, 0); 
+                    GraphMainAttSet(errLepEffSF_pStat, kGray+1, 3001, kGray+1, 2, kWhite, 0, 0); 
+                    errCompSpecSource->push_back(errLepEffSF);
+                    errCompSpecSource_pStat->push_back(errLepEffSF_pStat);
+                    systCanvNameVec->push_back(stringLepEffSF); 
+                    currFracRatioGraph = fracGraph(h_MCComp, errLepEffSF, doAbsRatio, fracRatioYAxisRange);
+                    fracRatioSystVec->push_back(currFracRatioGraph);
+                    cout << "test 3b" << endl;
+                    errLepEnSc = GraphSystErrorSet_SingleSource(h_MCComp, mcCompHist1DSystVec, stringLepEnSc + TString("Shift"), doSymErr, 0);
+                    errLepEnSc_pStat = GraphSystErrorSumErrors(errCompCentVal, errLepEnSc, h_MCComp);
+                    GraphMainAttSet(errLepEnSc, kGray+1, 3001, kGray+1, 2, kWhite, 0, 0); 
+                    GraphMainAttSet(errLepEnSc_pStat, kGray+1, 3001, kGray+1, 2, kWhite, 0, 0); 
+                    errCompSpecSource->push_back(errLepEnSc);
+                    errCompSpecSource_pStat->push_back(errLepEnSc_pStat);
+                    systCanvNameVec->push_back(stringLepEnSc);
+                    currFracRatioGraph = fracGraph(h_MCComp, errLepEnSc, doAbsRatio, fracRatioYAxisRange);
+                    fracRatioSystVec->push_back(currFracRatioGraph);
+                    cout << "test 3c" << endl;
+                    if (plotVarName.Contains("MT2ll")) {
+                        errMT2ll = GraphSystErrorSet_SingleSource(h_MCComp, mcCompHist1DSystVec, stringMT2ll + TString("Shift"), doSymErr, 1);
+                        errMT2ll_pStat = GraphSystErrorSumErrors(errCompCentVal, errMT2ll, h_MCComp);
+                        GraphMainAttSet(errMT2ll, kGray+1, 3001, kGray+1, 2, kWhite, 0, 0); 
+                        GraphMainAttSet(errMT2ll_pStat, kGray+1, 3001, kGray+1, 2, kWhite, 0, 0); 
+                        errCompSpecSource->push_back(errMT2ll);
+                        errCompSpecSource_pStat->push_back(errMT2ll_pStat);
+                        systCanvNameVec->push_back(stringMT2ll);
+                        currFracRatioGraph = fracGraph(h_MCComp, errMT2ll, doAbsRatio, fracRatioYAxisRange);
+                        fracRatioSystVec->push_back(currFracRatioGraph);
+                    }        
+                    else {
+                        errMT2ll = NULL;
+                    }
+                    cout << "test 3d" << endl;
+                    errQuadSum = GraphSystErrorSumErrors(errCompCentVal, errCompSpecSource, false, h_MCComp);
+                    errQuadSum_pStat = GraphSystErrorSumErrors(errCompCentVal, errCompSpecSource, true, h_MCComp);
+                    GraphMainAttSet(errQuadSum, kGray+1, 3001, kGray+1, 2, kWhite, 0, 0); 
+                    GraphMainAttSet(errQuadSum_pStat, kGray+1, 3001, kGray+1, 2, kWhite, 0, 0); 
+                    errCompSpecSource->push_back(errQuadSum);
+                    errCompSpecSource_pStat->push_back(errQuadSum_pStat);
+                    systCanvNameVec->push_back("FullSyst");
+                    cout << "test 3e" << endl;
+                    currFracRatioGraph = fracGraph(h_MCComp, errQuadSum, doAbsRatio, fracRatioYAxisRange);
+                    fracRatioSystVec->push_back(currFracRatioGraph);
+                    for (unsigned int iSyst = 0; iSyst < systCanvNameVec->size(); ++iSyst) {
+                        systCanvName = canvName + systCanvNameVec->at(iSyst);
+                        c_Var = new TCanvas(systCanvName, systCanvName, wtopx, wtopy, W_, H_);
+                        SpectrumDrawSyst(c_Var, h_DataComp, dataLegendComp, h_MCComp, mcStack, errCompSpecSource_pStat->at(iSyst), errCompSpecSource->at(iSyst), h_FracratioComp, fracRatioSystVec->at(iSyst), XaxisLegendPos[k], YaxisLegendStart[k], YAxisLB, YAxisUB, logYPad1, mcLegends, mcCompHist1DCentValVec, doStats, "", intLumi);
+                        c_Var->SaveAs(saveNameAddition + systCanvName + TString(".pdf"));
+                        if (saveDotCFile) c_Var->SaveAs(saveNameAddition + systCanvName + TString(".C"));
+                    }
+                }
+                
+                //        cout << "Data Integral " << h_DataComp->Integral() << endl;
+                //        HistMainAttSet(h_StopComp, mcColors[5], 1001, mcColors[5], 2, kWhite, 0, 0); 
+                /*
+                 if (whichNTuple == 0) {
+                 DataMCSpectrumDrawSplit(c_Var[k], h_DataComp, mcStack, h_MCComp, h_ErrComp, h_FracratioComp, XaxisLegendPos[k], YaxisLegendStart[k], YAxisLB, YAxisUB, dataLegendComp, mcLegendsOvi, mcPlotHistsOvi, endJ, doAbsRatio, doStats, "", intLumi[whichNTuple]);
+                 }
+                 else if (whichNTuple == 1) {
+                 DataMCSpectrumDrawSplit(c_Var[k], h_DataComp, mcStack, h_MCComp, h_ErrComp, h_FracratioComp, XaxisLegendPos[k], YaxisLegendStart[k], YAxisLB, YAxisUB, dataLegendComp, mcLegendsDESY, mcPlotHistsDESY, endJ, doAbsRatio, doStats, "", intLumi[whichNTuple]);
+                 }
+                 c_Var[k]->SaveAs(canvName + TString(".pdf"));
+                 if (plotVar[k] == "MT2llControl" || plotVar[k] == "MT2ll") {
+                 doCDF = 1;
+                 }
+                 else {
+                 doCDF = 0;
+                 }
+                 if (plotVar[k] == "MT2llControl") {
+                 reportChi2 = 1;
+                 }
+                 else {
+                 reportChi2 = 0;
+                 }
+                 if (doCDF) {
+                 c_Var[k] = new TCanvas(canvName + TString("_CDF_Data"), canvName + TString("_CDF_Data"), wtopx, wtopy, W_, H_);
+                 CDFRight(h_DataComp, h_CDF_Data);
+                 h_CDF_Data->Draw("hist");
+                 c_Var[k]->SaveAs(canvName + TString("_CDF_Data") + TString(".pdf"));
+                 c_Var[k] = new TCanvas(canvName + TString("_CDF_Sim"), canvName + TString("_CDF_Sim"), wtopx, wtopy, W_, H_);
+                 CDFRight(h_MCComp, h_CDF_MC);
+                 h_CDF_MC->Draw("hist");
+                 c_Var[k]->SaveAs(canvName + TString("_CDF_Sim") + TString(".pdf"));
+                 }
+                 if (reportChi2) {
+                 int N = h_DataComp->GetNbinsX();
+                 Double_t res[20];
+                 cout << "Chi2 WW for histogram " << h_DataComp->GetName() << " is " << h_DataComp->Chi2Test(h_MCComp, "WW P", res) << endl;
+                 cout << "Chi2 UW for histogram " << h_DataComp->GetName() << " is " << h_DataComp->Chi2Test(h_MCComp, "UW P", res) << endl;
+                 }
+                 */
+                delete dataHist1DVec;
+                delete mcIndHist1DCentValVec;
+                delete mcCompHist1DCentValVec;
+                delete mcCompHist1DSystVec;
+                delete fracRatioSystVec;
+                delete mcCDFSystVec;
+                delete errCompSpecSource;
+                delete errCompSpecSource_pStat;
+                delete systCanvNameVec;
+            }
         }
     }
     
@@ -443,7 +683,7 @@ int main( int argc, char* argv[]) {
             canvName = "c_";
             canvName += plotVarName;
             canvName += subSampName;
-//            if (whichNTuple == 1) canvName += TTBarGenNameDESY[whichTTbarGen];
+            //            if (whichNTuple == 1) canvName += TTBarGenNameDESY[whichTTbarGen];
             canvName += TTBarGenNameDESY[whichTTbarGen];
             canvName += nameNTuple;
             mcStackName = "mcStack_";
@@ -451,7 +691,7 @@ int main( int argc, char* argv[]) {
             mcStackName += subSampName;
             
             doSystCurrPlot = (doSyst && (histVec_2D->at(k2D).doXSyst || histVec_2D->at(k2D).doYSyst));
-            HistogramVecGrabber(inputFiles, dataHist2DVec, mcIndHist2DCentValVec, mcCompHist2DCentValVec, nVtxBackScaleVec, systVec, dataplot, mcplot, subSampName, RBNX[0], RBNY[0], RBNZ[0], doOverflow[0], doUnderflow[0], doSystCurrPlot);
+            HistogramVecGrabber(inputFiles, dataHist2DVec, mcIndHist2DCentValVec, mcCompHist2DCentValVec, nVtxBackScaleVec, systVec, dataplot, mcplot, subSampName, RBNX[0], RBNY[0], RBNZ[0], doOverflow[0], doUnderflow[0], doSystCurrPlot, useDDEstimate, TTBarSF);
             for (int iCase = 0; iCase < nCases; ++iCase) {
                 dataHist1DVec = new vector<TH1F *>;
                 mcIndHist1DCentValVec = new vector<TH1F *>;
@@ -467,7 +707,7 @@ int main( int argc, char* argv[]) {
                 cutString = HistProjection1D(dataHist2DVec, dataHist1DVec, dataplot, iCase);
                 cutString = HistProjection1D(mcIndHist2DCentValVec, mcIndHist1DCentValVec, mcplot, iCase);
                 cutString = HistProjection1D(mcCompHist2DCentValVec, mcCompHist1DCentValVec, mcplot, iCase);
-//                cout << "cutString: " << cutString << endl;
+                //                cout << "cutString: " << cutString << endl;
                 if (cutString.Contains("Nothin")) continue;      
                 mcStack = new THStack(caseStackName, "");
                 c_Var = new TCanvas(caseCanvName, caseCanvName, wtopx, wtopy, W_, H_);          
@@ -542,7 +782,7 @@ int main( int argc, char* argv[]) {
             canvName = "c_";
             canvName += plotVarName;
             canvName += subSampName;
-//            if (whichNTuple == 1) canvName += TTBarGenNameDESY[whichTTbarGen];
+            //            if (whichNTuple == 1) canvName += TTBarGenNameDESY[whichTTbarGen];
             canvName += TTBarGenNameDESY[whichTTbarGen];
             canvName += nameNTuple;
             mcStackName = "mcStack_";
@@ -550,7 +790,7 @@ int main( int argc, char* argv[]) {
             mcStackName += subSampName;
             
             doSystCurrPlot = (doSyst && (histVec_3D->at(k3D).doXSyst || histVec_3D->at(k3D).doYSyst || histVec_3D->at(k3D).doZSyst));
-            HistogramVecGrabber(inputFiles, dataHist3DVec, mcIndHist3DCentValVec, mcCompHist3DCentValVec, nVtxBackScaleVec, systVec, dataplot, mcplot, subSampName, RBNX[0], RBNY[0], RBNZ[0], doOverflow[0], doUnderflow[0], doSystCurrPlot);
+            HistogramVecGrabber(inputFiles, dataHist3DVec, mcIndHist3DCentValVec, mcCompHist3DCentValVec, nVtxBackScaleVec, systVec, dataplot, mcplot, subSampName, RBNX[0], RBNY[0], RBNZ[0], doOverflow[0], doUnderflow[0], doSystCurrPlot, useDDEstimate, TTBarSF);
             for (int iCase = 0; iCase < nCases; ++iCase) {
                 dataHist1DVec = new vector<TH1F *>;
                 mcIndHist1DCentValVec = new vector<TH1F *>;
@@ -571,7 +811,7 @@ int main( int argc, char* argv[]) {
                 cutString = HistProjection1D(dataHist3DVec, dataHist1DVec, dataplot, iCase);
                 cutString = HistProjection1D(mcIndHist3DCentValVec, mcIndHist1DCentValVec, mcplot, iCase);
                 cutString = HistProjection1D(mcCompHist3DCentValVec, mcCompHist1DCentValVec, mcplot, iCase);
-//                cout << "cutString: " << cutString << endl;
+                //                cout << "cutString: " << cutString << endl;
                 if (cutString.Contains("Nothin")) continue;      
                 mcStack = new THStack(caseStackName, "");
                 c_Var = new TCanvas(caseCanvName, caseCanvName, wtopx, wtopy, W_, H_);          

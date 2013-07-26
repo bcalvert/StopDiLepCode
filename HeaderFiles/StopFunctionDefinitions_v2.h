@@ -67,7 +67,7 @@ typedef struct {
 } HistogramT;
 
 typedef struct {
-//    SampleT() : histNameSuffix(""), whichdiLepType(-1), doZVeto(-1), cutNJets(-1), cutNBJets(-1), cutMET(0) {}
+    //    SampleT() : histNameSuffix(""), whichdiLepType(-1), doZVeto(-1), cutNJets(-1), cutNBJets(-1), cutMET(0) {}
     TString histNameSuffix;
     TString histXaxisSuffix;
     TString histYaxisSuffix;
@@ -208,10 +208,10 @@ inline TLorentzVector LeptonScaleSystShift(TLorentzVector inputLepVec, int input
     return outShiftVec;
 }
 /*
-inline TLorentzVector JetScaleSystShift(TLorentzVector inputJetVec) {
-    
-}
-*/
+ inline TLorentzVector JetScaleSystShift(TLorentzVector inputJetVec) {
+ 
+ }
+ */
 inline void METSystShift(vector<TLorentzVector> * inputObjVec, vector<TLorentzVector> * shiftObjVec, float &newMET, float &newMETPhi, float origMET, float origMETPhi) {
     TVector3 vecMET;
     TVector3 inputObjTotThreeVec; inputObjTotThreeVec.SetPtEtaPhi(0., 0., 0.);
@@ -271,8 +271,8 @@ inline float ScaleFactorMC(int Type, int Syst) {
     
     // Type: 0 MuMu, 1 EE 2 EMu
     // Syst: 0 CentVal, 1 SystShiftUp, 2 SystShiftDown
-//    float SFTrig[3] = {0.994, 0.955, 0.978};
-//    float SFIDIso[3] = {0.993, 0.979, 0.986};    
+    //    float SFTrig[3] = {0.994, 0.955, 0.978};
+    //    float SFIDIso[3] = {0.993, 0.979, 0.986};    
     //return SFTrig[Type] * SFIDIso[Type];
     float SFTotal[3] = {0.987, 0.957, 0.935};
     float SFSystUp[3] = {0.011, 0.015, 0.013};
@@ -303,25 +303,25 @@ inline bool FilterMET(vector<bool> * regFilterVec, vector<bool> * oppFilterVec) 
 }
 
 inline vector<int> * ElectronPickOvi(vector<float> * ElecPt, vector<float> * ElecEta, vector<int> * ElecCharge, vector<float> * ElecNeutHadIso, vector<float> * ElecCharHadIso, vector<float> * ElecPhotHadIso, vector<bool> * passConvVeto, vector<bool> * isPFElectron) {
-//    cout << "doing electron info" << endl;
+    //    cout << "doing electron info" << endl;
     int leadElecIndex = -1; int subElecIndex = -1; int leadPositIndex = -1; int subPositIndex = -1;
     float elecIsoRatioCut = 0.15; float elecEtaCut = 2.5; float leadElecPtCut = 20; float subElecPtCut = 10;
     float barrelEtaEnd = 1.442; float endcapEtaStart = 1.566;
-//    cout << "i max " << ElecPt->size() << endl;
+    //    cout << "i max " << ElecPt->size() << endl;
     for (unsigned int i = 0; i < ElecPt->size(); ++i) {
         /*
-        cout << "i " << i << endl;
-        cout << "passconv " << passConvVeto->at(i) << endl;
-        cout << "isPFElec " << isPFElectron->at(i) << endl;
-        cout << "neuthadiso " << ElecNeutHadIso->at(i) << endl;
-        cout << "charhadiso " << ElecCharHadIso->at(i) << endl;
-        cout << "photiso " << ElecPhotHadIso->at(i) << endl;
-        cout << "ElecPt " << ElecPt->at(i) << endl;
-        cout << "ElecEta " << ElecEta->at(i) << endl;
-        cout << "ElecEta " << abs(ElecEta->at(i)) << endl;
-        cout << "ElecCharge " << ElecCharge->at(i) << endl;
-        cout << "(ElecNeutHadIso->at(i) + ElecCharHadIso->at(i) + ElecPhotHadIso->at(i))/ElecPt->at(i) " << (ElecNeutHadIso->at(i) + ElecCharHadIso->at(i) + ElecPhotHadIso->at(i))/ElecPt->at(i) << endl;
-        */
+         cout << "i " << i << endl;
+         cout << "passconv " << passConvVeto->at(i) << endl;
+         cout << "isPFElec " << isPFElectron->at(i) << endl;
+         cout << "neuthadiso " << ElecNeutHadIso->at(i) << endl;
+         cout << "charhadiso " << ElecCharHadIso->at(i) << endl;
+         cout << "photiso " << ElecPhotHadIso->at(i) << endl;
+         cout << "ElecPt " << ElecPt->at(i) << endl;
+         cout << "ElecEta " << ElecEta->at(i) << endl;
+         cout << "ElecEta " << abs(ElecEta->at(i)) << endl;
+         cout << "ElecCharge " << ElecCharge->at(i) << endl;
+         cout << "(ElecNeutHadIso->at(i) + ElecCharHadIso->at(i) + ElecPhotHadIso->at(i))/ElecPt->at(i) " << (ElecNeutHadIso->at(i) + ElecCharHadIso->at(i) + ElecPhotHadIso->at(i))/ElecPt->at(i) << endl;
+         */
         if (isPFElectron->at(i) && passConvVeto->at(i) && ((ElecNeutHadIso->at(i) + ElecCharHadIso->at(i) + ElecPhotHadIso->at(i))/ElecPt->at(i)) < elecIsoRatioCut && abs(ElecEta->at(i)) < elecEtaCut && !(abs(ElecEta->at(i)) > barrelEtaEnd && abs(ElecEta->at(i)) < endcapEtaStart)) {
             if (ElecCharge->at(i) > 0) {
                 if (leadPositIndex < 0) {
@@ -352,9 +352,9 @@ inline vector<int> * ElectronPickOvi(vector<float> * ElecPt, vector<float> * Ele
     }
     vector<int> * indices = new vector<int>;
     indices->push_back(leadElecIndex); 
-//    indices->push_back(subElecIndex); 
+    //    indices->push_back(subElecIndex); 
     indices->push_back(leadPositIndex); 
-//    indices->push_back(subPositIndex);
+    //    indices->push_back(subPositIndex);
     return indices;
 }
 
@@ -365,23 +365,23 @@ inline vector<int> * MuonPickOvi(vector<float> * MuonPt, vector<float> * MuonEta
     float muonD0Cut = 0.2; float muonDZCut = 0.5;
     
     float muonPFIso;
-//    cout << "i max " << MuonPt->size() << endl;
+    //    cout << "i max " << MuonPt->size() << endl;
     for (unsigned int i = 0; i < MuonPt->size(); ++i) {
         /*
-        cout << "i " << i << endl;
-        cout << "isGMPT " << isGMPT->at(i) << endl;
-        cout << "isPFMuon " << isPFMuon->at(i) << endl;
-        cout << "neuthadiso " << MuonNeutHadIso->at(i) << endl;
-        cout << "charhadiso " << MuonCharHadIso->at(i) << endl;
-        cout << "photiso " << MuonPhotHadIso->at(i) << endl;
-        cout << "MuonPt " << MuonPt->at(i) << endl;
-        cout << "MuonEta " << MuonEta->at(i) << endl;
-        cout << "VertexZ->at " << VertexZ->at(0) << endl;
-        cout << "muonVertexZ->at " << MuonVertZ->at(i) << endl;
-        cout << "MuonCharge->at " << MuonCharge->at(i) << endl;
-        cout << "abs(VertexZ->at(0) - MuonVertZ->at(i)) " << abs(VertexZ->at(0) - MuonVertZ->at(i)) << endl;
-        */
-//         [sumChargedHadronPt+ max(0.,sumNeutralHadronPt+sumPhotonPt-0.5sumPUPt]/pt
+         cout << "i " << i << endl;
+         cout << "isGMPT " << isGMPT->at(i) << endl;
+         cout << "isPFMuon " << isPFMuon->at(i) << endl;
+         cout << "neuthadiso " << MuonNeutHadIso->at(i) << endl;
+         cout << "charhadiso " << MuonCharHadIso->at(i) << endl;
+         cout << "photiso " << MuonPhotHadIso->at(i) << endl;
+         cout << "MuonPt " << MuonPt->at(i) << endl;
+         cout << "MuonEta " << MuonEta->at(i) << endl;
+         cout << "VertexZ->at " << VertexZ->at(0) << endl;
+         cout << "muonVertexZ->at " << MuonVertZ->at(i) << endl;
+         cout << "MuonCharge->at " << MuonCharge->at(i) << endl;
+         cout << "abs(VertexZ->at(0) - MuonVertZ->at(i)) " << abs(VertexZ->at(0) - MuonVertZ->at(i)) << endl;
+         */
+        //         [sumChargedHadronPt+ max(0.,sumNeutralHadronPt+sumPhotonPt-0.5sumPUPt]/pt
         muonPFIso = MuonCharHadIso->at(i) + TMath::Max((float)0., MuonPhotHadIso->at(i) + MuonNeutHadIso->at(i) - MuonSumPUPt->at(i));
         if (isGMPT->at(i) && isPFMuon->at(i) && muonPFIso/MuonPt->at(i) < muonIsoRatioCut && abs(MuonEta->at(i)) < muonEtaCut && MuonD0->at(0) < muonD0Cut && abs(VertexZ->at(0) - MuonVertZ->at(i)) < muonDZCut) {
             if (MuonCharge->at(i) > 0) {
@@ -413,16 +413,16 @@ inline vector<int> * MuonPickOvi(vector<float> * MuonPt, vector<float> * MuonEta
     }
     vector<int> * indices = new vector<int>;
     indices->push_back(leadMuonIndex); 
-//    indices->push_back(subMuonIndex); 
+    //    indices->push_back(subMuonIndex); 
     indices->push_back(leadMuBarIndex); 
     //indices->push_back(subMuBarIndex);
     return indices;
 }
 inline void LeptonPairOvi(TLorentzVector &Lep0Vec, TLorentzVector &Lep1Vec, int &eventType, bool &doEvent, vector<TLorentzVector> * Leptons, vector<int> * lepPdgId, int &Lep0PdgId,  int &Lep1PdgId) {
-//    cout << "making lepton pair" << endl;
+    //    cout << "making lepton pair" << endl;
     int lep0Index = -1; int lep1Index = -1;
-//    int currLeadLepIndex, currSubLepIndex;
-//    int currLeadLepPt, currSubLepPt;
+    //    int currLeadLepIndex, currSubLepIndex;
+    //    int currLeadLepPt, currSubLepPt;
     float currDiLepPt; float leadDiLepPt = 0;
     float massCut = 20;
     int productPdgId;
@@ -482,22 +482,22 @@ inline vector<TLorentzVector> * JetInfo(vector<TLorentzVector> * Leptons, vector
     float BTagWP = 0.679;  //CSV Middle working point, see (remove underscore in address): h_ttps://twiki.cern.ch/twiki/bin/viewauth/CMS/BTagPerformanceOP
     bool leptonJet;
     float dRcut = 0.5;
-//    cout << "iJet Max " << JetEt->size() << endl;
+    //    cout << "iJet Max " << JetEt->size() << endl;
     for (unsigned int iJet = 0; iJet < JetEt->size(); ++iJet) {
         leptonJet = 0;
         /*
-        cout << "iJet " << iJet << endl;        
-        cout << "JetEta " << JetEta->at(iJet) << endl;
-        cout << "JetEt " << JetEt->at(iJet) << endl;
-        cout << "JetNDaug " << JetNDaug->at(iJet) << endl;
-        cout << "JetNHF " << JetNHF->at(iJet) << endl;
-        cout << "JetNEF " << JetNEF->at(iJet) << endl;
-        cout << "JetCHF " << JetCHF->at(iJet) << endl;
-        cout << "JetCEF " << JetCEF->at(iJet) << endl;
-        cout << "JetCharMult " << JetCharMult->at(iJet) << endl;
-        cout << "JetBTag " << JetBTag->at(iJet) << endl;
-        */
-//        cout << "JetPt " << TMath::Sqrt(JetPx->at(iJet)*JetPx->at(iJet) + JetPy->at(iJet)*JetPy->at(iJet)) << endl;
+         cout << "iJet " << iJet << endl;        
+         cout << "JetEta " << JetEta->at(iJet) << endl;
+         cout << "JetEt " << JetEt->at(iJet) << endl;
+         cout << "JetNDaug " << JetNDaug->at(iJet) << endl;
+         cout << "JetNHF " << JetNHF->at(iJet) << endl;
+         cout << "JetNEF " << JetNEF->at(iJet) << endl;
+         cout << "JetCHF " << JetCHF->at(iJet) << endl;
+         cout << "JetCEF " << JetCEF->at(iJet) << endl;
+         cout << "JetCharMult " << JetCharMult->at(iJet) << endl;
+         cout << "JetBTag " << JetBTag->at(iJet) << endl;
+         */
+        //        cout << "JetPt " << TMath::Sqrt(JetPx->at(iJet)*JetPx->at(iJet) + JetPy->at(iJet)*JetPy->at(iJet)) << endl;
         patsyJet.SetPxPyPzE(JetPx->at(iJet), JetPy->at(iJet), JetPz->at(iJet), JetE->at(iJet));
         for (unsigned int iLep = 0; iLep < Leptons->size(); ++iLep) {
             if (deltaR(patsyJet.Eta(), patsyJet.Phi(), Leptons->at(iLep).Eta(), Leptons->at(iLep).Phi()) < dRcut) leptonJet = 1;
@@ -505,24 +505,24 @@ inline vector<TLorentzVector> * JetInfo(vector<TLorentzVector> * Leptons, vector
         if (leptonJet) continue;
         if (abs(JetEta->at(iJet)) > 2.4) continue;
         if (JetEt->at(iJet) < 30) continue;
-//        if (JetNDaug->at(iJet) > 1 && JetNHF->at(iJet) < 0.99 && JetNEF->at(iJet) < 0.99 && JetCEF->at(iJet) < 0.99 && JetCHF->at(iJet) > 0 && JetCharMult->at(iJet) > 0) {
+        //        if (JetNDaug->at(iJet) > 1 && JetNHF->at(iJet) < 0.99 && JetNEF->at(iJet) < 0.99 && JetCEF->at(iJet) < 0.99 && JetCHF->at(iJet) > 0 && JetCharMult->at(iJet) > 0) {
         if (JetNHF->at(iJet) < 0.99 && JetNEF->at(iJet) < 0.99 && JetCEF->at(iJet) < 0.99 && JetCHF->at(iJet) > 0 && JetCharMult->at(iJet) > 0) {
             currJet.SetPxPyPzE(JetPx->at(iJet), JetPy->at(iJet), JetPz->at(iJet), JetE->at(iJet));
             ++NJets;
             HT += JetEt->at(iJet);
             if (JetBTag->at(iJet) > BTagWP) {
                 NBJets += 1;
-//                cout << "BTAGG is now " << NBJets << " ocurring at " << iJet << endl;
+                //                cout << "BTAGG is now " << NBJets << " ocurring at " << iJet << endl;
                 BJetIndices->push_back(NJets - 1);
             }
-//            cout << "Jets size pre " << Jets->size() << endl;
+            //            cout << "Jets size pre " << Jets->size() << endl;
             Jets->push_back(currJet);
             /*
              for (int iLep = 0; iLep < Leptons->size(); ++iLep) {
              cout << "deltaR for iLep " << iLep << " is " << deltaR(currJet.Eta(), currJet.Phi(), Leptons->at(iLep).Eta(), Leptons->at(iLep).Phi()) << endl;                
              }
              */
-//            cout << "Jets size post " << Jets->size() << endl;
+            //            cout << "Jets size post " << Jets->size() << endl;
         }
         else {
             continue;
@@ -535,7 +535,7 @@ inline void LeptonInfo(VLV * Leptons, vector<int> *lepPdgId, vector<double> *lep
     lep0Index = 0;
     lep1Index = 0;
     int vecSize = Leptons->size();
-//    cout << "vecSize " << vecSize << endl;
+    //    cout << "vecSize " << vecSize << endl;
     if (vecSize < 2) {
         doEvent = false;
         return;
@@ -551,16 +551,16 @@ inline void LeptonInfo(VLV * Leptons, vector<int> *lepPdgId, vector<double> *lep
     float leadDiLepPt = 0;
     float massCut = 20;
     
-//    cout << "" << endl;
-//    if (vecSize > 2) cout << "vecSize: " << vecSize << endl;
+    //    cout << "" << endl;
+    //    if (vecSize > 2) cout << "vecSize: " << vecSize << endl;
     for (int iLep = 0; iLep < vecSize; ++iLep) {
         currLeadLepPt = Leptons->at(iLep).Pt();
         currLeadLepEta = Leptons->at(iLep).Eta();
         currLeadLepCharge = TMath::Sign(1, lepPdgId->at(iLep));
-//        cout << "currLeadLepPt for iLep = " << iLep << " is " << currLeadLepPt << endl;
-//        cout << "lead lepPDGId" << lepPdgId->at(iLep) << endl;
+        //        cout << "currLeadLepPt for iLep = " << iLep << " is " << currLeadLepPt << endl;
+        //        cout << "lead lepPDGId" << lepPdgId->at(iLep) << endl;
         if (abs(lepPdgId->at(iLep)) == 13) {
-//            cout << "IsoCut: " << lepPFIso->at(iLep)/currLeadLepPt << endl;
+            //            cout << "IsoCut: " << lepPFIso->at(iLep)/currLeadLepPt << endl;
             if (currLeadLepPt < leadMuonPtCut) continue;
             if (lepPFIso->at(iLep)/currLeadLepPt > muonIsoRatioCut) continue;
             if (abs(currLeadLepEta) > muonEtaCut) continue;
@@ -576,8 +576,8 @@ inline void LeptonInfo(VLV * Leptons, vector<int> *lepPdgId, vector<double> *lep
             currSubLepEta = Leptons->at(iLep2).Eta();
             currSubLepCharge = TMath::Sign(1, lepPdgId->at(iLep2));
             if (currLeadLepCharge == currSubLepCharge) continue;    //// opposite sign charge requirement
-//            cout << "currSubLepPt for iLep = " << iLep2 << " is " << currSubLepPt << endl;
-//            cout << "sub lead lepPDGId" << lepPdgId->at(iLep2) << endl;
+            //            cout << "currSubLepPt for iLep = " << iLep2 << " is " << currSubLepPt << endl;
+            //            cout << "sub lead lepPDGId" << lepPdgId->at(iLep2) << endl;
             if (abs(lepPdgId->at(iLep2)) == 13) {
                 if (currSubLepPt < subMuonPtCut) continue;
                 if (lepPFIso->at(iLep2)/currSubLepPt > muonIsoRatioCut) continue;
@@ -593,7 +593,7 @@ inline void LeptonInfo(VLV * Leptons, vector<int> *lepPdgId, vector<double> *lep
             productPdgId = lepPdgId->at(iLep) * lepPdgId->at(iLep2);
             if (productPdgId > 0) continue; //i.e. same sign event
             currDiLepPt = currLeadLepPt + currSubLepPt;
-//            cout << "currDiLep " << currDiLepPt << endl;
+            //            cout << "currDiLep " << currDiLepPt << endl;
             if (currDiLepPt > leadDiLepPt) {
                 leadDiLepPt = currDiLepPt;
                 lep0Index = iLep;
@@ -601,22 +601,22 @@ inline void LeptonInfo(VLV * Leptons, vector<int> *lepPdgId, vector<double> *lep
             }
         }
     }
-//    cout << "lep0 Index " << lep0Index << endl;
-//    cout << "lep1 Index " << lep1Index << endl;
-//    cout << "" << endl;
+    //    cout << "lep0 Index " << lep0Index << endl;
+    //    cout << "lep1 Index " << lep1Index << endl;
+    //    cout << "" << endl;
     if (lep0Index == lep1Index) {
         doEvent = false;
         /*
-        cout << "vecSize: " << vecSize << endl;
-        for (int i = 0; i < vecSize; ++i) {
-            cout << "i: " << i << endl;
-            cout << "lepPDGId: " << lepPdgId->at(i) << endl;
-            cout << "lepPt: " << Leptons->at(i).Pt() << endl;
-            cout << "lepEta: " << Leptons->at(i).Eta() << endl;
-            if (vecSize > 1) cout << "diLepMass: " << (Leptons->at(0) + Leptons->at(1)).M() << endl;
-        }
-        cout << "no suitable pair found! " << endl;
-        cout << "" << endl;
+         cout << "vecSize: " << vecSize << endl;
+         for (int i = 0; i < vecSize; ++i) {
+         cout << "i: " << i << endl;
+         cout << "lepPDGId: " << lepPdgId->at(i) << endl;
+         cout << "lepPt: " << Leptons->at(i).Pt() << endl;
+         cout << "lepEta: " << Leptons->at(i).Eta() << endl;
+         if (vecSize > 1) cout << "diLepMass: " << (Leptons->at(0) + Leptons->at(1)).M() << endl;
+         }
+         cout << "no suitable pair found! " << endl;
+         cout << "" << endl;
          */
     }
     Lep0PdgId = lepPdgId->at(lep0Index);
@@ -645,7 +645,7 @@ inline vector<int> * NumJets(VLV * Jets, float jetPtCut, VLV * Leptons, int lep0
         CurrentJet = Jets->at(iJet);
         if (CurrentJet.Pt() > jetPtCut) {
             if (deltaR(CurrentJet.Eta(), CurrentJet.Phi(), Lepton0.Eta(), Lepton0.Phi()) < dRcut) {
-//                cout << "delta R failed for lep 0 " << deltaR(CurrentJet.Eta(), CurrentJet.Phi(), Lepton0.Eta(), Lepton0.Phi()) << endl;
+                //                cout << "delta R failed for lep 0 " << deltaR(CurrentJet.Eta(), CurrentJet.Phi(), Lepton0.Eta(), Lepton0.Phi()) << endl;
                 continue; 
             }
             if (deltaR(CurrentJet.Eta(), CurrentJet.Phi(), Lepton1.Eta(), Lepton1.Phi()) < dRcut) continue;
@@ -727,7 +727,7 @@ inline vector<HistogramT> * OneDeeHistTVec() {
     int METXYBinN    = 200;    
     int NJetsBinN    = 11;
     int nVtxBinN     = 60;
-
+    
     float EnergyPtBinLB = 0;
     float EnergyPtBinUB = 400;
     float EtaBinLB      = -6;
@@ -1215,7 +1215,7 @@ inline vector<HistogramT> * OneDeeHistTVec() {
     histVec_1D->push_back(H_diLepEMinJetE); histVec_1D->push_back(H_HT); 
     histVec_1D->push_back(H_nVtx); histVec_1D->push_back(H_nVtx_preRW);
     histVec_1D->push_back(H_nVtxTrue); histVec_1D->push_back(H_nVtxTrue_preRW);
-
+    
     return histVec_1D;
 }
 
@@ -1224,24 +1224,24 @@ inline vector<HistogramT> * TwoDeeHistTVec() {
     vector<HistogramT> * histVec_2D = new vector<HistogramT>;
     
     const double PI = 3.14159265;
-//    int EnergyPtBinN = 400;
-//    int EtaBinN      = 200;
+    //    int EnergyPtBinN = 400;
+    //    int EtaBinN      = 200;
     int PhiBinN      = 200;
     int METBinN      = 40;    
     int METXYBinN    = 200;    
-//    int NJetsBinN    = 11;
+    //    int NJetsBinN    = 11;
     int nVtxBinN     = 35;
     
-//    float EnergyPtBinLB = 0;
-//    float EnergyPtBinUB = 400;
-//    float EtaBinLB      = -6;
-//    float EtaBinUB      = 6;
+    //    float EnergyPtBinLB = 0;
+    //    float EnergyPtBinUB = 400;
+    //    float EtaBinLB      = -6;
+    //    float EtaBinUB      = 6;
     float METBinLB      = 0;
     float METBinUB      = 400;
     float METXYBinLB    = -200;
     float METXYBinUB    = 200;
-//    float NJetsBinLB    = -0.5;
-//    float NJetsBinUB    = 10.5;
+    //    float NJetsBinLB    = -0.5;
+    //    float NJetsBinUB    = 10.5;
     float nVtxBinLB     = 0.5;
     float nVtxBinUB     = 35.5;
     
@@ -1353,10 +1353,37 @@ inline vector<HistogramT> * ThreeDeeHistTVec() {
     H_MT2ll_vs_DeltaPhiZMET_vs_NBJets.yVarKey = "DPhiZMET";
     H_MT2ll_vs_DeltaPhiZMET_vs_NBJets.zVarKey = "NBJets";
     
+    HistogramT H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx1to10; H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx1to10.name = "h_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx1to10"; 
+    H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx1to10.xLabel = "MT2_{ll} [GeV]"; H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx1to10.xBinN = METBinN; H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx1to10.xMin = METBinLB; H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx1to10.xMax = METBinUB;
+    H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx1to10.yLabel = "#Delta #phi_{Z, #slash{E}_{T}}"; H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx1to10.yBinN = PhiBinN; H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx1to10.yMin = 0.; H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx1to10.yMax = PI;
+    H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx1to10.zLabel = "N_{jets}"; H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx1to10.zBinN = NJetsBinN; H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx1to10.zMin = NJetsBinLB; H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx1to10.zMax = NJetsBinUB;
+    H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx1to10.xVarKey = "MT2ll";
+    H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx1to10.yVarKey = "DPhiZMET";
+    H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx1to10.zVarKey = "NJets";
+    
+    HistogramT H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx11to20; H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx11to20.name = "h_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx11to20"; 
+    H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx11to20.xLabel = "MT2_{ll} [GeV]"; H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx11to20.xBinN = METBinN; H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx11to20.xMin = METBinLB; H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx11to20.xMax = METBinUB;
+    H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx11to20.yLabel = "#Delta #phi_{Z, #slash{E}_{T}}"; H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx11to20.yBinN = PhiBinN; H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx11to20.yMin = 0.; H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx11to20.yMax = PI;
+    H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx11to20.zLabel = "N_{jets}"; H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx11to20.zBinN = NJetsBinN; H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx11to20.zMin = NJetsBinLB; H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx11to20.zMax = NJetsBinUB;
+    H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx11to20.xVarKey = "MT2ll";
+    H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx11to20.yVarKey = "DPhiZMET";
+    H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx11to20.zVarKey = "NJets";
+    
+    HistogramT H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx21to30; H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx21to30.name = "h_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx21to30"; 
+    H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx21to30.xLabel = "MT2_{ll} [GeV]"; H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx21to30.xBinN = METBinN; H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx21to30.xMin = METBinLB; H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx21to30.xMax = METBinUB;
+    H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx21to30.yLabel = "#Delta #phi_{Z, #slash{E}_{T}}"; H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx21to30.yBinN = PhiBinN; H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx21to30.yMin = 0.; H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx21to30.yMax = PI;
+    H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx21to30.zLabel = "N_{jets}"; H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx21to30.zBinN = NJetsBinN; H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx21to30.zMin = NJetsBinLB; H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx21to30.zMax = NJetsBinUB;
+    H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx21to30.xVarKey = "MT2ll";
+    H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx21to30.yVarKey = "DPhiZMET";
+    H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx21to30.zVarKey = "NJets";
+    
     //push the 2D histograms structures into a vector for eventual use in booking histograms
     histVec_3D->push_back(H_MT2ll_vs_DeltaPhiZMET_vs_nVtx);
     histVec_3D->push_back(H_MT2ll_vs_DeltaPhiZMET_vs_NJets);
     histVec_3D->push_back(H_MT2ll_vs_DeltaPhiZMET_vs_NBJets);
+    histVec_3D->push_back(H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx1to10);
+    histVec_3D->push_back(H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx11to20);
+    histVec_3D->push_back(H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx21to30);
     return histVec_3D;
 }
 
@@ -1425,7 +1452,7 @@ inline vector<SampleT> * SubSampVec() {
      SampleT events_EMu_NJetsGeq2_NBJetsGeq1; events_EMu_NJetsGeq2_NBJetsGeq1.histNameSuffix = "_emu_Jet2BJet1"; events_EMu_NJetsGeq2_NBJetsGeq1.histXaxisSuffix = "_{e#mu}"; 
      events_EMu_NJetsGeq2_NBJetsGeq1.histYaxisSuffix = events_EMu_NJetsGeq2_NBJetsGeq1.histXaxisSuffix; events_EMu_NJetsGeq2_NBJetsGeq1.histZaxisSuffix = events_EMu_NJetsGeq2_NBJetsGeq1.histXaxisSuffix;
      events_EMu_NJetsGeq2_NBJetsGeq1.doZVeto = 0; events_EMu_NJetsGeq2_NBJetsGeq1.cutNJets = 2; events_EMu_NJetsGeq2_NBJetsGeq1.cutNBJets = 1; events_EMu_NJetsGeq2_NBJetsGeq1.cutMET = 0;
-
+     
      
      SampleT events_EE_ZVeto_NJetsGeq2; events_EE_ZVeto_NJetsGeq2.histNameSuffix = "_ee_ZVeto_Jet2"; events_EE_ZVeto_NJetsGeq2.histXaxisSuffix = "_{ee}"; 
      events_EE_ZVeto_NJetsGeq2.histYaxisSuffix = events_EE_ZVeto_NJetsGeq2.histXaxisSuffix; events_EE_ZVeto_NJetsGeq2.histZaxisSuffix = events_EE_ZVeto_NJetsGeq2.histXaxisSuffix;
@@ -1468,7 +1495,7 @@ inline vector<SampleT> * SubSampVec() {
      
      SampleT events_EMu_METGeq40_NJetsGeq2_NBJetsGeq1; events_EMu_METGeq40_NJetsGeq2_NBJetsGeq1.histNameSuffix = "_emu_METGeq40_Jet2BJet1"; events_EMu_METGeq40_NJetsGeq2_NBJetsGeq1.histXaxisSuffix = "_{e#mu}"; 
      events_EMu_METGeq40_NJetsGeq2_NBJetsGeq1.histYaxisSuffix = events_EMu_METGeq40_NJetsGeq2_NBJetsGeq1.histXaxisSuffix; events_EMu_METGeq40_NJetsGeq2_NBJetsGeq1.histZaxisSuffix = events_EMu_METGeq40_NJetsGeq2_NBJetsGeq1.histXaxisSuffix;
-    */
+     */
     
     /*######Define Subchannels###########*/
     TString lepNameSuffix[3] = {"_mumu", "_ee", "_emu"};
@@ -1593,7 +1620,7 @@ inline vector<SampleT> * SubSampVec() {
         events_LepOutZMass0BJetsJet2[i].histZaxisSuffix = lepHistXAxisSuffix[i];
         events_LepOutZMass0BJetsJet2[i].whichdiLepType  = i;
         events_LepOutZMass0BJetsJet2[i].blindDataChannel  = 0;        
-                
+        
         events_LepInZMassor0BJetsJet2MET40[i].histNameSuffix = lepNameSuffix[i] + JetCutString + METCutString + TString("_inZMass_or0BJets");
         events_LepInZMassor0BJetsJet2MET40[i].histXaxisSuffix = lepHistXAxisSuffix[i];
         events_LepInZMassor0BJetsJet2MET40[i].histYaxisSuffix = lepHistXAxisSuffix[i];
@@ -1616,7 +1643,7 @@ inline vector<SampleT> * SubSampVec() {
         events_LepOutZMass0BJetsJet2MET40[i].blindDataChannel  = 0;        
     }
     for (int j = 0; j < 3; ++j) {
-
+        
         events_LepInZMass[j].doZVeto         = 0;
         events_LepInZMass[j].cutNJets        = -1;
         events_LepInZMass[j].cutNBJets       = -1;
@@ -1682,7 +1709,7 @@ inline vector<SampleT> * SubSampVec() {
         events_LepInZMass0BJetsJet2[j].cutNJets  = 2;
         events_LepInZMass0BJetsJet2[j].cutNBJets = -1;
         events_LepInZMass0BJetsJet2[j].cutMET    = 0.;
-
+        
         events_LepOutZMass0BJetsJet2[j].doZVeto   = 1;
         events_LepOutZMass0BJetsJet2[j].cutNJets  = 2;
         events_LepOutZMass0BJetsJet2[j].cutNBJets = -1;
@@ -1769,7 +1796,7 @@ inline vector<SampleT> * SubSampVec() {
         subSampVec->push_back(events_LepInZMassJet2[k]); subSampVec->push_back(events_LepOutZMassJet2[k]);
         subSampVec->push_back(events_LepInZMassJet2BJet1[k]); subSampVec->push_back(events_LepOutZMassJet2BJet1[k]);
         subSampVec->push_back(events_LepInZMassJet2BJet1MET40[k]); subSampVec->push_back(events_LepOutZMassJet2BJet1MET40[k]);
-
+        
         subSampVec->push_back(events_LepInZMassBothinBarrel[k]);
         subSampVec->push_back(events_LepInZMassOneinBarrel[k]);
         subSampVec->push_back(events_LepInZMassBothinEndcap[k]);
@@ -1810,20 +1837,20 @@ inline vector<SystT> * SystVec() {
     LepESShiftDown.whichSystType = 1;
     
     /*
-    SystT LepERShiftUp; LepERShiftUp.name = "_LepERShiftUp"; LepERShiftUp.systVarKey = "_LepERShiftUp";
-    SystT LepERShiftDown; LepERShiftDown.name = "_LepERShiftDown"; LepERShiftDown.systVarKey = "_LepERShiftDown";
-    SystT JetESShiftUp; JetESShiftUp.name = "_JetESShiftUp"; JetESShiftUp.systVarKey = "_JetESShiftUp";
-    SystT JetESShiftDown; JetESShiftDown.name = "_JetESShiftDown"; JetESShiftDown.systVarKey = "_JetESShiftUpDown";
-    SystT JetERShiftUp; JetERShiftUp.name = "_JetERShiftUp"; JetERShiftUp.systVarKey = "_JetERShiftUp";
-    SystT JetERShiftDown; JetERShiftDown.name = "_JetERShiftDown"; JetERShiftDown.systVarKey = "_JetERShiftDown";
-    */
+     SystT LepERShiftUp; LepERShiftUp.name = "_LepERShiftUp"; LepERShiftUp.systVarKey = "_LepERShiftUp";
+     SystT LepERShiftDown; LepERShiftDown.name = "_LepERShiftDown"; LepERShiftDown.systVarKey = "_LepERShiftDown";
+     SystT JetESShiftUp; JetESShiftUp.name = "_JetESShiftUp"; JetESShiftUp.systVarKey = "_JetESShiftUp";
+     SystT JetESShiftDown; JetESShiftDown.name = "_JetESShiftDown"; JetESShiftDown.systVarKey = "_JetESShiftUpDown";
+     SystT JetERShiftUp; JetERShiftUp.name = "_JetERShiftUp"; JetERShiftUp.systVarKey = "_JetERShiftUp";
+     SystT JetERShiftDown; JetERShiftDown.name = "_JetERShiftDown"; JetERShiftDown.systVarKey = "_JetERShiftDown";
+     */
     vector<SystT> * systVec = new vector<SystT>;
     systVec->push_back(MT2llShiftUp); systVec->push_back(MT2llShiftDown);
     systVec->push_back(LepEffSFShiftUp); systVec->push_back(LepEffSFShiftDown);
     systVec->push_back(LepESShiftUp); systVec->push_back(LepESShiftDown);
-//    systVec->push_back(LepERShiftUp); systVec->push_back(LepERShiftDown);
-//    systVec->push_back(JetESShiftUp); systVec->push_back(JetESShiftDown);
-//    systVec->push_back(JetERShiftUp); systVec->push_back(JetERShiftDown);
+    //    systVec->push_back(LepERShiftUp); systVec->push_back(LepERShiftDown);
+    //    systVec->push_back(JetESShiftUp); systVec->push_back(JetESShiftDown);
+    //    systVec->push_back(JetERShiftUp); systVec->push_back(JetERShiftDown);
     return systVec;
 }
 inline TString DescriptorString(SampleT inputSubSamp) {
@@ -1941,6 +1968,7 @@ inline TString HistProjection1D(vector<TH3F *> * inputHistVec, vector<TH1F *> * 
     TString outString = "Nothin";
     TH1F * currOutHist;
     TH3F * currInHist;
+    TString addName = "";
     TAxis * XAxis, * YAxis, * ZAxis;
     int XAxisLB, XAxisUB, YAxisLB, YAxisUB, ZAxisLB, ZAxisUB;
     TString outHistName;
@@ -1950,6 +1978,7 @@ inline TString HistProjection1D(vector<TH3F *> * inputHistVec, vector<TH1F *> * 
         switch (whichCase) {
             case 0: // plot for DeltaPhiZMET > 2./3. Pi and nVtx = 1-10
                 outHistPlusName = "_XAxis_DPhiZMETGt2/3_nVtx1to10_";
+                outHistPlusName += addName; 
                 YAxisLBFind = 2./3. * PI;
                 YAxisUBFind = PI;
                 ZAxisLBFind = 1.;
@@ -1958,6 +1987,7 @@ inline TString HistProjection1D(vector<TH3F *> * inputHistVec, vector<TH1F *> * 
                 break;
             case 1: // plot for 1./3. Pi < DeltaPhiZMET < 2/3 Pi and nVtx = 1-10
                 outHistPlusName = "_XAxis_DPhiZMETGt1/3Lt2/3_nVtx1to10_";
+                outHistPlusName += addName; 
                 YAxisLBFind = 1./3. * PI;
                 YAxisUBFind = 2./3. * PI;
                 ZAxisLBFind = 1.;
@@ -1966,6 +1996,7 @@ inline TString HistProjection1D(vector<TH3F *> * inputHistVec, vector<TH1F *> * 
                 break;   
             case 2: // plot for DeltaPhiZMET < 1/3 Pi and nVtx = 1-10
                 outHistPlusName = "_XAxis_DPhiZMETLt1/3_nVtx1to10_";
+                outHistPlusName += addName; 
                 YAxisLBFind = 0;
                 YAxisUBFind = 1./3. * PI;
                 ZAxisLBFind = 1.;
@@ -1974,6 +2005,7 @@ inline TString HistProjection1D(vector<TH3F *> * inputHistVec, vector<TH1F *> * 
                 break; 
             case 3: // plot for DeltaPhiZMET > 2./3. Pi and nVtx = 11-20
                 outHistPlusName = "_XAxis_DPhiZMETGt2/3_nVtx11to20_";
+                outHistPlusName += addName; 
                 YAxisLBFind = 2./3. * PI;
                 YAxisUBFind = PI;
                 ZAxisLBFind = 11.;
@@ -1982,6 +2014,7 @@ inline TString HistProjection1D(vector<TH3F *> * inputHistVec, vector<TH1F *> * 
                 break;
             case 4: // plot for 1./3. Pi < DeltaPhiZMET < 2/3 Pi and nVtx = 11-20
                 outHistPlusName = "_XAxis_DPhiZMETGt1/3Lt2/3_nVtx11to20_";
+                outHistPlusName += addName; 
                 YAxisLBFind = 1./3. * PI;
                 YAxisUBFind = 2./3. * PI;
                 ZAxisLBFind = 11.;
@@ -1990,6 +2023,7 @@ inline TString HistProjection1D(vector<TH3F *> * inputHistVec, vector<TH1F *> * 
                 break;   
             case 5: // plot for DeltaPhiZMET < 1/3 Pi and nVtx = 11-20
                 outHistPlusName = "_XAxis_DPhiZMETLt1/3_nVtx11to20_";
+                outHistPlusName += addName; 
                 YAxisLBFind = 0;
                 YAxisUBFind = 1./3. * PI;
                 ZAxisLBFind = 11.;
@@ -1998,6 +2032,7 @@ inline TString HistProjection1D(vector<TH3F *> * inputHistVec, vector<TH1F *> * 
                 break; 
             case 6: // plot for DeltaPhiZMET > 2./3. Pi and nVtx = 21-30
                 outHistPlusName = "_XAxis_DPhiZMETGt2/3_nVtx21to30_";
+                outHistPlusName += addName; 
                 YAxisLBFind = 2./3. * PI;
                 YAxisUBFind = PI;
                 ZAxisLBFind = 21.;
@@ -2006,6 +2041,7 @@ inline TString HistProjection1D(vector<TH3F *> * inputHistVec, vector<TH1F *> * 
                 break;
             case 7: // plot for 1./3. Pi < DeltaPhiZMET < 2/3 Pi and nVtx = 21-30
                 outHistPlusName = "_XAxis_DPhiZMETGt1/3Lt2/3_nVtx21to30_";
+                outHistPlusName += addName; 
                 YAxisLBFind = 1./3. * PI;
                 YAxisUBFind = 2./3. * PI;
                 ZAxisLBFind = 21.;
@@ -2014,6 +2050,7 @@ inline TString HistProjection1D(vector<TH3F *> * inputHistVec, vector<TH1F *> * 
                 break;   
             case 8: // plot for DeltaPhiZMET < 1/3 Pi and nVtx = 21-30
                 outHistPlusName = "_XAxis_DPhiZMETLt1/3_nVtx21to30_";
+                outHistPlusName += addName; 
                 YAxisLBFind = 0;
                 YAxisUBFind = 1./3. * PI;
                 ZAxisLBFind = 21.;
@@ -2025,9 +2062,19 @@ inline TString HistProjection1D(vector<TH3F *> * inputHistVec, vector<TH1F *> * 
         }
     }    
     else if (plotName.Contains("h_MT2ll_vs_DeltaPhiZMET_vs_NJets")) {
+        if (plotName.Contains("nVtx1to10")) {
+            addName = "nVtx1to10";
+        }
+        else if (plotName.Contains("nVtx11to20")) {
+            addName = "nVtx11to20";
+        }
+        else if (plotName.Contains("nVtx21to30")) {
+            addName = "nVtx21to30";
+        }
         switch (whichCase) {
             case 0: // plot for DeltaPhiZMET > 2./3. Pi and N_{Jets} #in {0}
                 outHistPlusName = "_XAxis_DPhiZMETGt2/3_nJets0_";
+                outHistPlusName += addName; 
                 YAxisLBFind = 2./3. * PI;
                 YAxisUBFind = PI;
                 ZAxisLBFind = 0.;
@@ -2036,6 +2083,7 @@ inline TString HistProjection1D(vector<TH3F *> * inputHistVec, vector<TH1F *> * 
                 break;
             case 1: // plot for 1./3. Pi < DeltaPhiZMET < 2/3 Pi and N_{Jets} #in {0}
                 outHistPlusName = "_XAxis_DPhiZMETGt1/3Lt2/3_nJets0_";
+                outHistPlusName += addName; 
                 YAxisLBFind = 1./3. * PI;
                 YAxisUBFind = 2./3. * PI;
                 ZAxisLBFind = 0.;
@@ -2044,6 +2092,7 @@ inline TString HistProjection1D(vector<TH3F *> * inputHistVec, vector<TH1F *> * 
                 break;   
             case 2: // plot for DeltaPhiZMET < 1/3 Pi and N_{Jets} #in {0}
                 outHistPlusName = "_XAxis_DPhiZMETLt1/3_nJets0_";
+                outHistPlusName += addName; 
                 YAxisLBFind = 0;
                 YAxisUBFind = 1./3. * PI;
                 ZAxisLBFind = 0.;
@@ -2052,6 +2101,7 @@ inline TString HistProjection1D(vector<TH3F *> * inputHistVec, vector<TH1F *> * 
                 break; 
             case 3: // plot for DeltaPhiZMET > 2./3. Pi and N_{Jets} #in {1}
                 outHistPlusName = "_XAxis_DPhiZMETGt2/3_nJets1_";
+                outHistPlusName += addName; 
                 YAxisLBFind = 2./3. * PI;
                 YAxisUBFind = PI;
                 ZAxisLBFind = 1.;
@@ -2060,6 +2110,7 @@ inline TString HistProjection1D(vector<TH3F *> * inputHistVec, vector<TH1F *> * 
                 break;
             case 4: // plot for 1./3. Pi < DeltaPhiZMET < 2/3 Pi and N_{Jets} #in {1}
                 outHistPlusName = "_XAxis_DPhiZMETGt1/3Lt2/3_nJets1_";
+                outHistPlusName += addName; 
                 YAxisLBFind = 1./3. * PI;
                 YAxisUBFind = 2./3. * PI;
                 ZAxisLBFind = 1.;
@@ -2068,6 +2119,7 @@ inline TString HistProjection1D(vector<TH3F *> * inputHistVec, vector<TH1F *> * 
                 break;   
             case 5: // plot for DeltaPhiZMET < 1/3 Pi and N_{Jets} #in {1}
                 outHistPlusName = "_XAxis_DPhiZMETLt1/3_nJets1_";
+                outHistPlusName += addName; 
                 YAxisLBFind = 0;
                 YAxisUBFind = 1./3. * PI;
                 ZAxisLBFind = 1.;
@@ -2076,6 +2128,7 @@ inline TString HistProjection1D(vector<TH3F *> * inputHistVec, vector<TH1F *> * 
                 break; 
             case 6: // plot for DeltaPhiZMET > 2./3. Pi and N_{Jets} #in {2:#infty}
                 outHistPlusName = "_XAxis_DPhiZMETGt2/3_nJetsGt1_";
+                outHistPlusName += addName; 
                 YAxisLBFind = 2./3. * PI;
                 YAxisUBFind = PI;
                 ZAxisLBFind = 2.;
@@ -2084,6 +2137,7 @@ inline TString HistProjection1D(vector<TH3F *> * inputHistVec, vector<TH1F *> * 
                 break;
             case 7: // plot for 1./3. Pi < DeltaPhiZMET < 2/3 Pi and N_{Jets} #in {2:#infty}
                 outHistPlusName = "_XAxis_DPhiZMETGt1/3Lt2/3_nJetsGt1_";
+                outHistPlusName += addName; 
                 YAxisLBFind = 1./3. * PI;
                 YAxisUBFind = 2./3. * PI;
                 ZAxisLBFind = 2.;
@@ -2092,6 +2146,7 @@ inline TString HistProjection1D(vector<TH3F *> * inputHistVec, vector<TH1F *> * 
                 break;   
             case 8: // plot for DeltaPhiZMET < 1/3 Pi and N_{Jets} #in {2:#infty}
                 outHistPlusName = "_XAxis_DPhiZMETLt1/3_nJetsGt1_";
+                outHistPlusName += addName; 
                 YAxisLBFind = 0;
                 YAxisUBFind = 1./3. * PI;
                 ZAxisLBFind = 2.;
@@ -2121,9 +2176,9 @@ inline TString HistProjection1D(vector<TH3F *> * inputHistVec, vector<TH1F *> * 
 
 
 /*
-float * RebinArray() {
-    float
-}
-*/
+ float * RebinArray() {
+ float
+ }
+ */
 
 #endif //HistSampFunc_h_

@@ -251,6 +251,10 @@ vector<double> * WeightVec(int whichNTuple, float L_data, vector<double> * baseW
                 case 10:            
                     numParFiles = numParFilesVec->at(0);
                     outVec->push_back(numParFiles * L_data * xsecHiggsWW / baseWeightVec->at(0));
+                    break;
+                case 11:
+                    numParFiles = numParFilesVec->at(0);
+                    outVec->push_back(numParFiles * L_data * xsecHiggsVBF / baseWeightVec->at(0));
                     break; 
                 default:
                     break;
@@ -328,7 +332,7 @@ vector<TFile *> * OutFileVec(int whichNTuple, vector<TString> * nameVec, vector<
     vector<TFile *> * outVec = new vector<TFile *>;
     TFile * TargetTTBarSig, * TargetTTBarBkg, * TargetSingTop, * TargetZDY, * TargetWLNu, * TargetWW, * TargetWZ, * TargetZZ;
     TFile * TargetQCDMu, * TargetQCDEM, * TargetQCDBCEM;
-    TFile * TargetZG, * TargetWG, * TargetHiggs;
+    TFile * TargetZG, * TargetWG, * TargetHiggsWW, * TargetHiggsVBF;
     TString TTBarSystString, whichNTupleString, PURWString, doSystString, suffixString;
     if (nameVec->size() < 5) {
         cout << "nameVec size less than 5!!!" << endl;
@@ -373,8 +377,10 @@ vector<TFile *> * OutFileVec(int whichNTuple, vector<TString> * nameVec, vector<
                 outVec->push_back(TargetZG);
             }        
             if (boolVec->at(10)) {
-                TargetHiggs = TFile::Open(TString("HiggsWW") + whichNTupleString + PURWString + doSystString + suffixString, "RECREATE");   
-                outVec->push_back(TargetHiggs);
+                TargetHiggsWW = TFile::Open(TString("HiggsWW") + whichNTupleString + PURWString + doSystString + suffixString, "RECREATE");                
+                outVec->push_back(TargetHiggsWW);
+                TargetHiggsVBF = TFile::Open(TString("HiggsVBF") + whichNTupleString + PURWString + doSystString + suffixString, "RECREATE"); 
+                outVec->push_back(TargetHiggsVBF);
             } 
             break;
         case 1:
@@ -395,7 +401,7 @@ vector<TFile *> * OutFileVec(int whichNTuple, vector<TString> * nameVec, vector<
 
 vector<TList *> * FileListVec(int whichNTuple, vector<TString> * nameVec, vector<bool> * boolVec) {
     vector<TList *> * outVec = new vector<TList *>;
-    TList * FileListTTBarSig, * FileListTTBarBkg, * FileListSingTop, * FileListZDY, * FileListWLNu, * FileListWW, * FileListWZ, * FileListZZ, * FileListQCDMu, * FileListQCDEM, * FileListQCDBCEM, * FileListZG, * FileListWG, * FileListHiggs;    
+    TList * FileListTTBarSig, * FileListTTBarBkg, * FileListSingTop, * FileListZDY, * FileListWLNu, * FileListWW, * FileListWZ, * FileListZZ, * FileListQCDMu, * FileListQCDEM, * FileListQCDBCEM, * FileListZG, * FileListWG, * FileListHiggsWW, * FileListHiggsVBF;    
     TString TTBarSystString, whichNTupleString, PURWString, doSystString, suffixString;
     if (nameVec->size() < 5) {
         cout << "nameVec size less than 5!!!" << endl;
@@ -454,9 +460,12 @@ vector<TList *> * FileListVec(int whichNTuple, vector<TString> * nameVec, vector
                 outVec->push_back(FileListZG);
             }
             if (boolVec->at(10)) {
-                FileListHiggs = new TList();
-                FileListHiggs->Add(TFile::Open(TString("HWW125") + whichNTupleString + PURWString + doSystString + suffixString));
-                outVec->push_back(FileListHiggs);
+                FileListHiggsWW = new TList();
+                FileListHiggsWW->Add(TFile::Open(TString("HWW125") + whichNTupleString + PURWString + doSystString + suffixString));
+                outVec->push_back(FileListHiggsWW);
+                FileListHiggsVBF = new TList();
+                FileListHiggsVBF->Add(TFile::Open(TString("VBF125") + whichNTupleString + PURWString + doSystString + suffixString));
+                outVec->push_back(FileListHiggsVBF);
             }
             break;
         case 1:
