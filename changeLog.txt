@@ -1,0 +1,40 @@
+7/31/13 at 11:17 P.M. EST
+StopFunctionDefinitions_v2.h	
+Added in generator level top reweighting for the systematic
+Added in Stop XSection systematic
+Added in Histogram for "MT2ll passes cut" where cut is 80-120 GeV in 10 GeV steps, so 5 histograms in total
+Added in 1D histogram for Delta Phi between Z and MET
+Added in .do(X,Y,Z)Syst for the 2D and 3D histograms (still need some work on how to book the histograms in a correct fashion)
+
+StopPlotHaddInfo.h
+Added in some additional Oviedo samples' information, including the ability to hadd "exclusive" samples (TTBar individualized by decay mode and DY + # of jets) as opposed to "inclusive" samples
+Fixed minor bug with TTBar samples for Oviedo in hadding
+
+StopPlotSetup.h
+Fixed the legend for Statistical and Systematic Uncertainties
+
+PlotMaker scripts
+Added in ability to do local condor queue
+
+NewOviStopPlotFillerRunOnSkim_wSyst.C
+Added in appropriate things to match the changes to StopFunctionDefinitions_v2.h
+Added in booking of 2D and 3D histograms w/ systematics
+Added in generator top and antitop pT histograms when running on TTBar samples that have them
+Added in reading of input Stop, Chi0, and Chargino Mass for the purposes of scanning over signal files
+Added in some additional debug statements when "verbosity" is turned on
+
+READMEs
+updated with more current information
+
+NewOviStopPlotSkimmer.C
+Added in a bunch of generator information for Status 1 and Status 3 SM particles
+
+StopPlotsSpectraShowNewDESY_wSyst.C
+Added in saving string info for data-driven estimates and symmetric errors
+Fixed 2D and 3D histogram grabbing for systematics (but haven't tested yet, as 2D and 3D hists w/ systs weren't available yet, condor queue has been slapped around recently)
+
+Hadding shell scripts
+Fixed some minor issues
+
+plotHaddersStop.C
+Added in appropriate stuff to match changes to StopPlotHaddInfo.h

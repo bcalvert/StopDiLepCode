@@ -482,12 +482,10 @@ void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH2F *> * dataHist
     }
 }
 void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH3F *> * dataHistVec, vector<TH3F *> * mcIndHistCentValVec, vector<TH3F *> * mcCompHistSystVec, vector<float> * nVtxBackScaleVec, vector<SystT> * systVec, TString dataPlotName, TString mcPlotName, TString subSampName, int RBNX, int RBNY, int RBNZ, bool doOverflow, bool doUnderflow, bool doSyst, bool useDDEstimate, float scaleFacTTBar) {
-    cout << "inside Histogram Vec Grabber line: 144" << endl;
     int NBinsX, NBinsY, NBinsZ;
     TString fileName, systName, mcGrabName;
     TH3F * currHist;
     TH3F * systCompHist = NULL;
-    cout << "inside Histogram Vec Grabber line: 149" << endl;
     cout << "inputFiles size " << inputFiles->size() << endl;
     cout << "nVtxBackScale size " << nVtxBackScaleVec->size() << endl;
     TString mcSystPlotName, systCompHistName;
@@ -908,7 +906,7 @@ void SpectrumDraw(TCanvas * InputCanvas, TH1F * Hist1, TString legHist1, TH1F * 
     for (unsigned int j = 0; j < mcLegends->size(); ++j) {
         leg->AddEntry(indMCHists->at(j), mcLegends->at(j), "f");
     }
-    leg->AddEntry(errHist,"Sim unc","f");
+    leg->AddEntry(errHist,"Stat. Unc.","f");
     leg->Draw("same");
     TLatex latex;
     latex.SetNDC();
@@ -1020,12 +1018,12 @@ void SpectrumDrawSyst(TCanvas * InputCanvas, TH1F * Hist1, TString legHist1, TH1
         sprintf(buf,"RMS = %0.2f #pm %0.2f",Hist2->GetRMS(),Hist2->GetRMSError());
         tl->DrawLatex(MeanXstart,MeanYstart-0.15,buf);    
     }
-    leg = new TLegend(legXstart,legYstart - 0.05 * (mcLegends->size() + 1),legXstart + 0.40,legYstart);
+    leg = new TLegend(legXstart - 0.05,legYstart - 0.05 * (mcLegends->size() + 1),legXstart + 0.40,legYstart);
     leg->AddEntry(Hist1,TString(legHist1),"pl");
     for (unsigned int j = 0; j < mcLegends->size(); ++j) {
         leg->AddEntry(indMCHists->at(j), mcLegends->at(j), "f");
     }
-    leg->AddEntry(errGraph,"Sim unc","f");
+    leg->AddEntry(errGraph,"Stat #oplus syst","f");
     leg->Draw("same");
     TLatex latex;
     latex.SetNDC();

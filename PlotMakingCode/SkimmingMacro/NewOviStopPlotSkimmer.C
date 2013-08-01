@@ -154,7 +154,7 @@ int main( int argc, const char* argv[] ) {
     genStopMassCut = 0;
     genChi0MassCut = 0;
     genCharginoMassCut = 0;
-// Gen info
+    // Gen info
     vector<float> * genStopMass, * genChi0Mass, * genCharginoMass;
     vector<double> * genPolWeights;
     genStopMass = new vector<float>;
@@ -163,96 +163,217 @@ int main( int argc, const char* argv[] ) {
     genPolWeights = new vector<double>;  
     
     float StopMass0, StopMass1, Chi0Mass0, Chi0Mass1;
+    // Leading Status 3 particle characteristics
+    float genTopSt3_0_Energy, genTopSt3_0_Pt, genTopSt3_0_Eta, genTopSt3_0_Phi;
+    int   genTopSt3_0_PID, genTopSt3_0_Index, genTopSt3_0_FirstMom;
+    float genBSt3_0_Energy, genBSt3_0_Pt, genBSt3_0_Eta, genBSt3_0_Phi;
+    int   genBSt3_0_PID, genBSt3_0_Index, genBSt3_0_FirstMom;
+    float genMuonSt3_0_Energy, genMuonSt3_0_Pt, genMuonSt3_0_Eta, genMuonSt3_0_Phi;
+    int   genMuonSt3_0_PID, genMuonSt3_0_Index, genMuonSt3_0_FirstMom;
+    float genElecSt3_0_Energy, genElecSt3_0_Pt, genElecSt3_0_Eta, genElecSt3_0_Phi;
+    int   genElecSt3_0_PID, genElecSt3_0_Index, genElecSt3_0_FirstMom;
+    
+    // Sub-Leading Status 3 particle characteristics
+    float genTopSt3_1_Energy, genTopSt3_1_Pt, genTopSt3_1_Eta, genTopSt3_1_Phi;
+    int   genTopSt3_1_PID, genTopSt3_1_Index, genTopSt3_1_FirstMom;
+    float genBSt3_1_Energy, genBSt3_1_Pt, genBSt3_1_Eta, genBSt3_1_Phi;
+    int   genBSt3_1_PID, genBSt3_1_Index, genBSt3_1_FirstMom;
+    float genMuonSt3_1_Energy, genMuonSt3_1_Pt, genMuonSt3_1_Eta, genMuonSt3_1_Phi;
+    int   genMuonSt3_1_PID, genMuonSt3_1_Index, genMuonSt3_1_FirstMom;
+    float genElecSt3_1_Energy, genElecSt3_1_Pt, genElecSt3_1_Eta, genElecSt3_1_Phi;
+    int   genElecSt3_1_PID, genElecSt3_1_Index, genElecSt3_1_FirstMom;
+    
+    // Leading Status 1 particle characteristics
+    float genBSt1_0_Energy, genBSt1_0_Px, genBSt1_0_Py, genBSt1_0_Pz;
+    float genBSt1_0_MomEnergy, genBSt1_0_MomPx, genBSt1_0_MomPy, genBSt1_0_MomPz;
+    int   genBSt1_0_PID, genBSt1_0_MomPID, genBSt1_0_MomStatus;
+    float genMuonSt1_0_Energy, genMuonSt1_0_Px, genMuonSt1_0_Py, genMuonSt1_0_Pz;
+    float genMuonSt1_0_MomEnergy, genMuonSt1_0_MomPx, genMuonSt1_0_MomPy, genMuonSt1_0_MomPz;
+    int   genMuonSt1_0_PID, genMuonSt1_0_MomPID, genMuonSt1_0_MomStatus;
+    float genElecSt1_0_Energy, genElecSt1_0_Px, genElecSt1_0_Py, genElecSt1_0_Pz;
+    float genElecSt1_0_MomEnergy, genElecSt1_0_MomPx, genElecSt1_0_MomPy, genElecSt1_0_MomPz;
+    int   genElecSt1_0_PID, genElecSt1_0_MomPID, genElecSt1_0_MomStatus;
+    
+    // Sub-Leading Status 1 particle characteristics
+    float genBSt1_1_Energy, genBSt1_1_Px, genBSt1_1_Py, genBSt1_1_Pz;
+    float genBSt1_1_MomEnergy, genBSt1_1_MomPx, genBSt1_1_MomPy, genBSt1_1_MomPz;
+    int   genBSt1_1_PID, genBSt1_1_MomPID, genBSt1_1_MomStatus;
+    float genMuonSt1_1_Energy, genMuonSt1_1_Px, genMuonSt1_1_Py, genMuonSt1_1_Pz;
+    float genMuonSt1_1_MomEnergy, genMuonSt1_1_MomPx, genMuonSt1_1_MomPy, genMuonSt1_1_MomPz;
+    int   genMuonSt1_1_PID, genMuonSt1_1_MomPID, genMuonSt1_1_MomStatus;
+    float genElecSt1_1_Energy, genElecSt1_1_Px, genElecSt1_1_Py, genElecSt1_1_Pz;
+    float genElecSt1_1_MomEnergy, genElecSt1_1_MomPx, genElecSt1_1_MomPy, genElecSt1_1_MomPz;
+    int   genElecSt1_1_PID, genElecSt1_1_MomPID, genElecSt1_1_MomStatus;
+    
+    
+    vector<float> * genTopSt3En, * genTopSt3Pt, * genTopSt3Eta, * genTopSt3Phi;
+    vector<int> * genTopSt3_i, * genTopSt3_firstMom, * genTopSt3_pdgId;
+    genTopSt3En = new vector<float>;
+    genTopSt3Eta = new vector<float>;
+    genTopSt3Phi = new vector<float>;
+    genTopSt3Pt = new vector<float>;
+    genTopSt3_i = new vector<int>;
+    genTopSt3_firstMom = new vector<int>;
+    genTopSt3_pdgId = new vector<int>;
+    
+    vector<float> * genBSt3En, * genBSt3Pt, * genBSt3Eta, * genBSt3Phi;
+    vector<int> * genBSt3_i, * genBSt3_firstMom, * genBSt3_pdgId;
+    genBSt3En = new vector<float>;
+    genBSt3Eta = new vector<float>;
+    genBSt3Phi = new vector<float>;
+    genBSt3Pt = new vector<float>;
+    genBSt3_i = new vector<int>;
+    genBSt3_firstMom = new vector<int>;
+    genBSt3_pdgId = new vector<int>; 
+    
+    vector<float> * genMuonSt3En, * genMuonSt3Pt, * genMuonSt3Eta, * genMuonSt3Phi;
+    vector<int> * genMuonSt3_i, * genMuonSt3_firstMom, * genMuonSt3_pdgId;
+    genMuonSt3En = new vector<float>;
+    genMuonSt3Eta = new vector<float>;
+    genMuonSt3Phi = new vector<float>;
+    genMuonSt3Pt = new vector<float>;
+    genMuonSt3_i = new vector<int>;
+    genMuonSt3_firstMom = new vector<int>;
+    genMuonSt3_pdgId = new vector<int>;
+    
+    vector<float> * genElecSt3En, * genElecSt3Pt, * genElecSt3Eta, * genElecSt3Phi;
+    vector<int> * genElecSt3_i, * genElecSt3_firstMom, * genElecSt3_pdgId;
+    genElecSt3En = new vector<float>;
+    genElecSt3Eta = new vector<float>;
+    genElecSt3Phi = new vector<float>;
+    genElecSt3Pt = new vector<float>;
+    genElecSt3_i = new vector<int>;
+    genElecSt3_firstMom = new vector<int>;
+    genElecSt3_pdgId = new vector<int>;
+    
+    vector<float> * genBSt1En, * genBSt1Px, * genBSt1Py, * genBSt1Pz;
+    vector<float> * genBSt1MomEn, * genBSt1MomPx, * genBSt1MomPy, * genBSt1MomPz;
+    vector<int> * genBSt1MomPID, * genBSt1_pdgId, * genBSt1MomStatus;
+    genBSt1En = new vector<float>;
+    genBSt1Px = new vector<float>;
+    genBSt1Py = new vector<float>;
+    genBSt1Pz = new vector<float>;
+    genBSt1_pdgId = new vector<int>;
+    genBSt1MomEn = new vector<float>;
+    genBSt1MomPx = new vector<float>;
+    genBSt1MomPy = new vector<float>;
+    genBSt1MomPz = new vector<float>;
+    genBSt1MomPID = new vector<int>;
+    genBSt1MomStatus = new vector<int>;
+    
+    vector<float> * genMuonSt1En, * genMuonSt1Px, * genMuonSt1Py, * genMuonSt1Pz;
+    vector<float> * genMuonSt1MomEn, * genMuonSt1MomPx, * genMuonSt1MomPy, * genMuonSt1MomPz;
+    vector<int> * genMuonSt1MomPID, * genMuonSt1_pdgId, * genMuonSt1MomStatus;
+    genMuonSt1En = new vector<float>;
+    genMuonSt1Px = new vector<float>;
+    genMuonSt1Py = new vector<float>;
+    genMuonSt1Pz = new vector<float>;
+    genMuonSt1_pdgId = new vector<int>;
+    genMuonSt1MomEn = new vector<float>;
+    genMuonSt1MomPx = new vector<float>;
+    genMuonSt1MomPy = new vector<float>;
+    genMuonSt1MomPz = new vector<float>;
+    genMuonSt1MomPID = new vector<int>;
+    genMuonSt1MomStatus = new vector<int>;
+    
+    vector<float> * genElecSt1En, * genElecSt1Px, * genElecSt1Py, * genElecSt1Pz;
+    vector<float> * genElecSt1MomEn, * genElecSt1MomPx, * genElecSt1MomPy, * genElecSt1MomPz;
+    vector<int> * genElecSt1MomPID, * genElecSt1_pdgId, * genElecSt1MomStatus;
+    genElecSt1En = new vector<float>;
+    genElecSt1Px = new vector<float>;
+    genElecSt1Py = new vector<float>;
+    genElecSt1Pz = new vector<float>;
+    genElecSt1_pdgId = new vector<int>;
+    genElecSt1MomEn = new vector<float>;
+    genElecSt1MomPx = new vector<float>;
+    genElecSt1MomPy = new vector<float>;
+    genElecSt1MomPz = new vector<float>;
+    genElecSt1MomPID = new vector<int>;
+    genElecSt1MomStatus = new vector<int>;
+    
     /*
-    vector<float> * genStopEn, * genStopPt, * genStopEta, * genStopPhi;
-    vector<int> * genStop_i, * genStop_firstMom, * genStop_pdgId;
-    genStopEn = new vector<float>;
-    genStopEta = new vector<float>;
-    genStopPhi = new vector<float>;
-    genStopPt = new vector<float>; 
-    
-    vector<float> * genChi0En, * genChi0Pt, * genChi0Eta, * genChi0Phi;
-    vector<int> * genChi0_i, * genChi0_firstMom, * genChi0_pdgId;
-    genChi0En = new vector<float>;
-    genChi0Eta = new vector<float>;
-    genChi0Phi = new vector<float>;
-    genChi0Pt = new vector<float>; 
-    
-    vector<float> * genChiPMEn, * genChiPMPt, * genChiPMEta, * genChiPMPhi;
-    vector<int> * genChiPM_i, * genChiPM_firstMom, * genChiPM_pdgId;
-    genChiPMEn = new vector<float>;
-    genChiPMEta = new vector<float>;
-    genChiPMPhi = new vector<float>;
-    genChiPMPt = new vector<float>; 
-    
-    vector<float> * genTopEn, * genTopPt, * genTopEta, * genTopPhi;
-    vector<int> * genTop_i, * genTop_firstMom, * genTop_pdgId;
-    genTopEn = new vector<float>;
-    genTopEta = new vector<float>;
-    genTopPhi = new vector<float>;
-    genTopPt = new vector<float>;    
-    
-    vector<float> * genBEn, * genBPt, * genBEta, * genBPhi;
-    vector<int> * genB_i, * genB_firstMom, * genB_pdgId;
-    genBEn = new vector<float>;
-    genBEta = new vector<float>;
-    genBPhi = new vector<float>;
-    genBPt = new vector<float>;  
-    
-    vector<float> * genWEn, * genWPt, * genWEta, * genWPhi;
-    vector<int> * genW_i, * genW_firstMom, * genW_pdgId;
-    genWEn = new vector<float>;
-    genWEta = new vector<float>;
-    genWPhi = new vector<float>;
-    genWPt = new vector<float>;
-    
-    genW_i = new vector<int>;
-    genW_firstMom = new vector<int>;
-    genW_pdgId = new vector<int>;
-    
-    vector<float> * genTauLepPx, * genTauLepPy, * genTauLepPz, * genTauLepEn;
-    vector<int> * genTauLepPID;
-    vector<bool> * genTauLepisLepDecay;
-    genTauLepPx = new vector<float>;
-    genTauLepPy = new vector<float>;
-    genTauLepPz = new vector<float>;
-    genTauLepEn = new vector<float>;
-    genTauLepPID = new vector<int>;
-    genTauLepisLepDecay = new vector<bool>;
-    
-    
-    vector<float> * genTauEn, * genTauPt, * genTauEta, * genTauPhi;
-    vector<int> * genTau_i, * genTau_firstMom, * genTau_pdgId;
-    genTauEn = new vector<float>;
-    genTauEta = new vector<float>;
-    genTauPhi = new vector<float>;
-    genTauPt = new vector<float>; 
-    
-    vector<float> * genElecEn, * genElecPt, * genElecEta, * genElecPhi;
-    vector<int> * genElec_i, * genElec_firstMom, * genElec_pdgId;
-    genElecEn = new vector<float>;
-    genElecEta = new vector<float>;
-    genElecPhi = new vector<float>;
-    genElecPt = new vector<float>; 
-    
-    vector<float> * genMuonEn, * genMuonPt, * genMuonEta, * genMuonPhi;
-    vector<int> * genMuon_i, * genMuon_firstMom, * genMuon_pdgId;
-    genMuonEn = new vector<float>;
-    genMuonEta = new vector<float>;
-    genMuonPhi = new vector<float>;
-    genMuonPt = new vector<float>; 
-    
-    vector<float> * genJetPx, * genJetPy, * genJetPz, * genJetEt, * genJetEta, * genJetEn, * genJetInvisE, 
-    vector<bool> * genJetIsGenJet;
-    genJetPx = new vector<float>;
-    genJetPy = new vector<float>;
-    genJetPz = new vector<float>;
-    genJetEn = new vector<float>;
-    genJetEt = new vector<float>;
-    genJetEta = new vector<float>;
-    genJetInvisE = new vector<float>;
-    genJetIsGenJet = new vector<bool>;
-    */
+     vector<float> * genStopEn, * genStopPt, * genStopEta, * genStopPhi;
+     vector<int> * genStop_i, * genStop_firstMom, * genStop_pdgId;
+     genStopEn = new vector<float>;
+     genStopEta = new vector<float>;
+     genStopPhi = new vector<float>;
+     genStopPt = new vector<float>; 
+     
+     vector<float> * genChi0En, * genChi0Pt, * genChi0Eta, * genChi0Phi;
+     vector<int> * genChi0_i, * genChi0_firstMom, * genChi0_pdgId;
+     genChi0En = new vector<float>;
+     genChi0Eta = new vector<float>;
+     genChi0Phi = new vector<float>;
+     genChi0Pt = new vector<float>; 
+     
+     vector<float> * genChiPMEn, * genChiPMPt, * genChiPMEta, * genChiPMPhi;
+     vector<int> * genChiPM_i, * genChiPM_firstMom, * genChiPM_pdgId;
+     genChiPMEn = new vector<float>;
+     genChiPMEta = new vector<float>;
+     genChiPMPhi = new vector<float>;
+     genChiPMPt = new vector<float>; 
+     
+     vector<float> * genBEn, * genBPt, * genBEta, * genBPhi;
+     vector<int> * genB_i, * genB_firstMom, * genB_pdgId;
+     genBEn = new vector<float>;
+     genBEta = new vector<float>;
+     genBPhi = new vector<float>;
+     genBPt = new vector<float>;  
+     
+     vector<float> * genWEn, * genWPt, * genWEta, * genWPhi;
+     vector<int> * genW_i, * genW_firstMom, * genW_pdgId;
+     genWEn = new vector<float>;
+     genWEta = new vector<float>;
+     genWPhi = new vector<float>;
+     genWPt = new vector<float>;
+     
+     genW_i = new vector<int>;
+     genW_firstMom = new vector<int>;
+     genW_pdgId = new vector<int>;
+     
+     vector<float> * genTauLepPx, * genTauLepPy, * genTauLepPz, * genTauLepEn;
+     vector<int> * genTauLepPID;
+     vector<bool> * genTauLepisLepDecay;
+     genTauLepPx = new vector<float>;
+     genTauLepPy = new vector<float>;
+     genTauLepPz = new vector<float>;
+     genTauLepEn = new vector<float>;
+     genTauLepPID = new vector<int>;
+     genTauLepisLepDecay = new vector<bool>;
+     
+     
+     vector<float> * genTauEn, * genTauPt, * genTauEta, * genTauPhi;
+     vector<int> * genTau_i, * genTau_firstMom, * genTau_pdgId;
+     genTauEn = new vector<float>;
+     genTauEta = new vector<float>;
+     genTauPhi = new vector<float>;
+     genTauPt = new vector<float>; 
+     
+     vector<float> * genElecEn, * genElecPt, * genElecEta, * genElecPhi;
+     vector<int> * genElec_i, * genElec_firstMom, * genElec_pdgId;
+     genElecEn = new vector<float>;
+     genElecEta = new vector<float>;
+     genElecPhi = new vector<float>;
+     genElecPt = new vector<float>; 
+     
+     vector<float> * genMuonEn, * genMuonPt, * genMuonEta, * genMuonPhi;
+     vector<int> * genMuon_i, * genMuon_firstMom, * genMuon_pdgId;
+     genMuonEn = new vector<float>;
+     genMuonEta = new vector<float>;
+     genMuonPhi = new vector<float>;
+     genMuonPt = new vector<float>; 
+     
+     vector<float> * genJetPx, * genJetPy, * genJetPz, * genJetEt, * genJetEta, * genJetEn, * genJetInvisE, 
+     vector<bool> * genJetIsGenJet;
+     genJetPx = new vector<float>;
+     genJetPy = new vector<float>;
+     genJetPz = new vector<float>;
+     genJetEn = new vector<float>;
+     genJetEt = new vector<float>;
+     genJetEta = new vector<float>;
+     genJetInvisE = new vector<float>;
+     genJetIsGenJet = new vector<bool>;
+     */
     
     float genMET, genMETPhi;
     
@@ -345,6 +466,7 @@ int main( int argc, const char* argv[] ) {
     if (doPURW && !doData) fOutName += "_PURW";
     if (doPURWOviToDESY && !doData) fOutName += "OviToDESY";
     fOutName += "_SkimOutput.root";
+    cout << "saving to " << fOutName << endl;
     TFile * outputFile;
     outputFile = new TFile(fOutName,"RECREATE");
     TTree * outTree = new TTree("OviSkimTree", "OviSkimTree");
@@ -417,7 +539,7 @@ int main( int argc, const char* argv[] ) {
     fileTree.SetBranchAddress( "T_METPFTypeI_ET",     &MET );
     fileTree.SetBranchAddress( "T_METPFTypeI_Phi", &MET_Phi );
     fileTree.SetBranchAddress( "T_METPFTypeI_Sig",  &METSig );
-
+    
     fileTree.SetBranchAddress( "T_EventF_EcalDeadCell", &filterECalDeadCell );
     fileTree.SetBranchAddress( "T_EventF_logErrorTooManyClusters", &filterLogErrorTooManyClusters );
     fileTree.SetBranchAddress( "T_EventF_trackingFailure", &filterTrackingFailure );
@@ -427,12 +549,83 @@ int main( int argc, const char* argv[] ) {
     fileTree.SetBranchAddress( "T_EventF_manystripclus", &filterManyStripClus );
     fileTree.SetBranchAddress( "T_EventF_eeBadSc", &filterEEBadSC );
     
-    //generator information
+    //// Generator information
+    fileTree.SetBranchAddress( "T_METgen_ET", &genMET );
+    fileTree.SetBranchAddress( "T_METgen_Phi", &genMETPhi );
+    /// Status 3 particles
+    fileTree.SetBranchAddress( "T_Gen_tSt3_pdgId", &genTopSt3_pdgId );
+    fileTree.SetBranchAddress( "T_Gen_tSt3_firstMother", &genTopSt3_firstMom );
+    fileTree.SetBranchAddress( "T_Gen_tSt3_i", &genTopSt3_i  );
+    fileTree.SetBranchAddress( "T_Gen_tSt3_energy", &genTopSt3En );
+    fileTree.SetBranchAddress( "T_Gen_tSt3_pt", &genTopSt3Pt );
+    fileTree.SetBranchAddress( "T_Gen_tSt3_eta", &genTopSt3Eta );
+    fileTree.SetBranchAddress( "T_Gen_tSt3_phi", &genTopSt3Phi );
+    
+    fileTree.SetBranchAddress( "T_Gen_bSt3_pdgId", &genBSt3_pdgId );
+    fileTree.SetBranchAddress( "T_Gen_bSt3_firstMother", &genBSt3_firstMom );
+    fileTree.SetBranchAddress( "T_Gen_bSt3_i", &genBSt3_i  );
+    fileTree.SetBranchAddress( "T_Gen_bSt3_energy", &genBSt3En );
+    fileTree.SetBranchAddress( "T_Gen_bSt3_pt", &genBSt3Pt );
+    fileTree.SetBranchAddress( "T_Gen_bSt3_eta", &genBSt3Eta );
+    fileTree.SetBranchAddress( "T_Gen_bSt3_phi", &genBSt3Phi );
+    
+    fileTree.SetBranchAddress( "T_Gen_MuonSt3_pdgId", &genMuonSt3_pdgId );
+    fileTree.SetBranchAddress( "T_Gen_MuonSt3_firstMother", &genMuonSt3_firstMom );
+    fileTree.SetBranchAddress( "T_Gen_MuonSt3_i", &genMuonSt3_i  );
+    fileTree.SetBranchAddress( "T_Gen_MuonSt3_energy", &genMuonSt3En );
+    fileTree.SetBranchAddress( "T_Gen_MuonSt3_pt", &genMuonSt3Pt );
+    fileTree.SetBranchAddress( "T_Gen_MuonSt3_eta", &genMuonSt3Eta );
+    fileTree.SetBranchAddress( "T_Gen_MuonSt3_phi", &genMuonSt3Phi );
+    
+    fileTree.SetBranchAddress( "T_Gen_ElecSt3_pdgId", &genElecSt3_pdgId );
+    fileTree.SetBranchAddress( "T_Gen_ElecSt3_firstMother", &genElecSt3_firstMom );
+    fileTree.SetBranchAddress( "T_Gen_ElecSt3_i", &genElecSt3_i  );
+    fileTree.SetBranchAddress( "T_Gen_ElecSt3_energy", &genElecSt3En );
+    fileTree.SetBranchAddress( "T_Gen_ElecSt3_pt", &genElecSt3Pt );
+    fileTree.SetBranchAddress( "T_Gen_ElecSt3_eta", &genElecSt3Eta );
+    fileTree.SetBranchAddress( "T_Gen_ElecSt3_phi", &genElecSt3Phi );
+    
+    /// Status 1 particles (technically, b-quark is a status 2 -- intermediate particle)
+    fileTree.SetBranchAddress( "T_Gen_b_PID", &genBSt1_pdgId );
+    fileTree.SetBranchAddress( "T_Gen_b_Px", &genBSt1Px );
+    fileTree.SetBranchAddress( "T_Gen_b_Py", &genBSt1Py );
+    fileTree.SetBranchAddress( "T_Gen_b_Pz", &genBSt1Pz );
+    fileTree.SetBranchAddress( "T_Gen_b_Energy", &genBSt1En );
+    fileTree.SetBranchAddress( "T_Gen_b_MPID", &genBSt1MomPID );
+    fileTree.SetBranchAddress( "T_Gen_b_MPx", &genBSt1MomPx );
+    fileTree.SetBranchAddress( "T_Gen_b_MPy", &genBSt1MomPy );
+    fileTree.SetBranchAddress( "T_Gen_b_MPz", &genBSt1MomPz );
+    fileTree.SetBranchAddress( "T_Gen_b_MEnergy", &genBSt1MomEn );
+    fileTree.SetBranchAddress( "T_Gen_b_MSt", &genBSt1MomStatus );
+    
+    fileTree.SetBranchAddress( "T_Gen_Muon_PID", &genMuonSt1_pdgId );
+    fileTree.SetBranchAddress( "T_Gen_Muon_Px", &genMuonSt1Px );
+    fileTree.SetBranchAddress( "T_Gen_Muon_Py", &genMuonSt1Py );
+    fileTree.SetBranchAddress( "T_Gen_Muon_Pz", &genMuonSt1Pz );
+    fileTree.SetBranchAddress( "T_Gen_Muon_Energy", &genMuonSt1En );
+    fileTree.SetBranchAddress( "T_Gen_Muon_MPID", &genMuonSt1MomPID );
+    fileTree.SetBranchAddress( "T_Gen_Muon_MPx", &genMuonSt1MomPx );
+    fileTree.SetBranchAddress( "T_Gen_Muon_MPy", &genMuonSt1MomPy );
+    fileTree.SetBranchAddress( "T_Gen_Muon_MPz", &genMuonSt1MomPz );
+    fileTree.SetBranchAddress( "T_Gen_Muon_MEnergy", &genMuonSt1MomEn );
+    fileTree.SetBranchAddress( "T_Gen_Muon_MSt", &genMuonSt1MomStatus );
+    
+    fileTree.SetBranchAddress( "T_Gen_Elec_PID", &genElecSt1_pdgId );
+    fileTree.SetBranchAddress( "T_Gen_Elec_Px", &genElecSt1Px );
+    fileTree.SetBranchAddress( "T_Gen_Elec_Py", &genElecSt1Py );
+    fileTree.SetBranchAddress( "T_Gen_Elec_Pz", &genElecSt1Pz );
+    fileTree.SetBranchAddress( "T_Gen_Elec_Energy", &genElecSt1En );
+    fileTree.SetBranchAddress( "T_Gen_Elec_MPID", &genElecSt1MomPID );
+    fileTree.SetBranchAddress( "T_Gen_Elec_MPx", &genElecSt1MomPx );
+    fileTree.SetBranchAddress( "T_Gen_Elec_MPy", &genElecSt1MomPy );
+    fileTree.SetBranchAddress( "T_Gen_Elec_MPz", &genElecSt1MomPz );
+    fileTree.SetBranchAddress( "T_Gen_Elec_MEnergy", &genElecSt1MomEn );
+    fileTree.SetBranchAddress( "T_Gen_Elec_MSt", &genElecSt1MomStatus );
+    
+    //Signal stuff
     fileTree.SetBranchAddress( "T_Gen_StopMass", &genStopMass );
     fileTree.SetBranchAddress( "T_Gen_Chi0Mass", &genChi0Mass );
     fileTree.SetBranchAddress( "T_Gen_CharginoMass", &genCharginoMass );
-    fileTree.SetBranchAddress( "T_METgen_ET", &genMET );
-    fileTree.SetBranchAddress( "T_METgen_Phi", &genMETPhi );
     
     //run information
     fileTree.SetBranchAddress( "T_Event_RunNumber", &RunNum );
@@ -464,7 +657,7 @@ int main( int argc, const char* argv[] ) {
     outTree->Branch("TLep1PdgId",&Lep0PDGID);
     
     outTree->Branch("TNJets",    &NJets); 
-//    outTree->Branch("THT",     &Jet0Py); 
+    //    outTree->Branch("THT",     &Jet0Py); 
     outTree->Branch("TNJetsBtag",&NBtagJets); 
     
     outTree->Branch("HT",        &HT);
@@ -496,14 +689,157 @@ int main( int argc, const char* argv[] ) {
         outTree->Branch("TGenCharginoMass0", &genCharginoMass0);
         outTree->Branch("TGenCharginoMass1", &genCharginoMass1);
     }
-    outTree->Branch("TGenMET", &genMET);
-    outTree->Branch("TGenMETPhi", &genMETPhi);
-
+    
+    if (!doData) {
+        outTree->Branch("TGenMET", &genMET);
+        outTree->Branch("TGenMETPhi", &genMETPhi);
+        
+        /// Status 3 lead particle branches
+        outTree->Branch("TGenTopSt3_0_PDGID", &genTopSt3_0_PID );
+        outTree->Branch("TGenTopSt3_0_FirstMom", &genTopSt3_0_FirstMom );
+        outTree->Branch("TGenTopSt3_0_Index", &genTopSt3_0_Index );
+        outTree->Branch("TGenTopSt3_0_Energy", &genTopSt3_0_Energy );
+        outTree->Branch("TGenTopSt3_0_Pt", &genTopSt3_0_Pt );
+        outTree->Branch("TGenTopSt3_0_Eta", &genTopSt3_0_Eta );
+        outTree->Branch("TGenTopSt3_0_Phi", &genTopSt3_0_Phi );
+        
+        outTree->Branch("TGenBSt3_0_PDGID", &genBSt3_0_PID );
+        outTree->Branch("TGenBSt3_0_FirstMom", &genBSt3_0_FirstMom );
+        outTree->Branch("TGenBSt3_0_Index", &genBSt3_0_Index );
+        outTree->Branch("TGenBSt3_0_Energy", &genBSt3_0_Energy );
+        outTree->Branch("TGenBSt3_0_Pt", &genBSt3_0_Pt );
+        outTree->Branch("TGenBSt3_0_Eta", &genBSt3_0_Eta );
+        outTree->Branch("TGenBSt3_0_Phi", &genBSt3_0_Phi );
+        
+        outTree->Branch("TGenMuonSt3_0_PDGID", &genMuonSt3_0_PID );
+        outTree->Branch("TGenMuonSt3_0_FirstMom", &genMuonSt3_0_FirstMom );
+        outTree->Branch("TGenMuonSt3_0_Index", &genMuonSt3_0_Index );
+        outTree->Branch("TGenMuonSt3_0_Energy", &genMuonSt3_0_Energy );
+        outTree->Branch("TGenMuonSt3_0_Pt", &genMuonSt3_0_Pt );
+        outTree->Branch("TGenMuonSt3_0_Eta", &genMuonSt3_0_Eta );
+        outTree->Branch("TGenMuonSt3_0_Phi", &genMuonSt3_0_Phi );
+        
+        outTree->Branch("TGenElecSt3_0_PDGID", &genElecSt3_0_PID );
+        outTree->Branch("TGenElecSt3_0_FirstMom", &genElecSt3_0_FirstMom );
+        outTree->Branch("TGenElecSt3_0_Index", &genElecSt3_0_Index );
+        outTree->Branch("TGenElecSt3_0_Energy", &genElecSt3_0_Energy );
+        outTree->Branch("TGenElecSt3_0_Pt", &genElecSt3_0_Pt );
+        outTree->Branch("TGenElecSt3_0_Eta", &genElecSt3_0_Eta );
+        outTree->Branch("TGenElecSt3_0_Phi", &genElecSt3_0_Phi );
+        
+        /// Status 3 sub-lead particle branches
+        outTree->Branch("TGenTopSt3_1_PDGID", &genTopSt3_1_PID );
+        outTree->Branch("TGenTopSt3_1_FirstMom", &genTopSt3_1_FirstMom );
+        outTree->Branch("TGenTopSt3_1_Index", &genTopSt3_1_Index );
+        outTree->Branch("TGenTopSt3_1_Energy", &genTopSt3_1_Energy );
+        outTree->Branch("TGenTopSt3_1_Pt", &genTopSt3_1_Pt );
+        outTree->Branch("TGenTopSt3_1_Eta", &genTopSt3_1_Eta );
+        outTree->Branch("TGenTopSt3_1_Phi", &genTopSt3_1_Phi );
+        
+        outTree->Branch("TGenBSt3_1_PDGID", &genBSt3_1_PID );
+        outTree->Branch("TGenBSt3_1_FirstMom", &genBSt3_1_FirstMom );
+        outTree->Branch("TGenBSt3_1_Index", &genBSt3_1_Index );
+        outTree->Branch("TGenBSt3_1_Energy", &genBSt3_1_Energy );
+        outTree->Branch("TGenBSt3_1_Pt", &genBSt3_1_Pt );
+        outTree->Branch("TGenBSt3_1_Eta", &genBSt3_1_Eta );
+        outTree->Branch("TGenBSt3_1_Phi", &genBSt3_1_Phi );
+        
+        outTree->Branch("TGenMuonSt3_1_PDGID", &genMuonSt3_1_PID );
+        outTree->Branch("TGenMuonSt3_1_FirstMom", &genMuonSt3_1_FirstMom );
+        outTree->Branch("TGenMuonSt3_1_Index", &genMuonSt3_1_Index );
+        outTree->Branch("TGenMuonSt3_1_Energy", &genMuonSt3_1_Energy );
+        outTree->Branch("TGenMuonSt3_1_Pt", &genMuonSt3_1_Pt );
+        outTree->Branch("TGenMuonSt3_1_Eta", &genMuonSt3_1_Eta );
+        outTree->Branch("TGenMuonSt3_1_Phi", &genMuonSt3_1_Phi );
+        
+        outTree->Branch("TGenElecSt3_1_PDGID", &genElecSt3_1_PID );
+        outTree->Branch("TGenElecSt3_1_FirstMom", &genElecSt3_1_FirstMom );
+        outTree->Branch("TGenElecSt3_1_Index", &genElecSt3_1_Index );
+        outTree->Branch("TGenElecSt3_1_Energy", &genElecSt3_1_Energy );
+        outTree->Branch("TGenElecSt3_1_Pt", &genElecSt3_1_Pt );
+        outTree->Branch("TGenElecSt3_1_Eta", &genElecSt3_1_Eta );
+        outTree->Branch("TGenElecSt3_1_Phi", &genElecSt3_1_Phi );
+        
+        /// Status 1 lead particle branches
+        outTree->Branch( "T_Gen_BSt1_0_PID", &genBSt1_0_PID );
+        outTree->Branch( "T_Gen_BSt1_0_Px", &genBSt1_0_Px );
+        outTree->Branch( "T_Gen_BSt1_0_Py", &genBSt1_0_Py );
+        outTree->Branch( "T_Gen_BSt1_0_Pz", &genBSt1_0_Pz );
+        outTree->Branch( "T_Gen_BSt1_0_Energy", &genBSt1_0_Energy );
+        outTree->Branch( "T_Gen_BSt1_0_MomPID", &genBSt1_0_MomPID );
+        outTree->Branch( "T_Gen_BSt1_0_MomPx", &genBSt1_0_MomPx );
+        outTree->Branch( "T_Gen_BSt1_0_MomPy", &genBSt1_0_MomPy );
+        outTree->Branch( "T_Gen_BSt1_0_MomPz", &genBSt1_0_MomPz );
+        outTree->Branch( "T_Gen_BSt1_0_MomEnergy", &genBSt1_0_MomEnergy );
+        outTree->Branch( "T_Gen_BSt1_0_MomStat", &genBSt1_0_MomStatus );
+        
+        outTree->Branch( "T_Gen_MuonSt1_0_PID", &genMuonSt1_0_PID );
+        outTree->Branch( "T_Gen_MuonSt1_0_Px", &genMuonSt1_0_Px );
+        outTree->Branch( "T_Gen_MuonSt1_0_Py", &genMuonSt1_0_Py );
+        outTree->Branch( "T_Gen_MuonSt1_0_Pz", &genMuonSt1_0_Pz );
+        outTree->Branch( "T_Gen_MuonSt1_0_Energy", &genMuonSt1_0_Energy );
+        outTree->Branch( "T_Gen_MuonSt1_0_MomPID", &genMuonSt1_0_MomPID );
+        outTree->Branch( "T_Gen_MuonSt1_0_MomPx", &genMuonSt1_0_MomPx );
+        outTree->Branch( "T_Gen_MuonSt1_0_MomPy", &genMuonSt1_0_MomPy );
+        outTree->Branch( "T_Gen_MuonSt1_0_MomPz", &genMuonSt1_0_MomPz );
+        outTree->Branch( "T_Gen_MuonSt1_0_MomEnergy", &genMuonSt1_0_MomEnergy );
+        outTree->Branch( "T_Gen_MuonSt1_0_MomStat", &genMuonSt1_0_MomStatus );
+        
+        outTree->Branch( "T_Gen_ElecSt1_0_PID", &genElecSt1_0_PID );
+        outTree->Branch( "T_Gen_ElecSt1_0_Px", &genElecSt1_0_Px );
+        outTree->Branch( "T_Gen_ElecSt1_0_Py", &genElecSt1_0_Py );
+        outTree->Branch( "T_Gen_ElecSt1_0_Pz", &genElecSt1_0_Pz );
+        outTree->Branch( "T_Gen_ElecSt1_0_Energy", &genElecSt1_0_Energy );
+        outTree->Branch( "T_Gen_ElecSt1_0_MomPID", &genElecSt1_0_MomPID );
+        outTree->Branch( "T_Gen_ElecSt1_0_MomPx", &genElecSt1_0_MomPx );
+        outTree->Branch( "T_Gen_ElecSt1_0_MomPy", &genElecSt1_0_MomPy );
+        outTree->Branch( "T_Gen_ElecSt1_0_MomPz", &genElecSt1_0_MomPz );
+        outTree->Branch( "T_Gen_ElecSt1_0_MomEnergy", &genElecSt1_0_MomEnergy );
+        outTree->Branch( "T_Gen_ElecSt1_0_MomStat", &genElecSt1_0_MomStatus );  
+        
+        /// Status 1 sub-lead particle branches
+        outTree->Branch( "T_Gen_BSt1_1_PID", &genBSt1_1_PID );
+        outTree->Branch( "T_Gen_BSt1_1_Px", &genBSt1_1_Px );
+        outTree->Branch( "T_Gen_BSt1_1_Py", &genBSt1_1_Py );
+        outTree->Branch( "T_Gen_BSt1_1_Pz", &genBSt1_1_Pz );
+        outTree->Branch( "T_Gen_BSt1_1_Energy", &genBSt1_1_Energy );
+        outTree->Branch( "T_Gen_BSt1_1_MomPID", &genBSt1_1_MomPID );
+        outTree->Branch( "T_Gen_BSt1_1_MomPx", &genBSt1_1_MomPx );
+        outTree->Branch( "T_Gen_BSt1_1_MomPy", &genBSt1_1_MomPy );
+        outTree->Branch( "T_Gen_BSt1_1_MomPz", &genBSt1_1_MomPz );
+        outTree->Branch( "T_Gen_BSt1_1_MomEnergy", &genBSt1_1_MomEnergy );
+        outTree->Branch( "T_Gen_BSt1_1_MomStat", &genBSt1_1_MomStatus );
+        
+        outTree->Branch( "T_Gen_MuonSt1_1_PID", &genMuonSt1_1_PID );
+        outTree->Branch( "T_Gen_MuonSt1_1_Px", &genMuonSt1_1_Px );
+        outTree->Branch( "T_Gen_MuonSt1_1_Py", &genMuonSt1_1_Py );
+        outTree->Branch( "T_Gen_MuonSt1_1_Pz", &genMuonSt1_1_Pz );
+        outTree->Branch( "T_Gen_MuonSt1_1_Energy", &genMuonSt1_1_Energy );
+        outTree->Branch( "T_Gen_MuonSt1_1_MomPID", &genMuonSt1_1_MomPID );
+        outTree->Branch( "T_Gen_MuonSt1_1_MomPx", &genMuonSt1_1_MomPx );
+        outTree->Branch( "T_Gen_MuonSt1_1_MomPy", &genMuonSt1_1_MomPy );
+        outTree->Branch( "T_Gen_MuonSt1_1_MomPz", &genMuonSt1_1_MomPz );
+        outTree->Branch( "T_Gen_MuonSt1_1_MomEnergy", &genMuonSt1_1_MomEnergy );
+        outTree->Branch( "T_Gen_MuonSt1_1_MomStat", &genMuonSt1_1_MomStatus );
+        
+        outTree->Branch( "T_Gen_ElecSt1_1_PID", &genElecSt1_1_PID );
+        outTree->Branch( "T_Gen_ElecSt1_1_Px", &genElecSt1_1_Px );
+        outTree->Branch( "T_Gen_ElecSt1_1_Py", &genElecSt1_1_Py );
+        outTree->Branch( "T_Gen_ElecSt1_1_Pz", &genElecSt1_1_Pz );
+        outTree->Branch( "T_Gen_ElecSt1_1_Energy", &genElecSt1_1_Energy );
+        outTree->Branch( "T_Gen_ElecSt1_1_MomPID", &genElecSt1_1_MomPID );
+        outTree->Branch( "T_Gen_ElecSt1_1_MomPx", &genElecSt1_1_MomPx );
+        outTree->Branch( "T_Gen_ElecSt1_1_MomPy", &genElecSt1_1_MomPy );
+        outTree->Branch( "T_Gen_ElecSt1_1_MomPz", &genElecSt1_1_MomPz );
+        outTree->Branch( "T_Gen_ElecSt1_1_MomEnergy", &genElecSt1_1_MomEnergy );
+        outTree->Branch( "T_Gen_ElecSt1_1_MomStat", &genElecSt1_1_MomStatus );
+    }
+    
     cout << "--- Processing: " << fileTree.GetEntries() << " events" << endl;
     h_eventCount->Fill(1);
     h_eventCount->SetEntries(fileTree.GetEntries());
     outputFile->cd();
-//    int lep0Index, lep1Index;
+    //    int lep0Index, lep1Index;
     bool doEvent;
     // cout << "test2 " << endl;
     
@@ -526,14 +862,14 @@ int main( int argc, const char* argv[] ) {
     }
     
     for (Long64_t ievt=0; ievt<fileTree.GetEntries();ievt++) {
-//    for (Long64_t ievt=0; ievt<100;ievt++) {
+        //    for (Long64_t ievt=0; ievt<100;ievt++) {
         Leptons = new vector<TLorentzVector>;
         pdgId = new vector<int>;
         Jets = new vector<TLorentzVector>;
         BJetIndices = new vector<int>;
         ElecIndices = new vector<int>;
         MuonIndices = new vector<int>;
-//        lep0Index = 0; lep1Index = 1;
+        //        lep0Index = 0; lep1Index = 1;
         doEvent = true;
         map<string, float> stringKeyToVar;
         fileTree.GetEntry(ievt);
@@ -566,6 +902,146 @@ int main( int argc, const char* argv[] ) {
             cout << "in format EventNum:genStopMass:genChi0Mass:genCharginoMass ";
             cout << EventNum << ":" << genStopMass0 << ":" << genChi0Mass0 << ":" <<  genCharginoMass0 << endl;
         }
+        /// Status 3 lead particle info
+        genTopSt3_0_Energy = ((int) genTopSt3En->size() > 0) ? genTopSt3En->at(0) : -1;
+        genTopSt3_0_Pt = ((int) genTopSt3Pt->size() > 0) ? genTopSt3Pt->at(0) : -1;
+        genTopSt3_0_Eta = ((int) genTopSt3Eta->size() > 0) ? genTopSt3Eta->at(0) : -1;
+        genTopSt3_0_Phi = ((int) genTopSt3Phi->size() > 0) ? genTopSt3Phi->at(0) : -1;
+        genTopSt3_0_PID = ((int) genTopSt3_pdgId->size() > 0) ? genTopSt3_pdgId->at(0) : -1;
+        genTopSt3_0_Index = ((int) genTopSt3_i->size() > 0) ? genTopSt3_i->at(0) : -1;
+        genTopSt3_0_FirstMom = ((int) genTopSt3_firstMom->size() > 0) ? genTopSt3_firstMom->at(0) : -1;
+        
+        genBSt3_0_Energy = ((int) genBSt3En->size() > 0) ? genBSt3En->at(0) : -1;
+        genBSt3_0_Pt = ((int) genBSt3Pt->size() > 0) ? genBSt3Pt->at(0) : -1;
+        genBSt3_0_Eta = ((int) genBSt3Eta->size() > 0) ? genBSt3Eta->at(0) : -1;
+        genBSt3_0_Phi = ((int) genBSt3Phi->size() > 0) ? genBSt3Phi->at(0) : -1;
+        genBSt3_0_PID = ((int) genBSt3_pdgId->size() > 0) ? genBSt3_pdgId->at(0) : -1;
+        genBSt3_0_Index = ((int) genBSt3_i->size() > 0) ? genBSt3_i->at(0) : -1;
+        genBSt3_0_FirstMom = ((int) genBSt3_firstMom->size() > 0) ? genBSt3_firstMom->at(0) : -1;
+        
+        genMuonSt3_0_Energy = ((int) genMuonSt3En->size() > 0) ? genMuonSt3En->at(0) : -1;
+        genMuonSt3_0_Pt = ((int) genMuonSt3Pt->size() > 0) ? genMuonSt3Pt->at(0) : -1;
+        genMuonSt3_0_Eta = ((int) genMuonSt3Eta->size() > 0) ? genMuonSt3Eta->at(0) : -1;
+        genMuonSt3_0_Phi = ((int) genMuonSt3Phi->size() > 0) ? genMuonSt3Phi->at(0) : -1;
+        genMuonSt3_0_PID = ((int) genMuonSt3_pdgId->size() > 0) ? genMuonSt3_pdgId->at(0) : -1;
+        genMuonSt3_0_Index = ((int) genMuonSt3_i->size() > 0) ? genMuonSt3_i->at(0) : -1;
+        genMuonSt3_0_FirstMom = ((int) genMuonSt3_firstMom->size() > 0) ? genMuonSt3_firstMom->at(0) : -1;
+        
+        genElecSt3_0_Energy = ((int) genElecSt3En->size() > 0) ? genElecSt3En->at(0) : -1;
+        genElecSt3_0_Pt = ((int) genElecSt3Pt->size() > 0) ? genElecSt3Pt->at(0) : -1;
+        genElecSt3_0_Eta = ((int) genElecSt3Eta->size() > 0) ? genElecSt3Eta->at(0) : -1;
+        genElecSt3_0_Phi = ((int) genElecSt3Phi->size() > 0) ? genElecSt3Phi->at(0) : -1;
+        genElecSt3_0_PID = ((int) genElecSt3_pdgId->size() > 0) ? genElecSt3_pdgId->at(0) : -1;
+        genElecSt3_0_Index = ((int) genElecSt3_i->size() > 0) ? genElecSt3_i->at(0) : -1;
+        genElecSt3_0_FirstMom = ((int) genElecSt3_firstMom->size() > 0) ? genElecSt3_firstMom->at(0) : -1;
+        
+        /// Status 3 sub-lead particle info
+        genTopSt3_1_Energy = ((int) genTopSt3En->size() > 1) ? genTopSt3En->at(1) : -1;
+        genTopSt3_1_Pt = ((int) genTopSt3Pt->size() > 1) ? genTopSt3Pt->at(1) : -1;
+        genTopSt3_1_Eta = ((int) genTopSt3Eta->size() > 1) ? genTopSt3Eta->at(1) : -1;
+        genTopSt3_1_Phi = ((int) genTopSt3Phi->size() > 1) ? genTopSt3Phi->at(1) : -1;
+        genTopSt3_1_PID = ((int) genTopSt3_pdgId->size() > 1) ? genTopSt3_pdgId->at(1) : -1;
+        genTopSt3_1_Index = ((int) genTopSt3_i->size() > 1) ? genTopSt3_i->at(1) : -1;
+        genTopSt3_1_FirstMom = ((int) genTopSt3_firstMom->size() > 1) ? genTopSt3_firstMom->at(1) : -1;
+        
+        genBSt3_1_Energy = ((int) genBSt3En->size() > 1) ? genBSt3En->at(1) : -1;
+        genBSt3_1_Pt = ((int) genBSt3Pt->size() > 1) ? genBSt3Pt->at(1) : -1;
+        genBSt3_1_Eta = ((int) genBSt3Eta->size() > 1) ? genBSt3Eta->at(1) : -1;
+        genBSt3_1_Phi = ((int) genBSt3Phi->size() > 1) ? genBSt3Phi->at(1) : -1;
+        genBSt3_1_PID = ((int) genBSt3_pdgId->size() > 1) ? genBSt3_pdgId->at(1) : -1;
+        genBSt3_1_Index = ((int) genBSt3_i->size() > 1) ? genBSt3_i->at(1) : -1;
+        genBSt3_1_FirstMom = ((int) genBSt3_firstMom->size() > 1) ? genBSt3_firstMom->at(1) : -1;
+        
+        genMuonSt3_1_Energy = ((int) genMuonSt3En->size() > 1) ? genMuonSt3En->at(1) : -1;
+        genMuonSt3_1_Pt = ((int) genMuonSt3Pt->size() > 1) ? genMuonSt3Pt->at(1) : -1;
+        genMuonSt3_1_Eta = ((int) genMuonSt3Eta->size() > 1) ? genMuonSt3Eta->at(1) : -1;
+        genMuonSt3_1_Phi = ((int) genMuonSt3Phi->size() > 1) ? genMuonSt3Phi->at(1) : -1;
+        genMuonSt3_1_PID = ((int) genMuonSt3_pdgId->size() > 1) ? genMuonSt3_pdgId->at(1) : -1;
+        genMuonSt3_1_Index = ((int) genMuonSt3_i->size() > 1) ? genMuonSt3_i->at(1) : -1;
+        genMuonSt3_1_FirstMom = ((int) genMuonSt3_firstMom->size() > 1) ? genMuonSt3_firstMom->at(1) : -1;
+        
+        genElecSt3_1_Energy = ((int) genElecSt3En->size() > 1) ? genElecSt3En->at(1) : -1;
+        genElecSt3_1_Pt = ((int) genElecSt3Pt->size() > 1) ? genElecSt3Pt->at(1) : -1;
+        genElecSt3_1_Eta = ((int) genElecSt3Eta->size() > 1) ? genElecSt3Eta->at(1) : -1;
+        genElecSt3_1_Phi = ((int) genElecSt3Phi->size() > 1) ? genElecSt3Phi->at(1) : -1;
+        genElecSt3_1_PID = ((int) genElecSt3_pdgId->size() > 1) ? genElecSt3_pdgId->at(1) : -1;
+        genElecSt3_1_Index = ((int) genElecSt3_i->size() > 1) ? genElecSt3_i->at(1) : -1;
+        genElecSt3_1_FirstMom = ((int) genElecSt3_firstMom->size() > 1) ? genElecSt3_firstMom->at(1) : -1;
+        
+        /// Status 1 lead-particle info
+        genBSt1_0_Energy = ((int) genBSt1En->size() > 0) ? genBSt1En->at(0) : -1;
+        genBSt1_0_MomEnergy = ((int) genBSt1MomEn->size() > 0) ? genBSt1MomEn->at(0) : -1;
+        genBSt1_0_Px = ((int) genBSt1Px->size() > 0) ? genBSt1Px->at(0) : -1;
+        genBSt1_0_MomPx = ((int) genBSt1MomPx->size() > 0) ? genBSt1MomPx->at(0) : -1;
+        genBSt1_0_Py = ((int) genBSt1Py->size() > 0) ? genBSt1Py->at(0) : -1;
+        genBSt1_0_MomPy = ((int) genBSt1MomPy->size() > 0) ? genBSt1MomPy->at(0) : -1;
+        genBSt1_0_Pz = ((int) genBSt1Pz->size() > 0) ? genBSt1Pz->at(0) : -1;
+        genBSt1_0_MomPz = ((int) genBSt1MomPz->size() > 0) ? genBSt1MomPz->at(0) : -1;
+        genBSt1_0_PID = ((int) genBSt1_pdgId->size() > 0) ? genBSt1_pdgId->at(0) : -1;
+        genBSt1_0_MomPID = ((int) genBSt1MomPID->size() > 0) ? genBSt1MomPID->at(0) : -1;
+        genBSt1_0_MomStatus = ((int) genBSt1MomStatus->size() > 0) ? genBSt1MomStatus->at(0) : -1;
+        
+        genMuonSt1_0_Energy = ((int) genMuonSt1En->size() > 0) ? genMuonSt1En->at(0) : -1;
+        genMuonSt1_0_MomEnergy = ((int) genMuonSt1MomEn->size() > 0) ? genMuonSt1MomEn->at(0) : -1;
+        genMuonSt1_0_Px = ((int) genMuonSt1Px->size() > 0) ? genMuonSt1Px->at(0) : -1;
+        genMuonSt1_0_MomPx = ((int) genMuonSt1MomPx->size() > 0) ? genMuonSt1MomPx->at(0) : -1;
+        genMuonSt1_0_Py = ((int) genMuonSt1Py->size() > 0) ? genMuonSt1Py->at(0) : -1;
+        genMuonSt1_0_MomPy = ((int) genMuonSt1MomPy->size() > 0) ? genMuonSt1MomPy->at(0) : -1;
+        genMuonSt1_0_Pz = ((int) genMuonSt1Pz->size() > 0) ? genMuonSt1Pz->at(0) : -1;
+        genMuonSt1_0_MomPz = ((int) genMuonSt1MomPz->size() > 0) ? genMuonSt1MomPz->at(0) : -1;
+        genMuonSt1_0_PID = ((int) genMuonSt1_pdgId->size() > 0) ? genMuonSt1_pdgId->at(0) : -1;
+        genMuonSt1_0_MomPID = ((int) genMuonSt1MomPID->size() > 0) ? genMuonSt1MomPID->at(0) : -1;
+        genMuonSt1_0_MomStatus = ((int) genMuonSt1MomStatus->size() > 0) ? genMuonSt1MomStatus->at(0) : -1;
+        
+        genElecSt1_0_Energy = ((int) genElecSt1En->size() > 0) ? genElecSt1En->at(0) : -1;
+        genElecSt1_0_MomEnergy = ((int) genElecSt1MomEn->size() > 0) ? genElecSt1MomEn->at(0) : -1;
+        genElecSt1_0_Px = ((int) genElecSt1Px->size() > 0) ? genElecSt1Px->at(0) : -1;
+        genElecSt1_0_MomPx = ((int) genElecSt1MomPx->size() > 0) ? genElecSt1MomPx->at(0) : -1;
+        genElecSt1_0_Py = ((int) genElecSt1Py->size() > 0) ? genElecSt1Py->at(0) : -1;
+        genElecSt1_0_MomPy = ((int) genElecSt1MomPy->size() > 0) ? genElecSt1MomPy->at(0) : -1;
+        genElecSt1_0_Pz = ((int) genElecSt1Pz->size() > 0) ? genElecSt1Pz->at(0) : -1;
+        genElecSt1_0_MomPz = ((int) genElecSt1MomPz->size() > 0) ? genElecSt1MomPz->at(0) : -1;
+        genElecSt1_0_PID = ((int) genElecSt1_pdgId->size() > 0) ? genElecSt1_pdgId->at(0) : -1;
+        genElecSt1_0_MomPID = ((int) genElecSt1MomPID->size() > 0) ? genElecSt1MomPID->at(0) : -1;
+        genElecSt1_0_MomStatus = ((int) genElecSt1MomStatus->size() > 0) ? genElecSt1MomStatus->at(0) : -1; 
+        
+        /// Status 1 sub-lead-particle info
+        genBSt1_1_Energy = ((int) genBSt1En->size() > 1) ? genBSt1En->at(1) : -1;
+        genBSt1_1_MomEnergy = ((int) genBSt1MomEn->size() > 1) ? genBSt1MomEn->at(1) : -1;
+        genBSt1_1_Px = ((int) genBSt1Px->size() > 1) ? genBSt1Px->at(1) : -1;
+        genBSt1_1_MomPx = ((int) genBSt1MomPx->size() > 1) ? genBSt1MomPx->at(1) : -1;
+        genBSt1_1_Py = ((int) genBSt1Py->size() > 1) ? genBSt1Py->at(1) : -1;
+        genBSt1_1_MomPy = ((int) genBSt1MomPy->size() > 1) ? genBSt1MomPy->at(1) : -1;
+        genBSt1_1_Pz = ((int) genBSt1Pz->size() > 1) ? genBSt1Pz->at(1) : -1;
+        genBSt1_1_MomPz = ((int) genBSt1MomPz->size() > 1) ? genBSt1MomPz->at(1) : -1;
+        genBSt1_1_PID = ((int) genBSt1_pdgId->size() > 1) ? genBSt1_pdgId->at(1) : -1;
+        genBSt1_1_MomPID = ((int) genBSt1MomPID->size() > 1) ? genBSt1MomPID->at(1) : -1;
+        genBSt1_1_MomStatus = ((int) genBSt1MomStatus->size() > 1) ? genBSt1MomStatus->at(1) : -1;
+        
+        genMuonSt1_1_Energy = ((int) genMuonSt1En->size() > 1) ? genMuonSt1En->at(1) : -1;
+        genMuonSt1_1_MomEnergy = ((int) genMuonSt1MomEn->size() > 1) ? genMuonSt1MomEn->at(1) : -1;
+        genMuonSt1_1_Px = ((int) genMuonSt1Px->size() > 1) ? genMuonSt1Px->at(1) : -1;
+        genMuonSt1_1_MomPx = ((int) genMuonSt1MomPx->size() > 1) ? genMuonSt1MomPx->at(1) : -1;
+        genMuonSt1_1_Py = ((int) genMuonSt1Py->size() > 1) ? genMuonSt1Py->at(1) : -1;
+        genMuonSt1_1_MomPy = ((int) genMuonSt1MomPy->size() > 1) ? genMuonSt1MomPy->at(1) : -1;
+        genMuonSt1_1_Pz = ((int) genMuonSt1Pz->size() > 1) ? genMuonSt1Pz->at(1) : -1;
+        genMuonSt1_1_MomPz = ((int) genMuonSt1MomPz->size() > 1) ? genMuonSt1MomPz->at(1) : -1;
+        genMuonSt1_1_PID = ((int) genMuonSt1_pdgId->size() > 1) ? genMuonSt1_pdgId->at(1) : -1;
+        genMuonSt1_1_MomPID = ((int) genMuonSt1MomPID->size() > 1) ? genMuonSt1MomPID->at(1) : -1;
+        genMuonSt1_1_MomStatus = ((int) genMuonSt1MomStatus->size() > 1) ? genMuonSt1MomStatus->at(1) : -1;
+        
+        genElecSt1_1_Energy = ((int) genElecSt1En->size() > 1) ? genElecSt1En->at(1) : -1;
+        genElecSt1_1_MomEnergy = ((int) genElecSt1MomEn->size() > 1) ? genElecSt1MomEn->at(1) : -1;
+        genElecSt1_1_Px = ((int) genElecSt1Px->size() > 1) ? genElecSt1Px->at(1) : -1;
+        genElecSt1_1_MomPx = ((int) genElecSt1MomPx->size() > 1) ? genElecSt1MomPx->at(1) : -1;
+        genElecSt1_1_Py = ((int) genElecSt1Py->size() > 1) ? genElecSt1Py->at(1) : -1;
+        genElecSt1_1_MomPy = ((int) genElecSt1MomPy->size() > 1) ? genElecSt1MomPy->at(1) : -1;
+        genElecSt1_1_Pz = ((int) genElecSt1Pz->size() > 1) ? genElecSt1Pz->at(1) : -1;
+        genElecSt1_1_MomPz = ((int) genElecSt1MomPz->size() > 1) ? genElecSt1MomPz->at(1) : -1;
+        genElecSt1_1_PID = ((int) genElecSt1_pdgId->size() > 1) ? genElecSt1_pdgId->at(1) : -1;
+        genElecSt1_1_MomPID = ((int) genElecSt1MomPID->size() > 1) ? genElecSt1MomPID->at(1) : -1;
+        genElecSt1_1_MomStatus = ((int) genElecSt1MomStatus->size() > 1) ? genElecSt1MomStatus->at(1) : -1;
+        
         weight = 1.;
         float preNVtxRWweight = 1;  
         
@@ -586,6 +1062,7 @@ int main( int argc, const char* argv[] ) {
         if (!doEvent) continue;
         ElecIndices = ElectronPickOvi(ElecPt, ElecEta, ElecCharge, ElecPFNeutIso, ElecPFCharIso, ElecPFPhotIso, passConvVeto, isPFElectron);
         if (doVerbosity) {
+            cout << "iEvent " << ievt << endl;
             cout << "E0 Index " << ElecIndices->at(0) << endl;
             cout << "E1 Index " << ElecIndices->at(1) << endl;
         }
@@ -599,16 +1076,16 @@ int main( int argc, const char* argv[] ) {
         int M0I = MuonIndices->at(0);
         int M1I = MuonIndices->at(1);
         if (!(M0I < 0)) {
-//            cout << "muon E 0 " << MuonE->at(MuonIndices->at(0)) << endl;
-//            cout << "muon Px " << MuonPx->at(MuonIndices->at(0)) << endl;
-//            cout << "muon Py " << MuonPy->at(MuonIndices->at(0)) << endl;
-//            cout << "muon Pz " << MuonPz->at(MuonIndices->at(0)) << endl;
+            //            cout << "muon E 0 " << MuonE->at(MuonIndices->at(0)) << endl;
+            //            cout << "muon Px " << MuonPx->at(MuonIndices->at(0)) << endl;
+            //            cout << "muon Py " << MuonPy->at(MuonIndices->at(0)) << endl;
+            //            cout << "muon Pz " << MuonPz->at(MuonIndices->at(0)) << endl;
             patsyVec.SetPxPyPzE(MuonPx->at(MuonIndices->at(0)), MuonPy->at(MuonIndices->at(0)), MuonPz->at(MuonIndices->at(0)), MuonE->at(MuonIndices->at(0)));
-//            cout << " patsyVec Eta " << patsyVec.Eta() << endl;
-//            cout << "MuonEtavector " << MuonEta->at(MuonIndices->at(0)) << endl;
+            //            cout << " patsyVec Eta " << patsyVec.Eta() << endl;
+            //            cout << "MuonEtavector " << MuonEta->at(MuonIndices->at(0)) << endl;
             //            patsyVec.SetPtEtaPhiE(MuonPt->at(MuonIndices->at(0)), MuonEta->at(MuonIndices->at(0)), patsyVec.Phi(), patsyVec.E());
-//            cout << "MuonEtapatsy " << patsyVec.Eta() << endl;
-//            cout << "MuonE " << patsyVec.E() << endl;
+            //            cout << "MuonEtapatsy " << patsyVec.Eta() << endl;
+            //            cout << "MuonE " << patsyVec.E() << endl;
             Leptons->push_back(patsyVec);
             pdgId->push_back(-13);
         }
@@ -618,13 +1095,13 @@ int main( int argc, const char* argv[] ) {
             pdgId->push_back(13);
         }
         if (!(E0I < 0)) {      
-//            cout << "elec E 0" << ElecE->at(ElecIndices->at(0)) << endl;
-//            cout << "elec Px " << ElecPx->at(ElecIndices->at(0)) << endl;
-//            cout << "elec Py " << ElecPy->at(ElecIndices->at(0)) << endl;
-//            cout << "elec Pz " << ElecPz->at(ElecIndices->at(0)) << endl;
+            //            cout << "elec E 0" << ElecE->at(ElecIndices->at(0)) << endl;
+            //            cout << "elec Px " << ElecPx->at(ElecIndices->at(0)) << endl;
+            //            cout << "elec Py " << ElecPy->at(ElecIndices->at(0)) << endl;
+            //            cout << "elec Pz " << ElecPz->at(ElecIndices->at(0)) << endl;
             patsyVec.SetPxPyPzE(ElecPx->at(ElecIndices->at(0)), ElecPy->at(ElecIndices->at(0)), ElecPz->at(ElecIndices->at(0)), ElecE->at(ElecIndices->at(0)));
-//            cout << "elec E 1 " << patsyVec.E() << endl;
-//            cout << "elec E 2 " << ElecE->at(ElecIndices->at(0)) << endl;
+            //            cout << "elec E 1 " << patsyVec.E() << endl;
+            //            cout << "elec E 2 " << ElecE->at(ElecIndices->at(0)) << endl;
             Leptons->push_back(patsyVec);
             pdgId->push_back(-11); 
         }
@@ -645,12 +1122,12 @@ int main( int argc, const char* argv[] ) {
         Lep1Pz = Lep1Vec.Pz();
         Lep1E  = Lep1Vec.E();
         /*
-        cout << "Lep0Px " << Lep0Px << endl;
-        cout << "Lep0Py " << Lep0Py << endl;
-        cout << "Lep0Pz " << Lep0Pz << endl;
-        cout << "Lep1Px " << Lep1Px << endl;
-        cout << "Lep1Py " << Lep1Py << endl;
-        cout << "Lep1Pz " << Lep1Pz << endl;
+         cout << "Lep0Px " << Lep0Px << endl;
+         cout << "Lep0Py " << Lep0Py << endl;
+         cout << "Lep0Pz " << Lep0Pz << endl;
+         cout << "Lep1Px " << Lep1Px << endl;
+         cout << "Lep1Py " << Lep1Py << endl;
+         cout << "Lep1Pz " << Lep1Pz << endl;
          */
         
         Jets = JetInfo(Leptons, JetEt, JetEta, JetPx, JetPy, JetPz, JetE, JetNHF, JetNEF, JetCHF, JetCEF, JetBTag, JetNDaug, JetCharMult, NJets, NBtagJets, BJetIndices, HT);
@@ -737,7 +1214,7 @@ int main( int argc, const char* argv[] ) {
     outputFile->cd();
     cout << "cd-ing to output directory" << endl;
     outputFile->Write();
-    h_eventCount->Write();    
+    h_eventCount->Write();
     cout << "Writing of output file done" << endl;
     outputFile->Close();
     cout << "end of code" << endl;

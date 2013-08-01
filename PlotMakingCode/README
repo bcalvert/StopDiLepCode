@@ -20,15 +20,32 @@ Example:
 or
 ./NewOviStopPlotFillerRunOnSkim_wSyst -i ttbar -w 1 doPURW doHackPURW doBookSyst
 
-Note, I have also included four shell scripts to submit condor jobs to run on the relevant Oviedo or DESY nTuples
+Note, I have also included four shell scripts (plus four extensions I'll talk about later) to submit condor jobs to run on the relevant Oviedo or DESY nTuples
 OviMCPlotMaker.sh
 OviDataPlotMaker.sh
 DESYMCPlotMaker.sh
 DESYDataPlotMaker.sh
-These scripts will read the list nTuples from the appropriate directory (currently,
-/data/users/tkolberg/new_oviedo_ntuples_5_14_13 for Oviedo
+To use these scripts, for DESY call them in the following example fashion,
+./DESYDataPlotMaker.sh doLocal
+where doLocal is 1 or 0 to specify whether to use the local condor queue or not (generally should leave it as 0 unless there's complete filling of the main condor queue)
+The DESY scripts read in the appropriate nTuples from (currently),
 /data/users/tkolberg/new_top for DESY
-)
-and run the ./NewOviStopPlotFillerRunOnSkim_wSyst with appropriate settings, included saving output to the directory specified in outputSavePath.txt
+For Oviedo, it's analogous to DESY with one additional command line input
+./OviDataPlotMaker.sh doLocal grabNewNTuple
+where grabNewNTuple is 1 or 0 for whether or not to grab the new version of the nTuples
+If not grabbing the new version, the Oviedo script will grab from the location,
+/data/users/tkolberg/new_oviedo_ntuples_5_14_13
 
-Note, that if you want to run in parallel on the files
+Regardless, these scripts will run the ./NewOviStopPlotFillerRunOnSkim_wSyst with appropriate settings, included saving output to the directory specified in outputSavePath.txt
+Note, that if you want to run in parallel on the files, you can use the extended versions of the PlotMaker scripts
+OviMCPlotMakerParallel.sh
+OviDataPlotMakerParallel.sh
+DESYMCPlotMakerParallel.sh
+DESYDataPlotMakerParallel.sh
+These scripts are completely analogous to the non-Parallel plot maker scripts except for ONE key caveat: You need an additional command line argument at the BEGINNING of the command line chain. That argument specifies the number of "Break Points", or partitions between parallel files (i.e. # of parallel files created is # of break points + 1)
+So for DESY
+./DESYDataPlotMakerParallel.sh numBPs doLocal
+and for Oviedo
+./OviDataPlotMakerParallel.sh numBPs doLocal grabNewNTuple
+
+I commonly choose numBPs = 9, but NB that for now you should either always be consistent or alternatively, delete all parallel output files in the target directory before re-running (to prevent adding old version of the parallel files when hadding them together into composite files)

@@ -96,10 +96,12 @@ int main( int argc, const char* argv[] ) {
     float fillWeight;
     float MET,METPhi,METSig, METPhi_preCorr;
     float METX, METY, METX_preCorr, METY_preCorr;
-    float genMET, genMETPhi;
     float MT2ll, MT2lb, MT2lbPair1, MT2lbPair2;
     float MT2llCut = 80;
     float MT2lbCut = 172;
+    bool  PassMT2llIndCut[5];
+    float MT2llIndCut[5] = {80., 90., 100., 110., 120.};
+    
     float Lep0Px,Lep0Py,Lep0Pz,Lep0E,Lep1Px,Lep1Py,Lep1Pz,Lep1E;
     int   Lep0PdgId, Lep1PdgId;
     float HT,Btag_j0,Btag_j1;
@@ -108,9 +110,15 @@ int main( int argc, const char* argv[] ) {
     int   BtagJet0Index, BtagJet1Index;
     float BDT,BDTDis;
     
-    float TGenStopMass0,TGenStopMass1,TGenChi0Mass0,TGenChi0Mass1;
-    int   grabStopMass, grabChi0Mass;
+    int TGenStopMass0,TGenStopMass1,TGenChi0Mass0,TGenChi0Mass1, TGenCharginoMass0, TGenCharginoMass1;
+    int   grabStopMass, grabChi0Mass, grabCharginoMass;
     int   massDiffThresh = 5;
+    float stopWeight    = 0.;
+    float stopWeightErr = 0.;
+    float stopWeightPlusErr = 0.;
+    float stopWeightMinusErr = 0.;
+    
+    
     int NJets, NBtagJets;
     float SysVar;
     
@@ -125,11 +133,34 @@ int main( int argc, const char* argv[] ) {
     LV * Lep0Vec_DESY, * Lep1Vec_DESY;
     LV * Jet0Vec_DESY, * Jet1Vec_DESY, * BJet0Vec_DESY, * BJet1Vec_DESY;
     
+    /// Generator Level Information
+    LV * genTopVec_DESY, * genAntiTopVec_DESY;
+    
+    bool  hasTopInfo = 0;
+    float genTop0Pt, genTop0En, genTop0Eta, genTop0Phi;
+    float genTop1Pt, genTop1En, genTop1Eta, genTop1Phi;
+    int genTop0PdgId, genTop1PdgId; //genTop0FirstMom, genTop1FirstMom;
+    float genTopPt, genTopEn, genTopEta, genTopPhi;
+    float genAntiTopPt, genAntiTopEn, genAntiTopEta, genAntiTopPhi;
+    float genMET_Pt, genMET_Phi;
+    genTopPt = -1;
+    genAntiTopPt = -1;
+    
+    TH1F * h_genTopPt = new TH1F("h_genTopPt", ";gen-level Top p_{T} [GeV];Number of Events / NUM GeV", 500, 0, 1000); h_genTopPt->Sumw2();
+    TH1F * h_genTopPtRW = new TH1F("h_genTopPtRW", ";gen-level Top p_{T} [GeV];Number of Events / NUM GeV", 500, 0, 1000); h_genTopPtRW->Sumw2();
+    TH1F * h_genAntiTopPt = new TH1F("h_genAntiTopPt", ";gen-level Anti-Top p_{T} [GeV];Number of Events / NUM GeV", 500, 0, 1000); h_genAntiTopPt->Sumw2();
+    TH1F * h_genAntiTopPtRW = new TH1F("h_genAntiTopPtRW", ";gen-level Anti-Top p_{T} [GeV];Number of Events / NUM GeV", 500, 0, 1000); h_genAntiTopPtRW->Sumw2();
+    
     /********************************************************************************************************/
     // Systematics Stuff
     float weight_LepEffSFUp, weight_LepEffSFDown;
     float preNVtxRWweight_LepEffSFUp, preNVtxRWweight_LepEffSFDown;
-    float MT2ll_ShiftUp, MT2ll_ShiftDown;
+    float weight_GenTopReweight, preNVtxRWweight_GenTopReweight;
+    float weight_genStopXSecUp, weight_genStopXSecDown;
+    float preNVtxRWweight_genStopXSecUp, preNVtxRWweight_genStopXSecDown;
+    
+    
+    float MT2ll_ShiftUp, MT2ll_ShiftDown; // TTBar MT2ll smearing
     float MET_LepESUp, MET_LepESDown, MET_JetESUp, MET_JetESDown, MET_JetERUp, MET_JetERDown;
     float METPhi_LepESUp, METPhi_LepESDown, METPhi_JetESUp, METPhi_JetESDown, METPhi_JetERUp, METPhi_JetERDown;
     float MT2lb_LepESUp, MT2lb_LepESDown, MT2lb_JetESUp, MT2lb_JetESDown, MT2lb_JetERUp, MT2lb_JetERDown;
@@ -228,6 +259,8 @@ int main( int argc, const char* argv[] ) {
             isSignal = 1;
             grabStopMass = strtol(argv[k+1], NULL, 10);
             grabChi0Mass = strtol(argv[k+2], NULL, 10);
+            grabCharginoMass = strtol(argv[k+3], NULL, 10);
+            cout << "Looking for StopMass: " << grabStopMass << ", Chi0Mass: " << grabChi0Mass << ", and CharginoMass: " << grabCharginoMass << endl;
         }
         else if (strncmp (argv[k],"ReleaseTheKraken", 16) == 0) {
             blindData = 0;
@@ -292,6 +325,10 @@ int main( int argc, const char* argv[] ) {
         fOutName += grabStopMass;
         fOutName += "_Chi0";
         fOutName += grabChi0Mass;
+        if (grabCharginoMass >= 0) {                        
+            fOutName += "_Chargino";
+            fOutName += grabCharginoMass;
+        }
     }
     if (doParallel) {
         fOutName += "_Parallel_";
@@ -324,11 +361,11 @@ int main( int argc, const char* argv[] ) {
     
     ///Branch definitions
     /// basic things
-    TBranch        *b_runNumber;   //!
-    TBranch        *b_lumiBlock;   //!
-    TBranch        *b_eventNumber;   //!
-    TBranch        *b_vertMulti;   //!
-    TBranch        *b_vertMultiTrue;   //!
+    TBranch        * b_runNumber;   //!
+    TBranch        * b_lumiBlock;   //!
+    TBranch        * b_eventNumber;   //!
+    TBranch        * b_vertMulti;   //!
+    TBranch        * b_vertMultiTrue;   //!
     
     UInt_t          runNumber;
     UInt_t          lumiBlock;
@@ -337,59 +374,84 @@ int main( int argc, const char* argv[] ) {
     Int_t           vertMulti;
     Int_t           vertMultiTrue;
     /// Lepton branches
-    TBranch        *b_lepton;
-    TBranch        *b_leptons_;   //!
-    TBranch        *b_leptons_fCoordinates_fPt;   //!
-    TBranch        *b_leptons_fCoordinates_fEta;   //!
-    TBranch        *b_leptons_fCoordinates_fPhi;   //!
-    TBranch        *b_leptons_fCoordinates_fM;   //!
-    TBranch        *b_lepPdgId;   //!
-    TBranch        *b_lepPfIso;
-    VLV            *leptons = 0;
-    vector<int>    *lepPdgId = 0;
-    vector<double> *lepPfIso = 0;
+    TBranch        * b_lepton;
+    TBranch        * b_leptons_;   //!
+    TBranch        * b_leptons_fCoordinates_fPt;   //!
+    TBranch        * b_leptons_fCoordinates_fEta;   //!
+    TBranch        * b_leptons_fCoordinates_fPhi;   //!
+    TBranch        * b_leptons_fCoordinates_fM;   //!
+    TBranch        * b_lepPdgId;   //!
+    TBranch        * b_lepPfIso;
+    VLV            * leptons = 0;
+    vector<int>    * lepPdgId = 0;
+    vector<double> * lepPfIso = 0;
     /// Jet branches
-    TBranch        *b_jet;
-    TBranch        *b_jets_;   //!
-    TBranch        *b_jets_fCoordinates_fPt;   //!
-    TBranch        *b_jets_fCoordinates_fEta;   //!
-    TBranch        *b_jets_fCoordinates_fPhi;   //!
-    TBranch        *b_jets_fCoordinates_fM;   //!
-    TBranch        *b_jetBTagCSV;   //!
-    VLV            *jets = 0;
-    VLV            *jetsForMET = 0;
-    vector<double>  *jetBTagCSV = 0;
+    TBranch        * b_jet;
+    TBranch        * b_jets_;   //!
+    TBranch        * b_jets_fCoordinates_fPt;   //!
+    TBranch        * b_jets_fCoordinates_fEta;   //!
+    TBranch        * b_jets_fCoordinates_fPhi;   //!
+    TBranch        * b_jets_fCoordinates_fM;   //!
+    TBranch        * b_jetBTagCSV;   //!
+    VLV            * jets = 0;
+    VLV            * jetsForMET = 0;
+    vector<double> * jetBTagCSV = 0;
     //    float   BTagCut = 0.679;  //CSV Middle working point, see (remove underscore in address): h_ttps://twiki.cern.ch/twiki/bin/viewauth/CMS/BTagPerformanceOP
     //    float   JetPtCutforCount = 30;
     ///sub branch for gen jets for met smearing
     /*
-     TBranch        *b_allGenJets_;   //!
-     TBranch        *b_allGenJets_fCoordinates_fPt;   //!
-     TBranch        *b_allGenJets_fCoordinates_fEta;   //!
-     TBranch        *b_allGenJets_fCoordinates_fPhi;   //!
-     TBranch        *b_allGenJets_fCoordinates_fM;   //!
-     TBranch        *b_associatedGenJet_;   //!
-     TBranch        *b_associatedGenJet_fCoordinates_fPt;   //!
-     TBranch        *b_associatedGenJet_fCoordinates_fEta;   //!
-     TBranch        *b_associatedGenJet_fCoordinates_fPhi;   //!
-     TBranch        *b_associatedGenJet_fCoordinates_fM;   //!
-     TBranch        *b_associatedGenJetForMET_;   //!
-     TBranch        *b_associatedGenJetForMET_fCoordinates_fPt;   //!
-     TBranch        *b_associatedGenJetForMET_fCoordinates_fEta;   //!
-     TBranch        *b_associatedGenJetForMET_fCoordinates_fPhi;   //!
-     TBranch        *b_associatedGenJetForMET_fCoordinates_fM;   //!
-     VLV            *associatedGenJet;
-     VLV            *associatedGenJetForMET;
+     TBranch        * b_allGenJets_;   //!
+     TBranch        * b_allGenJets_fCoordinates_fPt;   //!
+     TBranch        * b_allGenJets_fCoordinates_fEta;   //!
+     TBranch        * b_allGenJets_fCoordinates_fPhi;   //!
+     TBranch        * b_allGenJets_fCoordinates_fM;   //!
+     TBranch        * b_associatedGenJet_;   //!
+     TBranch        * b_associatedGenJet_fCoordinates_fPt;   //!
+     TBranch        * b_associatedGenJet_fCoordinates_fEta;   //!
+     TBranch        * b_associatedGenJet_fCoordinates_fPhi;   //!
+     TBranch        * b_associatedGenJet_fCoordinates_fM;   //!
+     TBranch        * b_associatedGenJetForMET_;   //!
+     TBranch        * b_associatedGenJetForMET_fCoordinates_fPt;   //!
+     TBranch        * b_associatedGenJetForMET_fCoordinates_fEta;   //!
+     TBranch        * b_associatedGenJetForMET_fCoordinates_fPhi;   //!
+     TBranch        * b_associatedGenJetForMET_fCoordinates_fM;   //!
+     VLV            * associatedGenJet;
+     VLV            * associatedGenJetForMET;
      */
-    /// MET branches
-    TBranch        *b_met;
-    TBranch        *b_met_fCoordinates_fPt;   //!
-    TBranch        *b_met_fCoordinates_fEta;   //!
-    TBranch        *b_met_fCoordinates_fPhi;   //!
-    TBranch        *b_met_fCoordinates_fM;   //!
-    LV             *met = 0;
     
-    TBranch        *b_GenWeight;
+    /// DESY Top and AntiTop Generator level branches
+    TBranch        * b_GenTop;
+    TBranch        * b_GenTop_fCoordinates_fPt;
+    TBranch        * b_GenTop_fCoordinates_fEta;
+    TBranch        * b_GenTop_fCoordinates_fPhi;
+    TBranch        * b_GenTop_fCoordinates_fM;
+    LV             * genTop = 0;
+    
+    TBranch        * b_GenAntiTop;
+    TBranch        * b_GenAntiTop_fCoordinates_fPt;
+    TBranch        * b_GenAntiTop_fCoordinates_fEta;
+    TBranch        * b_GenAntiTop_fCoordinates_fPhi;
+    TBranch        * b_GenAntiTop_fCoordinates_fM;
+    LV             * genAntiTop = 0;
+    
+    /// MET branches
+    TBranch        * b_met;
+    TBranch        * b_met_fCoordinates_fPt;   //!
+    TBranch        * b_met_fCoordinates_fEta;   //!
+    TBranch        * b_met_fCoordinates_fPhi;   //!
+    TBranch        * b_met_fCoordinates_fM;   //!
+    LV             * met = 0;
+    
+    /// GenMET branch
+    TBranch        * b_genMET;
+    TBranch        * b_genMET_fCoordinates_fPt;   //!
+    TBranch        * b_genMET_fCoordinates_fEta;   //!
+    TBranch        * b_genMET_fCoordinates_fPhi;   //!
+    TBranch        * b_genMET_fCoordinates_fM;   //!
+    LV             * genMET = 0;
+    
+    
+    TBranch        * b_GenWeight;
     double         GenWeight;
     
     //////////////////////////
@@ -453,21 +515,69 @@ int main( int argc, const char* argv[] ) {
         fileTree.SetBranchAddress( "TLumiBlock", &lumiBlock );
         
         if (fileTree.GetBranch("TGenMET")) {
-            fileTree.SetBranchAddress("TGenMET", &genMET);
-            fileTree.SetBranchAddress("TGenMETPhi", &genMETPhi);
+            fileTree.SetBranchAddress("TGenMET", &genMET_Pt);
+            fileTree.SetBranchAddress("TGenMETPhi", &genMET_Phi);
+        }
+        else {
+            genMET_Pt = -99.;
+            genMET_Phi = -99.;
+        }
+        if (fileTree.GetBranch("TGenTopSt3_0_Pt")) {
+            hasTopInfo = 1;
+            fileTree.SetBranchAddress("TGenTopSt3_0_Energy", &genTop0En);
+            fileTree.SetBranchAddress("TGenTopSt3_0_Pt",     &genTop0Pt);
+            fileTree.SetBranchAddress("TGenTopSt3_0_Phi",    &genTop0Phi);
+            fileTree.SetBranchAddress("TGenTopSt3_0_Eta",    &genTop0Eta);
+            fileTree.SetBranchAddress("TGenTopSt3_0_PDGID",  &genTop0PdgId);
+            fileTree.SetBranchAddress("TGenTopSt3_1_Energy", &genTop1En);
+            fileTree.SetBranchAddress("TGenTopSt3_1_Pt",     &genTop1Pt);
+            fileTree.SetBranchAddress("TGenTopSt3_1_Phi",    &genTop1Phi);
+            fileTree.SetBranchAddress("TGenTopSt3_1_Eta",    &genTop1Eta);
+            fileTree.SetBranchAddress("TGenTopSt3_1_PDGID",  &genTop1PdgId);
+        }
+        else {
+            genTop0Pt = -99.;
+            genTop1Pt = -99.;
+            genTop0PdgId = -99;
+            genTop1PdgId = -99;
         }
         if (fileTree.GetBranch("TGenStopMass0")){
             fileTree.SetBranchAddress( "TGenStopMass0", &TGenStopMass0 );
             fileTree.SetBranchAddress( "TGenStopMass1", &TGenStopMass1 );
             fileTree.SetBranchAddress( "TGenChi0Mass0", &TGenChi0Mass0 );
-            fileTree.SetBranchAddress( "TGenChi0Mass1", &TGenChi0Mass1 );
+            fileTree.SetBranchAddress( "TGenChi0Mass1", &TGenChi0Mass1 );            
+            fileTree.SetBranchAddress( "TGenCharginoMass0", &TGenCharginoMass0 );
+            fileTree.SetBranchAddress( "TGenCharginoMass1", &TGenCharginoMass1 );
         }
         else{
-            TGenStopMass0 = -99.;
-            TGenStopMass1 = -99.;
-            TGenChi0Mass0 = -99.;
-            TGenChi0Mass1 = -99.;
+            TGenStopMass0 = -99;
+            TGenStopMass1 = -99;
+            TGenChi0Mass0 = -99;
+            TGenChi0Mass1 = -99;
+            TGenCharginoMass0 = -99;
+            TGenCharginoMass1 = -99;
         }
+        if (fileTree.GetBranch("TGenStopMass0")){
+            float stopMassToUseForXSec;
+            if (!fInName.Contains("FineBin")) {
+                float roundedStopMass = floor((TGenStopMass0+12.5)/25.)*25.; 
+                stopMassToUseForXSec = roundedStopMass;
+//                cout << "roundedStopMass " << roundedStopMass << endl;
+            }
+            else {
+                stopMassToUseForXSec = grabStopMass;
+            }
+            StopXSec theStopXSec = getCrossSectionStop(stopMassToUseForXSec);
+            stopWeight = theStopXSec.stopProdXsec;            
+            stopWeightErr = theStopXSec.stopProdXsecUncert * stopWeight;
+            stopWeightPlusErr = stopWeight + stopWeightErr;
+            stopWeightMinusErr = stopWeight - stopWeightErr;            
+            cout << "stopWeight " << stopWeight << endl;
+            cout << "stopWeightErr " << stopWeightErr << endl;
+            cout << "stopWeightErr " << stopWeightPlusErr << endl;
+            cout << "stopWeightErr " << stopWeightMinusErr << endl;
+        }
+        
         
         if(fInName.Contains("TMVA")) fileTree.SetBranchAddress( "BDT",&BDT);
         if(fInName.Contains("Dis")) fileTree.SetBranchAddress( "BDTDis",&BDTDis);
@@ -489,6 +599,16 @@ int main( int argc, const char* argv[] ) {
         fileTree.SetBranchAddress("jetBTagCSV", &jetBTagCSV, &b_jetBTagCSV );
         fileTree.SetBranchAddress("met", &met, &b_met );
         fileTree.SetBranchAddress("weightGenerator", &GenWeight, &b_GenWeight);
+        if (fileTree.GetBranch("GenTop")) {
+            hasTopInfo = 1;
+            fileTree.SetBranchAddress("GenTop", &genTop, &b_GenTop );   
+        }
+        if (fileTree.GetBranch("GenAntiTop")) {
+            fileTree.SetBranchAddress("GenAntiTop", &genAntiTop, &b_GenAntiTop );   
+        }
+        if (fileTree.GetBranch("GenMET")) {
+            fileTree.SetBranchAddress("GenMET", &genMET, &b_genMET );   
+        }
         SysVar = 1.0;
     }
     ////Book histograms and histogram names
@@ -499,6 +619,8 @@ int main( int argc, const char* argv[] ) {
     vector<SampleT> * subSampVec    = SubSampVec();    ///Define things necessary for booking histograms
     vector<SystT> * systVec         = SystVec();
     vector<HistogramT> * histVec_1D_Syst = new vector<HistogramT>;
+    vector<HistogramT> * histVec_2D_Syst = new vector<HistogramT>;
+    vector<HistogramT> * histVec_3D_Syst = new vector<HistogramT>;
 //    vector<HistogramT> * histVec_2D_Syst;
 //    vector<HistogramT> * histVec_3D_Syst;
     HistogramT H_Current; 
@@ -512,7 +634,9 @@ int main( int argc, const char* argv[] ) {
     float yBinMin, yBinMax;
     float zBinMin, zBinMax;
     if (doBookSyst) {
-        histVec_1D_Syst = AddSystHists(histVec_1D, systVec);
+        histVec_1D_Syst = AddSystHists(histVec_1D, systVec, fInName, isSignal);
+        histVec_2D_Syst = AddSystHists(histVec_2D, systVec, fInName, isSignal);
+        histVec_3D_Syst = AddSystHists(histVec_3D, systVec, fInName, isSignal);
 //        addSystHists(histVec_2D, systVec);
 //        addSystHists(histVec_3D, systVec);
     }
@@ -534,7 +658,7 @@ int main( int argc, const char* argv[] ) {
                 xBinMin = H_Current.xMin;
                 xBinMax = H_Current.xMax;
             }
-            if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !(H_Current.name.Contains("h_MT2llControl"))) {
+            if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !H_Current.name.Contains("h_PassMT2ll") && !(H_Current.name.Contains("h_MT2llControl"))) {
                 xBinMax = xBinMax / 2;
             }
 //            if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.
@@ -554,13 +678,12 @@ int main( int argc, const char* argv[] ) {
             nYBins = H_Current.yBinN;
             yBinMin = H_Current.yMin;
             yBinMax = H_Current.yMax;
-            if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !(H_Current.name.Contains("h_MT2llControl"))) {
+            if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !H_Current.name.Contains("h_PassMT2ll") && !(H_Current.name.Contains("h_MT2llControl"))) {
                 xBinMax = xBinMax / 2;
             }
             h_2DCurr = new TH2D(histTitle, axesTitle, nXBins, xBinMin, xBinMax, nYBins, yBinMin, yBinMax); h_2DCurr->Sumw2();
             histMap_2D[histKey(H_Current, S_Current)] = h_2DCurr;
-        }
-        
+        }        
          for (unsigned int l = 0; l < histVec_3D->size(); ++l) {
              H_Current = histVec_3D->at(l);
              histTitle = H_Current.name + S_Current.histNameSuffix;
@@ -576,7 +699,7 @@ int main( int argc, const char* argv[] ) {
              nZBins = H_Current.zBinN;
              zBinMin = H_Current.zMin;
              zBinMax = H_Current.zMax;
-             if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !(H_Current.name.Contains("h_MT2llControl"))) {
+             if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !H_Current.name.Contains("h_PassMT2ll") && !(H_Current.name.Contains("h_MT2llControl"))) {
                  xBinMax = xBinMax / 2;
              }
              h_3DCurr = new TH3D(histTitle, axesTitle, nXBins, xBinMin, xBinMax, nYBins, yBinMin, yBinMax, nZBins, zBinMin, zBinMax); h_3DCurr->Sumw2(); 
@@ -598,12 +721,51 @@ int main( int argc, const char* argv[] ) {
                     xBinMin = H_Current.xMin;
                     xBinMax = H_Current.xMax;
                 }
-                if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !(H_Current.name.Contains("h_MT2llControl"))) {
+                if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !H_Current.name.Contains("h_PassMT2ll") && !(H_Current.name.Contains("h_MT2llControl"))) {
                     xBinMax = xBinMax / 2;
                 }
                 h_1DCurr = new TH1D(histTitle, axesTitle, nXBins, xBinMin, xBinMax); h_1DCurr->Sumw2();
                 histMap_1D[histKey(H_Current, S_Current)] = h_1DCurr;
                 //will this cause memory leaks?
+            }
+            for (unsigned int ks = 0; ks < histVec_2D_Syst->size(); ++ks) {
+                H_Current = histVec_2D_Syst->at(ks);
+                histTitle = H_Current.name + S_Current.histNameSuffix;
+                axesTitle = ";"; axesTitle += H_Current.xLabel;// axesTitle += S_Current.histXaxisSuffix;
+                axesTitle += ";"; axesTitle += H_Current.yLabel;// axesTitle += S_Current.histYaxisSuffix;
+                axesTitle += ";"; axesTitle += H_Current.zLabel;
+                nXBins = H_Current.xBinN;
+                xBinMin = H_Current.xMin;
+                xBinMax = H_Current.xMax;
+                nYBins = H_Current.yBinN;
+                yBinMin = H_Current.yMin;
+                yBinMax = H_Current.yMax;
+                if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !H_Current.name.Contains("h_PassMT2ll") && !(H_Current.name.Contains("h_MT2llControl"))) {
+                    xBinMax = xBinMax / 2;
+                }
+                h_2DCurr = new TH2D(histTitle, axesTitle, nXBins, xBinMin, xBinMax, nYBins, yBinMin, yBinMax); h_2DCurr->Sumw2();
+                histMap_2D[histKey(H_Current, S_Current)] = h_2DCurr;
+            }
+            for (unsigned int ls = 0; ls < histVec_3D_Syst->size(); ++ls) {
+                H_Current = histVec_3D_Syst->at(ls);
+                histTitle = H_Current.name + S_Current.histNameSuffix;
+                axesTitle = ";"; axesTitle += H_Current.xLabel;// axesTitle += S_Current.histXaxisSuffix;
+                axesTitle += ";"; axesTitle += H_Current.yLabel;// axesTitle += S_Current.histYaxisSuffix;
+                axesTitle += ";"; axesTitle += H_Current.zLabel;
+                nXBins = H_Current.xBinN;
+                xBinMin = H_Current.xMin;
+                xBinMax = H_Current.xMax;
+                nYBins = H_Current.yBinN;
+                yBinMin = H_Current.yMin;
+                yBinMax = H_Current.yMax;
+                nZBins = H_Current.zBinN;
+                zBinMin = H_Current.zMin;
+                zBinMax = H_Current.zMax;
+                if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !H_Current.name.Contains("h_PassMT2ll") && !(H_Current.name.Contains("h_MT2llControl"))) {
+                    xBinMax = xBinMax / 2;
+                }
+                h_3DCurr = new TH3D(histTitle, axesTitle, nXBins, xBinMin, xBinMax, nYBins, yBinMin, yBinMax, nZBins, zBinMin, zBinMax); h_3DCurr->Sumw2(); 
+                histMap_3D[histKey(H_Current, S_Current)] = h_3DCurr;
             }
         }
     }   
@@ -663,16 +825,21 @@ int main( int argc, const char* argv[] ) {
         fileTree.GetEntry(ievt);
         /*
         cout << "TGenStopMass0 " << TGenStopMass0 << endl;
-        cout << "TGenChi0Mass0 " << TGenChi0Mass0 << endl;
         cout << "TGenStopMass1 " << TGenStopMass1 << endl;
+        cout << "TGenChi0Mass0 " << TGenChi0Mass0 << endl;
         cout << "TGenChi0Mass1 " << TGenChi0Mass1 << endl;
+        cout << "TGenCharginoMass0 " << TGenCharginoMass0 << endl;
+        cout << "TGenCharginoMass1 " << TGenCharginoMass1 << endl;
         */
         if (isSignal) {
             if (abs(TGenStopMass0 - grabStopMass) > massDiffThresh) continue;
             if (abs(TGenStopMass1 - grabStopMass) > massDiffThresh) continue;
             if (abs(TGenChi0Mass0 - grabChi0Mass) > massDiffThresh) continue;
             if (abs(TGenChi0Mass1 - grabChi0Mass) > massDiffThresh) continue;
+            if (abs(TGenCharginoMass0 - grabCharginoMass) > massDiffThresh) continue;
+            if (abs(TGenCharginoMass1 - grabCharginoMass) > massDiffThresh) continue;
         }
+        
         //        cout << "Lep0 Px " << Lep0Px << endl;
         ZVeto = true;
         //*****************************************                                                                                                                   
@@ -681,32 +848,41 @@ int main( int argc, const char* argv[] ) {
         weight = 1.;
         // cout << "test 5" << endl;
         if (whichNTupleType == 0) {
+            /*
             if( (TGenStopMass0 > genStopMassMin && TGenStopMass0 < genStopMassMax &&
                  TGenStopMass1 > genStopMassMin && TGenStopMass1 < genStopMassMax && // Stop mass limits                                                                  
                  (TGenStopMass0-TGenChi0Mass0) > genDeltaM_stopChi0_Min && (TGenStopMass0-TGenChi0Mass0) < genDeltaM_stopChi0_Max &&
                  (TGenStopMass1-TGenChi0Mass1) > genDeltaM_stopChi0_Min && (TGenStopMass1-TGenChi0Mass1) < genDeltaM_stopChi0_Max) || // Neutralino mass limits           
                (TGenStopMass0 == -99. && TGenStopMass1 == -99. &&
-                TGenChi0Mass0 == -99. && TGenChi0Mass1 == -99.) ) { // Background or data                                                                                
-                   
+                TGenChi0Mass0 == -99. && TGenChi0Mass1 == -99.) ) { // Background or data  
+                   */
+            
                    //*****************************************                                                                                                                 
-                   // NORMALIZE STOP SIGNAL TO INTEGRATED LUMI                                                                                                                 
-                   //*****************************************                                                                                                                 
-                   
-                   float stopWeight = 0.;
-                   if (fileTree.GetBranch("TGenStopMass0")){
-                       float roundedStopMass = floor((TGenStopMass0+12.5)/25.)*25.; 
-                       // assuming delta_Mstop = 25 GeV, this rounds the stop mass to the closest value divisible by 25                                                                                                                                                              
-                       StopXSec theStopXSec = getCrossSectionStop(roundedStopMass);
-                       stopWeight = theStopXSec.stopProdXsec;   /// * lumi / Nevt_stop_oneMassPoint; 
-                       //equivalent to G_Event_Weight= dm->GetCrossSection()* G_Event_Lumi/ dm->GetEventsInTheSample();                                                                                                                                                    
-                   }
-                   
-                   if(fileTree.GetBranch("TGenStopMass0"))
-                       weight = PUWeight * stopWeight;
-                   else
-                       weight = PUWeight;
-                   
-               }        // cout << "test 6" << endl;
+            // NORMALIZE STOP SIGNAL TO INTEGRATED LUMI                                                                                                                 
+            //*****************************************  
+            /*
+             if (fileTree.GetBranch("TGenStopMass0")){
+             if (!fInName.Contains("FineBin")) 
+             float roundedStopMass = floor((TGenStopMass0+12.5)/25.)*25.; 
+             cout << "roundedStopMass " << roundedStopMass << endl;
+             // assuming delta_Mstop = 25 GeV, this rounds the stop mass to the closest value divisible by 25                                                                                                                                                              
+             StopXSec theStopXSec = getCrossSectionStop(roundedStopMass);
+             stopWeight = theStopXSec.stopProdXsec;   /// * lumi / Nevt_stop_oneMassPoint; 
+             stopWeightErr = theStopXSec.stopProdXsecUncert;   /// * lumi / Nevt_stop_oneMassPoint;
+             stopWeightPlusErr = stopWeight + stopWeightErr;
+             stopWeightMinusErr = stopWeight - stopWeightErr;
+             //equivalent to G_Event_Weight= dm->GetCrossSection()* G_Event_Lumi/ dm->GetEventsInTheSample();                                                                                                                                                    
+             }
+             */
+            //            cout << "stopWeight " << stopWeight << endl;
+            /*
+             if(fileTree.GetBranch("TGenStopMass0"))
+             weight = PUWeight * stopWeight;
+             else
+             weight = PUWeight;
+             */
+            weight = PUWeight;
+            //}        // cout << "test 6" << endl;
         }
         else if (whichNTupleType == 1 ) {
             weight = (float) GenWeight;
@@ -767,6 +943,32 @@ int main( int argc, const char* argv[] ) {
                 preNVtxRWweight_LepEffSFUp *= ScaleFactorMC(Type, 1);
                 preNVtxRWweight_LepEffSFDown *= ScaleFactorMC(Type, -1);
             }
+            if (hasTopInfo && fInName.Contains("TT")) {
+                if (genTop0PdgId * genTop1PdgId > 0) {
+                    cout << "something is funky with the genTop PDGIDs" << endl;
+                    continue;
+                }
+                else {
+                    if (genTop0PdgId > 0) {
+                        genTopPt = genTop0Pt;
+                        genAntiTopPt = genTop1Pt;
+                    }
+                    else {
+                        genTopPt = genTop1Pt;
+                        genAntiTopPt = genTop0Pt;   
+                    }                
+                }
+                weight_GenTopReweight = GenLevelTopPtWeight(genTopPt, genAntiTopPt);
+                h_genTopPt->Fill(genTopPt, 1.);
+                h_genTopPtRW->Fill(genTopPt, weight_GenTopReweight);
+                h_genAntiTopPt->Fill(genAntiTopPt, 1.);
+                h_genAntiTopPtRW->Fill(genAntiTopPt, weight_GenTopReweight);
+            }
+            else {
+                weight_GenTopReweight = 1.;
+            }
+            preNVtxRWweight_GenTopReweight = weight_GenTopReweight;
+            
             //        cout << "weight post doHack " << weight << endl;
             
         }
@@ -788,6 +990,19 @@ int main( int argc, const char* argv[] ) {
                 weight = PileupRW(OneDPUDist, nVtxTrue);
                 if (doHackPURW) weight = PileupRW(nVtxSFHist, nVtx);
             }
+            if (fInName.Contains("ttbar") && hasTopInfo) {
+                genTopPt = genTop->Pt();
+                genAntiTopPt = genAntiTop->Pt();
+                weight_GenTopReweight = GenLevelTopPtWeight(genTopPt, genAntiTopPt);
+                h_genTopPt->Fill(genTopPt, 1.);
+                h_genTopPtRW->Fill(genTopPt, weight_GenTopReweight);
+                h_genAntiTopPt->Fill(genAntiTopPt, 1.);
+                h_genAntiTopPtRW->Fill(genAntiTopPt, weight_GenTopReweight);
+            }
+            else {
+                weight_GenTopReweight = 1.;
+            }
+            preNVtxRWweight_GenTopReweight = weight_GenTopReweight;
             //            cout << "weight from hackPURW " << weight << endl;
             //            cout << "test " << endl;
             Lep0Vec_DESY = &leptons->at(lep0Index);
@@ -1043,6 +1258,13 @@ int main( int argc, const char* argv[] ) {
         stringKeyToVar["diLepEta"] = diLepEta;
         stringKeyToVar["diLepPhi"] = diLepPhi;
         stringKeyToVar["MT2ll"] = MT2ll;
+//        cout << "MT2ll " << MT2ll << endl;
+//        cout << "PassMT2llCut80 " << (MT2ll > 80.) << endl;
+        stringKeyToVar["PassMT2llCut80"] = (MT2ll > 80.);
+        stringKeyToVar["PassMT2llCut90"] = (MT2ll > 90.);
+        stringKeyToVar["PassMT2llCut100"] = (MT2ll > 100.);
+        stringKeyToVar["PassMT2llCut110"] = (MT2ll > 110.);
+        stringKeyToVar["PassMT2llCut120"] = (MT2ll > 120.);
         stringKeyToVar["MT2lb"] = MT2lb;
         stringKeyToVar["MET"] = MET;
         stringKeyToVar["METPhi"] = METPhi;
@@ -1055,6 +1277,7 @@ int main( int argc, const char* argv[] ) {
         stringKeyToVar["DPhiLep0MET_PreCorr"] = dPhi((float) Lep0Vec.Phi(), METPhi_preCorr);
         stringKeyToVar["DPhiLep1MET_PreCorr"] = dPhi((float) Lep0Vec.Phi(), METPhi_preCorr);
         stringKeyToVar["DPhiZMET"] = dPhi((float) (Lep0Vec + Lep1Vec).Phi(), METPhi);
+        stringKeyToVar["DPhiZMET_PreCorr"] = dPhi((float) (Lep0Vec + Lep1Vec).Phi(), METPhi_preCorr);
         stringKeyToVar["nVtx"] = (float) nVtx;
         stringKeyToVar["nVtxTrue"] = (float) nVtxTrue;
         stringKeyToVar["METX"] = METX;
@@ -1116,7 +1339,12 @@ int main( int argc, const char* argv[] ) {
                 stringKeyToVar["ELepEJet_LepESShiftUp"] = Lep0Vec_LepESUp.E() + Lep1Vec_LepESUp.E() - Jet0Vec.E() - Jet1Vec.E();
                 stringKeyToVar["ELepEJet_LepESShiftDown"] = Lep0Vec_LepESDown.E() + Lep1Vec_LepESDown.E() - Jet0Vec.E() - Jet1Vec.E();
             }
-            stringKeyToVar["MT2ll_MT2llShiftUp"] = MT2ll_ShiftUp;            
+            stringKeyToVar["MT2ll_MT2llShiftUp"] = MT2ll_ShiftUp;
+            stringKeyToVar["PassMT2llCut80_MT2llShiftUp"] = (MT2ll_ShiftUp > 80.);
+            stringKeyToVar["PassMT2llCut90_MT2llShiftUp"] = (MT2ll_ShiftUp > 90.);
+            stringKeyToVar["PassMT2llCut100_MT2llShiftUp"] = (MT2ll_ShiftUp > 100.);
+            stringKeyToVar["PassMT2llCut110_MT2llShiftUp"] = (MT2ll_ShiftUp > 110.);
+            stringKeyToVar["PassMT2llCut120_MT2llShiftUp"] = (MT2ll_ShiftUp > 120.);
             stringKeyToVar["MET_LepESShiftUp"] = MET_LepESUp;
             stringKeyToVar["MET_LepESShiftDown"] = MET_LepESDown;
             stringKeyToVar["METPhi_LepESShiftUp"] = METPhi_LepESUp;
@@ -1132,11 +1360,27 @@ int main( int argc, const char* argv[] ) {
             if (!(S_Current.whichdiLepType < 0 || Type == S_Current.whichdiLepType)) continue;
             if (!(NJets >= S_Current.cutNJets)) continue;
             if (!(NBtagJets >= S_Current.cutNBJets)) continue;
+            if (!(Type == 2 && S_Current.histNameSuffix.Contains("FullCut"))) {
+                if (MET < S_Current.cutMET) continue;
+                if (!(S_Current.doZVeto < 0 || ZVeto == S_Current.doZVeto)) continue;
+            }
+
+/*
+            if (Type == 0 || Type == 1) {
+                if (!(S_Current.doZVeto < 0 || ZVeto == S_Current.doZVeto)) continue;
+                if (MET < S_Current.cutMET) continue;
+            }
+            else {
+                if (!(S_Current.doZVeto < 0 || ZVeto == S_Current.doZVeto || S_Current.histNameSuffix.Contains("FullCut"))) continue;
+            }
+ */
+            /*
             if (!(S_Current.doZVeto < 0 || ZVeto == S_Current.doZVeto)) {
                 if (Type == 0 || Type == 1) continue;
                 if (!S_Current.histNameSuffix.Contains("FullCut")) continue;                                                     
             }
             if ((Type == 0 || Type == 1) && MET < S_Current.cutMET) continue;
+            */
             if (S_Current.histNameSuffix.Contains("BothinBarrel")) {
                 if (!(TMath::Abs(Lep0Vec.Eta()) < barrelEtaEnd && TMath::Abs(Lep1Vec.Eta()) < barrelEtaEnd)) continue;
             }
@@ -1253,7 +1497,31 @@ int main( int argc, const char* argv[] ) {
         }
         /*#######################
          FILL PLOTS
-         #####################*/          
+         #####################*/   
+        
+        /// Set genTop weights to be appropriate values
+        preNVtxRWweight_GenTopReweight *= preNVtxRWweight;
+        weight_GenTopReweight *= weight;
+        
+        /// Set StopWeights to be appropriate values
+        if (isSignal) {
+            weight_genStopXSecUp = weight;
+            weight_genStopXSecDown = weight;
+            weight *= stopWeight;            
+            weight_genStopXSecUp *= stopWeightPlusErr;
+            weight_genStopXSecDown *= stopWeightMinusErr;
+            /*
+            cout << "weight " << weight << endl;
+            cout << "weightup " << weight_genStopXSecUp << endl;
+            cout << "weightdown " << weight_genStopXSecDown << endl;
+            */
+            
+            preNVtxRWweight_genStopXSecUp = preNVtxRWweight;
+            preNVtxRWweight_genStopXSecDown = preNVtxRWweight;
+            preNVtxRWweight *= stopWeight;
+            preNVtxRWweight_genStopXSecUp *= stopWeightPlusErr;
+            preNVtxRWweight_genStopXSecDown *= stopWeightMinusErr;
+        }
         //require MT2 < 80 for data (for now, I'm allowing it for MC)        
         for (unsigned int i = 0; i < subSampVec->size(); ++i) {
             S_Current = subSampVec->at(i);
@@ -1282,36 +1550,24 @@ int main( int argc, const char* argv[] ) {
                             cout << "xIter second " << xIter->second << endl;
                         }
                         ///Some necessary continue checks
-                        if (H_Current.xVarKey == "MT2lb" && NJets < 2) continue;
-                        if (S_Current.blindDataChannel && H_Current.xVarKey == "MT2ll") {
+                        if (TString(H_Current.xVarKey).Contains("MT2lb") && NJets < 2) continue;
+                        if (S_Current.blindDataChannel && TString(H_Current.xVarKey).Contains("MT2ll")) {
                             if (blindData && doData && MT2ll > MT2llCut) continue;
                         }
-                        if (S_Current.blindDataChannel && H_Current.xVarKey == "MT2lb") {
+                        if (S_Current.blindDataChannel && TString(H_Current.xVarKey).Contains("MT2lb")) {
                             if (blindData && doData && MT2lb > MT2lbCut) continue;
                         }
                         /*
-                        if ((S_Current.histNameSuffix == "_FullCut" || S_Current.histNameSuffix == "_emu_Jet2BJet1" || S_Current.histNameSuffix == "_ee_ZVeto_METGeq40_Jet2BJet1" || S_Current.histNameSuffix == "_mumu_ZVeto_METGeq40_Jet2BJet1") && H_Current.xVarKey == "MT2ll") {
+                        if ((S_Current.histNameSuffix == "_FullCut" || S_Current.histNameSuffix == "_emu_Jet2BJet1" || S_Current.histNameSuffix == "_ee_ZVeto_METGeq40_Jet2BJet1" || S_Current.histNameSuffix == "_mumu_ZVeto_METGeq40_Jet2BJet1") && TString(H_Current.xVarKey).Contains("MT2ll")) {
                             if (doData && MT2ll > MT2llCut) continue;                            
                         }
-                        if ((S_Current.histNameSuffix == "_FullCut" || S_Current.histNameSuffix == "_emu_Jet2BJet1" || S_Current.histNameSuffix == "_ee_ZVeto_METGeq40_Jet2BJet1" || S_Current.histNameSuffix == "_mumu_ZVeto_METGeq40_Jet2BJet1") && H_Current.xVarKey == "MT2lb") {
+                        if ((S_Current.histNameSuffix == "_FullCut" || S_Current.histNameSuffix == "_emu_Jet2BJet1" || S_Current.histNameSuffix == "_ee_ZVeto_METGeq40_Jet2BJet1" || S_Current.histNameSuffix == "_mumu_ZVeto_METGeq40_Jet2BJet1") && TString(H_Current.xVarKey).Contains("MT2lb")) {
                             if (doData && MT2lb > MT2lbCut) continue;                            
                         }
                         */
                         ///condition for which stuff to run on
 //                        cout << "H_Current Name " << H_Current.name << endl;
-                        if (H_Current.name.Contains("LepEffSFShiftUp")) {                            
-                            fillWeight = ((H_Current.name.Contains("preRW")) ? preNVtxRWweight_LepEffSFUp : weight_LepEffSFUp);
-//                            cout << "weight_LepEffSFUp " << weight_LepEffSFUp << endl;
-//                            cout << "fillWeight " << fillWeight;
-                        }
-                        else if (H_Current.name.Contains("LepEffSFShiftDown")) {
-                            fillWeight = ((H_Current.name.Contains("preRW")) ? preNVtxRWweight_LepEffSFDown : weight_LepEffSFDown);
-//                            cout << "weight_LepEffSFDown " << weight_LepEffSFDown << endl;
-//                            cout << "fillWeight " << fillWeight;
-                        }
-                        else {
-                            fillWeight = ((H_Current.name.Contains("preRW")) ? preNVtxRWweight : weight);
-                        }
+                        fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight : weight;
                         histMap_1D[histKey(H_Current, S_Current)]->Fill(xIter->second, fillWeight);
                     }
                     if (doVerbosity) cout << "" << endl;
@@ -1322,26 +1578,26 @@ int main( int argc, const char* argv[] ) {
                     xIter = stringKeyToVar.find(H_Current.xVarKey);
                     yIter = stringKeyToVar.find(H_Current.yVarKey);
                     if (xIter != stringKeyToVar.end() && yIter != stringKeyToVar.end()) { 
-                        if (H_Current.xVarKey == "MT2lb" && NJets < 2) continue;
+                        if (TString(H_Current.xVarKey).Contains("MT2lb") && NJets < 2) continue;
                         /*
-                         if (NJets > 1 && H_Current.xVarKey == "MT2lb") {
+                         if (NJets > 1 && TString(H_Current.xVarKey).Contains("MT2lb")) {
                          cout << "HCurrent xvar key " << H_Current.xVarKey << endl;
                          cout << "HCurrent yvar key " << H_Current.yVarKey << endl;
                          cout << "xiter second " << xIter->second << endl;
                          cout << "yiter second " << yIter->second << endl;
                          }
                          */
-                        if (S_Current.blindDataChannel && H_Current.xVarKey == "MT2ll") {
+                        if (S_Current.blindDataChannel && TString(H_Current.xVarKey).Contains("MT2ll")) {
                             if (blindData && doData && MT2ll > MT2llCut) continue;
                         }
-                        if (S_Current.blindDataChannel && H_Current.xVarKey == "MT2lb") {
+                        if (S_Current.blindDataChannel && TString(H_Current.xVarKey).Contains("MT2lb")) {
                             if (blindData && doData && MT2lb > MT2lbCut) continue;
                         }
                         /*
-                        if ((S_Current.histNameSuffix == "_FullCut" || S_Current.histNameSuffix == "_emu_Jet2BJet1" || S_Current.histNameSuffix == "_ee_ZVeto_METGeq40_Jet2BJet1" || S_Current.histNameSuffix == "_mumu_ZVeto_METGeq40_Jet2BJet1") && H_Current.xVarKey == "MT2ll") {
+                        if ((S_Current.histNameSuffix == "_FullCut" || S_Current.histNameSuffix == "_emu_Jet2BJet1" || S_Current.histNameSuffix == "_ee_ZVeto_METGeq40_Jet2BJet1" || S_Current.histNameSuffix == "_mumu_ZVeto_METGeq40_Jet2BJet1") && TString(H_Current.xVarKey).Contains("MT2ll")) {
                             if (doData && MT2ll > MT2llCut) continue;                            
                         }
-                        if ((S_Current.histNameSuffix == "_FullCut" || S_Current.histNameSuffix == "_emu_Jet2BJet1" || S_Current.histNameSuffix == "_ee_ZVeto_METGeq40_Jet2BJet1" || S_Current.histNameSuffix == "_mumu_ZVeto_METGeq40_Jet2BJet1") && H_Current.xVarKey == "MT2lb") {
+                        if ((S_Current.histNameSuffix == "_FullCut" || S_Current.histNameSuffix == "_emu_Jet2BJet1" || S_Current.histNameSuffix == "_ee_ZVeto_METGeq40_Jet2BJet1" || S_Current.histNameSuffix == "_mumu_ZVeto_METGeq40_Jet2BJet1") && TString(H_Current.xVarKey).Contains("MT2lb")) {
                             if (doData && MT2lb > MT2lbCut) continue;                            
                         }
                          */
@@ -1355,11 +1611,11 @@ int main( int argc, const char* argv[] ) {
                     yIter = stringKeyToVar.find(H_Current.yVarKey); 
                     zIter = stringKeyToVar.find(H_Current.zVarKey);
                     if (xIter != stringKeyToVar.end() && yIter != stringKeyToVar.end() && zIter != stringKeyToVar.end()) {
-                        if (H_Current.xVarKey == "MT2lb" && NJets < 2) continue;
-                        if (S_Current.blindDataChannel && H_Current.xVarKey == "MT2ll") {
+                        if (TString(H_Current.xVarKey).Contains("MT2lb") && NJets < 2) continue;
+                        if (S_Current.blindDataChannel && TString(H_Current.xVarKey).Contains("MT2ll")) {
                             if (blindData && doData && MT2ll > MT2llCut) continue;
                         }
-                        if (S_Current.blindDataChannel && H_Current.xVarKey == "MT2lb") {
+                        if (S_Current.blindDataChannel && TString(H_Current.xVarKey).Contains("MT2lb")) {
                             if (blindData && doData && MT2lb > MT2lbCut) continue;
                         }
                         if (H_Current.name.Contains("h_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx")) {
@@ -1385,6 +1641,7 @@ int main( int argc, const char* argv[] ) {
                         cout << "i " << i << endl;
                         cout << "js " << js << endl;
                         cout << "S_Current.histNamesuffix " << S_Current.histNameSuffix << endl;
+                        cout << "H_Current.name " << H_Current.name << endl;
                         cout << "H_Current.xVarKey " << H_Current.xVarKey << endl;
                     }
                     //                    cout << "H_Current.xVarKey " << H_Current.xVarKey << endl;
@@ -1399,32 +1656,180 @@ int main( int argc, const char* argv[] ) {
                             cout << "xIter second " << xIter->second << endl;
                         }
                         ///Some necessary continue checks
-                        if (H_Current.xVarKey == "MT2lb" && NJets < 2) continue;
-                        if (S_Current.blindDataChannel && H_Current.xVarKey == "MT2ll") {
+                        if (TString(H_Current.xVarKey).Contains("MT2lb") && NJets < 2) continue;
+                        if (S_Current.blindDataChannel && TString(H_Current.xVarKey).Contains("MT2ll")) {
                             if (blindData && doData && MT2ll > MT2llCut) continue;
                         }
-                        if (S_Current.blindDataChannel && H_Current.xVarKey == "MT2lb") {
+                        if (S_Current.blindDataChannel && TString(H_Current.xVarKey).Contains("MT2lb")) {
                             if (blindData && doData && MT2lb > MT2lbCut) continue;
                         }
                         /*
-                        if ((S_Current.histNameSuffix == "_FullCut" || S_Current.histNameSuffix == "_emu_Jet2_BJet1" || S_Current.histNameSuffix == "_ee_ZVeto_Jet2_BJet1_METGeq40" || S_Current.histNameSuffix == "_mumu_ZVeto_Jet2_BJet1_METGeq40") && H_Current.xVarKey == "MT2ll") {
+                        if ((S_Current.histNameSuffix == "_FullCut" || S_Current.histNameSuffix == "_emu_Jet2_BJet1" || S_Current.histNameSuffix == "_ee_ZVeto_Jet2_BJet1_METGeq40" || S_Current.histNameSuffix == "_mumu_ZVeto_Jet2_BJet1_METGeq40") && TString(H_Current.xVarKey).Contains("MT2ll")) {
                             if (doData && MT2ll > MT2llCut) continue;                            
                         }
-                        if ((S_Current.histNameSuffix == "_FullCut" || S_Current.histNameSuffix == "_emu_Jet2_BJet1" || S_Current.histNameSuffix == "_ee_ZVeto_Jet2_BJet1_METGeq40" || S_Current.histNameSuffix == "_mumu_ZVeto_Jet2_BJet1_METGeq40") && H_Current.xVarKey == "MT2lb") {
+                        if ((S_Current.histNameSuffix == "_FullCut" || S_Current.histNameSuffix == "_emu_Jet2_BJet1" || S_Current.histNameSuffix == "_ee_ZVeto_Jet2_BJet1_METGeq40" || S_Current.histNameSuffix == "_mumu_ZVeto_Jet2_BJet1_METGeq40") && TString(H_Current.xVarKey).Contains("MT2lb")) {
                             if (doData && MT2lb > MT2lbCut) continue;                            
                         }
                         */
                         ///condition for which stuff to run on
                         if (H_Current.name.Contains("LepEffSFShiftUp")) {
-                            fillWeight = ((H_Current.name.Contains("preRW")) ? preNVtxRWweight_LepEffSFUp : weight_LepEffSFUp);
+                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_LepEffSFUp : weight_LepEffSFUp;
                         }
                         else if (H_Current.name.Contains("LepEffSFShiftDown")) {
-                            fillWeight = ((H_Current.name.Contains("preRW")) ? preNVtxRWweight_LepEffSFDown : weight_LepEffSFDown);
+                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_LepEffSFDown : weight_LepEffSFDown;
+                        }
+                        else if (H_Current.name.Contains("genTopRW")) {
+                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_GenTopReweight : weight_GenTopReweight;
+                        }
+                        else if (H_Current.name.Contains("genStopXSecShiftUp")) {
+                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_genStopXSecUp : weight_genStopXSecUp;
+                        }
+                        else if (H_Current.name.Contains("genStopXSecShiftDown")) {
+                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_genStopXSecDown : weight_genStopXSecDown;
                         }
                         else {
-                            fillWeight = ((H_Current.name.Contains("preRW")) ? preNVtxRWweight : weight);
+                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight : weight;
                         }
                         histMap_1D[histKey(H_Current, S_Current)]->Fill(xIter->second, fillWeight);
+                    }
+                    if (doVerbosity) cout << "" << endl;                    
+                }
+                
+                for (unsigned int ks = 0; ks < histVec_2D_Syst->size(); ++ks) {                  
+                    H_Current = histVec_2D_Syst->at(ks);
+                    xIter = stringKeyToVar.find(H_Current.xVarKey);
+                    yIter = stringKeyToVar.find(H_Current.yVarKey);
+                    if (doVerbosity) {
+                        cout << "" << endl;
+                        cout << "ievt " << ievt << endl;
+                        cout << "i " << i << endl;
+                        cout << "ks " << ks << endl;
+                        cout << "S_Current.histNamesuffix " << S_Current.histNameSuffix << endl;
+                        cout << "H_Current.name " << H_Current.name << endl;
+                        cout << "H_Current.xVarKey " << H_Current.xVarKey << endl;
+                        cout << "H_Current.yVarKey " << H_Current.yVarKey << endl;
+                    }
+                    //                    cout << "H_Current.xVarKey " << H_Current.xVarKey << endl;
+                    /*
+                     if (H_Current.xVarKey == "leadBJetEn" && NBtagJets > 0) {
+                     cout << "variable energy " << xIter->second << endl;
+                     }
+                     */
+                    if (xIter != stringKeyToVar.end() && yIter != stringKeyToVar.end()) {
+                        if (doVerbosity) {
+                            cout << "xIter first " <<  xIter->first << endl;
+                            cout << "xIter second " << xIter->second << endl;
+                            cout << "yIter first " <<  yIter->first << endl;
+                            cout << "yIter second " << yIter->second << endl;
+                        }
+                        ///Some necessary continue checks
+                        if (TString(H_Current.xVarKey).Contains("MT2lb") && NJets < 2) continue;
+                        if (S_Current.blindDataChannel && TString(H_Current.xVarKey).Contains("MT2ll")) {
+                            if (blindData && doData && MT2ll > MT2llCut) continue;
+                        }
+                        if (S_Current.blindDataChannel && TString(H_Current.xVarKey).Contains("MT2lb")) {
+                            if (blindData && doData && MT2lb > MT2lbCut) continue;
+                        }
+                        /*
+                         if ((S_Current.histNameSuffix == "_FullCut" || S_Current.histNameSuffix == "_emu_Jet2_BJet1" || S_Current.histNameSuffix == "_ee_ZVeto_Jet2_BJet1_METGeq40" || S_Current.histNameSuffix == "_mumu_ZVeto_Jet2_BJet1_METGeq40") && TString(H_Current.xVarKey).Contains("MT2ll")) {
+                         if (doData && MT2ll > MT2llCut) continue;                            
+                         }
+                         if ((S_Current.histNameSuffix == "_FullCut" || S_Current.histNameSuffix == "_emu_Jet2_BJet1" || S_Current.histNameSuffix == "_ee_ZVeto_Jet2_BJet1_METGeq40" || S_Current.histNameSuffix == "_mumu_ZVeto_Jet2_BJet1_METGeq40") && TString(H_Current.xVarKey).Contains("MT2lb")) {
+                         if (doData && MT2lb > MT2lbCut) continue;                            
+                         }
+                         */
+                        ///condition for which stuff to run on
+                        if (H_Current.name.Contains("LepEffSFShiftUp")) {
+                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_LepEffSFUp : weight_LepEffSFUp;
+                        }
+                        else if (H_Current.name.Contains("LepEffSFShiftDown")) {
+                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_LepEffSFDown : weight_LepEffSFDown;
+                        }
+                        else if (H_Current.name.Contains("genTopRW")) {
+                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_GenTopReweight : weight_GenTopReweight;
+                        }
+                        else if (H_Current.name.Contains("genStopXSecShiftUp")) {
+                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_genStopXSecUp : weight_genStopXSecUp;
+                        }
+                        else if (H_Current.name.Contains("genStopXSecShiftDown")) {
+                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_genStopXSecDown : weight_genStopXSecDown;
+                        }
+                        else {
+                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight : weight;
+                        }
+                        histMap_2D[histKey(H_Current, S_Current)]->Fill(xIter->second, yIter->second, weight); //there could be shenanigans with this one
+                    }
+                    if (doVerbosity) cout << "" << endl;                    
+                }
+                for (unsigned int ls = 0; ls < histVec_3D_Syst->size(); ++ls) {                  
+                    H_Current = histVec_3D_Syst->at(ls);
+                    xIter = stringKeyToVar.find(H_Current.xVarKey);
+                    yIter = stringKeyToVar.find(H_Current.yVarKey);
+                    zIter = stringKeyToVar.find(H_Current.zVarKey);
+                    if (doVerbosity) {
+                        cout << "" << endl;
+                        cout << "ievt " << ievt << endl;
+                        cout << "i " << i << endl;
+                        cout << "ls " << ls << endl;
+                        cout << "S_Current.histNamesuffix " << S_Current.histNameSuffix << endl;
+                        cout << "H_Current.name " << H_Current.name << endl;
+                        cout << "H_Current.xVarKey " << H_Current.xVarKey << endl;
+                        cout << "H_Current.yVarKey " << H_Current.yVarKey << endl;
+                        cout << "H_Current.zVarKey " << H_Current.zVarKey << endl;
+                    }
+                    //                    cout << "H_Current.xVarKey " << H_Current.xVarKey << endl;
+                    /*
+                     if (H_Current.xVarKey == "leadBJetEn" && NBtagJets > 0) {
+                     cout << "variable energy " << xIter->second << endl;
+                     }
+                     */
+                    if (xIter != stringKeyToVar.end() && yIter != stringKeyToVar.end() && zIter != stringKeyToVar.end()) {
+                        if (doVerbosity) {
+                            cout << "xIter first " <<  xIter->first << endl;
+                            cout << "xIter second " << xIter->second << endl;
+                            cout << "yIter first " <<  yIter->first << endl;
+                            cout << "yIter second " << yIter->second << endl;                            
+                            cout << "zIter first " <<  zIter->first << endl;
+                            cout << "zIter second " << zIter->second << endl;
+                        }
+                        ///Some necessary continue checks
+                        if (TString(H_Current.xVarKey).Contains("MT2lb") && NJets < 2) continue;
+                        if (S_Current.blindDataChannel && TString(H_Current.xVarKey).Contains("MT2ll")) {
+                            if (blindData && doData && MT2ll > MT2llCut) continue;
+                        }
+                        if (S_Current.blindDataChannel && TString(H_Current.xVarKey).Contains("MT2lb")) {
+                            if (blindData && doData && MT2lb > MT2lbCut) continue;
+                        }
+                        if (H_Current.name.Contains("h_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx")) {
+                            if (H_Current.name.Contains("21to30")) {
+                                if ((nVtx > 30 || nVtx < 21)) continue;
+                            }
+                            else if (H_Current.name.Contains("11to20")) {
+                                if ((nVtx > 20 || nVtx < 11)) continue;
+                            }
+                            else if (H_Current.name.Contains("1to10")) {
+                                if ((nVtx > 10 || nVtx < 1)) continue;
+                            }
+                        }
+                        if (H_Current.name.Contains("LepEffSFShiftUp")) {
+                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_LepEffSFUp : weight_LepEffSFUp;
+                        }
+                        else if (H_Current.name.Contains("LepEffSFShiftDown")) {
+                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_LepEffSFDown : weight_LepEffSFDown;
+                        }
+                        else if (H_Current.name.Contains("genTopRW")) {
+                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_GenTopReweight : weight_GenTopReweight;
+                        }
+                        else if (H_Current.name.Contains("genStopXSecShiftUp")) {
+                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_genStopXSecUp : weight_genStopXSecUp;
+                        }
+                        else if (H_Current.name.Contains("genStopXSecShiftDown")) {
+                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_genStopXSecDown : weight_genStopXSecDown;
+                        }
+                        else {
+                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight : weight;
+                        }
+                        histMap_3D[histKey(H_Current, S_Current)]->Fill(xIter->second, yIter->second, zIter->second, weight); //there could be shenanigans with this one
                     }
                     if (doVerbosity) cout << "" << endl;                    
                 }
@@ -1451,7 +1856,12 @@ int main( int argc, const char* argv[] ) {
 //        if (numBreakPoints > 0) eventCount->Scale(1./endBreakPoint);
         eventCount->Write();
     }
-    
+    if (fInName.Contains("TT") || fInName.Contains("ttbarsignal")) {
+        h_genTopPt->Write();
+        h_genTopPtRW->Write();
+        h_genAntiTopPt->Write();
+        h_genAntiTopPtRW->Write();
+    }
     outputFile->Write();
     cout << "Writing of output file done" << endl;
     outputFile->Close();

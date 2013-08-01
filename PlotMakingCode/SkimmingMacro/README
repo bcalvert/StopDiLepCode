@@ -3,7 +3,14 @@ you should only have to do the command 'make' in the directory containing the sk
 
 Once the code has compiled, you then submit some condor jobs to process the skimming by using the script OviedoNTupleSkimmer.sh
 i.e.
-./OviedoNTupleSkimmer.sh
+./OviedoNTupleSkimmer.sh grabNewNTupleVers doLocal
+where both additional command line arguments are binary (1 or 0)
+If grabNewNTupleVers is 1, then the script grabs the Oviedo nTuples from their storage area on /hadoop in order to run on them, as part of this, it also sets a threshold on the number of jobs it runs (currently 6) so as not to hammer /hadoop
+Also note, that if grabNewNTupleVers is 1, the script is NOT a "fire and forget" because there are "sleep" commands used to hold on additional submission (suggestions for how to make it "fire and forget" are welcome)
+If grabNewNTupleVers is 0, then the script grabs the Oviedo nTuples from their storage area on /data (so old version of Oviedo nTuples); because it's grabbing from /data it doesn't set a threshold on number of jobs running
 
-Note that, as of 7/17/13, it will save the output skim files to the same location they were loaded in from, so currently, 
-/data/users/bcalvert/new_oviedo_ntuples_5_14_13
+For both of these cases, doLocal = 1 means use local Condor queue, while 0 uses the main one (note then, that because there's a hard threshold of 6 for running on the /hadoop guys, you might as well use the local queue if it's free because there are 24 slots on the local queue machine)
+
+If you open the shell script, you see one of the command line options that is passed to the runCondor command is "gOutDir"; as with the code to fill the histograms, this reads in the desired output directory (where one wishes the skims to be saved) from the file called "outputSavePath.txt" It doesn't do this if you're running on old version of the nTuples, so as not to mix up output files
+
+Also, as of 7/28/13, it deliberately "grep -v"'s against reading in signal samples (T2tt, T2bw, or FineBin); those are handled by a different skimmer, discussed in the "READMESignal" file

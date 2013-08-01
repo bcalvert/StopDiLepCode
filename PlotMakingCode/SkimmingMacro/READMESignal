@@ -1,0 +1,51 @@
+See the "README" file in this same directory for instructions on compiling the skimming macro
+
+So for running on the signal files there's two goals we're getting at
+1) Skim the damn things for starters
+2) Save the generator level SUSY mass information, for the purposes of differentiation later
+2a) Tertiary goal, while the SUSY nTuples still do not contain the information on number of events run on is to save the event number information
+
+Anyway,
+Once the code has compiled, you then submit some condor jobs to process the skimming by using the script OviedoNTupleSignalSkimmer.sh
+i.e.
+./OviedoNTupleSignalSkimmer.sh doLocal
+where doLocal is 1 (0) if one wants to use the local (main) condor queue
+!!!!!!
+NOTE: As of 7/28/13, before doing this, you should remove all prior "condor" files from previous skimmings OF THE SIGNAL (don't need to care about SM backgrounds or the data), as the mass point separation relies on having a "clean slate"
+!!!!!!
+If you open the shell script, you see one of the command line options that is passed to the runCondor command is "gOutDir"; as with the code to fill the histograms, this reads in the desired output directory (where one wishes the skims to be saved) from the file called "outputSavePath.txt"
+
+You will also see two additional command line inputs that differ from the NON-signal skimmer script, namely "isSig" (tells skimmer that the files being run on are signal files) and "pEvNum" which prints EventNumber:GenStopMass0:GenChi0Mass0:GenCharginoMass0 for every event (to satisfy 2 and 2a above), where GenSUSYMass0 is the leading generated SUSY particle's (of the respective type, i.e. Stop, Chi0, or Chargino) mass for the given event
+
+So, intrinsically, this script satisfies 1), but you need to run some extra scripts for 2) and 2a) -- actually, a chain of scripts
+
+The first of these is eventNumberConcat.sh
+
+Opening it up, you can see that it reads in all the ".stdout" files from the condor skimming of the signal nTuples (hence the NOTE above)
+For each of these files, it reads in the event number and genSUSY masses in the format they're saved in, and outputs them in the same format to a new file, before then sorting based on event number
+
+to run, just do ./eventNumberConcat.sh after successfully skimming all the signal files (i.e. generating the necessary Condor standard outs)
+
+After running this script, the next script to run is eventSplitToCompSort.sh
+
+This script will take the sorted files for the Signal NTuples that had multiple files to begin with, and compile that information into singular files for each respective general signal nTuple (so the poster child for this is the T2tt FineBin sample)
+
+./eventSplitToCompSort.sh
+
+The next script to run is eventMass.sh; this script will take the *CompSort.txt files that resulted from the prior script, remove the first entry in each line (the event number) and then do a sort into unique "mass points" -- mass points being a combination of Stop, Chi0, and Chargino mass -- and save the results into a separate file
+
+The next script to run is eventNumberUniqueMass.sh; this script runs over the "unique mass points" files generated in the last script. For each mass point, it ups the "number of unique mass points" counter, grabs the respective SUSY masses and saves them into the correct format for loading into the Histogram filling script -- | StopMass GeV | Chi0Mass GeV | CharginoMass GeV | -- and also reloads in the *CompSort.txt files, grepping for the given mass point, thereby finding the event numbers corresponding to this mass point; it saves these into a separate file
+So, upon running this script, for every unique mass point, you have a properly formatted input file to load into the histogram making script, as well as a list of the event numbers that correspond to that mass point. Note, that there are some "buggy" mass points which only have one event associated with them -- I do "ls -lrS" of the EventNumberMassPoints directory created by the script and determine what are the "real" mass points from this
+
+You can use the list of event numbers associated with a given mass point as input into the root macro, SelectionEfficiencyCalc.C, which takes as input a list of event numbers and calculates the basic Oviedo initial selection effiency, (note, not the BCal skimming efficiency). It will output the selection efficiency, using two separate but ostensibly analogous methods, to standard c-out
+
+To facilitate the process of running on these mass points for the FineBin sample, I have created a script that will scan over the FineBin unique mass points and calculate the selection efficiencies for each mass point and then save this into "properly" named files (as well as copying the mass point values into a "properly" named file
+
+For example, running on 7/31/13 I got for the mass point # 2262, 
+StopMass 800
+Chi0Mass 100
+CharginoMass -1 (no Chargino mass because T2tt sample)
+The output file containing the mass point is SelEffFiles/Tree_FineBin_MassPt_StopMass${StopMass}_Chi0Mass${Chi0Mass}_CharginoMass${CharginoMass}.txt
+so SelEffFiles/Tree_FineBin_MassPt_StopMass800_Chi0Mass100_CharginoMass-1.txt in this case
+The output file containing selection effiency is SelEffFiles/Tree_FineBin_MassPt_StopMass${StopMass}_Chi0Mass${Chi0Mass}_CharginoMass${CharginoMass}.Numbers
+so SelEffFiles/Tree_FineBin_MassPt_StopMass800_Chi0Mass100_CharginoMass-1.Numbers in this case

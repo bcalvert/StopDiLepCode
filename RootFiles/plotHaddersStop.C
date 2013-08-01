@@ -93,7 +93,8 @@ int main( int argc, const char* argv[] ) {
     bool doPURW       = 0;          // grab the nVtx reweighted MC files
     bool doSyst       = 1;          // look at systematics plots -- (6/25/13) don't turn off for now haven't validated code fully when not making systematics
     bool beVerbose    = 0;
-    bool doHardCodeNumParFiles = 0;   // fix for an issue with Oviedo nTuples -- temporary (put in 7/18/13
+    bool doHardCodeNumParFiles = 0; // fix for an issue with Oviedo nTuples -- temporary (put in 7/18/13
+    bool doExcSamp    = 0;          // For doing the exclusive DY and TTbar samples
     for (int k = 0; k < argc; ++k) {
         cout << "argv[k] for k = " << k << " is: " << argv[k] << endl;
         if (strncmp (argv[k],"wNTuple", 7) == 0) {
@@ -111,10 +112,22 @@ int main( int argc, const char* argv[] ) {
         else if (strncmp (argv[k],"beVerbose", 9) == 0) {
             beVerbose = 1;
         }
+        else if (strncmp (argv[k],"doExcSamp", 11) == 0) {
+            doExcSamp = 1;
+        }
     }
     gROOT->ProcessLine("#include <vector>");
-    if (whichNTuple == 0) doHardCodeNumParFiles = 1;
+    
+    ///Fix for Oviedo nTuples and number of par files
+    if (whichNTuple == 0) doHardCodeNumParFiles = 1;    
     int hardCodeNumParFiles = 1;
+    
+    ///For doing exclusive samples, only applies for madgraph
+    if (doExcSamp && whichTTBarSyst != 2) {
+        cout << "Exclusive samples only for Madgraph!!" << endl;
+        return 0;
+    }
+    
     // set up input/output strings
     vector<TString> * nameStringVec = new vector<TString>;
     TString nTupleString, PURWString, doSystString;
@@ -150,6 +163,7 @@ int main( int argc, const char* argv[] ) {
     bool doQCD              = 1;
     bool doVG               = 1;
     bool doHiggs            = 1;
+    bool doRare             = 1;
     if (whichTTBarSyst != 2) {
         doSingTop = 0;
         doWLNu = 0;
@@ -158,9 +172,10 @@ int main( int argc, const char* argv[] ) {
         doQCD = 0;
         doVG = 0;
         doHiggs = 0;
+        doRare = 0;
     }
     boolSampVec->push_back(doTTBar);
-    boolSampVec->push_back(doTTBar); // two ttbar lists
+    boolSampVec->push_back(doTTBar); // two ttbar lists, one for diLep "Signal", and one for other decay modes mimicking diLep
     boolSampVec->push_back(doSingTop); // one sing top list
     boolSampVec->push_back(doZDY); // one ZDY list
     boolSampVec->push_back(doVV);
@@ -175,11 +190,14 @@ int main( int argc, const char* argv[] ) {
     else {
         boolSampVec->push_back(doVG);
         boolSampVec->push_back(doVG);
+        boolSampVec->push_back(doHiggs); //Three Higgs lists
         boolSampVec->push_back(doHiggs);
         boolSampVec->push_back(doHiggs);
+        boolSampVec->push_back(doRare);
+        boolSampVec->push_back(doRare);
     }
-    vector<TList*> * fileListVec = FileListVec(whichNTuple, nameStringVec, boolSampVec);
-    vector<TFile*> * outFileVec = OutFileVec(whichNTuple, nameStringVec, boolSampVec);
+    vector<TList*> * fileListVec = FileListVec(whichNTuple, nameStringVec, boolSampVec, doExcSamp);
+    vector<TFile*> * outFileVec = OutFileVec(whichNTuple, nameStringVec, boolSampVec, doExcSamp);
     // boolean vector for which files to hadd
     
     // vectors of vectors of doubles to contain weight factors

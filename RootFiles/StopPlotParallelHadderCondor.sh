@@ -27,7 +27,7 @@ then
     strSyst="_wSyst"
     echo $strSyst
 fi
-for dataset in `/bin/ls *${strNTup}_Parallel_1.root | sed "s/${strNTup}_Parallel_1.root//g"`
+for dataset in `/bin/ls *${strNTup}${strPURW}${strSyst}_Parallel_1.root | sed "s/${strNTup}${strPURW}${strSyst}_Parallel_1.root//g"`
 #for dataset in `/bin/ls ttbarsignalplustau_scaleup_DESY_wSyst_Parallel_1.root | sed "s/_DESY_wSyst_Parallel_1.root//g"`
   do
   echo $dataset
