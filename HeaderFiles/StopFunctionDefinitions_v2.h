@@ -255,7 +255,10 @@ inline float GenLevelTopPtWeight(float pT_Top, float pT_AntiTop) {
     */
     float expoConst = 0.156;
     float expoSlope = -0.00137;
-    return TMath::Exp(0.156) * TMath::Exp(-0.00137 * pT_ToUse);
+/*    return TMath::Exp(expoConst) * TMath::Exp(expoSlope * pT_ToUse);*/
+    float weightTop = TMath::Exp(expoConst) * TMath::Exp(expoSlope * pT_Top);
+    float weightAntiTop = TMath::Exp(expoConst) * TMath::Exp(expoSlope * pT_AntiTop);
+    return TMath::Sqrt(weightAntiTop * weightAntiTop + weightTop * weightTop);
 }
 
 inline int EventType(vector<int> *lepPdgId, int lep0Index, int lep1Index) {
@@ -752,7 +755,7 @@ inline vector<HistogramT> * OneDeeHistTVec() {
     int EtaBinN      = 50;
     int PhiBinN      = 50;
     int METBinN      = 40;    
-    int METXYBinN    = 200;    
+    int METXYBinN    = 50;    
     int NJetsBinN    = 11;
     int nVtxBinN     = 60;
     
@@ -876,7 +879,7 @@ inline vector<HistogramT> * OneDeeHistTVec() {
     H_subBJetEta.doXSyst = false;
     
     HistogramT H_subBJetEn; H_subBJetEn.name = "h_subBJetEn"; 
-    H_subBJetEn.xLabel = "Sub-lead BJet Energy"; H_subBJetEn.xBinN = 3*EnergyPtBinN; H_subBJetEn.xMin = EnergyPtBinLB; H_subBJetEn.xMax = 3*EnergyPtBinUB; 
+    H_subBJetEn.xLabel = "Sub-lead BJet Energy"; H_subBJetEn.xBinN = EnergyPtBinN; H_subBJetEn.xMin = EnergyPtBinLB; H_subBJetEn.xMax = 3*EnergyPtBinUB; 
     H_subBJetEn.yLabel = "Number of Events / ";
     numDivs = (H_subBJetEn.xMax - H_subBJetEn.xMin) / (float) H_subBJetEn.xBinN;
     H_subBJetEn.yLabel += "NUM"; H_subBJetEn.yLabel += " GeV";
@@ -962,6 +965,30 @@ inline vector<HistogramT> * OneDeeHistTVec() {
     H_PassMT2llCut120.yLabel = "Events Passing/Failing MT2ll Cut";
     H_PassMT2llCut120.xVarKey = "PassMT2llCut120";
     H_PassMT2llCut120.doXSyst = true;
+    
+    HistogramT H_MT2ll_DPhiZMETClose; H_MT2ll_DPhiZMETClose.name = "h_MT2ll_DPhiZMETClose"; 
+    H_MT2ll_DPhiZMETClose.xLabel = "MT2_{ll} [GeV]"; H_MT2ll_DPhiZMETClose.xBinN = METBinN; H_MT2ll_DPhiZMETClose.xMin = METBinLB; H_MT2ll_DPhiZMETClose.xMax = METBinUB; 
+    H_MT2ll_DPhiZMETClose.yLabel = "Number of Events / ";
+    numDivs = (H_MT2ll_DPhiZMETClose.xMax - H_MT2ll_DPhiZMETClose.xMin) / (float) H_MT2ll_DPhiZMETClose.xBinN;
+    H_MT2ll_DPhiZMETClose.yLabel += "NUM"; H_MT2ll_DPhiZMETClose.yLabel += " GeV";
+    H_MT2ll_DPhiZMETClose.xVarKey = "MT2ll";
+    H_MT2ll_DPhiZMETClose.doXSyst = true;
+    
+    HistogramT H_MT2ll_DPhiZMETMid; H_MT2ll_DPhiZMETMid.name = "h_MT2ll_DPhiZMETMid"; 
+    H_MT2ll_DPhiZMETMid.xLabel = "MT2_{ll} [GeV]"; H_MT2ll_DPhiZMETMid.xBinN = METBinN; H_MT2ll_DPhiZMETMid.xMin = METBinLB; H_MT2ll_DPhiZMETMid.xMax = METBinUB; 
+    H_MT2ll_DPhiZMETMid.yLabel = "Number of Events / ";
+    numDivs = (H_MT2ll_DPhiZMETMid.xMax - H_MT2ll_DPhiZMETMid.xMin) / (float) H_MT2ll_DPhiZMETMid.xBinN;
+    H_MT2ll_DPhiZMETMid.yLabel += "NUM"; H_MT2ll_DPhiZMETMid.yLabel += " GeV";
+    H_MT2ll_DPhiZMETMid.xVarKey = "MT2ll";
+    H_MT2ll_DPhiZMETMid.doXSyst = true;
+    
+    HistogramT H_MT2ll_DPhiZMETFar; H_MT2ll_DPhiZMETFar.name = "h_MT2ll_DPhiZMETFar"; 
+    H_MT2ll_DPhiZMETFar.xLabel = "MT2_{ll} [GeV]"; H_MT2ll_DPhiZMETFar.xBinN = METBinN; H_MT2ll_DPhiZMETFar.xMin = METBinLB; H_MT2ll_DPhiZMETFar.xMax = METBinUB; 
+    H_MT2ll_DPhiZMETFar.yLabel = "Number of Events / ";
+    numDivs = (H_MT2ll_DPhiZMETFar.xMax - H_MT2ll_DPhiZMETFar.xMin) / (float) H_MT2ll_DPhiZMETFar.xBinN;
+    H_MT2ll_DPhiZMETFar.yLabel += "NUM"; H_MT2ll_DPhiZMETFar.yLabel += " GeV";
+    H_MT2ll_DPhiZMETFar.xVarKey = "MT2ll";
+    H_MT2ll_DPhiZMETFar.doXSyst = true;
     
     HistogramT H_MT2lb; H_MT2lb.name = "h_MT2lb"; 
     H_MT2lb.xLabel = "MT2lb [GeV]"; H_MT2lb.xBinN = METBinN; H_MT2lb.xMin = METBinLB; H_MT2lb.xMax = METBinUB; 
@@ -1231,7 +1258,7 @@ inline vector<HistogramT> * OneDeeHistTVec() {
     
     //polarization energy "E-malgamation"
     HistogramT H_diLepEMinJetE; H_diLepEMinJetE.name = "h_diLepEMinJetE"; 
-    H_diLepEMinJetE.xLabel = "E(l^{+}) + E(l^{-}) - E(J1) - E(J2) [GeV]"; H_diLepEMinJetE.xBinN = 2 * EnergyPtBinN; H_diLepEMinJetE.xMin = -EnergyPtBinUB; H_diLepEMinJetE.xMax = EnergyPtBinUB; 
+    H_diLepEMinJetE.xLabel = "E(l^{+}) + E(l^{-}) - E(J1) - E(J2) [GeV]"; H_diLepEMinJetE.xBinN = EnergyPtBinN; H_diLepEMinJetE.xMin = -EnergyPtBinUB; H_diLepEMinJetE.xMax = EnergyPtBinUB; 
     H_diLepEMinJetE.yLabel = "Number of Events / ";
     numDivs = (H_diLepEMinJetE.xMax - H_diLepEMinJetE.xMin) / (float) H_diLepEMinJetE.xBinN;
     H_diLepEMinJetE.yLabel += "NUM"; H_diLepEMinJetE.yLabel += " GeV";
@@ -1239,7 +1266,7 @@ inline vector<HistogramT> * OneDeeHistTVec() {
     H_diLepEMinJetE.doXSyst = true;
     
     HistogramT H_HT; H_HT.name = "h_HT"; 
-    H_HT.xLabel = "H_{T} [GeV]"; H_HT.xBinN = 3 * EnergyPtBinN; H_HT.xMin = 0; H_HT.xMax = 3 * EnergyPtBinUB; 
+    H_HT.xLabel = "H_{T} [GeV]"; H_HT.xBinN = EnergyPtBinN; H_HT.xMin = 0; H_HT.xMax = 3 * EnergyPtBinUB; 
     H_HT.yLabel = "Number of Events / ";
     numDivs = (H_HT.xMax - H_HT.xMin) / (float) H_HT.xBinN;
     H_HT.yLabel += "NUM"; H_HT.yLabel += " GeV";
@@ -1280,6 +1307,7 @@ inline vector<HistogramT> * OneDeeHistTVec() {
     histVec_1D->push_back(H_MT2ll); histVec_1D->push_back(H_MT2lb);
     histVec_1D->push_back(H_MT2llCont); histVec_1D->push_back(H_MT2lbCont);
     histVec_1D->push_back(H_PassMT2llCut80); histVec_1D->push_back(H_PassMT2llCut90); histVec_1D->push_back(H_PassMT2llCut100); histVec_1D->push_back(H_PassMT2llCut110); histVec_1D->push_back(H_PassMT2llCut120);
+    histVec_1D->push_back(H_MT2ll_DPhiZMETClose); histVec_1D->push_back(H_MT2ll_DPhiZMETMid); histVec_1D->push_back(H_MT2ll_DPhiZMETFar);    
     histVec_1D->push_back(H_MET); histVec_1D->push_back(H_METX); histVec_1D->push_back(H_METY); histVec_1D->push_back(H_METPhi); histVec_1D->push_back(H_METPhi_noCorr); histVec_1D->push_back(H_METX_noPhiCorr); histVec_1D->push_back(H_METY_noPhiCorr);
     histVec_1D->push_back(H_NJets); histVec_1D->push_back(H_NJetswBTag);
     histVec_1D->push_back(H_diJetPt); histVec_1D->push_back(H_diJetInvMass); histVec_1D->push_back(H_diJetEta); histVec_1D->push_back(H_diJetPhi); 
@@ -1305,9 +1333,9 @@ inline vector<HistogramT> * TwoDeeHistTVec() {
     const double PI = 3.14159265;
     //    int EnergyPtBinN = 400;
     //    int EtaBinN      = 200;
-    int PhiBinN      = 200;
+    int PhiBinN      = 100;
     int METBinN      = 40;    
-    int METXYBinN    = 200;    
+    int METXYBinN    = 100;    
     //    int NJetsBinN    = 11;
     int nVtxBinN     = 35;
     
@@ -1399,7 +1427,7 @@ inline vector<HistogramT> * ThreeDeeHistTVec() {
     const double PI = 3.14159265;
     //    int EnergyPtBinN = 400;
     //    int EtaBinN      = 200;
-    int PhiBinN      = 200;
+    int PhiBinN      = 100;
     int METBinN      = 40;    
     int METXYBinN    = 200;    
     int NJetsBinN    = 11;

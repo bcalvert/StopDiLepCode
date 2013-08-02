@@ -7,8 +7,8 @@
 #include "TVector3.h"
 #include "TMath.h"
 #include "TRandom.h"
-#include "TH1D.h"
-#include "TH2D.h"
+#include "TH1F.h"
+#include "TH2F.h"
 #include "TH3F.h"
 #include "TF1.h"
 #include "TTree.h"
@@ -99,8 +99,7 @@ int main( int argc, const char* argv[] ) {
     float MT2ll, MT2lb, MT2lbPair1, MT2lbPair2;
     float MT2llCut = 80;
     float MT2lbCut = 172;
-    bool  PassMT2llIndCut[5];
-    float MT2llIndCut[5] = {80., 90., 100., 110., 120.};
+//    float MT2llIndCut[5] = {80., 90., 100., 110., 120.};
     
     float Lep0Px,Lep0Py,Lep0Pz,Lep0E,Lep1Px,Lep1Py,Lep1Pz,Lep1E;
     int   Lep0PdgId, Lep1PdgId;
@@ -118,6 +117,8 @@ int main( int argc, const char* argv[] ) {
     float stopWeightPlusErr = 0.;
     float stopWeightMinusErr = 0.;
     
+    
+    const double PI = 3.14159265;
     
     int NJets, NBtagJets;
     float SysVar;
@@ -165,7 +166,7 @@ int main( int argc, const char* argv[] ) {
     float METPhi_LepESUp, METPhi_LepESDown, METPhi_JetESUp, METPhi_JetESDown, METPhi_JetERUp, METPhi_JetERDown;
     float MT2lb_LepESUp, MT2lb_LepESDown, MT2lb_JetESUp, MT2lb_JetESDown, MT2lb_JetERUp, MT2lb_JetERDown;
     TFile * MT2llSmearFile = new TFile("MT2llSmear.root");
-    TH1D * MT2llMeanSmear = (TH1D*) MT2llSmearFile->Get("MT2llSmear");
+    TH1F * MT2llMeanSmear = (TH1F*) MT2llSmearFile->Get("MT2llSmear");
     float MT2llSmearFactor;
     int MT2llSmearFactorBin;
     float MT2llSystConst = 1.5;
@@ -199,7 +200,7 @@ int main( int argc, const char* argv[] ) {
     // 50k evts per point x Npoints
     
     ////input cuts/commands    
-    //    const double PI = 3.14159265;
+
     bool grabOutDir      = 0;      // whether or not to use the file: "outputSavePath.txt" for where to save output
     bool doPhiCorr       = 1;      // whether to do the MetPhi asymmetry correction -- 6/25/13 as of right now parameters need to be updated
     bool doData          = 0;      // Whether you're running on data or not
@@ -624,7 +625,7 @@ int main( int argc, const char* argv[] ) {
 //    vector<HistogramT> * histVec_2D_Syst;
 //    vector<HistogramT> * histVec_3D_Syst;
     HistogramT H_Current; 
-    TH1D * h_1DCurr; TH2D * h_2DCurr; TH3D * h_3DCurr;
+    TH1F * h_1DCurr; TH2F * h_2DCurr; TH3F * h_3DCurr;
     HMap_1D histMap_1D; HMap_2D histMap_2D; HMap_3D histMap_3D; passCutMap subSampBool;
     SampleT S_Current;
     TString histTitle;
@@ -635,8 +636,10 @@ int main( int argc, const char* argv[] ) {
     float zBinMin, zBinMax;
     if (doBookSyst) {
         histVec_1D_Syst = AddSystHists(histVec_1D, systVec, fInName, isSignal);
+        /*
         histVec_2D_Syst = AddSystHists(histVec_2D, systVec, fInName, isSignal);
         histVec_3D_Syst = AddSystHists(histVec_3D, systVec, fInName, isSignal);
+         */
 //        addSystHists(histVec_2D, systVec);
 //        addSystHists(histVec_3D, systVec);
     }
@@ -662,7 +665,7 @@ int main( int argc, const char* argv[] ) {
                 xBinMax = xBinMax / 2;
             }
 //            if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.
-            h_1DCurr = new TH1D(histTitle, axesTitle, nXBins, xBinMin, xBinMax); h_1DCurr->Sumw2();
+            h_1DCurr = new TH1F(histTitle, axesTitle, nXBins, xBinMin, xBinMax); h_1DCurr->Sumw2();
             histMap_1D[histKey(H_Current, S_Current)] = h_1DCurr;
             //will this cause memory leaks?
         }
@@ -681,7 +684,7 @@ int main( int argc, const char* argv[] ) {
             if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !H_Current.name.Contains("h_PassMT2ll") && !(H_Current.name.Contains("h_MT2llControl"))) {
                 xBinMax = xBinMax / 2;
             }
-            h_2DCurr = new TH2D(histTitle, axesTitle, nXBins, xBinMin, xBinMax, nYBins, yBinMin, yBinMax); h_2DCurr->Sumw2();
+            h_2DCurr = new TH2F(histTitle, axesTitle, nXBins, xBinMin, xBinMax, nYBins, yBinMin, yBinMax); h_2DCurr->Sumw2();
             histMap_2D[histKey(H_Current, S_Current)] = h_2DCurr;
         }        
          for (unsigned int l = 0; l < histVec_3D->size(); ++l) {
@@ -702,7 +705,7 @@ int main( int argc, const char* argv[] ) {
              if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !H_Current.name.Contains("h_PassMT2ll") && !(H_Current.name.Contains("h_MT2llControl"))) {
                  xBinMax = xBinMax / 2;
              }
-             h_3DCurr = new TH3D(histTitle, axesTitle, nXBins, xBinMin, xBinMax, nYBins, yBinMin, yBinMax, nZBins, zBinMin, zBinMax); h_3DCurr->Sumw2(); 
+             h_3DCurr = new TH3F(histTitle, axesTitle, nXBins, xBinMin, xBinMax, nYBins, yBinMin, yBinMax, nZBins, zBinMin, zBinMax); h_3DCurr->Sumw2(); 
              histMap_3D[histKey(H_Current, S_Current)] = h_3DCurr;
          }
         if (doBookSyst) {
@@ -724,10 +727,11 @@ int main( int argc, const char* argv[] ) {
                 if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !H_Current.name.Contains("h_PassMT2ll") && !(H_Current.name.Contains("h_MT2llControl"))) {
                     xBinMax = xBinMax / 2;
                 }
-                h_1DCurr = new TH1D(histTitle, axesTitle, nXBins, xBinMin, xBinMax); h_1DCurr->Sumw2();
+                h_1DCurr = new TH1F(histTitle, axesTitle, nXBins, xBinMin, xBinMax); h_1DCurr->Sumw2();
                 histMap_1D[histKey(H_Current, S_Current)] = h_1DCurr;
                 //will this cause memory leaks?
             }
+            /*
             for (unsigned int ks = 0; ks < histVec_2D_Syst->size(); ++ks) {
                 H_Current = histVec_2D_Syst->at(ks);
                 histTitle = H_Current.name + S_Current.histNameSuffix;
@@ -743,7 +747,7 @@ int main( int argc, const char* argv[] ) {
                 if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !H_Current.name.Contains("h_PassMT2ll") && !(H_Current.name.Contains("h_MT2llControl"))) {
                     xBinMax = xBinMax / 2;
                 }
-                h_2DCurr = new TH2D(histTitle, axesTitle, nXBins, xBinMin, xBinMax, nYBins, yBinMin, yBinMax); h_2DCurr->Sumw2();
+                h_2DCurr = new TH2F(histTitle, axesTitle, nXBins, xBinMin, xBinMax, nYBins, yBinMin, yBinMax); h_2DCurr->Sumw2();
                 histMap_2D[histKey(H_Current, S_Current)] = h_2DCurr;
             }
             for (unsigned int ls = 0; ls < histVec_3D_Syst->size(); ++ls) {
@@ -764,9 +768,10 @@ int main( int argc, const char* argv[] ) {
                 if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !H_Current.name.Contains("h_PassMT2ll") && !(H_Current.name.Contains("h_MT2llControl"))) {
                     xBinMax = xBinMax / 2;
                 }
-                h_3DCurr = new TH3D(histTitle, axesTitle, nXBins, xBinMin, xBinMax, nYBins, yBinMin, yBinMax, nZBins, zBinMin, zBinMax); h_3DCurr->Sumw2(); 
+                h_3DCurr = new TH3F(histTitle, axesTitle, nXBins, xBinMin, xBinMax, nYBins, yBinMin, yBinMax, nZBins, zBinMin, zBinMax); h_3DCurr->Sumw2(); 
                 histMap_3D[histKey(H_Current, S_Current)] = h_3DCurr;
             }
+            */
         }
     }   
     /////
@@ -1276,8 +1281,8 @@ int main( int argc, const char* argv[] ) {
         stringKeyToVar["DPhiLep1MET"] = dPhi((float) Lep0Vec.Phi(), METPhi);
         stringKeyToVar["DPhiLep0MET_PreCorr"] = dPhi((float) Lep0Vec.Phi(), METPhi_preCorr);
         stringKeyToVar["DPhiLep1MET_PreCorr"] = dPhi((float) Lep0Vec.Phi(), METPhi_preCorr);
-        stringKeyToVar["DPhiZMET"] = dPhi((float) (Lep0Vec + Lep1Vec).Phi(), METPhi);
-        stringKeyToVar["DPhiZMET_PreCorr"] = dPhi((float) (Lep0Vec + Lep1Vec).Phi(), METPhi_preCorr);
+        stringKeyToVar["DPhiZMET"] = dPhi(diLepPhi, METPhi);
+        stringKeyToVar["DPhiZMET_PreCorr"] = dPhi(diLepPhi, METPhi_preCorr);
         stringKeyToVar["nVtx"] = (float) nVtx;
         stringKeyToVar["nVtxTrue"] = (float) nVtxTrue;
         stringKeyToVar["METX"] = METX;
@@ -1557,6 +1562,15 @@ int main( int argc, const char* argv[] ) {
                         if (S_Current.blindDataChannel && TString(H_Current.xVarKey).Contains("MT2lb")) {
                             if (blindData && doData && MT2lb > MT2lbCut) continue;
                         }
+                        if (TString(H_Current.name).Contains("MT2ll_DPhiZMETClose")) {
+                            if (dPhi(diLepPhi, MET) > 1./3. * PI) continue;
+                        }
+                        else if (TString(H_Current.name).Contains("MT2ll_DPhiZMETMid")) {
+                            if (dPhi(diLepPhi, MET) < 1./3. * PI || dPhi(diLepPhi, MET) > 2./3. * PI) continue;
+                        }                        
+                        else if (TString(H_Current.name).Contains("MT2ll_DPhiZMETFar")) {
+                            if (dPhi(diLepPhi, MET) < 2./3. * PI) continue;
+                        }
                         /*
                         if ((S_Current.histNameSuffix == "_FullCut" || S_Current.histNameSuffix == "_emu_Jet2BJet1" || S_Current.histNameSuffix == "_ee_ZVeto_METGeq40_Jet2BJet1" || S_Current.histNameSuffix == "_mumu_ZVeto_METGeq40_Jet2BJet1") && TString(H_Current.xVarKey).Contains("MT2ll")) {
                             if (doData && MT2ll > MT2llCut) continue;                            
@@ -1662,6 +1676,15 @@ int main( int argc, const char* argv[] ) {
                         }
                         if (S_Current.blindDataChannel && TString(H_Current.xVarKey).Contains("MT2lb")) {
                             if (blindData && doData && MT2lb > MT2lbCut) continue;
+                        }
+                        if (TString(H_Current.name).Contains("MT2ll_DPhiZMETClose")) {
+                            if (dPhi(diLepPhi, MET) > 1./3. * PI) continue;
+                        }
+                        else if (TString(H_Current.name).Contains("MT2ll_DPhiZMETMid")) {
+                            if (dPhi(diLepPhi, MET) < 1./3. * PI || dPhi(diLepPhi, MET) > 2./3. * PI) continue;
+                        }                        
+                        else if (TString(H_Current.name).Contains("MT2ll_DPhiZMETFar")) {
+                            if (dPhi(diLepPhi, MET) < 2./3. * PI) continue;
                         }
                         /*
                         if ((S_Current.histNameSuffix == "_FullCut" || S_Current.histNameSuffix == "_emu_Jet2_BJet1" || S_Current.histNameSuffix == "_ee_ZVeto_Jet2_BJet1_METGeq40" || S_Current.histNameSuffix == "_mumu_ZVeto_Jet2_BJet1_METGeq40") && TString(H_Current.xVarKey).Contains("MT2ll")) {

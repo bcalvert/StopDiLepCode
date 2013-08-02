@@ -351,25 +351,25 @@ vector<double> * WeightVec(int whichNTuple, float L_data, vector<double> * baseW
                     outVec->push_back(numParFiles * L_data * xsecHiggsZZ4L / baseWeightVec->at(0));
                     break;
                 case 13:
-                    numParFiles = numParFiles->at(0);
+                    numParFiles = numParFilesVec->at(0);
                     outVec->push_back(numParFiles * L_data * xsecWWG / baseWeightVec->at(0));
-                    numParFiles = numParFiles->at(1);
+                    numParFiles = numParFilesVec->at(1);
                     outVec->push_back(numParFiles * L_data * xsecWWW / baseWeightVec->at(1));
-                    numParFiles = numParFiles->at(2);
+                    numParFiles = numParFilesVec->at(2);
                     outVec->push_back(numParFiles * L_data * xsecWWZ / baseWeightVec->at(2));
-                    numParFiles = numParFiles->at(3);
+                    numParFiles = numParFilesVec->at(3);
                     outVec->push_back(numParFiles * L_data * xsecWZZ / baseWeightVec->at(3));
-                    numParFiles = numParFiles->at(4);
+                    numParFiles = numParFilesVec->at(4);
                     outVec->push_back(numParFiles * L_data * xsecZZZ / baseWeightVec->at(4));
                     break;
                 case 14:
-                    numParFiles = numParFiles->at(0);
+                    numParFiles = numParFilesVec->at(0);
                     outVec->push_back(numParFiles * L_data * xsecTTbarG / baseWeightVec->at(0));
-                    numParFiles = numParFiles->at(1);
+                    numParFiles = numParFilesVec->at(1);
                     outVec->push_back(numParFiles * L_data * xsecTTbarZ / baseWeightVec->at(1));
-                    numParFiles = numParFiles->at(2);
+                    numParFiles = numParFilesVec->at(2);
                     outVec->push_back(numParFiles * L_data * xsecTTbarW / baseWeightVec->at(2));
-                    numParFiles = numParFiles->at(3);
+                    numParFiles = numParFilesVec->at(3);
                     outVec->push_back(numParFiles * L_data * xsecTTbarWW / baseWeightVec->at(3));
                     break;
                 default:

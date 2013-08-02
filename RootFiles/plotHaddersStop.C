@@ -228,7 +228,7 @@ int main( int argc, const char* argv[] ) {
                     numParFilesVec->at(iHardCode) = hardCodeNumParFiles;
                 }
             }
-            currWeightVec = WeightVec(whichNTuple, L_data, currWeightBaseVec, i, numParFilesVec);
+            currWeightVec = WeightVec(whichNTuple, L_data, currWeightBaseVec, i, numParFilesVec, doExcSamp);
             weightVec->push_back(currWeightVec);
         }
     }
@@ -271,6 +271,7 @@ int main( int argc, const char* argv[] ) {
         if (boolSampVec->at(j)) {
             MergeRootfileHists(outFileVec->at(j), fileListVec->at(j), weightVec->at(j), beVerbose); //I think this needs some work..
         }
+        outFileVec->at(j)->Close();
         if (boolSampVec->at(j)) {
             switch (j) {
                 case 1:
