@@ -527,7 +527,8 @@ int main( int argc, char* argv[]) {
                 cout << "integral for DataComp " << h_DataComp->GetName() << " is " << h_DataComp->Integral() << endl;            
                 cout << "integral for MCComp " << h_MCComp->GetName() << " is " << h_MCComp->Integral() << endl;
                 for (unsigned int kMC = 0; kMC < mcCompHist1DSystVec->size(); ++kMC) {
-                    cout << "integral for syst " << mcCompHist1DSystVec->at(kMC)->GetName() << " is " << mcCompHist1DSystVec->at(kMC)->Integral() << endl;
+                    cout << "integral for syst ";
+                    cout << mcCompHist1DSystVec->at(kMC)->GetName() << " is " << mcCompHist1DSystVec->at(kMC)->Integral() << endl;
                 }
                 //        cout << "Data Integral " << h_DataComp->Integral() << endl;
                 //        cout << "MC Integral " << h_MCComp->Integral() << endl;

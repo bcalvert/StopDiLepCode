@@ -1527,7 +1527,7 @@ int main( int argc, const char* argv[] ) {
             preNVtxRWweight_genStopXSecUp *= stopWeightPlusErr;
             preNVtxRWweight_genStopXSecDown *= stopWeightMinusErr;
         }
-        //require MT2 < 80 for data (for now, I'm allowing it for MC)        
+        //require MT2 < 80 for data (for now, I'm allowing it for MC)           
         for (unsigned int i = 0; i < subSampVec->size(); ++i) {
             S_Current = subSampVec->at(i);
             
@@ -1563,13 +1563,13 @@ int main( int argc, const char* argv[] ) {
                             if (blindData && doData && MT2lb > MT2lbCut) continue;
                         }
                         if (TString(H_Current.name).Contains("MT2ll_DPhiZMETClose")) {
-                            if (dPhi(diLepPhi, MET) > 1./3. * PI) continue;
+                            if (dPhi(diLepPhi, METPhi) > 1./3. * PI) continue;
                         }
                         else if (TString(H_Current.name).Contains("MT2ll_DPhiZMETMid")) {
-                            if (dPhi(diLepPhi, MET) < 1./3. * PI || dPhi(diLepPhi, MET) > 2./3. * PI) continue;
+                            if (dPhi(diLepPhi, METPhi) < 1./3. * PI || dPhi(diLepPhi, METPhi) > 2./3. * PI) continue;                         
                         }                        
                         else if (TString(H_Current.name).Contains("MT2ll_DPhiZMETFar")) {
-                            if (dPhi(diLepPhi, MET) < 2./3. * PI) continue;
+                            if (dPhi(diLepPhi, METPhi) < 2./3. * PI) continue;
                         }
                         /*
                         if ((S_Current.histNameSuffix == "_FullCut" || S_Current.histNameSuffix == "_emu_Jet2BJet1" || S_Current.histNameSuffix == "_ee_ZVeto_METGeq40_Jet2BJet1" || S_Current.histNameSuffix == "_mumu_ZVeto_METGeq40_Jet2BJet1") && TString(H_Current.xVarKey).Contains("MT2ll")) {
@@ -1678,13 +1678,13 @@ int main( int argc, const char* argv[] ) {
                             if (blindData && doData && MT2lb > MT2lbCut) continue;
                         }
                         if (TString(H_Current.name).Contains("MT2ll_DPhiZMETClose")) {
-                            if (dPhi(diLepPhi, MET) > 1./3. * PI) continue;
+                            if (dPhi(diLepPhi, METPhi) > 1./3. * PI) continue;
                         }
                         else if (TString(H_Current.name).Contains("MT2ll_DPhiZMETMid")) {
-                            if (dPhi(diLepPhi, MET) < 1./3. * PI || dPhi(diLepPhi, MET) > 2./3. * PI) continue;
+                            if (dPhi(diLepPhi, METPhi) < 1./3. * PI || dPhi(diLepPhi, METPhi) > 2./3. * PI) continue;
                         }                        
                         else if (TString(H_Current.name).Contains("MT2ll_DPhiZMETFar")) {
-                            if (dPhi(diLepPhi, MET) < 2./3. * PI) continue;
+                            if (dPhi(diLepPhi, METPhi) < 2./3. * PI) continue;
                         }
                         /*
                         if ((S_Current.histNameSuffix == "_FullCut" || S_Current.histNameSuffix == "_emu_Jet2_BJet1" || S_Current.histNameSuffix == "_ee_ZVeto_Jet2_BJet1_METGeq40" || S_Current.histNameSuffix == "_mumu_ZVeto_Jet2_BJet1_METGeq40") && TString(H_Current.xVarKey).Contains("MT2ll")) {

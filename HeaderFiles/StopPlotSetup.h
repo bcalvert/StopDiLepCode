@@ -320,18 +320,24 @@ void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH1F *> * dataHist
             mcSystPlotName += systName;
             mcGrabName += subSampName;
             mcSystPlotName += subSampName;
+            if (systName.Contains("genStop")) continue;
             for (unsigned int k = 0; k < inputFiles->size(); ++k) {
                 cout << "k " << k << endl;            
                 fileName = inputFiles->at(k)->GetName();
                 cout << "fileName " << fileName << endl;
                 cout << "mcSystPlotName " << mcSystPlotName << endl;
                 if (fileName.Contains("Data")) continue;
+                if (systName.Contains("genTop") && !fileName.Contains("TTBarSig")) continue;
+                if (systName.Contains("genStop") && !fileName.Contains("Stop")) continue;
+                /*
                 if (systName.Contains("MT2ll") && !fileName.Contains("TTBar")) {
                     currHist = (TH1F *) inputFiles->at(k)->Get(mcGrabName);   
                 }
                 else {
                     currHist = (TH1F *) inputFiles->at(k)->Get(mcSystPlotName);   
                 }
+                 */
+                currHist = (TH1F *) inputFiles->at(k)->Get(mcSystPlotName);   
                 cout << "grabbed hist " << endl;
                 currHist->Scale(nVtxBackScaleVec->at(k)); // correct for PURW changes to integral
                 if (useDDEstimate && fileName.Contains("TTBar")) currHist->Scale(scaleFacTTBar);
@@ -436,18 +442,24 @@ void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH2F *> * dataHist
             mcSystPlotName += systName;
             mcGrabName += subSampName;
             mcSystPlotName += subSampName;
+            if (systName.Contains("genStop")) continue;
             for (unsigned int k = 0; k < inputFiles->size(); ++k) {
                 cout << "k " << k << endl;            
                 fileName = inputFiles->at(k)->GetName();
                 cout << "fileName " << fileName << endl;
                 cout << "mcSystPlotName " << mcSystPlotName << endl;
                 if (fileName.Contains("Data")) continue;
+                if (systName.Contains("genTop") && !fileName.Contains("TTBarSig")) continue;
+                if (systName.Contains("genStop") && !fileName.Contains("Stop")) continue;
+                /*
                 if (systName.Contains("MT2ll") && !fileName.Contains("TTBar")) {
                     currHist = (TH2F *) inputFiles->at(k)->Get(mcGrabName);   
                 }
                 else {
                     currHist = (TH2F *) inputFiles->at(k)->Get(mcSystPlotName);   
-                }
+                 }
+                 */
+                currHist = (TH2F *) inputFiles->at(k)->Get(mcSystPlotName);                   
                 cout << "grabbed hist " << endl;
                 currHist->Scale(nVtxBackScaleVec->at(k)); // correct for PURW changes to integral
                 if (useDDEstimate && fileName.Contains("TTBar")) currHist->Scale(scaleFacTTBar);
@@ -550,18 +562,24 @@ void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH3F *> * dataHist
             mcSystPlotName += systName;
             mcGrabName += subSampName;
             mcSystPlotName += subSampName;
+            if (systName.Contains("genStop")) continue;
             for (unsigned int k = 0; k < inputFiles->size(); ++k) {
                 cout << "k " << k << endl;            
                 fileName = inputFiles->at(k)->GetName();
                 cout << "fileName " << fileName << endl;
                 cout << "mcSystPlotName " << mcSystPlotName << endl;
                 if (fileName.Contains("Data")) continue;
+                if (systName.Contains("genTop") && !fileName.Contains("TTBarSig")) continue;
+                if (systName.Contains("genStop") && !fileName.Contains("Stop")) continue;
+                /*
                 if (systName.Contains("MT2ll") && !fileName.Contains("TTBar")) {
                     currHist = (TH3F *) inputFiles->at(k)->Get(mcGrabName);   
                 }
                 else {
                     currHist = (TH3F *) inputFiles->at(k)->Get(mcSystPlotName);   
                 }
+                 */
+                currHist = (TH3F *) inputFiles->at(k)->Get(mcSystPlotName);   
                 cout << "grabbed hist " << endl;
                 currHist->Scale(nVtxBackScaleVec->at(k)); // correct for PURW changes to integral
                 if (useDDEstimate && fileName.Contains("TTBar")) currHist->Scale(scaleFacTTBar);
