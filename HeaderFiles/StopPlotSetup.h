@@ -249,7 +249,7 @@ void SingSampCompHistogramGrabber(TFile * inputFile1, TH1F * &inputHist1, vector
         inputHist2->Scale(nVtxBackScale2);
     }
 }
-void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH1F *> * dataHistVec, vector<TH1F *> * mcIndHistCentValVec, vector<TH1F *> * mcCompHistSystVec, vector<float> * nVtxBackScaleVec, vector<SystT> * systVec, TString dataPlotName, TString mcPlotName, TString subSampName, int RBNX, int RBNY, int RBNZ, bool doOverflow, bool doUnderflow, bool doSyst, bool useDDEstimate, float scaleFacTTBar) {
+void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH1F *> * dataHistVec, vector<TH1F *> * mcIndHistCentValVec, vector<TH1F *> * mcCompHistSystVec, vector<float> * nVtxBackScaleVec, vector<SystT> * systVec, TString dataPlotName, TString mcPlotName, TString subSampName, int RBNX, int RBNY, int RBNZ, bool doOverflow, bool doUnderflow, bool doSyst, bool useDDEstimate, float scaleFacTTBar, bool allMT2llSystematic) {
     cout << "inside Histogram Vec Grabber line: 144" << endl;
     int NBinsX, NBinsY, NBinsZ;
     TString fileName, systName, mcGrabName;
@@ -268,6 +268,7 @@ void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH1F *> * dataHist
             cout << "contains data " << endl;
             cout << "trying to grab " << dataPlotName << endl;
             currHist = (TH1F *) inputFiles->at(k)->Get(dataPlotName);
+//            cout << "test " << endl;
             NBinsX = currHist->GetNbinsX();
             NBinsY = currHist->GetNbinsY();
             NBinsZ = currHist->GetNbinsZ();
@@ -329,15 +330,15 @@ void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH1F *> * dataHist
                 if (fileName.Contains("Data")) continue;
                 if (systName.Contains("genTop") && !fileName.Contains("TTBarSig")) continue;
                 if (systName.Contains("genStop") && !fileName.Contains("Stop")) continue;
-                /*
-                if (systName.Contains("MT2ll") && !fileName.Contains("TTBar")) {
+                
+                if (!allMT2llSystematic && systName.Contains("MT2ll") && !fileName.Contains("TTBar")) {
                     currHist = (TH1F *) inputFiles->at(k)->Get(mcGrabName);   
                 }
                 else {
                     currHist = (TH1F *) inputFiles->at(k)->Get(mcSystPlotName);   
                 }
-                 */
-                currHist = (TH1F *) inputFiles->at(k)->Get(mcSystPlotName);   
+                
+                //currHist = (TH1F *) inputFiles->at(k)->Get(mcSystPlotName);   
                 cout << "grabbed hist " << endl;
                 currHist->Scale(nVtxBackScaleVec->at(k)); // correct for PURW changes to integral
                 if (useDDEstimate && fileName.Contains("TTBar")) currHist->Scale(scaleFacTTBar);
@@ -371,7 +372,7 @@ void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH1F *> * dataHist
         }
     }
 }
-void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH2F *> * dataHistVec, vector<TH2F *> * mcIndHistCentValVec, vector<TH2F *> * mcCompHistSystVec, vector<float> * nVtxBackScaleVec, vector<SystT> * systVec, TString dataPlotName, TString mcPlotName, TString subSampName, int RBNX, int RBNY, int RBNZ, bool doOverflow, bool doUnderflow, bool doSyst, bool useDDEstimate, float scaleFacTTBar) {
+void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH2F *> * dataHistVec, vector<TH2F *> * mcIndHistCentValVec, vector<TH2F *> * mcCompHistSystVec, vector<float> * nVtxBackScaleVec, vector<SystT> * systVec, TString dataPlotName, TString mcPlotName, TString subSampName, int RBNX, int RBNY, int RBNZ, bool doOverflow, bool doUnderflow, bool doSyst, bool useDDEstimate, float scaleFacTTBar, bool allMT2llSystematic) {
     cout << "inside Histogram Vec Grabber line: 144" << endl;
     int NBinsX, NBinsY, NBinsZ;
     TString fileName, systName, mcGrabName;
@@ -451,15 +452,14 @@ void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH2F *> * dataHist
                 if (fileName.Contains("Data")) continue;
                 if (systName.Contains("genTop") && !fileName.Contains("TTBarSig")) continue;
                 if (systName.Contains("genStop") && !fileName.Contains("Stop")) continue;
-                /*
-                if (systName.Contains("MT2ll") && !fileName.Contains("TTBar")) {
+                
+                if (!allMT2llSystematic && systName.Contains("MT2ll") && !fileName.Contains("TTBar")) {
                     currHist = (TH2F *) inputFiles->at(k)->Get(mcGrabName);   
                 }
                 else {
                     currHist = (TH2F *) inputFiles->at(k)->Get(mcSystPlotName);   
-                 }
-                 */
-                currHist = (TH2F *) inputFiles->at(k)->Get(mcSystPlotName);                   
+                }                
+                //currHist = (TH2F *) inputFiles->at(k)->Get(mcSystPlotName);                   
                 cout << "grabbed hist " << endl;
                 currHist->Scale(nVtxBackScaleVec->at(k)); // correct for PURW changes to integral
                 if (useDDEstimate && fileName.Contains("TTBar")) currHist->Scale(scaleFacTTBar);
@@ -493,7 +493,7 @@ void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH2F *> * dataHist
         }
     }
 }
-void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH3F *> * dataHistVec, vector<TH3F *> * mcIndHistCentValVec, vector<TH3F *> * mcCompHistSystVec, vector<float> * nVtxBackScaleVec, vector<SystT> * systVec, TString dataPlotName, TString mcPlotName, TString subSampName, int RBNX, int RBNY, int RBNZ, bool doOverflow, bool doUnderflow, bool doSyst, bool useDDEstimate, float scaleFacTTBar) {
+void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH3F *> * dataHistVec, vector<TH3F *> * mcIndHistCentValVec, vector<TH3F *> * mcCompHistSystVec, vector<float> * nVtxBackScaleVec, vector<SystT> * systVec, TString dataPlotName, TString mcPlotName, TString subSampName, int RBNX, int RBNY, int RBNZ, bool doOverflow, bool doUnderflow, bool doSyst, bool useDDEstimate, float scaleFacTTBar, bool allMT2llSystematic) {
     int NBinsX, NBinsY, NBinsZ;
     TString fileName, systName, mcGrabName;
     TH3F * currHist;
@@ -570,16 +570,14 @@ void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH3F *> * dataHist
                 cout << "mcSystPlotName " << mcSystPlotName << endl;
                 if (fileName.Contains("Data")) continue;
                 if (systName.Contains("genTop") && !fileName.Contains("TTBarSig")) continue;
-                if (systName.Contains("genStop") && !fileName.Contains("Stop")) continue;
-                /*
+                if (systName.Contains("genStop") && !fileName.Contains("Stop")) continue;            
                 if (systName.Contains("MT2ll") && !fileName.Contains("TTBar")) {
                     currHist = (TH3F *) inputFiles->at(k)->Get(mcGrabName);   
                 }
                 else {
                     currHist = (TH3F *) inputFiles->at(k)->Get(mcSystPlotName);   
-                }
-                 */
-                currHist = (TH3F *) inputFiles->at(k)->Get(mcSystPlotName);   
+                }        
+//                currHist = (TH3F *) inputFiles->at(k)->Get(mcSystPlotName);   
                 cout << "grabbed hist " << endl;
                 currHist->Scale(nVtxBackScaleVec->at(k)); // correct for PURW changes to integral
                 if (useDDEstimate && fileName.Contains("TTBar")) currHist->Scale(scaleFacTTBar);
@@ -954,8 +952,15 @@ void SpectrumDraw(TCanvas * InputCanvas, TH1F * Hist1, TString legHist1, TH1F * 
     HistAxisAttSet(XAxis, XAxisTitle, .17, 1.03, .12,.07, 0.0, 0.0);
     YAxis->SetNdivisions(3,5,0);
     XAxis->SetNdivisions(6,5,0);
+    TGraphAsymmErrors * fracRatioDrawGraph = clonePoints(fracRatioHist);
+    HistToGraphCopyAttributes(fracRatioHist, fracRatioDrawGraph);
+    TH1F * patsy = (TH1F*) fracRatioHist->Clone("frac patsy");
+    patsy->SetLineColor(kWhite);
+    patsy->SetMarkerColor(kWhite);
     fracRatioHist->SetLineColor(kBlack);
-    fracRatioHist->Draw("e1");
+    patsy->Draw("e1");    
+    fracRatioDrawGraph->Draw("p0 same");
+//    fracRatioHist->Draw("e1");
     Pad2->Update();
     Pad2->Modified();
 }
@@ -1067,10 +1072,16 @@ void SpectrumDrawSyst(TCanvas * InputCanvas, TH1F * Hist1, TString legHist1, TH1
     HistAxisAttSet(XAxis, XAxisTitle, .17, 1.03, .12,.07, 0.0, 0.0);
     YAxis->SetNdivisions(3,5,0);
     XAxis->SetNdivisions(6,5,0);
+    TGraphAsymmErrors * fracRatioDrawGraph = clonePoints(fracRatioHist);
+    HistToGraphCopyAttributes(fracRatioHist, fracRatioDrawGraph);
+    TH1F * patsy = (TH1F*) fracRatioHist->Clone("frac patsy");
+    patsy->SetLineColor(kWhite);
+    patsy->SetMarkerColor(kWhite);
     fracRatioHist->SetLineColor(kBlack);
-    fracRatioHist->Draw("e1");
-    fracRatioGraph->Draw("3 same");
-    fracRatioHist->Draw("e1 same");
+    patsy->Draw("e1");    
+    fracRatioGraph->Draw("2 same");
+//    fracRatioHist->Draw("e1 same");
+    fracRatioDrawGraph->Draw("p0 same");
     Pad2->Update();
     Pad2->Modified();
 }
@@ -1187,8 +1198,15 @@ void SpectrumDrawSingSampCompare(TCanvas * InputCanvas, TH1F * Hist1, TString le
         HistAxisAttSet(XAxis, XAxisTitle, .17, 1.03, .12,.07, 0.0, 0.0);
         YAxis->SetNdivisions(3,5,0);
         XAxis->SetNdivisions(6,5,0);
+        TGraphAsymmErrors * fracRatioDrawGraph = clonePoints(fracRatioHist);
+        HistToGraphCopyAttributes(fracRatioHist, fracRatioDrawGraph);
+        TH1F * patsy = (TH1F*) fracRatioHist->Clone("frac patsy");
+        patsy->SetLineColor(kWhite);
+        patsy->SetMarkerColor(kWhite);
         fracRatioHist->SetLineColor(kBlack);
-        fracRatioHist->Draw("e1");
+//        fracRatioHist->Draw("e1");
+        patsy->Draw("e1");
+        fracRatioDrawGraph->Draw("p0 same");
         Pad2->Update();
         Pad2->Modified();
     }

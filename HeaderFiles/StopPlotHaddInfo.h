@@ -264,6 +264,8 @@ vector<double> * WeightVec(int whichNTuple, float L_data, vector<double> * baseW
         xsecZZ = 9.03;
         xsecWLNu = 37509;
     }
+    cout << "Case: " << whichFileList << " numParFilesVec size " << numParFilesVec->size() << endl;
+    cout << "baseWeightVec-> size " << baseWeightVec->size() << endl;
     switch (whichNTuple) {
         case 0:
             switch (whichFileList) {
@@ -327,12 +329,14 @@ vector<double> * WeightVec(int whichNTuple, float L_data, vector<double> * baseW
                 case 8:            
                     numParFiles = numParFilesVec->at(0);
                     outVec->push_back(numParFiles * L_data * xsecWG / baseWeightVec->at(0));
+                    /*
                     numParFiles = numParFilesVec->at(1);
                     outVec->push_back(numParFiles * L_data * xsecWGstarToElNu / baseWeightVec->at(1));
                     numParFiles = numParFilesVec->at(2);
                     outVec->push_back(numParFiles * L_data * xsecWGstarToMuNu / baseWeightVec->at(2));
                     numParFiles = numParFilesVec->at(3);
                     outVec->push_back(numParFiles * L_data * xsecWGstarToTauNu / baseWeightVec->at(3));
+                    */
                     break;            
                 case 9:            
                     numParFiles = numParFilesVec->at(0);
@@ -603,10 +607,13 @@ vector<TList *> * FileListVec(int whichNTuple, vector<TString> * nameVec, vector
             }
             if (boolVec->at(8)) {
                 FileListWG = new TList();
-                FileListWG->Add(TFile::Open(TString("WgammaToLNuG") + whichNTupleString + PURWString + doSystString + suffixString));
+                FileListWG->Add(TFile::Open(TString("WgammaToLNuG") + whichNTupleString + PURWString
+                                            + doSystString + suffixString));
+                /*
                 FileListWG->Add(TFile::Open(TString("WGstarToElNuMad") + whichNTupleString + PURWString + doSystString + suffixString));
                 FileListWG->Add(TFile::Open(TString("WGstarToMuNuMad") + whichNTupleString + PURWString + doSystString + suffixString));
                 FileListWG->Add(TFile::Open(TString("WGstarToTauNuMad") + whichNTupleString + PURWString + doSystString + suffixString));
+                 */
                 outVec->push_back(FileListWG);
                 FileListZG = new TList();
                 FileListZG->Add(TFile::Open(TString("ZgammaToLLG") + whichNTupleString + PURWString + doSystString + suffixString));
@@ -625,17 +632,17 @@ vector<TList *> * FileListVec(int whichNTuple, vector<TString> * nameVec, vector
             }
             if (boolVec->at(13)) {
                 FileListTripVecBoson = new TList();
-                FileListTripVecBoson->Add(TFile::Open(TString("WWG") + whichNTupleString + PURWString + doSystString + suffixString));
-                FileListTripVecBoson->Add(TFile::Open(TString("WWW") + whichNTupleString + PURWString + doSystString + suffixString));
-                FileListTripVecBoson->Add(TFile::Open(TString("WWZ") + whichNTupleString + PURWString + doSystString + suffixString));
-                FileListTripVecBoson->Add(TFile::Open(TString("WZZ") + whichNTupleString + PURWString + doSystString + suffixString));
-                FileListTripVecBoson->Add(TFile::Open(TString("ZZZ") + whichNTupleString + PURWString + doSystString + suffixString));
+                FileListTripVecBoson->Add(TFile::Open(TString("WWGJets") + whichNTupleString + PURWString + doSystString + suffixString));
+                FileListTripVecBoson->Add(TFile::Open(TString("WWWJets") + whichNTupleString + PURWString + doSystString + suffixString));
+                FileListTripVecBoson->Add(TFile::Open(TString("WWZJets") + whichNTupleString + PURWString + doSystString + suffixString));
+                FileListTripVecBoson->Add(TFile::Open(TString("WZZJets") + whichNTupleString + PURWString + doSystString + suffixString));
+                FileListTripVecBoson->Add(TFile::Open(TString("ZZZJets") + whichNTupleString + PURWString + doSystString + suffixString));
                 outVec->push_back(FileListTripVecBoson); 
                 FileListTTBarVecBoson = new TList();
-                FileListTripVecBoson->Add(TFile::Open(TString("TTGJets") + whichNTupleString + PURWString + doSystString + suffixString));
-                FileListTripVecBoson->Add(TFile::Open(TString("TTZJets") + whichNTupleString + PURWString + doSystString + suffixString));
-                FileListTripVecBoson->Add(TFile::Open(TString("TTWJets") + whichNTupleString + PURWString + doSystString + suffixString));
-                FileListTripVecBoson->Add(TFile::Open(TString("TTWWJets") + whichNTupleString + PURWString + doSystString + suffixString));
+                FileListTTBarVecBoson->Add(TFile::Open(TString("TTGJets") + whichNTupleString + PURWString + doSystString + suffixString));
+                FileListTTBarVecBoson->Add(TFile::Open(TString("TTZJets") + whichNTupleString + PURWString + doSystString + suffixString));
+                FileListTTBarVecBoson->Add(TFile::Open(TString("TTWJets") + whichNTupleString + PURWString + doSystString + suffixString));
+                FileListTTBarVecBoson->Add(TFile::Open(TString("TTWWJets") + whichNTupleString + PURWString + doSystString + suffixString));
                 outVec->push_back(FileListTTBarVecBoson); 
             }
             break;

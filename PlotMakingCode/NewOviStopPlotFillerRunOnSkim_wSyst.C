@@ -157,6 +157,7 @@ int main( int argc, const char* argv[] ) {
     float weight_LepEffSFUp, weight_LepEffSFDown;
     float preNVtxRWweight_LepEffSFUp, preNVtxRWweight_LepEffSFDown;
     float weight_GenTopReweight, preNVtxRWweight_GenTopReweight;
+    float weightSwitch;
     float weight_genStopXSecUp, weight_genStopXSecDown;
     float preNVtxRWweight_genStopXSecUp, preNVtxRWweight_genStopXSecDown;
     
@@ -893,10 +894,6 @@ int main( int argc, const char* argv[] ) {
             weight = (float) GenWeight;
         }
         preNVtxRWweight = weight;
-        weight_LepEffSFUp = weight;
-        weight_LepEffSFDown = weight;
-        preNVtxRWweight_LepEffSFUp = weight;
-        preNVtxRWweight_LepEffSFDown = weight;
         //        cout << "weight from GenWeight " << weight << endl;
         ////Calculate all the event variables needed
         if (whichNTupleType == 0) {
@@ -941,12 +938,7 @@ int main( int argc, const char* argv[] ) {
 //                cout << "ScaleFactorMC_+ for Type " << Type << " is " << ScaleFactorMC(Type, +1);
 //                cout << "ScaleFactorMC_- for Type " << Type << " is " << ScaleFactorMC(Type, -1);
                 weight *= ScaleFactorMC(Type, 0);
-                weight_LepEffSFUp *= ScaleFactorMC(Type, 1);
-                weight_LepEffSFDown *= ScaleFactorMC(Type, -1);
-                if (doVerbosity) cout << "weight post scale " << weight << endl;
                 preNVtxRWweight *= ScaleFactorMC(Type, 0);
-                preNVtxRWweight_LepEffSFUp *= ScaleFactorMC(Type, 1);
-                preNVtxRWweight_LepEffSFDown *= ScaleFactorMC(Type, -1);
             }
             if (hasTopInfo && fInName.Contains("TT")) {
                 if (genTop0PdgId * genTop1PdgId > 0) {
@@ -1058,17 +1050,7 @@ int main( int argc, const char* argv[] ) {
 //                cout << "ScaleFactorMC_- for Type " << Type << " is " << ScaleFactorMC(Type, -1) << endl;
 //                cout << " weight " << weight << endl;
                 weight *= ScaleFactorMC(Type, 0);
-//                cout << " weight post " << weight << endl;
-//                cout << " weight_LepEffSFUp " << weight_LepEffSFUp << endl;
-                weight_LepEffSFUp *= ScaleFactorMC(Type, 1);
-//                cout << " weight_LepEffSFUp post " << weight_LepEffSFUp << endl;
-//                cout << " weight_LepEffSFDown " << weight_LepEffSFDown << endl;
-                weight_LepEffSFDown *= ScaleFactorMC(Type, -1);
-//                cout << " weight_LepEffSFDown post " << weight_LepEffSFDown << endl;
-                if (doVerbosity) cout << "weight post scale " << weight << endl;
                 preNVtxRWweight *= ScaleFactorMC(Type, 0);
-                preNVtxRWweight_LepEffSFUp *= ScaleFactorMC(Type, 1);
-                preNVtxRWweight_LepEffSFDown *= ScaleFactorMC(Type, -1);
                 //                cout << "weight post scale factor MC " << weight << endl;
             }
         }            
@@ -1507,6 +1489,35 @@ int main( int argc, const char* argv[] ) {
         /// Set genTop weights to be appropriate values
         preNVtxRWweight_GenTopReweight *= preNVtxRWweight;
         weight_GenTopReweight *= weight;
+//        cout << "weight " << weight << endl;
+//        cout << "weight_GenTopReweight  " << weight_GenTopReweight << endl;
+        weightSwitch = weight;
+        weight = weight_GenTopReweight;
+        weight_GenTopReweight = weightSwitch;
+//        cout << "weight post switch " << weight << endl;
+//        cout << "weight_GenTopReweight post switch " << weight_GenTopReweight << endl;
+        weightSwitch = preNVtxRWweight;
+        preNVtxRWweight = preNVtxRWweight_GenTopReweight;
+        preNVtxRWweight_GenTopReweight = weightSwitch;
+        
+        if (!doData) {
+            weight_LepEffSFUp = weight;
+            weight_LepEffSFDown = weight;
+            preNVtxRWweight_LepEffSFUp = weight;
+            preNVtxRWweight_LepEffSFDown = weight;
+            
+            weight_LepEffSFUp /= ScaleFactorMC(Type, 0);
+            weight_LepEffSFDown /= ScaleFactorMC(Type, 0);
+            weight_LepEffSFUp *= ScaleFactorMC(Type, 1);
+            weight_LepEffSFDown *= ScaleFactorMC(Type, -1);
+            if (doVerbosity) cout << "weight post scale " << weight << endl;
+            preNVtxRWweight_LepEffSFUp /= ScaleFactorMC(Type, 0);
+            preNVtxRWweight_LepEffSFDown /= ScaleFactorMC(Type, 0);
+            preNVtxRWweight_LepEffSFUp *= ScaleFactorMC(Type, 1);
+            preNVtxRWweight_LepEffSFDown *= ScaleFactorMC(Type, -1);
+        }
+        
+        
         
         /// Set StopWeights to be appropriate values
         if (isSignal) {
@@ -1520,7 +1531,6 @@ int main( int argc, const char* argv[] ) {
             cout << "weightup " << weight_genStopXSecUp << endl;
             cout << "weightdown " << weight_genStopXSecDown << endl;
             */
-            
             preNVtxRWweight_genStopXSecUp = preNVtxRWweight;
             preNVtxRWweight_genStopXSecDown = preNVtxRWweight;
             preNVtxRWweight *= stopWeight;

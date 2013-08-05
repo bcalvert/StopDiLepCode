@@ -27,6 +27,22 @@ void GraphMainAttSet(TGraph * inputGraph, Color_t FillColor = kBlack, Style_t Fi
     inputGraph->SetMarkerStyle(MarkerStyle);
     inputGraph->SetMarkerSize(MarkerSize);
 }
+void HistToGraphCopyAttributes(TH1 * inputHist, TGraph * outputGraph) {
+    Color_t FillColor = (Color_t) inputHist->GetFillColor();
+    Style_t FillStyle = (Style_t) inputHist->GetFillStyle();
+    Color_t LineColor = (Color_t) inputHist->GetLineColor();
+    Width_t LineWidth = (Width_t) inputHist->GetLineWidth();
+    Color_t MarkerColor = (Color_t) inputHist->GetMarkerColor();
+    Style_t MarkerStyle = (Style_t) inputHist->GetMarkerStyle();
+    Size_t MarkerSize = (Size_t) inputHist->GetMarkerSize();
+    outputGraph->SetFillColor(FillColor);
+    outputGraph->SetFillStyle(FillStyle);
+    outputGraph->SetLineColor(LineColor);
+    outputGraph->SetLineWidth(LineWidth);
+    outputGraph->SetMarkerColor(MarkerColor);
+    outputGraph->SetMarkerStyle(MarkerStyle);
+    outputGraph->SetMarkerSize(MarkerSize);
+}
 void HistMainAttSet(TH1 * inputHist, Color_t FillColor = kBlack, Style_t FillStyle = 1001, Color_t LineColor = kBlack, Width_t LineWidth = 2, Color_t MarkerColor = kBlack, Style_t MarkerStyle = 20, Size_t MarkerSize = 1) {
     inputHist->SetFillColor(FillColor);
     inputHist->SetFillStyle(FillStyle);

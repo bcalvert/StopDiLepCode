@@ -37,6 +37,7 @@ int main( int argc, char* argv[]) {
     bool addThings    = 1;          // Add together similar kinds of events (for aesthetic reasons) like VV backgrounds -- (6/25/13) don't turn off for now haven't validated code fully when not adding
     bool calcTTBarNorm = 0;         // calculate TTBar normalization by utilizing integral to data - (other backgrounds) for MT2ll < 80 in the "Full Cut region"
     bool useDDEstimate = 0;         // whether or not to use data-driven estimates for appropriate backgrounds -- as of right now it is just the TTBar norm to MT2ll < 80 GeV (7/22/13)
+    bool allMT2llSystematic = 0;    // Whether or not to use the MT2ll systematic smearing for all MC or just TTBar
     bool doOneDee     = 1;          // Plots 1D histograms, as in the 1D HistTs defined in StopFunctionDefinitions_v2.h
     bool doTwoDee     = 0;          // Plots 2D histograms, as in the 2D HistTs defined in StopFunctionDefinitions_v2.h -- note, this involves making projections and what-not so there (as of 7/10/13) isn't actual plotting of 2D histograms
     bool doThreeDee   = 0;          // Plots 3D histograms, as in the 3D HistTs defined in StopFunctionDefinitions_v2.h -- note, this involves making projections and what-not so there (as of 7/10/13) isn't actual plotting of 3D histograms
@@ -50,7 +51,7 @@ int main( int argc, char* argv[]) {
     bool diffFilesSingSampCompare = 0;  // For grabbing same sample across different files
     TString firstSampSetupFile = "";     // file name for the first file containing the information for what sample/histogram to look at
     TString secondSampSetupFile = "";     // file name for the second file containing the information for what sample/histogram to look at
-    bool multHistsSingSampCompare = 1;  // if there will be multiple histograms to look at
+    bool multHistsSingSampCompare = 1;  // if there will be multiple histograms to look at    
     for (int k = 0; k < argc; ++k) {
         cout << "argv[k] for k = " << k << " is: " << argv[k] << endl;
         if (strncmp (argv[k],"wChan", 5) == 0) {
@@ -76,6 +77,9 @@ int main( int argc, char* argv[]) {
         }
         else if (strncmp (argv[k],"useDDEst", 8) == 0) {
             useDDEstimate = 1;
+        }
+        else if (strncmp (argv[k],"allMT2ll", 8) == 0) {
+            allMT2llSystematic = 1;
         }
         else if (strncmp (argv[k],"noOneDee", 8) == 0) {
             doOneDee = 0;
@@ -493,7 +497,7 @@ int main( int argc, char* argv[]) {
                 cout << "test 2" << endl;
                 //        doSystCurrPlot = (doSyst && histVec_1D->at(k).doXSyst)  ? true : false;
                 doSystCurrPlot = (doSyst && histVec_1D->at(k).doXSyst);
-                HistogramVecGrabber(inputFiles, dataHist1DVec, mcIndHist1DCentValVec, mcCompHist1DSystVec, nVtxBackScaleVec, systVec, dataplot, mcplot, subSampName, RBNX[k], RBNY[k], RBNZ[k], doOverflow[k], doUnderflow[k], doSystCurrPlot, useDDEstimate, TTBarSF);
+                HistogramVecGrabber(inputFiles, dataHist1DVec, mcIndHist1DCentValVec, mcCompHist1DSystVec, nVtxBackScaleVec, systVec, dataplot, mcplot, subSampName, RBNX[k], RBNY[k], RBNZ[k], doOverflow[k], doUnderflow[k], doSystCurrPlot, useDDEstimate, TTBarSF, allMT2llSystematic);
                 cout << "test 2a" << endl;
                 HistogramAdderSyst(dataHist1DVec, mcIndHist1DCentValVec, mcCompHist1DCentValVec, h_DataComp, h_MCComp, h_FracratioComp, whichNTuple, doAbsRatio, fracRatioYAxisRange);
                 cout << "test 3" << endl;
@@ -691,7 +695,7 @@ int main( int argc, char* argv[]) {
             mcStackName += subSampName;
             
             doSystCurrPlot = (doSyst && (histVec_2D->at(k2D).doXSyst || histVec_2D->at(k2D).doYSyst));
-            HistogramVecGrabber(inputFiles, dataHist2DVec, mcIndHist2DCentValVec, mcCompHist2DSystVec, nVtxBackScaleVec, systVec, dataplot, mcplot, subSampName, RBNX[0], RBNY[0], RBNZ[0], doOverflow[0], doUnderflow[0], doSystCurrPlot, useDDEstimate, TTBarSF);
+            HistogramVecGrabber(inputFiles, dataHist2DVec, mcIndHist2DCentValVec, mcCompHist2DSystVec, nVtxBackScaleVec, systVec, dataplot, mcplot, subSampName, RBNX[0], RBNY[0], RBNZ[0], doOverflow[0], doUnderflow[0], doSystCurrPlot, useDDEstimate, TTBarSF, allMT2llSystematic);
             for (int iCase = 0; iCase < nCases; ++iCase) {
                 dataHist1DVec = new vector<TH1F *>;
                 mcIndHist1DCentValVec = new vector<TH1F *>;
@@ -845,7 +849,7 @@ int main( int argc, char* argv[]) {
             mcStackName += subSampName;
             
             doSystCurrPlot = (doSyst && (histVec_3D->at(k3D).doXSyst || histVec_3D->at(k3D).doYSyst || histVec_3D->at(k3D).doZSyst));
-            HistogramVecGrabber(inputFiles, dataHist3DVec, mcIndHist3DCentValVec, mcCompHist3DSystVec, nVtxBackScaleVec, systVec, dataplot, mcplot, subSampName, RBNX[0], RBNY[0], RBNZ[0], doOverflow[0], doUnderflow[0], doSystCurrPlot, useDDEstimate, TTBarSF);
+            HistogramVecGrabber(inputFiles, dataHist3DVec, mcIndHist3DCentValVec, mcCompHist3DSystVec, nVtxBackScaleVec, systVec, dataplot, mcplot, subSampName, RBNX[0], RBNY[0], RBNZ[0], doOverflow[0], doUnderflow[0], doSystCurrPlot, useDDEstimate, TTBarSF, allMT2llSystematic);
             for (int iCase = 0; iCase < nCases; ++iCase) {
                 dataHist1DVec = new vector<TH1F *>;
                 mcIndHist1DCentValVec = new vector<TH1F *>;

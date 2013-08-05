@@ -166,9 +166,9 @@ int main( int argc, const char* argv[] ) {
     bool doRare             = 1;
     if (whichTTBarSyst != 2) {
         doSingTop = 0;
-        doWLNu = 0;
-        doVV = 0;
         doZDY = 0;
+        doVV = 0;
+        doWLNu = 0;
         doQCD = 0;
         doVG = 0;
         doHiggs = 0;
@@ -207,7 +207,6 @@ int main( int argc, const char* argv[] ) {
     vector<double> * currWeightVec;
     TString nEventHistName = "weightedEvents";
     TString nParFileHistName = "h_numParFiles";
-    vector<int> * numParFilesVec = new vector<int>;
     float indLumiDESY[4] = {892, 4404, 7032, 7274};
     float indLumiOvi[4] = {892, 4404, 7032, 7274};
     float L_data = 19602.901;
@@ -220,6 +219,7 @@ int main( int argc, const char* argv[] ) {
     cout << "L_data " << L_data << endl;
     cout << "bool samp size " << boolSampVec->size() << endl;
     for (unsigned int i = 0; i < boolSampVec->size(); ++i) {
+        vector<int> * numParFilesVec = new vector<int>;
         if (boolSampVec->at(i)) {
             currWeightBaseVec = WeightBaseVec(whichNTuple, fileListVec, i, nEventHistName, nParFileHistName, numParFilesVec);
             weightBasesVec->push_back(currWeightBaseVec);
@@ -264,15 +264,16 @@ int main( int argc, const char* argv[] ) {
                     if (whichNTuple == 0) {
                         cout << "going to hadd Higgs" << endl;
                     }
+                case 13:
+                    if (whichNTuple == 0) {
+                        cout << "going to hadd Rare backgrounds" << endl;
+                    }
                 default:
                     break;
             }
-        }
-        if (boolSampVec->at(j)) {
-            MergeRootfileHists(outFileVec->at(j), fileListVec->at(j), weightVec->at(j), beVerbose); //I think this needs some work..
-        }
-        outFileVec->at(j)->Close();
-        if (boolSampVec->at(j)) {
+            
+            MergeRootfileHists(outFileVec->at(j), fileListVec->at(j), weightVec->at(j), beVerbose); //I think this needs some work..       
+            outFileVec->at(j)->Close();
             switch (j) {
                 case 1:
                     cout << "done hadd TTBar" << endl;
@@ -300,6 +301,10 @@ int main( int argc, const char* argv[] ) {
                 case 10:
                     if (whichNTuple == 0) {
                         cout << "done hadd Higgs" << endl;
+                    }
+                case 13:
+                    if (whichNTuple == 0) {
+                        cout << "done hadd Rare backgrounds" << endl;
                     }
                 default:
                     break;

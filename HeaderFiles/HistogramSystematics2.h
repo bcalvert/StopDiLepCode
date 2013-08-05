@@ -145,18 +145,43 @@ TGraphAsymmErrors * GraphSystErrorSet_SingleSource(TH1 * HistCentralVal, vector<
     cout << "within GraphSyst line 125" << endl;
     //picking out correct histogram
     cout << "systVec size " << systHistVec->size() << endl;
+    bool foundUp = 0;
+    bool foundDown = 0;
+    int singleShiftIndex;
     for (unsigned int k = 0; k < systHistVec->size(); ++k) {
         systHistName = systHistVec->at(k)->GetName();
         cout << "histName " << systHistName << endl;
         cout << "systHistName.Contains(systString) for systString " << systString << " is " <<systHistName.Contains(systString) << endl;
+        if (!systHistName.Contains(systString)) {
+            continue;   
+        }
+        else {
+            singleShiftIndex = k;
+        }
         cout << "systHistName.Contains(up) " << systHistName.Contains("Up") << endl;
         cout << "systHistName.Contains(down) " << systHistName.Contains("Down") << endl;
-        if (!systHistName.Contains(systString)) continue;
-        if (systHistName.Contains("Up")) HistShiftUp = systHistVec->at(k);
-        if (systHistName.Contains("Down")) HistShiftDown = systHistVec->at(k);
+        if (systHistName.Contains("Up")) {
+            HistShiftUp = systHistVec->at(k);   
+            foundUp = 1;
+        }
+        else if (systHistName.Contains("Down")) {
+            HistShiftDown = systHistVec->at(k);
+            foundDown = 1;
+        }
     }    
-    cout << "HistShiftUp " << HistShiftUp << " has " << HistShiftUp->GetNbinsX() << endl;
-    cout << "HistShiftDown " << HistShiftDown << " has " << HistShiftDown->GetNbinsX() << endl;
+    if (!foundUp && !foundDown) {
+        HistShiftUp = systHistVec->at(singleShiftIndex);
+        HistShiftDown = (TH1F *) HistCentralVal->Clone(HistCentralVal->GetName() + systHistName + TString("Down"));
+    }
+    else if (!foundUp) {
+        HistShiftUp = (TH1F *) HistCentralVal->Clone(HistCentralVal->GetName() + systHistName + TString("Up"));
+    }
+    else if (!foundDown) {
+        HistShiftDown = (TH1F *) HistCentralVal->Clone(HistCentralVal->GetName() + systHistName + TString("Down"));
+    }
+    cout << "HACK JOB " << endl;
+    cout << "HistShiftUp " << HistShiftUp->GetName() << " has " << HistShiftUp->GetNbinsX() << endl;
+    cout << "HistShiftDown " << HistShiftDown->GetName() << " has " << HistShiftDown->GetNbinsX() << endl;
     filledSystUpHist = (HistShiftUp->Integral() > 0) ? true : false;
     filledSystDownHist = (HistShiftDown->Integral() > 0) ? true : false;
     cout << "within GraphSyst line 133" << endl;
@@ -276,15 +301,19 @@ TGraphAsymmErrors * GraphSystErrorSumErrors(TGraphAsymmErrors * centValGraph, TG
 TGraphAsymmErrors * clonePoints(TH1 * inputHist) {
     int NBinsX = inputHist->GetNbinsX();
     double x, y;
+    Double_t binWidth;
     TGraphAsymmErrors * outGraph = new TGraphAsymmErrors(NBinsX + 2);
     outGraph->SetName(inputHist->GetName() + TString("_Graph"));
     for (int i = 0; i < NBinsX + 2; ++i) {
         x = (double) inputHist->GetBinCenter(i);
         y = (double) inputHist->GetBinContent(i);
+        binWidth = (Double_t) inputHist->GetXaxis()->GetBinWidth(i);
         //        cout << "i, x, y: " << i << ", " << x << ", " << y << endl;
         outGraph->SetPoint(i, x, y);
         outGraph->SetPointEYlow(i, inputHist->GetBinError(i));
         outGraph->SetPointEYhigh(i, inputHist->GetBinError(i));
+        outGraph->SetPointEXlow(i, binWidth/2.);
+        outGraph->SetPointEXhigh(i, binWidth/2.);
     }
     return outGraph;
 }
@@ -292,8 +321,9 @@ TGraphAsymmErrors * clonePoints(TH1 * inputHist) {
 TGraphAsymmErrors * fracGraph(TH1 * centValMCHist, TGraphAsymmErrors * errGraphSystPlusStat, bool doAbsRatio, float yAxisRange) {
     double x, y;
     double rel, relUpErr, relDownErr;
+    Double_t binWidth;
     int nBins = centValMCHist->GetNbinsX();
-    TGraphAsymmErrors * ratioGraph = new TGraphAsymmErrors(nBins + 2);
+    TGraphAsymmErrors * ratioGraph = new TGraphAsymmErrors(nBins + 2);    
     GraphMainAttSet(ratioGraph, kGray+1, 3001, kGray+1, 2, kWhite, 0, 0); 
     if (doAbsRatio) {
         rel = 1;
@@ -308,6 +338,10 @@ TGraphAsymmErrors * fracGraph(TH1 * centValMCHist, TGraphAsymmErrors * errGraphS
         x = centValMCHist->GetBinCenter(i);
         y = centValMCHist->GetBinContent(i);
         
+        binWidth = (Double_t) centValMCHist->GetXaxis()->GetBinWidth(i);
+        
+        //initial point sets -- y-axis info will contain relevant uncertainties
+
         if (!(y > 0.)) {
             relUpErr = 0;
             relDownErr = 0;
@@ -320,6 +354,10 @@ TGraphAsymmErrors * fracGraph(TH1 * centValMCHist, TGraphAsymmErrors * errGraphS
         }
         ratioGraph->SetPointEYhigh(i, relUpErr);
         ratioGraph->SetPointEYlow(i, relDownErr);
+//        cout << "binWidth / 2 " << binWidth/2 << endl;
+        ratioGraph->SetPointEXlow(i, binWidth/2.);
+        ratioGraph->SetPointEXhigh(i, binWidth/2.);
+        
     }
     return ratioGraph;
 }

@@ -256,9 +256,14 @@ inline float GenLevelTopPtWeight(float pT_Top, float pT_AntiTop) {
     float expoConst = 0.156;
     float expoSlope = -0.00137;
 /*    return TMath::Exp(expoConst) * TMath::Exp(expoSlope * pT_ToUse);*/
+//    cout << "TMath::Exp(expoConst) * TMath::Exp(expoSlope * pT_ToUse) " << (TMath::Exp(expoConst) * TMath::Exp(expoSlope * pT_ToUse)) << endl;
     float weightTop = TMath::Exp(expoConst) * TMath::Exp(expoSlope * pT_Top);
     float weightAntiTop = TMath::Exp(expoConst) * TMath::Exp(expoSlope * pT_AntiTop);
-    return TMath::Sqrt(weightAntiTop * weightAntiTop + weightTop * weightTop);
+//    cout << " weight Top " << weightTop << endl;
+//    cout << " weight antiTop " << weightAntiTop << endl;
+//    cout << "TMath::Sqrt(weightAntiTop * weightAntiTop + weightTop * weightTop) " << TMath::Sqrt((weightAntiTop * weightAntiTop) + (weightTop * weightTop)) << endl;
+//    return TMath::Sqrt(weightAntiTop * weightAntiTop + weightTop * weightTop);
+    return TMath::Sqrt(weightAntiTop * weightTop);
 }
 
 inline int EventType(vector<int> *lepPdgId, int lep0Index, int lep1Index) {
@@ -1961,8 +1966,10 @@ inline vector<SystT> * SystVec() {
     // For MT2ll, really should breakdown into components....for now doing agglomerate
     SystT MT2llShiftUp; MT2llShiftUp.name = "_MT2llShiftUp"; MT2llShiftUp.systVarKey = "_MT2llShiftUp";
     MT2llShiftUp.whichSystType = 3;
+    /*
     SystT MT2llShiftDown; MT2llShiftDown.name = "_MT2llShiftDown"; MT2llShiftDown.systVarKey = "_MT2llShiftDown";
     MT2llShiftDown.whichSystType = 3;
+     */
     
     SystT genTopReweight; genTopReweight.name = "_genTopRW"; genTopReweight.systVarKey = "";
     genTopReweight.whichSystType = 3;
@@ -1991,7 +1998,7 @@ inline vector<SystT> * SystVec() {
      SystT JetERShiftDown; JetERShiftDown.name = "_JetERShiftDown"; JetERShiftDown.systVarKey = "_JetERShiftDown";
      */
     vector<SystT> * systVec = new vector<SystT>;
-    systVec->push_back(MT2llShiftUp); systVec->push_back(MT2llShiftDown);
+    systVec->push_back(MT2llShiftUp);// systVec->push_back(MT2llShiftDown);
     systVec->push_back(LepEffSFShiftUp); systVec->push_back(LepEffSFShiftDown);
     systVec->push_back(LepESShiftUp); systVec->push_back(LepESShiftDown);
     systVec->push_back(genTopReweight);
