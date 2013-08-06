@@ -27,7 +27,6 @@
 #include "../HeaderFiles/StopFunctionDefinitions_v2.h"
 
 //#include "PileUpMC.h"
-#include <iostream>
 #include <vector>
 #include <cmath>
 #include <sstream>
@@ -569,6 +568,8 @@ int main( int argc, const char* argv[] ) {
             else {
                 stopMassToUseForXSec = grabStopMass;
             }
+            cout << "TEMP FIX !!! " << endl;
+            stopMassToUseForXSec = grabStopMass;
             StopXSec theStopXSec = getCrossSectionStop(stopMassToUseForXSec);
             stopWeight = theStopXSec.stopProdXsec;            
             stopWeightErr = theStopXSec.stopProdXsecUncert * stopWeight;

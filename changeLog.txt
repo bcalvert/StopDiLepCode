@@ -1,34 +1,20 @@
-8/5/13 12:04 A.M.
-
+8/6/13 2:37 A.M. EST
 HistogramStyleFunctions.h
-
-Added in a method to copy attributes from a TH1 into a TGraph (for example, after cloning TH1's points into a TGraph)
+Added in Line Style setting for HistogramMainAttSet (and also onti Graph Copy style function, HistToGraphCopyAtt)
 
 HistogramSystematics2.h
-
-Added in some checks to handle when  "Up-shift" exists but not a "down-shift" or vice-versa, as well as when the given "systematic" is neither marked as an up-shift nor a down-shift; this needs some work, still, I think
-
-For the "clonePoints" method, added in doing the "X" errors as half the bin width for each point
-
-Same with the "fracGraph" method
-
-StopFunctionDefinitions_v2.h
-Looking at the gen-level top reweighting, I chose to do the geometric means of the weights calculated with the two different pTs (Top and Anti-Top) instead of quadrature sum of said weights
-
-StopPlotHaddInfo.h
-Some fixes to some "bugs" for handling Oviedo
-
-StopPlotsSpectraShowNewDESY_wSyst.C
-Added in option for grabbing MT2ll systematic for all MC or just TTbar
+Changed clonePoints around so that it no longer clones points with 0 bin content
 
 StopPlotSetup.h
-(See above) Added in option for grabbing MT2ll systematic for all MC or just TTbar
-Fixed some style stuff for the plots
-Error bars are drawn when central value isn't visible
-Error bands for systematics on ratio plots are error bars now
 
-NewOviStopPlotFillerRunOnSkim_wSyst.C
-genLevelTopRW is now the "central value" and the original "central value" is treated as a systematic (with switching the weights around)
+Added in stuff to deal with the "signal",
+including function to calculate skim efficiency (for normalization purposes
+A function to grab multiple Stop Mass Points files
+A function that sets the Stop Legends
+A function that plots the stop signal on top of pre-existing plot (no systematics... yet)
 
-plotHaddersStop.C
-Fixed a minor bug in the parallel files handling (it would only manifest if different files from the same set of nTuples had different numbers of parallel files
+Added in "Rare" backgrounds into the plotting admixture for Oviedo
+Added in ability for "exclusive" backgrounds into the plotting admixture for Oviedo
+
+StopPlotsSpectraShowNewDESY_wSyst.C
+Added in stuff for Stop Signal Plotting

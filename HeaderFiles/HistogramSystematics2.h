@@ -298,7 +298,7 @@ TGraphAsymmErrors * GraphSystErrorSumErrors(TGraphAsymmErrors * centValGraph, TG
     }
     return outGraph;
 }
-TGraphAsymmErrors * clonePoints(TH1 * inputHist) {
+TGraphAsymmErrors * clonePoints(TH1 * inputHist, bool cloneZero = true) {
     int NBinsX = inputHist->GetNbinsX();
     double x, y;
     Double_t binWidth;
@@ -307,6 +307,7 @@ TGraphAsymmErrors * clonePoints(TH1 * inputHist) {
     for (int i = 0; i < NBinsX + 2; ++i) {
         x = (double) inputHist->GetBinCenter(i);
         y = (double) inputHist->GetBinContent(i);
+        if (!cloneZero && y == 0) continue;
         binWidth = (Double_t) inputHist->GetXaxis()->GetBinWidth(i);
         //        cout << "i, x, y: " << i << ", " << x << ", " << y << endl;
         outGraph->SetPoint(i, x, y);
