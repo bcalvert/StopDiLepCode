@@ -297,9 +297,9 @@ vector<TString> * MCSignalLegends(TString typeSMS, vector<int> * vecStopMassGrab
     vector<TString> * outVec = new vector<TString>;
 //    TString stringModelBase = "Signal, ";
     TString stringModelBase = "";
-    TString stringStopMass = "M_{#tilde{t}} = ";
-    TString stringChi0Mass = "M_{#chi_{0}} = ";
-    TString stringCharginoMass = "M_{#chi^{#pm}} = ";
+    TString stringStopMass = "M_{#tilde{t}}: ";
+    TString stringChi0Mass = "M_{#chi_{0}}: ";
+    TString stringCharginoMass = "M_{#chi^{#pm}}: ";
     TString currLegEntry;
     for (unsigned int i = 0; i < vecStopMassGrab->size(); ++i) {
         currLegEntry = stringModelBase + stringStopMass;
