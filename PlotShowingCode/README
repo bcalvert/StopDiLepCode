@@ -7,11 +7,26 @@ Once it compiles,
 runs the code (watch out, currently -- 6/25/13 -- a lot of debug statements still active)
 NB!!!! The code assumes you have copied successfully the outputs of the hadding to the RootFIles directory in the StopDiLepCode area (for the love of all that is sacred, please don't git add those dudes to the StopDiLepCode repo)
 Again, see the .C file to see the description of what various options are, but let me suggest the following one
-./StopPlotsSpectraShowNewDESY_wSyst  wChan 28 doPURW wTTbarGen 2
+./StopPlotsSpectraShowNewDESY_wSyst  wChan 54 doPURW wTTbarGen 2
 with an optional include of -b -q at the end if you don't want plots to be shown 
-"wChan 28" gives you FullCut channel
+"wChan 54" gives you FullCut channel
 "doPURW" grabs PURW-ed MC
 "wTTbarGen 2" grabs Powheg plots
+
+
+!!!!!!!!!
+Updated suggestion!
+./StopPlotsSpectraShowNewDESY_wSyst -b -q wChan 54 doPURW wTTbarGen 2 useDDEst wNTuple 0 doSignal T2tt FilePrefix StopMass Chi0Mass CharginoMass
+-b -q are standard ROOT options
+useDDEst utilizes DD ttbar normalization (eventually will also include DY DD normalization)
+wNTuple is 0 for Oviedo, 1 for DESY (note DESY doesn't have signal right now
+"doSignal" says to run on a signal point, the format for command line arguments after this is whichSMS, i.e. "T2tt" or "T2bw", then the particular necessities to grab the signal file
+Here's an example signal file
+T2tt_250LSP50_SignalStop250_Chi0_-1_Oviedo_PURW_wSyst_Output.root
+And here's what the code is looking to read in
+{FilePrefix}_SignalStop{StopMass}_Chi0_{Chi0Mass}_{whichNTuple}_{doPURW}_{doSystematics}_Output.root
+where the command line arguments *you* need to provide AFTER "doSignal" are the FilePrefix and masses for the SUSY particles. (note for this particular case that the file says LSP50, but the Oviedo peeps didn't save the Chi0 mass, so it's actually -1
+!!!!!!!!!
 
 
 To see what the channels are, look at the file
