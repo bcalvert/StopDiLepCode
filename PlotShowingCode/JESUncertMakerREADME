@@ -1,0 +1,4 @@
+After compiling the macro, JESUncertHistMaker.C, you use it with the following command
+./JESUncertHistMaker -i InputName outName OutputName
+where "InputName" is the input text file (official ones from the JetMET group) *without* the appended .txt (it'll append it on its own)
+and "OutputName" is the desired name for the output root file name, *without* the appended .root (it'll append it on its own)

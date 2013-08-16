@@ -1,0 +1,12 @@
+After compiling the macro MT2CutYieldCalc.C, you use it in an *extremely* similar fashion to StopPlotsSpectraShowNewDESY_wSyst.C, with some salient differences in what input options. You can open up MT2CutYieldCalc.C to see what the allowed command line inputs are, but one that should be pointed out is that you have to explicitly specify if you want to do SM backgrounds (and data) in addition to specifying whether you want to do Signal (with associated mass point and what-not)
+
+Also note that "wChan" no references something else, which is which "full cut stream" channel to grab, i.e. which dilep channel with all cuts applied to grab
+0 is MuMu
+1 is EE
+2 is EMu
+3 is the combination (i.e. the "FullCut" channel)
+
+For example
+./MT2CutYieldCalc wChan 0 doPURW TTbarGen 2 useDDEst wNTuple 0 doNonSig doSignal T2tt T2tt_250LSP50 250 -1 -1
+
+runs on MuMu, with PURW applied to MC, grabbing 3rd kind of TTbarGen (i.e. Powheg), using DD estimations for TTbar (and DY once that's added in), using Oviedo nTuple, grabbing SM backgrounds and data ("doNonSig"), and running on T2tt signal, Stop Mass 250, Chi 0 Mass -1 (bug in the file it had to grab, Chi0 mass wasn't saved, but it is, as the LSP name suggests, 50 GeV)

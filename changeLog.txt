@@ -1,3 +1,52 @@
+8/16/13 9:13 A.M. EST
+HeaderFiles/HistogramSystematics2.h
+-Removed some extraneous debug statements
+-Slightly changed how graph names are saved (to make debugging easier)
+-Changed the algorithm for what happens if the script cannot find any histogram with the systematic name in question (for example genStop Xsec in non-signal files)
+^technically, I've also changed how the histograms are grabbed to make sure to grab central value histograms whenever possible if the given systematic isn't available (so that net error for said systematic for said histogram ends up being 0)
+
+HeaderFiles/StopFunctionDefinitions_v2.h
+-Added in additional Scale Factor for the three di-lep channels, constructed in such a way to bring the TTBar data-driven scaling factor (i.e. normalization factor in MT2 control region) into agreement for all three dilep channels
+-Added in some additional histograms:
+--)MT2ll for different delta phi regions between the leptons
+--)MT2lb for different delta phi regions between the "b-lep" vecs (i.e. the 'b-jet' lepton pairings that are used to calculate the MT2lb)
+--)MT2lb for different delta phi regions between the two leading jets (need to check this to make sure I use the "correct" jets)
+--)MET/M_effective, MET/(S_T + MET), including for different "passes MT2ll Cut"
+-Removed H_MT2lb_vs_DeltaPhiLepB0LepB1 for space purposes
+-Removed SampleT events_NBJetsGeq1 for space purposes
+
+HeaderFiles/StopPlotSetup.h
+-Added in sorting of histograms (for the purposes of the legend/log scale sensibilities) -- right now sorting on a predetermined order but ostensibly could add in sorting by the "integral" of the histograms in question
+-Fixed handling of "exclusive samples" for TTbar in Oviedo for madgraph (need to confirm this works 100% of the time though)
+-Added in ability to load in NonFineBin signals for plotting purposes (still needs some work though)
+-Added in function HistogramUnderflowOverflow, which basically sets up under/over flow bins if the associated booleans are true
+-Changed how histograms are picked out of the file; since TH(1/2/3)(F/D) all inherit from TH1 class, I grab TH1 and then project/cast into appropriate histogram depending upon the circumstances (haven't yet implemented this for the 2D and 3D case, but it works for the 1D case, both for central values and for systmatics)
+-Made a function, SystGraphMakers, which creates the associated systematic error "graphs" for the various things (SM bkgd, Signal); this is a carbon copy of the associated code that was in the plot showing macro, just put here to save space
+-Changed color of systematics bands in ratio plots to be kYellow
+-Added in legend for systematics band in ratio plots
+
+PlotMakingCode/NewOviStopPlotFillerRunOnSkim_wSyst.C
+-Removed 2D and 3D systematics for now (space purposes)
+-Added in necessary calculations/variables for the histograms I added in the StopFunctionDefinitions_v2.h
+-Fixed weights for the Stop signal (for example LepEFSF systematics)
+
+PlotShowingCode/StopPlotsSpectraShowNewDESY_wSyst.C
+Associated changes in StopPlotSetup.h also were implemented here
+
+JESUncertHistMaker.C
+-Added in this macro to calculate the TH2s associated with the JES uncertainties from an input text file (see associated readme file, JESUncertMakerREADME)
+
+MT2CutYieldCalc.C
+-Added in this macro to calculate yield of data, SM backgrounds, and Signal in various MT2 cut regions, with systematics included (see associated readme file, MT2CutYielREADME)
+
+changeLog.txt
+-Come on, I'm not going to get that meta on you ;)
+
+===========================================================================
+===========================================================================
+===========================================================================
+===========================================================================
+
 8/6/13 2:37 A.M. EST
 HistogramStyleFunctions.h
 Added in Line Style setting for HistogramMainAttSet (and also onti Graph Copy style function, HistToGraphCopyAtt)

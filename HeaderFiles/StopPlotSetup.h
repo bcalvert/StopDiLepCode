@@ -9,6 +9,121 @@
 #include "TRegexp.h"
 using namespace std;
 
+void sampleStartPositionsNames(int whichNTuple, vector<TString> * sampleAddNames, vector<int> * sampleStartPositions, bool doExcSamp) {
+
+    TString TTbarName       = "_TTBar";
+    TString VVName          = "_VV";
+    TString SingTopName     = "_SingTop";
+    TString WJName          = "_WJ";
+    TString ZDYName         = "_ZDY";
+    TString QCDName         = "_QCD";
+    TString VGName          = "_VG";
+    TString HiggsName       = "_Higgs";
+    TString RareName        = "_Rare";
+
+    int numTTBar = doExcSamp ? 2 : 1;
+    int numVV               = 3;
+    int numSingTop          = 1;
+    int numWJ               = 1;
+    int numZDY              = 1;
+    int numQCD              = 1;
+    int numVG               = 2;
+    int numHiggs            = 3;
+    int numRare             = 2;
+    
+    int TTbarStart          = 0;
+    int VVStart             = TTbarStart + numTTBar;
+    int SingTopStart        = VVStart + numVV;
+    int WJStart             = SingTopStart + numSingTop;
+    int ZDYStart            = WJStart + numWJ;
+    int QCDStart            = ZDYStart + numZDY;
+    int VGStart             = ZDYStart + numZDY;
+    int HiggsStart          = VGStart + numVG;
+    int RareStart           = HiggsStart + numHiggs;
+    sampleAddNames->push_back(TTbarName);    
+    sampleAddNames->push_back(VVName);
+    sampleAddNames->push_back(SingTopName);
+    sampleAddNames->push_back(WJName);
+    sampleAddNames->push_back(ZDYName);
+    sampleStartPositions->push_back(TTbarStart);    
+    sampleStartPositions->push_back(VVStart);
+    sampleStartPositions->push_back(SingTopStart);
+    sampleStartPositions->push_back(WJStart);
+    sampleStartPositions->push_back(ZDYStart);
+    if (whichNTuple == 0) {
+        sampleAddNames->push_back(VGName);
+        sampleAddNames->push_back(HiggsName);
+        sampleAddNames->push_back(RareName);
+        sampleStartPositions->push_back(VGStart);
+        sampleStartPositions->push_back(HiggsStart);
+        sampleStartPositions->push_back(RareStart);
+        sampleStartPositions->push_back(RareStart + numRare);
+    }
+    else {
+        sampleAddNames->push_back(QCDName);
+        sampleStartPositions->push_back(QCDStart);
+        sampleStartPositions->push_back(QCDStart + numQCD);
+    }    
+
+    sampleAddNames->push_back("patsy");
+
+}
+vector<TH1F *> * sortedVector(vector<TH1F *> * inputVector, vector<int> * whichOrder) {
+    int currCounter = 0;
+    vector<TH1F *> * outVec = new vector<TH1F *>;
+    for (unsigned int iBaseCount = 0; iBaseCount < inputVector->size(); ++iBaseCount) {
+        currCounter = iBaseCount;
+        for (unsigned int iCount = 0; iCount < inputVector->size(); ++iCount) {
+            if (whichOrder->at(iCount) == currCounter) outVec->push_back(inputVector->at(iCount));
+        }
+    }
+    return outVec;
+}
+vector<int> * sortOrder(int whichNTuple) {
+    vector<int> * sortVec = new vector<int>;
+    const int numOviTypes = 15;
+    TString fileInNameSpecOviedo[numOviTypes] = {"TTBarComp", "TTBarBkg", "WW", "WZ", "ZZ", "SingleTop", "WToLNu", "ZDY", "WG", "ZG", "HiggsWW", "HiggsVBF", "HiggsZZ4L", "TripVecBoson", "TTBarVecBoson"};
+    const int numDESYTypes = 9;
+    TString fileInNameSpecDESY[numDESYTypes] = {"TTBarSig", "TTBarBkg", "WW", "WZ", "ZZ", "SingleTop", "WToLNu", "ZDY", "QCD"};
+    if (whichNTuple == 0) {
+        sortVec->push_back(7);
+        sortVec->push_back(4);
+        sortVec->push_back(6);
+        sortVec->push_back(2);
+        sortVec->push_back(5);
+        sortVec->push_back(4);
+        sortVec->push_back(1);
+        sortVec->push_back(0);
+        /*
+        mcCompHistCentValVec->push_back(RareComp);
+        mcCompHistCentValVec->push_back(HiggsComp);
+        mcCompHistCentValVec->push_back(WJComp);
+        mcCompHistCentValVec->push_back(VGComp);
+        mcCompHistCentValVec->push_back(VVComp);
+        mcCompHistCentValVec->push_back(ZDYComp);
+        mcCompHistCentValVec->push_back(SingTopComp);
+        mcCompHistCentValVec->push_back(TTbarComp);
+         */
+    }
+    else {
+        sortVec->push_back(4);
+        sortVec->push_back(1);
+        sortVec->push_back(3);
+        sortVec->push_back(0);
+        sortVec->push_back(2);
+        sortVec->push_back(5);
+        /*
+        mcCompHistCentValVec->push_back(WJComp);
+        mcCompHistCentValVec->push_back(VVComp);
+        mcCompHistCentValVec->push_back(ZDYComp);
+        mcCompHistCentValVec->push_back(SingTopComp);
+        mcCompHistCentValVec->push_back(TTbarComp);  
+        mcCompHistCentValVec->push_back(QCDComp);
+        */
+    }
+    return sortVec;
+}
+
 vector<float> * ScaleBackVecCalc(vector<TFile *> * inputFiles) {
     vector<float> * outVec = new vector<float>;
     TString mcplot = "h_nVtx_inclusive";
@@ -45,11 +160,29 @@ float ScaleBackCalc(TFile * inputFile) {
     scaleBack = (float) nVtxOrigHist->Integral(1, NBinsX + 1) / nVtxNewHist->Integral(1, NBinsX + 1);
     return scaleBack;
 }
-vector<float> * SignalSkimEfficiencyCalc(TString typeSMS, vector<int> * vecStopMassGrab, vector<int> * vecChi0MassGrab, vector<int> * vecCharginoMassGrab, float intLumi) {
+vector<float> * SignalSkimEfficiencyCalc(TString typeSMS, TString prefixT2tt, vector<int> * vecStopMassGrab, vector<int> * vecChi0MassGrab, vector<int> * vecCharginoMassGrab, float intLumi) {
     vector<float> * scaleBackVec = new vector<float>;
     char Buffer[500];
-    TString basePath = "../PlotMakingCode/FineBinNormFiles/";
-    TString nameNormFileSignalBase = "NormNumbers_StopMass";
+    
+    TString basePath, nameNormFileSignalBase;
+    int specT2ttIndex = -1;
+    int whichT2tt = 0;
+    int stopMassRef[5] = {250, 400, 500, 600, 750};
+    int numEvents[5] = {127789, 126051, 122413, 120570, 118333};
+    if (prefixT2tt.Contains("FineBin")) {
+        whichT2tt = 0;
+        basePath = "../PlotMakingCode/FineBinNormFiles/";
+        nameNormFileSignalBase = "NormNumbers_StopMass";
+    }
+    else if (prefixT2tt.Contains("225to350")) {
+        whichT2tt = 2;
+        basePath = "../PlotMakingCode/NonFineBinNonSpecificNormFiles/";
+        nameNormFileSignalBase = "NormNumbers_T2tt_225to350LSP25to250_LeptonFilter_StopMass";
+    }
+    else {
+        whichT2tt = 1;
+    }
+
     TString nameNormFileSignal;
     ifstream * streamNormFileSignal;
     TRegexp fExtractNumber(" [0-9]*\.[0-9]*");
@@ -57,46 +190,55 @@ vector<float> * SignalSkimEfficiencyCalc(TString typeSMS, vector<int> * vecStopM
     TString currString;
     float SkimEff, SkimEffErr, estOrigNum, estErrOrigNum;
     for (unsigned int iSkimEff = 0; iSkimEff < vecStopMassGrab->size(); ++iSkimEff) {
-        nameNormFileSignal = basePath; nameNormFileSignal += nameNormFileSignalBase;
-        nameNormFileSignal += vecStopMassGrab->at(iSkimEff);
-        nameNormFileSignal += TString("_Chi0Mass");
-        nameNormFileSignal += vecChi0MassGrab->at(iSkimEff);
-        nameNormFileSignal += TString("_CharginoMass");
-        nameNormFileSignal += vecCharginoMassGrab->at(iSkimEff);
-        nameNormFileSignal += TString(".txt");
-        streamNormFileSignal = new ifstream(nameNormFileSignal);
-        for (int iLine = 0; iLine < 4; ++iLine) {
-            streamNormFileSignal->getline(Buffer, 500);
-            cout << "line " << Buffer << endl;
-            currString = TString(Buffer);
-            currNumString = currString(fExtractNumber);
-            switch (iLine) {
-                case 0:
-                    SkimEff = atof(currNumString);
-                    cout << "SkimEff " << SkimEff << endl;
-                    break;
-                case 1:
-                    SkimEffErr = atof(currNumString);
-                    cout << "SkimEffErr " << SkimEffErr << endl;
-                    break;                
-                case 2:
-                    estOrigNum = atof(currNumString);
-                    cout << "estOrigNum " << estOrigNum << endl;
-                    break;
-                case 3:
-                    estErrOrigNum = atof(currNumString);
-                    cout << "estErrOrigNum " << estOrigNum << endl;
-                    break;
-                    
-                default:
-                    break;
+        if (whichT2tt != 1) {
+            nameNormFileSignal = basePath; nameNormFileSignal += nameNormFileSignalBase;
+            nameNormFileSignal += vecStopMassGrab->at(iSkimEff);
+            nameNormFileSignal += TString("_Chi0Mass");
+            nameNormFileSignal += vecChi0MassGrab->at(iSkimEff);
+            nameNormFileSignal += TString("_CharginoMass");
+            nameNormFileSignal += vecCharginoMassGrab->at(iSkimEff);
+            nameNormFileSignal += TString(".txt");
+            streamNormFileSignal = new ifstream(nameNormFileSignal);
+            for (int iLine = 0; iLine < 4; ++iLine) {
+                streamNormFileSignal->getline(Buffer, 500);
+                cout << "line " << Buffer << endl;
+                currString = TString(Buffer);
+                currNumString = currString(fExtractNumber);
+                switch (iLine) {
+                    case 0:
+                        SkimEff = atof(currNumString);
+                        cout << "SkimEff " << SkimEff << endl;
+                        break;
+                    case 1:
+                        SkimEffErr = atof(currNumString);
+                        cout << "SkimEffErr " << SkimEffErr << endl;
+                        break;                
+                    case 2:
+                        estOrigNum = atof(currNumString);
+                        cout << "estOrigNum " << estOrigNum << endl;
+                        break;
+                    case 3:
+                        estErrOrigNum = atof(currNumString);
+                        cout << "estErrOrigNum " << estOrigNum << endl;
+                        break;
+                        
+                    default:
+                        break;
+                }
             }
+            streamNormFileSignal->close();
+        }
+        else {
+            for (int i = 0; i < 5; ++i) {
+                if (abs(vecStopMassGrab->at(iSkimEff) - stopMassRef[i]) < 1) specT2ttIndex = i;                
+            }
+            if (specT2ttIndex < 0) cout << "something bad with specT2ttIndex" << endl;
+            estOrigNum = numEvents[specT2ttIndex];
         }
         cout << "intLumi " << intLumi << endl;
         cout << "estOrigNum " << estOrigNum << endl;
         cout << "intLumi / estOrigNum " << (intLumi / estOrigNum) << endl;
         scaleBackVec->push_back(intLumi / estOrigNum);
-        streamNormFileSignal->close();
     }
     return scaleBackVec;
 }
@@ -130,6 +272,23 @@ float DataDrivenTTBarScaleFactor(TH1F * dataHist, TH1F * mcHist, vector<TH1F *> 
     cout << "test2 " << dataIntegralMinNonTTBar << endl;
     return dataIntegralMinNonTTBar/integralTTBar;
 }
+
+void HistogramUnderflowOverflow(TH1F * inputHist, bool doUnderflow, bool doOverflow) {
+    float newHistErr;
+    int NBins = inputHist->GetNbinsX();
+    if (doUnderflow) {
+        inputHist->SetBinContent(1, inputHist->GetBinContent(1) + inputHist->GetBinContent(0));           
+        newHistErr = TMath::Sqrt(inputHist->GetBinError(1)*inputHist->GetBinError(1) + inputHist->GetBinError(0)*inputHist->GetBinError(0));
+        inputHist->SetBinError(1, newHistErr);
+    }
+    if (doOverflow) {
+        inputHist->SetBinContent(NBins, inputHist->GetBinContent(NBins) + inputHist->GetBinContent(NBins+1)); 
+        newHistErr = TMath::Sqrt(inputHist->GetBinError(NBins)*inputHist->GetBinError(NBins) + inputHist->GetBinError(NBins+1)*inputHist->GetBinError(NBins+1));
+        inputHist->SetBinError(NBins, newHistErr);
+    }
+}
+
+
 vector<TString> * StopFileNames(int whichNTuple, int whichTTBarGen, bool doExcSamp) {
     vector<TString> * outVec = new vector<TString>;
     const int numOviTypes = 18;
@@ -142,6 +301,7 @@ vector<TString> * StopFileNames(int whichNTuple, int whichTTBarGen, bool doExcSa
     switch (whichNTuple) {
         case 0:
             for (int i = 0; i < numOviTypes; ++i) {
+                if (!doExcSamp && fileInNameSpecOviedo[i].Contains("TTBarBkg")) continue;
                 outVec->push_back(fileInNameSpecOviedo[i]);
             }
             break;
@@ -218,12 +378,12 @@ vector<TFile *> * StopFiles(int whichNTuple, vector<TString> * fileNames, bool d
     }
     return outVec;
 }
-vector<TFile *> * StopSignalFiles(int whichNTuple, TString typeSMS, vector<int> * vecStopMassGrab, vector<int> * vecChi0MassGrab, vector<int> * vecCharginoMassGrab, bool doPURW, bool doSyst) {
+vector<TFile *> * StopSignalFiles(int whichNTuple, TString typeSMS, TString prefixT2tt, vector<int> * vecStopMassGrab, vector<int> * vecChi0MassGrab, vector<int> * vecCharginoMassGrab, bool doPURW, bool doSyst) {
     vector<TFile *> * outVec = new vector<TFile *>;
     bool isT2tt = typeSMS.Contains("T2tt");
     TFile * outTFile;
     TString addPath = "../RootFiles/Signal/";
-    TString baseString = isT2tt ? "FineBin" : "T2bw";
+    TString baseString = isT2tt ? prefixT2tt : "T2bw";
     TString specNTupString = (whichNTuple == 1) ? "_DESY" : "_Oviedo";
     TString PURWString = doPURW ? "_PURW" : "";
     TString SystString = doSyst ? "_wSyst" : "";
@@ -231,7 +391,7 @@ vector<TFile *> * StopSignalFiles(int whichNTuple, TString typeSMS, vector<int> 
     TString fileName;
     for (unsigned int i = 0; i < vecStopMassGrab->size(); ++i) {
         fileName = addPath + baseString;
-        fileName += "_Signal_SignalStop";
+        fileName += "_SignalStop";
         fileName += vecStopMassGrab->at(i);
         fileName += "_Chi0_";
         fileName += vecChi0MassGrab->at(i);
@@ -295,7 +455,7 @@ vector<TString> * MCLegends(int whichNTuple, bool addThings) {
 
 vector<TString> * MCSignalLegends(TString typeSMS, vector<int> * vecStopMassGrab, vector<int> * vecChi0MassGrab, vector<int> * vecCharginoMassGrab) {
     vector<TString> * outVec = new vector<TString>;
-//    TString stringModelBase = "Signal, ";
+    //    TString stringModelBase = "Signal, ";
     TString stringModelBase = "";
     TString stringStopMass = "M_{#tilde{t}}: ";
     TString stringChi0Mass = "M_{#chi_{0}}: ";
@@ -387,10 +547,9 @@ vector<Style_t> * MCSignalStyles(unsigned int numSignalPoints) {
     return outVec;
 }
 void SingSampCompHistogramGrabber(TFile * inputFile1, TH1F * &inputHist1, vector<TH1F *> * inputSystVec1, TString hist1Name, TFile * inputFile2, TH1F * &inputHist2, vector<TH1F *> * inputSystVec2,  TString hist2Name, TString subSampName, int RBNX, int RBNY, int RBNZ, bool doOverflow, bool doUnderflow, bool doSyst) {
-    int NBinsX, NBinsY, NBinsZ;
     TString fileName1, fileName2, systName, mcGrabName;
-    TH1F * currHist;
-    TH1F * systCompHist = NULL;
+//    TH1F * currHist;
+//    TH1F * systCompHist = NULL;
     mcGrabName = "";
     fileName1 = inputFile1->GetName();
     inputHist1 = (TH1F *) inputFile1->Get(hist1Name);
@@ -531,36 +690,33 @@ void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH1F *> * dataHist
         }
     }
 }
+/*
 
-
-void HistogramVecGrabber_Signal(vector<TFile *> * inputFilesSignal, vector<float> * sigSkimEffScaleCalcVec, vector<TH1F *> * vecStop1DCentValHists, TString mcPlotName, vector<vector<TH1F *> *> * vecStop1DSystHists, vector<SystT> * systVec, TString subSampName, int RBNX, int RBNY, int RBNZ, bool doOverflow, bool doUnderflow, bool doSyst, bool allMT2llSystematic) {
-    int NBinsX, NBinsY, NBinsZ;
+void HistogramVecGrabber_Signal(vector<TFile *> * inputFilesSignal, vector<float> * sigSkimEffScaleCalcVec, vector<TH1 *> * vecStop1DCentValHists, TString mcPlotName, vector<vector<TH1 *> *> * vecStop1DSystHists, vector<SystT> * systVec, TString subSampName, bool doOverflow, bool doUnderflow, bool doSyst, bool allMT2llSystematic) {
     TString fileName, systName, mcGrabName;
-    TH1F * currHist;
-    TH1F * systCompHist = NULL;
-    cout << " trying to grab signal scale " << endl;
+    TH1 * currHist;
+    TH1 * systCompHist = NULL;
     vector <float> * nVtxSignalBackScaleVec = ScaleBackVecCalc(inputFilesSignal);
-    cout << " trying to grab signal " << endl;
     TString mcSystPlotName, systCompHistName;
+    bool grabSyst;
     for (unsigned int k = 0; k < inputFilesSignal->size(); ++k) {
         mcGrabName = "";
         fileName = inputFilesSignal->at(k)->GetName();
         cout << "fileName" << " is " << fileName << endl;
         mcGrabName += mcPlotName;
         mcGrabName += subSampName;
-        currHist = (TH1F *) inputFilesSignal->at(k)->Get(mcGrabName);
+        cout << "nVtx scale factor " << nVtxSignalBackScaleVec->at(k) << endl;
+        cout << "SkimEfficiency scale factor " << sigSkimEffScaleCalcVec->at(k) << endl;
+        currHist = (TH1 *) inputFilesSignal->at(k)->Get(mcGrabName);
         currHist->Scale(nVtxSignalBackScaleVec->at(k)); // correct for PURW changes to integral            
         currHist->Scale(sigSkimEffScaleCalcVec->at(k)); // correct for PURW changes to integral            
-        NBinsX = currHist->GetNbinsX();
-        NBinsY = currHist->GetNbinsY();
-        NBinsZ = currHist->GetNbinsZ();
-        currHist->RebinX(RBNX);
         vecStop1DCentValHists->push_back(currHist);
     }
     if (doSyst) {
         for (unsigned int k = 0; k < inputFilesSignal->size(); ++k) {
+
             fileName = inputFilesSignal->at(k)->GetName();
-            vector<TH1F *> * currStopFileSystVec = new vector<TH1F *>;
+            vector<TH1 *> * currStopFileSystVec = new vector<TH1 *>;
             systCompHist = NULL;
             cout << "k " << k << endl;            
             for (unsigned int j = 0; j < systVec->size(); ++j) {
@@ -570,6 +726,13 @@ void HistogramVecGrabber_Signal(vector<TFile *> * inputFilesSignal, vector<float
                 mcGrabName += mcPlotName;
                 cout << "systName " << systName << endl;
                 cout << "mcGrabName " << mcGrabName << endl;
+                
+                
+                
+                
+                
+                
+                
                 if (systName.Contains("genTop")) continue;
                 if (!mcGrabName.Contains("MT2ll") && systName.Contains("MT2ll")) continue;
                 mcSystPlotName = mcGrabName;
@@ -578,25 +741,567 @@ void HistogramVecGrabber_Signal(vector<TFile *> * inputFilesSignal, vector<float
                 mcSystPlotName += subSampName;
                 cout << "mcSystPlotName " << mcSystPlotName << endl;
                 if (!allMT2llSystematic && systName.Contains("MT2ll") && !fileName.Contains("TTBar")) {
-                    currHist = (TH1F *) inputFilesSignal->at(k)->Get(mcGrabName);   
+                    currHist = (TH1 *) inputFilesSignal->at(k)->Get(mcGrabName);   
                 }
                 else {
-                    currHist = (TH1F *) inputFilesSignal->at(k)->Get(mcSystPlotName);   
+                    currHist = (TH1 *) inputFilesSignal->at(k)->Get(mcSystPlotName);   
                 }   
-                cout << "grabbed hist " << endl;
                 currHist->Scale(nVtxSignalBackScaleVec->at(k)); // correct for PURW changes to integral
-                currHist->Scale(sigSkimEffScaleCalcVec->at(k)); // correct for PURW changes to integral
-                NBinsX = currHist->GetNbinsX();
-                NBinsY = currHist->GetNbinsY();
-                NBinsZ = currHist->GetNbinsZ();
-                currHist->RebinX(RBNX);
+                currHist->Scale(sigSkimEffScaleCalcVec->at(k)); // correct for skim efficiencies to integral
                 currStopFileSystVec->push_back(currHist);
-                cout << "rebinned hist " << endl;
             }
             vecStop1DSystHists->push_back(currStopFileSystVec);
         }
     }
 }
+*/
+
+
+void HistogramVecGrabber_Signal(vector<TFile *> * inputFilesSignal, vector<float> * sigSkimEffScaleCalcVec, unsigned int whichIndex, TH1 * &histStopCentValTH1, TString mcPlotName, vector<TH1 *> * &vecStopTH1SystHists, vector<SystT> * systVec, TString subSampName, bool doOverflow, bool doUnderflow, bool doSyst, bool allMT2llSystematic) {
+    TString fileName, systName, mcGrabName;
+    TH1 * currHist;
+    vector <float> * nVtxSignalBackScaleVec = ScaleBackVecCalc(inputFilesSignal);
+    TString mcSystPlotName, systCompHistName;
+    mcGrabName = "";
+    fileName = inputFilesSignal->at(whichIndex)->GetName();
+    cout << "fileName" << " is " << fileName << endl;
+    mcGrabName += mcPlotName;
+    mcGrabName += subSampName;
+    cout << "mcGrabName " << mcGrabName << endl;
+    cout << "nVtx scale factor " << nVtxSignalBackScaleVec->at(whichIndex) << endl;
+    cout << "SkimEfficiency scale factor " << sigSkimEffScaleCalcVec->at(whichIndex) << endl;
+    histStopCentValTH1 = (TH1 *) inputFilesSignal->at(whichIndex)->Get(mcGrabName);
+    histStopCentValTH1->Scale(nVtxSignalBackScaleVec->at(whichIndex)); // correct for PURW changes to integral            
+    histStopCentValTH1->Scale(sigSkimEffScaleCalcVec->at(whichIndex)); // correct for PURW changes to integral 
+    cout << "histStopCentValTH1 bin 1 " << histStopCentValTH1->GetName() << histStopCentValTH1->GetBinContent(1) << endl;
+    bool grabSyst;
+    if (doSyst) {
+        for (unsigned int iSyst = 0; iSyst < systVec->size(); ++iSyst) {
+            grabSyst = true;
+            cout << "iSyst " << iSyst << endl;
+            systName = systVec->at(iSyst).name;
+            mcGrabName = "";
+            mcGrabName += mcPlotName;
+            cout << "systName " << systName << endl;
+            cout << "mcGrabName " << mcGrabName << endl;
+            mcSystPlotName = mcGrabName;
+            mcSystPlotName += systName;
+            mcGrabName += subSampName;
+            mcSystPlotName += subSampName;
+            cout << "mcSystPlotName " << mcSystPlotName << endl;            
+            if (systName.Contains("genTop")) {
+                grabSyst = false;
+            }
+            if (systName.Contains("MT2ll")) {
+                if (!allMT2llSystematic && !fileName.Contains("TTBar")) {
+                    grabSyst = false;
+                }
+                else {
+                    grabSyst = true;
+                }        
+            }
+            if (!grabSyst) {
+                currHist = (TH1 *) histStopCentValTH1->Clone(histStopCentValTH1->GetName() + systName);
+            }
+            else {
+                currHist = (TH1 *) inputFilesSignal->at(whichIndex)->Get(mcSystPlotName); 
+                currHist->Scale(nVtxSignalBackScaleVec->at(whichIndex)); // correct for PURW changes to integral
+                currHist->Scale(sigSkimEffScaleCalcVec->at(whichIndex)); // correct for skim efficiencies to integral  
+            }
+            cout << "curr Syst " << currHist->GetName() << " is bin 1 " << currHist->GetBinContent(1) << endl;
+            vecStopTH1SystHists->push_back(currHist);
+        }
+    }       
+}
+
+
+void HistogramVecGrabberCentValGrab(vector<TFile *> * inputFiles, bool grabData, vector<TH1 *> * vecHist, vector<float> * nVtxBackScaleVec, TString histPlotName, TString subSampName, bool useDDEstimate, float scaleFacTTBar) {
+    TString fileName;
+    TH1 * currHist;
+    for (unsigned int iFile = 0; iFile < inputFiles->size(); ++iFile) {
+        fileName = inputFiles->at(iFile)->GetName();
+        cout << "fileName" << " is " << fileName << endl;
+        cout << "hist plot name " << histPlotName << endl;
+        currHist = (TH1 *) inputFiles->at(iFile)->Get(histPlotName);
+        cout << "currHist " << currHist->Integral() << endl;
+        if (grabData) {
+            if (!fileName.Contains("Data")) continue;
+        }
+        else {
+            if (fileName.Contains("Data")) continue;
+            currHist->Scale(nVtxBackScaleVec->at(iFile)); // correct for PURW changes to integral
+            if (useDDEstimate && fileName.Contains("TTBar")) currHist->Scale(scaleFacTTBar);  
+            cout << "currHist bin 1 " << currHist->GetBinContent(1) << endl;
+        }
+        vecHist->push_back(currHist);
+        cout << "pushed hist into vector for iFile " << iFile << endl;
+    }
+}
+void HistogramVecGrabberSystGrab(vector<TFile *> * inputFiles, vector<TH1 *> * vecCentValTH1Hist, vector<TH1 *> * mcCompHistSystVec, vector<float> * nVtxBackScaleVec, TString histPlotName, TString subSampName, vector<SystT> * systVec, bool useDDEstimate, float scaleFacTTBar, bool allMT2llSystematic, int whichNTuple) {
+    TString fileName, systName, mcGrabName;
+    TH1 * currHist;
+    TH1 * systCompHist;
+    TString mcSystPlotName, systCompHistName;
+    bool grabSyst;
+    int grabIndex;
+    TH1 * centValTH1Hist;
+    for (unsigned int iSyst = 0; iSyst < systVec->size(); ++iSyst) {
+        grabSyst = true;
+        systCompHist = NULL;
+        mcGrabName = "";
+        mcGrabName += histPlotName;
+        cout << "iSyst " << iSyst << endl;
+        systName = systVec->at(iSyst).name;
+        cout << "systName " << systName << endl;
+        cout << "mcGrabName " << mcGrabName << endl;
+        if (!mcGrabName.Contains("MT2ll") && systName.Contains("MT2ll")) continue;
+        if (systName.Contains("genStop")) grabSyst = false;
+        mcSystPlotName = mcGrabName;
+        mcSystPlotName += systName;
+        mcGrabName += subSampName;
+        mcSystPlotName += subSampName;
+        grabIndex = -1;
+        for (unsigned int iFile = 0; iFile < inputFiles->size(); ++iFile) {
+            fileName = inputFiles->at(iFile)->GetName();
+            cout << "fileName " << fileName << endl;
+            cout << "mcSystPlotName " << mcSystPlotName << endl;
+            if (fileName.Contains("Data")) continue;
+            ++grabIndex;
+            if (systName.Contains("genTop")) {
+                if (!fileName.Contains("TTBar")) grabSyst = false;
+                if (whichNTuple == 1 && !fileName.Contains("Sig")) grabSyst = false;
+            }
+            if (systName.Contains("MT2ll")) {
+                if (!allMT2llSystematic && !fileName.Contains("TTBar")) {
+                    grabSyst = false;
+                }
+                else {
+                    grabSyst = true;
+                }        
+            }
+            if (!grabSyst) {
+                centValTH1Hist = vecCentValTH1Hist->at(grabIndex);
+                currHist = (TH1 *) centValTH1Hist->Clone(centValTH1Hist->GetName() + systName);
+                cout << " currHist name " << currHist->GetName() << endl;
+//                patsyHist = (TH1 *) inputFiles->at(iFile)->Get(mcGrabName);
+//                currHist = (TH1 *) patsyHist->Clone(patsyHist->GetName() + systName);
+            }
+            else {
+                currHist = (TH1 *) inputFiles->at(iFile)->Get(mcSystPlotName);   
+                currHist->Scale(nVtxBackScaleVec->at(iFile)); // correct for PURW changes to integral
+                if (useDDEstimate && fileName.Contains("TTBar")) currHist->Scale(scaleFacTTBar);
+            }  
+            if (systCompHist == NULL) {
+                systCompHistName = currHist->GetName();
+                systCompHistName += "_Comp";
+                systCompHist = (TH1 *) currHist->Clone(systCompHistName);
+            }
+            else {
+                systCompHist->Add(currHist);
+            }
+            cout << "systCompHist bin 1 " << systCompHist->GetBinContent(1) << endl;
+        }
+        mcCompHistSystVec->push_back(systCompHist);
+    }
+}
+
+
+void HistogramAdderData(vector<TH1 *> * dataHistVec, TH1F * &DataComp, int RBNX, int numDims, int whichAxis, int axis1LB, int axis1UB, int axis2LB, int axis2UB, TString nameProject, bool doOverflow, bool doUnderflow, TString addName) {
+    
+    TString patsyNamebase = "patsy";
+    patsyNamebase += addName;
+    TString patsyName;
+    
+    TH2F * data2DPatsy;
+    TH3F * data3DPatsy;
+    
+    TString dataName = dataHistVec->at(0)->GetName();
+    if (numDims > 1) {
+        dataName += nameProject;
+    }
+    dataName += "_DataComp";
+    dataName += addName;
+    
+    switch (numDims) {
+        case 1:
+            DataComp = (TH1F *) dataHistVec->at(0)->Clone(dataName);
+            for (unsigned int i = 1; i < dataHistVec->size(); ++i) {
+                DataComp->Add((TH1F*) dataHistVec->at(i));
+            }     
+            break;
+        case 2:
+            data2DPatsy = (TH2F *) dataHistVec->at(0);                    
+            switch (whichAxis) {
+                case 1:
+                    DataComp = (TH1F *) data2DPatsy->ProjectionX(dataName, axis1LB, axis1UB, "e");                    
+                    for (unsigned int iData = 1; iData < dataHistVec->size(); ++iData) {
+                        patsyName = patsyNamebase;
+                        patsyName += iData;
+                        data2DPatsy = (TH2F *) dataHistVec->at(iData);
+                        DataComp->Add((TH1F *) data2DPatsy->ProjectionX(dataName + patsyName, axis1LB, axis1UB, "e"));
+                    }            
+                    break;
+                case 2:
+                    DataComp = (TH1F *) data2DPatsy->ProjectionY(dataName, axis1LB, axis1UB, "e");                    
+                    for (unsigned int iData = 1; iData < dataHistVec->size(); ++iData) {
+                        data2DPatsy = (TH2F *) dataHistVec->at(iData);
+                        patsyName = patsyNamebase;
+                        patsyName += iData;
+                        DataComp->Add((TH1F *) data2DPatsy->ProjectionY(dataName + patsyName, axis1LB, axis1UB, "e"));
+                    }           
+                    break;                   
+                default:
+                    break;
+            }
+            break;
+        case 3:
+            data3DPatsy = (TH3F *) dataHistVec->at(0);                  
+            switch (whichAxis) {
+                case 1:
+                    DataComp = (TH1F *) data3DPatsy->ProjectionX(dataName, axis1LB, axis1UB, axis2LB, axis2UB, "e");                    
+                    for (unsigned int iData = 1; iData < dataHistVec->size(); ++iData) {
+                        data3DPatsy = (TH3F *) dataHistVec->at(iData);
+                        patsyName = patsyNamebase;
+                        patsyName += iData;
+                        DataComp->Add((TH1F *) data3DPatsy->ProjectionX(dataName + patsyName, axis1LB, axis1UB, axis2LB, axis2UB, "e"));
+                    }
+                    break;
+                case 2:
+                    DataComp = (TH1F *) data3DPatsy->ProjectionY(dataName, axis1LB, axis1UB, axis2LB, axis2UB, "e");                    
+                    for (unsigned int iData = 1; iData < dataHistVec->size(); ++iData) {
+                        data3DPatsy = (TH3F *) dataHistVec->at(iData);
+                        patsyName = patsyNamebase;
+                        patsyName += iData;
+                        DataComp->Add((TH1F *) data3DPatsy->ProjectionY(dataName + patsyName, axis1LB, axis1UB, axis2LB, axis2UB, "e"));
+                    }
+                    break;
+                case 3:
+                    DataComp = (TH1F *) data3DPatsy->ProjectionZ(dataName, axis1LB, axis1UB, axis2LB, axis2UB, "e");                    
+                    for (unsigned int iData = 1; iData < dataHistVec->size(); ++iData) {
+                        data3DPatsy = (TH3F *) dataHistVec->at(iData);
+                        patsyName = patsyNamebase;
+                        patsyName += iData;
+                        DataComp->Add((TH1F *) data3DPatsy->ProjectionZ(dataName + patsyName, axis1LB, axis1UB, axis2LB, axis2UB, "e"));
+                    }           
+                    break;
+            }
+            break;
+        default:
+            break;
+    }
+    //Rebin stuff as needed
+    DataComp->RebinX(RBNX);
+    cout << "DataComp error bin 25 " << DataComp->GetBinError(25) << endl;
+    cout << "DataComp Content bin 25 " << DataComp->GetBinContent(25) << endl;
+    HistogramUnderflowOverflow(DataComp, doUnderflow, doOverflow);
+}
+void HistogramAdderMC(vector<TH1 *> * mcIndHistCentValVec, vector<TH1F *> * mcCompHistCentValVec, vector<int> * sampleStartPositions, vector<TString> * sampleAddNames, TH1F * &MCComp, int whichNTuple, int RBNX, int numDims, int whichAxis, int axis1LB, int axis1UB, int axis2LB, int axis2UB, TString nameProject, bool doOverflow, bool doUnderflow, TString addName) {
+    TH1F * currSampHist1D;
+    TH2F * currSampHist2DPatsy, * mcComp2DPatsy;
+    TH3F * currSampHist3DPatsy, * mcComp3DPatsy;
+    TString nameMCComp = mcIndHistCentValVec->at(0)->GetName() + TString("_MCComp");
+    TString currSampName;
+    
+    TString patsyNamebase = "patsy";
+    patsyNamebase += addName;
+    TString patsyName;
+    switch (numDims) {
+        case 1:
+            MCComp = (TH1F *) mcIndHistCentValVec->at(0)->Clone(nameMCComp);
+            for (unsigned int iMC = 1; iMC < mcIndHistCentValVec->size(); ++iMC) {
+                MCComp->Add((TH1F*) mcIndHistCentValVec->at(iMC));
+            }  
+            break;
+        case 2:
+            mcComp2DPatsy = (TH2F *) mcIndHistCentValVec->at(0);
+            switch (whichAxis) {
+                case 1:
+                    MCComp = (TH1F *) mcComp2DPatsy->ProjectionX(nameMCComp, axis1LB, axis1UB, "e");
+                    break;
+                case 2:
+                    MCComp = (TH1F *) mcComp2DPatsy->ProjectionY(nameMCComp, axis1LB, axis1UB, "e");
+                    break;
+                default:
+                    break;
+            }
+            for (unsigned int iMC = 1; iMC < mcIndHistCentValVec->size(); ++iMC) {
+                patsyName = patsyNamebase;
+                patsyName += iMC;
+                mcComp2DPatsy = (TH2F *) mcIndHistCentValVec->at(iMC);
+                switch (whichAxis) {
+                    case 1:
+                        MCComp->Add((TH1F*) mcComp2DPatsy->ProjectionX(nameMCComp + patsyName, axis1LB, axis1UB, "e"));
+                        break;
+                    case 2:
+                        MCComp->Add((TH1F*) mcComp2DPatsy->ProjectionY(nameMCComp + patsyName, axis1LB, axis1UB, "e"));
+                        break;
+                    default:
+                        break;
+                }
+                MCComp->Add((TH1F*) mcComp2DPatsy->ProjectionX(nameMCComp + patsyName, axis1LB, axis1UB, "e"));
+            }
+            break;
+        case 3:
+            mcComp3DPatsy = (TH3F *) mcIndHistCentValVec->at(0);
+            switch (whichAxis) {
+                case 1:
+                    MCComp = (TH1F *) mcComp3DPatsy->ProjectionX(nameMCComp, axis1LB, axis1UB, axis2LB, axis2UB, "e");
+                    break;
+                case 2:
+                    MCComp = (TH1F *) mcComp3DPatsy->ProjectionY(nameMCComp, axis1LB, axis1UB, axis2LB, axis2UB, "e");
+                    break;
+                case 3:
+                    MCComp = (TH1F *) mcComp3DPatsy->ProjectionZ(nameMCComp, axis1LB, axis1UB, axis2LB, axis2UB, "e");
+                    break;
+                default:
+                    break;
+            }
+            for (unsigned int iMC = 1; iMC < mcIndHistCentValVec->size(); ++iMC) {
+                patsyName = patsyNamebase;
+                patsyName += iMC;
+                mcComp2DPatsy = (TH2F *) mcIndHistCentValVec->at(iMC);
+                switch (whichAxis) {
+                    case 1:
+                        MCComp->Add((TH1F*) mcComp3DPatsy->ProjectionX(nameMCComp + patsyName, axis1LB, axis1UB, axis2LB, axis2UB, "e"));
+                        break;
+                    case 2:
+                        MCComp->Add((TH1F*) mcComp3DPatsy->ProjectionY(nameMCComp + patsyName, axis1LB, axis1UB, axis2LB, axis2UB, "e"));
+                        break;
+                    case 3:
+                        MCComp->Add((TH1F*) mcComp3DPatsy->ProjectionZ(nameMCComp + patsyName, axis1LB, axis1UB, axis2LB, axis2UB, "e"));
+                        break;
+                    default:
+                        break;
+                }
+                MCComp->Add((TH1F*) mcComp2DPatsy->ProjectionX(nameMCComp + patsyName, axis1LB, axis1UB, "e"));
+            }
+            break;
+        default:
+            break;
+    }
+    MCComp->RebinX(RBNX);
+    cout << "MCComp error bin 25 " << MCComp->GetBinError(25) << endl;
+    cout << "MCComp Content bin 25 " << MCComp->GetBinContent(25) << endl;
+    float newHistErr;
+    int NBins = MCComp->GetNbinsX();
+    if (doUnderflow) {
+        MCComp->SetBinContent(1, MCComp->GetBinContent(1) + MCComp->GetBinContent(0));           
+        newHistErr = TMath::Sqrt(MCComp->GetBinError(1)*MCComp->GetBinError(1) + MCComp->GetBinError(0)*MCComp->GetBinError(0));
+        MCComp->SetBinError(1, newHistErr);
+    }
+    if (doOverflow) {
+        MCComp->SetBinContent(NBins, MCComp->GetBinContent(NBins) + MCComp->GetBinContent(NBins+1)); 
+        newHistErr = TMath::Sqrt(MCComp->GetBinError(NBins)*MCComp->GetBinError(NBins) + MCComp->GetBinError(NBins+1)*MCComp->GetBinError(NBins+1));
+        MCComp->SetBinError(NBins, newHistErr);
+    }
+    for (unsigned int iSamp = 0; iSamp < sampleStartPositions->size() - 1; ++iSamp) {
+        currSampHist1D = NULL;
+        currSampHist2DPatsy = NULL;
+        currSampHist3DPatsy = NULL;
+        
+        currSampName = mcIndHistCentValVec->at(sampleStartPositions->at(iSamp))->GetName();
+        if (numDims > 1) currSampName += nameProject;
+        currSampName += sampleAddNames->at(iSamp);
+        currSampName += addName;
+        cout << "stop point " << sampleStartPositions->at(iSamp + 1) << endl;
+        for (int iMCSpec = sampleStartPositions->at(iSamp); iMCSpec < sampleStartPositions->at(iSamp + 1); ++iMCSpec) {
+            cout << "curr SampName " << currSampName << endl;
+            cout << "iMCSpec " << iMCSpec << endl;
+            switch (numDims) {
+                case 1:
+                    if (currSampHist1D == NULL) {
+                        currSampHist1D = (TH1F *) mcIndHistCentValVec->at(iMCSpec)->Clone(currSampName);
+                    }
+                    else {
+                        currSampHist1D->Add((TH1F *) mcIndHistCentValVec->at(iMCSpec));
+                    }
+                    break;
+                case 2:
+                    if (currSampHist2DPatsy == NULL) {
+                        currSampHist2DPatsy = (TH2F *) mcIndHistCentValVec->at(iMCSpec);
+                        switch (whichAxis) {
+                            case 1:
+                                currSampHist1D = (TH1F *) currSampHist2DPatsy->ProjectionX(currSampName, axis1LB, axis1UB, "e");
+                                break;
+                            case 2:
+                                currSampHist1D = (TH1F *) currSampHist2DPatsy->ProjectionY(currSampName, axis1LB, axis1UB, "e");
+                                break;
+                        }
+                    }
+                    else {
+                        patsyName = patsyNamebase;
+                        patsyName += iMCSpec;
+                        currSampHist2DPatsy = (TH2F *) mcIndHistCentValVec->at(iMCSpec);
+                        switch (whichAxis) {
+                            case 1:
+                                currSampHist1D->Add((TH1F*) currSampHist2DPatsy->ProjectionX(currSampName + patsyName, axis1LB, axis1UB, "e"));
+                                break;
+                            case 2:
+                                currSampHist1D->Add((TH1F*) currSampHist2DPatsy->ProjectionY(currSampName + patsyName, axis1LB, axis1UB, "e"));
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    break;
+                case 3:
+                    if (currSampHist3DPatsy == NULL) {
+                        currSampHist3DPatsy = (TH3F *) mcIndHistCentValVec->at(iMCSpec);
+                        switch (whichAxis) {
+                            case 1:
+                                currSampHist1D = (TH1F *) currSampHist3DPatsy->ProjectionX(currSampName, axis1LB, axis1UB, axis2LB, axis2UB, "e");
+                                break;
+                            case 2:
+                                currSampHist1D = (TH1F *) currSampHist3DPatsy->ProjectionY(currSampName, axis1LB, axis1UB, axis2LB, axis2UB, "e");
+                                break;
+                            case 3:
+                                currSampHist1D = (TH1F *) currSampHist3DPatsy->ProjectionZ(currSampName + patsyName, axis1LB, axis1UB, axis2LB, axis2UB, "e");
+                                break;
+                        }
+                    }
+                    else {
+                        patsyName = patsyNamebase;
+                        patsyName += iMCSpec;
+                        currSampHist3DPatsy = (TH3F *) mcIndHistCentValVec->at(iMCSpec);
+                        switch (whichAxis) {
+                            case 1:
+                                currSampHist1D->Add((TH1F*) currSampHist3DPatsy->ProjectionX(currSampName + patsyName, axis1LB, axis1UB, axis2LB, axis2UB, "e"));
+                                break;
+                            case 2:
+                                currSampHist1D->Add((TH1F*) currSampHist3DPatsy->ProjectionY(currSampName + patsyName, axis1LB, axis1UB, axis2LB, axis2UB, "e"));
+                                break;
+                            case 3:
+                                currSampHist1D->Add((TH1F*) currSampHist3DPatsy->ProjectionZ(currSampName + patsyName, axis1LB, axis1UB, axis2LB, axis2UB, "e"));
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    break;
+                default:
+                    break;
+                    
+            }
+        }
+        currSampHist1D->RebinX(RBNX);
+        cout << "currSampHist1D " << currSampHist1D->GetName() << " error bin 25 " << currSampHist1D->GetBinError(25) << endl;
+        cout << "currSampHist1D " << currSampHist1D->GetName() << " Content bin 25 " << currSampHist1D->GetBinContent(25) << endl;
+        HistogramUnderflowOverflow(currSampHist1D, doUnderflow, doOverflow);
+        mcCompHistCentValVec->push_back(currSampHist1D);
+    }
+}
+void HistogramProjectorSyst(vector<TH1 *> * systHistVec, vector<TH1F *> * systProjHistVec, int RBNX, int numDims, int whichAxis, int axis1LB, int axis1UB, int axis2LB, int axis2UB, TString nameProject, bool doOverflow, bool doUnderflow, TString addName) {
+    TString systName;
+    TString patsyNamebase = "patsy";
+    patsyNamebase += addName;
+    TString patsyName;
+    
+    TH1F * currSystHist;
+    TH2F * currSystHist2DPatsy;
+    TH3F * currSystHist3DPatsy;
+    for (unsigned int iSyst = 0; iSyst < systHistVec->size(); ++iSyst) {
+        systName = systHistVec->at(iSyst)->GetName();
+        if (numDims > 1) systName += nameProject;
+        systName += "_SystComp";
+        systName += addName;
+        switch (numDims) {
+            case 1:
+                currSystHist = (TH1F *) systHistVec->at(iSyst)->Clone(systName);
+                break;                
+            case 2:
+                currSystHist2DPatsy = (TH2F *) systHistVec->at(iSyst);
+                switch (whichAxis) {
+                    case 1:
+                        currSystHist = (TH1F *) currSystHist2DPatsy->ProjectionX(systName + patsyName, axis1LB, axis1UB, "e");    
+                        break;
+                    case 2:
+                        currSystHist = (TH1F *) currSystHist2DPatsy->ProjectionY(systName + patsyName, axis1LB, axis1UB, "e");    
+                        break;
+                }
+                break;
+            case 3:
+                currSystHist3DPatsy = (TH3F *) systHistVec->at(iSyst);
+                switch (whichAxis) {
+                    case 1:
+                        currSystHist = (TH1F *) currSystHist3DPatsy->ProjectionX(systName + patsyName, axis1LB, axis1UB, axis2LB, axis2UB, "e");    
+                        break;
+                    case 2:
+                        currSystHist = (TH1F *) currSystHist3DPatsy->ProjectionY(systName + patsyName, axis1LB, axis1UB, axis2LB, axis2UB, "e");    
+                        break;
+                    case 3:
+                        currSystHist = (TH1F *) currSystHist3DPatsy->ProjectionZ(systName + patsyName, axis1LB, axis1UB, axis2LB, axis2UB, "e");    
+                        break;
+                }
+                break;
+        }
+        currSystHist->RebinX(RBNX);
+        float newHistErr;
+        int NBins = currSystHist->GetNbinsX();
+        if (doUnderflow) {
+            currSystHist->SetBinContent(1, currSystHist->GetBinContent(1) + currSystHist->GetBinContent(0));           
+            newHistErr = TMath::Sqrt(currSystHist->GetBinError(1)*currSystHist->GetBinError(1) + currSystHist->GetBinError(0)*currSystHist->GetBinError(0));
+            currSystHist->SetBinError(1, newHistErr);
+        }
+        if (doOverflow) {
+            currSystHist->SetBinContent(NBins, currSystHist->GetBinContent(NBins) + currSystHist->GetBinContent(NBins+1)); 
+            newHistErr = TMath::Sqrt(currSystHist->GetBinError(NBins)*currSystHist->GetBinError(NBins) + currSystHist->GetBinError(NBins+1)*currSystHist->GetBinError(NBins+1));
+            currSystHist->SetBinError(NBins, newHistErr);
+        }
+        systProjHistVec->push_back(currSystHist);
+    }
+}
+
+void HistogramAdderSignal(TH1 * signalHist, TH1F * &signalProjectionHist, int RBNX, int numDims, int whichAxis, int axis1LB, int axis1UB, int axis2LB, int axis2UB, TString nameProject, bool doOverflow, bool doUnderflow, TString addName) {
+    TH2F * signal2DPatsy;
+    TH3F * signal3DPatsy;    
+    TString signalName = signalHist->GetName();
+    if (numDims > 1) {
+        signalName += nameProject;
+    }
+    signalName += "_signalProjectionHist";
+    signalName += addName;
+    
+    switch (numDims) {
+        case 1:
+            signalProjectionHist = (TH1F *) signalHist;
+            break;
+        case 2:
+            signal2DPatsy = (TH2F *) signalHist;
+            switch (whichAxis) {
+                case 1:
+                    signalProjectionHist = (TH1F *) signal2DPatsy->ProjectionX(signalName, axis1LB, axis1UB, "e");
+                    break;
+                case 2:
+                    signalProjectionHist = (TH1F *) signal2DPatsy->ProjectionY(signalName, axis1LB, axis1UB, "e");
+                    break;                   
+                default:
+                    break;
+            }
+            break;
+        case 3:
+            signal3DPatsy = (TH3F *) signalHist;
+            switch (whichAxis) {
+                case 1:
+                    signalProjectionHist = (TH1F *) signal3DPatsy->ProjectionX(signalName, axis1LB, axis1UB, axis2LB, axis2UB, "e");                    
+                    break;
+                case 2:
+                    signalProjectionHist = (TH1F *) signal3DPatsy->ProjectionY(signalName, axis1LB, axis1UB, axis2LB, axis2UB, "e");                    
+                    break;
+                case 3:
+                    signalProjectionHist = (TH1F *) signal3DPatsy->ProjectionZ(signalName, axis1LB, axis1UB, axis2LB, axis2UB, "e");                    
+                    break;
+                default:
+                    break;
+            }
+            break;
+        default:
+            break;
+    }
+    signalProjectionHist->RebinX(RBNX);
+    HistogramUnderflowOverflow(signalProjectionHist, doUnderflow, doOverflow);
+}
+
+
 
 
 
@@ -656,6 +1361,7 @@ void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH2F *> * dataHist
             mcIndHistCentValVec->push_back(currHist);
         }
     }
+    bool grabSyst;
     if (doSyst) {
         cout << "inside Histogram Vec Grabber line: 187" << endl;
         for (unsigned int j = 0; j < systVec->size(); ++j) {
@@ -674,22 +1380,28 @@ void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH2F *> * dataHist
             mcSystPlotName += subSampName;
             if (systName.Contains("genStop")) continue;
             for (unsigned int k = 0; k < inputFiles->size(); ++k) {
+                grabSyst = true;
                 cout << "k " << k << endl;            
                 fileName = inputFiles->at(k)->GetName();
                 cout << "fileName " << fileName << endl;
                 cout << "mcSystPlotName " << mcSystPlotName << endl;
                 if (fileName.Contains("Data")) continue;
                 if (systName.Contains("genTop")) {
-                    if (!fileName.Contains("TTBar")) continue;
-                    if (whichNTuple == 1 && !fileName.Contains("Sig")) continue;
+                    if (!fileName.Contains("TTBar")) grabSyst = false;
+                    if (whichNTuple == 1 && !fileName.Contains("Sig")) grabSyst = false;
                 }
-                if (systName.Contains("genStop") && !fileName.Contains("Stop")) continue;                
                 if (!allMT2llSystematic && systName.Contains("MT2ll") && !fileName.Contains("TTBar")) {
-                    currHist = (TH2F *) inputFiles->at(k)->Get(mcGrabName);   
+                    grabSyst = false;
                 }
                 else {
-                    currHist = (TH2F *) inputFiles->at(k)->Get(mcSystPlotName);   
-                }                
+                    grabSyst = true;
+                }    
+                if (grabSyst) {
+                    currHist = (TH2F *) inputFiles->at(k)->Get(mcSystPlotName);
+                }
+                else {
+                    currHist = (TH2F *) inputFiles->at(k)->Get(mcGrabName);
+                }
                 //currHist = (TH2F *) inputFiles->at(k)->Get(mcSystPlotName);                   
                 cout << "grabbed hist " << endl;
                 currHist->Scale(nVtxBackScaleVec->at(k)); // correct for PURW changes to integral
@@ -722,6 +1434,100 @@ void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH2F *> * dataHist
             }
             mcCompHistSystVec->push_back(systCompHist);
         }
+    }
+}
+
+
+
+void SystGraphMakers(TH1F * inputBaseMCHist, vector<TH1F *> * inputBaseMCSystHists, vector<TGraphAsymmErrors *> * errCompSpecSource, vector<TGraphAsymmErrors *> * errCompSpecSource_pStat, vector<TGraphAsymmErrors *> * fracRatioSystVec, vector<TString> * systCanvNameVec, Color_t colorErrGraph, TString plotVarName, bool doAbsRatio, float fracRatioYAxisRange, bool doSymErr, bool doSignal) {
+    
+    TString stringLepEffSF = "LepEffSF";
+    TString stringLepEnSc = "LepES";
+    TString stringMT2ll = "MT2ll";  
+    TString stringGenTopRW = "genTopRW";
+    TString stringStopXSecUncert = "genStopXSec";
+    
+    TGraphAsymmErrors * errCompStatCentVal, * errSystQuadSum, * errSystQuadSum_pStat;
+    TGraphAsymmErrors * errLepEnSc, * errLepEffSF, * errMT2ll, * errGenTopRW, * errStopXSecUncert;
+    TGraphAsymmErrors * errLepEnSc_pStat, * errLepEffSF_pStat, * errMT2ll_pStat, * errGenTopRW_pStat, * errStopXSecUncert_pStat;    
+    TGraphAsymmErrors * currFracRatioGraph;
+
+    cout << "plotVarName " << plotVarName << endl;
+    
+    errCompStatCentVal = clonePoints(inputBaseMCHist);
+    
+    errLepEffSF = GraphSystErrorSet_SingleSource(inputBaseMCHist, inputBaseMCSystHists, stringLepEffSF + TString("Shift"), doSymErr, 0);
+    errLepEffSF_pStat = GraphSystErrorSumErrors(errCompStatCentVal, stringLepEffSF, errLepEffSF, inputBaseMCHist);
+    GraphMainAttSet(errLepEffSF, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
+    GraphMainAttSet(errLepEffSF_pStat, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
+    errCompSpecSource->push_back(errLepEffSF);
+    errCompSpecSource_pStat->push_back(errLepEffSF_pStat);
+    if (!doSignal) {
+        systCanvNameVec->push_back(stringLepEffSF); 
+        currFracRatioGraph = fracGraph(inputBaseMCHist, errLepEffSF, doAbsRatio, fracRatioYAxisRange);
+        fracRatioSystVec->push_back(currFracRatioGraph);
+    }
+    errLepEnSc = GraphSystErrorSet_SingleSource(inputBaseMCHist, inputBaseMCSystHists, stringLepEnSc + TString("Shift"), doSymErr, 0);
+    errLepEnSc_pStat = GraphSystErrorSumErrors(errCompStatCentVal, stringLepEnSc, errLepEnSc, inputBaseMCHist);
+    GraphMainAttSet(errLepEnSc, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
+    GraphMainAttSet(errLepEnSc_pStat, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
+    errCompSpecSource->push_back(errLepEnSc);
+    errCompSpecSource_pStat->push_back(errLepEnSc_pStat);
+    if (!doSignal) {
+        systCanvNameVec->push_back(stringLepEnSc);
+        currFracRatioGraph = fracGraph(inputBaseMCHist, errLepEnSc, doAbsRatio, fracRatioYAxisRange);
+        fracRatioSystVec->push_back(currFracRatioGraph);
+    }
+    if (plotVarName.Contains("MT2ll")) {
+        errMT2ll = GraphSystErrorSet_SingleSource(inputBaseMCHist, inputBaseMCSystHists, stringMT2ll + TString("Shift"), doSymErr, 1);
+        errMT2ll_pStat = GraphSystErrorSumErrors(errCompStatCentVal, stringMT2ll, errMT2ll, inputBaseMCHist);
+        GraphMainAttSet(errMT2ll, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
+        GraphMainAttSet(errMT2ll_pStat, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
+        errCompSpecSource->push_back(errMT2ll);
+        errCompSpecSource_pStat->push_back(errMT2ll_pStat);
+        if (!doSignal) {
+            systCanvNameVec->push_back(stringMT2ll);
+            currFracRatioGraph = fracGraph(inputBaseMCHist, errMT2ll, doAbsRatio, fracRatioYAxisRange);
+            fracRatioSystVec->push_back(currFracRatioGraph);
+        }
+    }        
+    else {
+        errMT2ll = NULL;
+    }
+    errGenTopRW = GraphSystErrorSet_SingleSource(inputBaseMCHist, inputBaseMCSystHists, stringGenTopRW, doSymErr, 0);
+    errGenTopRW_pStat = GraphSystErrorSumErrors(errCompStatCentVal, stringGenTopRW, errGenTopRW, inputBaseMCHist);
+    GraphMainAttSet(errGenTopRW, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
+    GraphMainAttSet(errGenTopRW_pStat, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
+    errCompSpecSource->push_back(errGenTopRW);
+    errCompSpecSource_pStat->push_back(errGenTopRW_pStat);
+    if (!doSignal) {
+        systCanvNameVec->push_back(stringGenTopRW); 
+        currFracRatioGraph = fracGraph(inputBaseMCHist, errGenTopRW, doAbsRatio, fracRatioYAxisRange);
+        fracRatioSystVec->push_back(currFracRatioGraph);   
+    }
+    
+    errStopXSecUncert = GraphSystErrorSet_SingleSource(inputBaseMCHist, inputBaseMCSystHists, stringStopXSecUncert + TString("Shift"), doSymErr, 0);
+    errStopXSecUncert_pStat = GraphSystErrorSumErrors(errCompStatCentVal, stringStopXSecUncert, errStopXSecUncert, inputBaseMCHist);
+    GraphMainAttSet(errStopXSecUncert, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
+    GraphMainAttSet(errStopXSecUncert_pStat, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
+    errCompSpecSource->push_back(errStopXSecUncert);
+    errCompSpecSource_pStat->push_back(errStopXSecUncert_pStat);
+    if (!doSignal) {
+        systCanvNameVec->push_back(stringStopXSecUncert);
+        currFracRatioGraph = fracGraph(inputBaseMCHist, errStopXSecUncert, doAbsRatio, fracRatioYAxisRange);
+        fracRatioSystVec->push_back(currFracRatioGraph);
+    }
+    
+    errSystQuadSum = GraphSystErrorSumErrors(errCompStatCentVal, TString("FullSyst"), errCompSpecSource, false, inputBaseMCHist);
+    errSystQuadSum_pStat = GraphSystErrorSumErrors(errCompStatCentVal, TString("FullSyst"), errCompSpecSource, true, inputBaseMCHist);
+    GraphMainAttSet(errSystQuadSum, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
+    GraphMainAttSet(errSystQuadSum_pStat, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
+    errCompSpecSource->push_back(errSystQuadSum);
+    errCompSpecSource_pStat->push_back(errSystQuadSum_pStat);
+    if (!doSignal) {
+        systCanvNameVec->push_back("FullSyst");
+        currFracRatioGraph = fracGraph(inputBaseMCHist, errSystQuadSum, doAbsRatio, fracRatioYAxisRange);
+        fracRatioSystVec->push_back(currFracRatioGraph);
     }
 }
 void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH3F *> * dataHistVec, vector<TH3F *> * mcIndHistCentValVec, vector<TH3F *> * mcCompHistSystVec, vector<float> * nVtxBackScaleVec, vector<SystT> * systVec, TString dataPlotName, TString mcPlotName, TString subSampName, int RBNX, int RBNY, int RBNZ, bool doOverflow, bool doUnderflow, bool doSyst, bool useDDEstimate, float scaleFacTTBar, bool allMT2llSystematic, int whichNTuple) {
@@ -845,162 +1651,7 @@ void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH3F *> * dataHist
         }
     }
 }
-/*
- void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH1 *> * dataHistVec, vector<TH1 *> * mcIndHistCentValVec, vector<TH1 *> * mcCompHistSystVec, int nDims, vector<float> * nVtxBackScaleVec, vector<SystT> * systVec, TString dataPlotName, TString mcPlotName, TString subSampName, int RBNX, int RBNY, int RBNZ, bool doOverflow, bool doUnderflow, bool doSyst) {
- cout << "inside Histogram Vec Grabber line: 144" << endl;
- int NBinsX, NBinsY, NBinsZ;
- TString fileName, systName, mcGrabName;
- TH1F * currHist;
- TH1F * systCompHist = NULL;
- cout << "inside Histogram Vec Grabber line: 149" << endl;
- cout << "inputFiles size " << inputFiles->size() << endl;
- cout << "nVtxBackScale size " << nVtxBackScaleVec->size() << endl;
- TString mcSystPlotName, systCompHistName;
- for (unsigned int k = 0; k < inputFiles->size(); ++k) {
- mcGrabName = "";
- cout << "k " << k << endl;
- fileName = inputFiles->at(k)->GetName();
- cout << "fileName" << " is " << fileName << endl;
- if (fileName.Contains("Data")) {
- cout << "contains data " << endl;
- cout << "trying to grab " << dataPlotName << endl;
- switch (nDims) {
- case 1:
- currHist = (TH1F *) inputFiles->at(k)->Get(dataPlotName);
- break;
- case 2:
- currHist = (TH2F *) inputFiles->at(k)->Get(dataPlotName);
- break;
- case 3:
- currHist = (TH3F *) inputFiles->at(k)->Get(dataPlotName);
- break;
- default:
- break;
- }
- NBinsX = currHist->GetNbinsX();
- NBinsY = currHist->GetNbinsY();
- NBinsZ = currHist->GetNbinsZ();
- currHist->RebinX(RBNX);
- if (NBinsY > 1) currHist->RebinY(RBNY);
- if (NBinsZ > 1) currHist->RebinZ(RBNZ);
- dataHistVec->push_back(currHist);
- }
- else {
- mcGrabName += mcPlotName;
- mcGrabName += subSampName;
- switch (nDims) {
- case 1:
- currHist = (TH1F *) inputFiles->at(k)->Get(mcGrabName);
- break;
- case 2:
- currHist = (TH2F *) inputFiles->at(k)->Get(mcGrabName);
- break;
- case 3:
- currHist = (TH3F *) inputFiles->at(k)->Get(mcGrabName);
- break;
- default:
- break;
- }
- currHist->Scale(nVtxBackScaleVec->at(k)); // correct for PURW changes to integral
- NBinsX = currHist->GetNbinsX();
- NBinsY = currHist->GetNbinsY();
- NBinsZ = currHist->GetNbinsZ();
- currHist->RebinX(RBNX);
- if (NBinsY > 1) currHist->RebinY(RBNY);
- if (NBinsZ > 1) currHist->RebinZ(RBNZ);
- mcIndHistCentValVec->push_back(currHist);
- }
- }
- if (doSyst) {
- cout << "inside Histogram Vec Grabber line: 187" << endl;
- for (unsigned int j = 0; j < systVec->size(); ++j) {
- systCompHist = NULL;
- mcGrabName = "";
- mcGrabName += mcPlotName;
- cout << "j " << j << endl;
- //        if (!systVec->at(j).doXSyst) continue;
- systName = systVec->at(j).name;
- cout << "systName " << systName << endl;
- cout << "mcGrabName " << mcGrabName << endl;
- if (!mcGrabName.Contains("MT2ll") && systName.Contains("MT2ll")) continue;
- mcSystPlotName = mcGrabName;
- mcSystPlotName += systName;
- mcGrabName += subSampName;
- mcSystPlotName += subSampName;
- for (unsigned int k = 0; k < inputFiles->size(); ++k) {
- cout << "k " << k << endl;            
- fileName = inputFiles->at(k)->GetName();
- cout << "fileName " << fileName << endl;
- cout << "mcSystPlotName " << mcSystPlotName << endl;
- if (fileName.Contains("Data")) continue;
- switch (nDims) {
- case 1:                        
- if (systName.Contains("MT2ll") && !fileName.Contains("TTBar")) {
- currHist = (TH1F *) inputFiles->at(k)->Get(mcGrabName);   
- }
- else {
- currHist = (TH1F *) inputFiles->at(k)->Get(mcSystPlotName);   
- }
- break;
- case 2:                        
- if (systName.Contains("MT2ll") && !fileName.Contains("TTBar")) {
- currHist = (TH2F *) inputFiles->at(k)->Get(mcGrabName);   
- }
- else {
- currHist = (TH2F *) inputFiles->at(k)->Get(mcSystPlotName);   
- }                        break;
- case 3:                        
- if (systName.Contains("MT2ll") && !fileName.Contains("TTBar")) {
- currHist = (TH3F *) inputFiles->at(k)->Get(mcGrabName);   
- }
- else {
- currHist = (TH3F *) inputFiles->at(k)->Get(mcSystPlotName);   
- } 
- break;
- default:
- break;
- }
- cout << "grabbed hist " << endl;
- currHist->Scale(nVtxBackScaleVec->at(k)); // correct for PURW changes to integral
- NBinsX = currHist->GetNbinsX();
- NBinsY = currHist->GetNbinsY();
- NBinsZ = currHist->GetNbinsZ();                
- currHist->RebinX(RBNX);
- if (NBinsY > 1) currHist->RebinY(RBNY);
- if (NBinsZ > 1) currHist->RebinZ(RBNZ);
- cout << "rebinned hist " << endl;
- if (systCompHist == NULL) {
- cout << "cloning syst " << endl;
- systCompHistName = currHist->GetName();
- systCompHistName += "_Comp";
- switch (nDims) {
- case 1:
- systCompHist = (TH1F *) currHist->Clone(systCompHistName);
- break;
- case 2:
- systCompHist = (TH2F *) currHist->Clone(systCompHistName);
- break;
- case 3:
- systCompHist = (TH3F *) currHist->Clone(systCompHistName);
- break;
- default:
- break;
- }
- }
- else {
- cout << "adding syst " << endl;
- cout << "systCompHist nBins " << systCompHist->GetNbinsX() << endl;
- cout << "currHist nBins " << currHist->GetNbinsX() << endl;
- systCompHist->Add(currHist);
- }
- }
- mcCompHistSystVec->push_back(systCompHist);
- }
- }
- }
- */
-void HistogramAdderSyst(vector<TH1F *> * dataHistVec, vector<TH1F *> * mcIndHistCentValVec, vector<TH1F *> * mcCompHistCentValVec, TH1F * &DataComp, TH1F * &MCComp, TH1F * &FracComp, int whichNTuple, bool doAbsRatio, float yAxisRange, bool doExcSamp) {
-    cout << "inside Histogram Adder Syst line: 232" << endl;
+void HistogramAdderSyst(vector<TH1F *> * dataHistVec, vector<TH1F *> * mcIndHistCentValVec, vector<TH1F *> * mcCompHistCentValVec, TH1F * &DataComp, TH1F * &MCComp, TH1F * &FracComp, int whichNTuple, bool doAbsRatio, float yAxisRange) {
     /*
      bool cloneTTBar = false;
      bool cloneVV = false;
@@ -1028,9 +1679,6 @@ void HistogramAdderSyst(vector<TH1F *> * dataHistVec, vector<TH1F *> * mcIndHist
     cout << "inside Histogram Adder Syst line: 249" << endl;
     cout << "MC vec size " <<  mcIndHistCentValVec->size() << endl;
     TTbarComp = (TH1F *) mcIndHistCentValVec->at(0)->Clone(mcIndHistCentValVec->at(0)->GetName() + TString("_TTbar"));
-    if (doExcSamp) {
-        TTbarComp->Add(mcIndHistCentValVec->at(1));
-    }
     VVComp = (TH1F *) mcIndHistCentValVec->at(2)->Clone(mcIndHistCentValVec->at(2)->GetName() + TString("_VV"));
     VVComp->Add(mcIndHistCentValVec->at(3));
     VVComp->Add(mcIndHistCentValVec->at(4));
@@ -1052,7 +1700,6 @@ void HistogramAdderSyst(vector<TH1F *> * dataHistVec, vector<TH1F *> * mcIndHist
     for (unsigned int j = 0; j < mcIndHistCentValVec->size(); ++j) {
         //        MCName = mcIndHistCentValVec->at(j)->GetName();
         if (j != 0) {
-            if (j == 1 && !doExcSamp) continue;
             MCComp->Add(mcIndHistCentValVec->at(j));
         }
     }
@@ -1124,7 +1771,7 @@ void SpectrumDraw(TCanvas * InputCanvas, TH1F * Hist1, TString legHist1, TH1F * 
     TString BinWidthString;
     BinWidthString += attempt;
     TAxis * YAxis = errHist->GetYaxis();
-    TString YAxisTitle = YAxis->GetTitle();    
+    TString YAxisTitle = YAxis->GetTitle(); 
     int StrPos = YAxisTitle.Index("NUM", 3, TString::kExact);
     //    cout << "StrPos " << StrPos << endl;
     if (StrPos != -1) YAxisTitle.Replace(StrPos, 3, BinWidthString); 
@@ -1160,8 +1807,10 @@ void SpectrumDraw(TCanvas * InputCanvas, TH1F * Hist1, TString legHist1, TH1F * 
         sprintf(buf,"RMS = %0.2f #pm %0.2f",Hist2->GetRMS(),Hist2->GetRMSError());
         tl->DrawLatex(MeanXstart,MeanYstart-0.15,buf);    
     }
+    cout << "draw test 3d " << mcLegends->size() << endl;
+    cout << "draw test 3da " << indMCHists->size() << endl;
     //    leg = new TLegend(legXstart,legYstart - 0.05 * (numIndMC + 1),legXstart + 0.05 * (numIndMC + 1),legYstart);
-    leg = new TLegend(legXstart,legYstart - 0.05 * (mcLegends->size() + 1),legXstart + 0.40,legYstart);
+    leg = new TLegend(legXstart - 0.05,legYstart - 0.05 * (mcLegends->size() + 1),legXstart + 0.40,legYstart);
     leg->AddEntry(Hist1,TString(legHist1),"pl");
     for (unsigned int j = 0; j < mcLegends->size(); ++j) {
         leg->AddEntry(indMCHists->at(j), mcLegends->at(j), "f");
@@ -1213,9 +1862,15 @@ void SpectrumDraw(TCanvas * InputCanvas, TH1F * Hist1, TString legHist1, TH1F * 
 
 void SpectrumDraw_AddSignal(TCanvas * InputCanvas, vector<TH1F *> * vecSignalHists, vector<TString> * vecSignalLegends, TLegend * leg) {
     TPad * Pad1 = (TPad *) InputCanvas->cd(1);
+    TH1F * currSigHist;
+    TH1F * h_SigErr;
     for (unsigned int iSigPoints = 0; iSigPoints < vecSignalHists->size(); ++iSigPoints) {
-        vecSignalHists->at(iSigPoints)->Draw("hist same");
-        leg->AddEntry(vecSignalHists->at(iSigPoints), vecSignalLegends->at(iSigPoints), "pl");
+        currSigHist = vecSignalHists->at(iSigPoints);
+        h_SigErr = (TH1F *) currSigHist->Clone();
+        HistMainAttSet(h_SigErr, h_SigErr->GetLineColor(), 3001, h_SigErr->GetLineColor(), 2, kWhite, 0, 0);
+        h_SigErr->Draw("e2 same");
+        currSigHist->Draw("hist same");
+        leg->AddEntry(currSigHist, vecSignalLegends->at(iSigPoints), "l");
         leg->Draw("same");
     }
     Pad1->Update();
@@ -1235,9 +1890,8 @@ void SpectrumDraw_AddSignal(TCanvas * InputCanvas, vector<TH1F *> * vecSignalHis
      Pad2->Modified();
      */
 }
-void SpectrumDrawSyst(TCanvas * InputCanvas, TH1F * Hist1, TString legHist1, TH1F * Hist2, THStack * MCStack, TGraphAsymmErrors * errGraph, TGraphAsymmErrors * errGraphjustSyst, TH1F * fracRatioHist, TGraphAsymmErrors * fracRatioGraph, float TextXPos, float TextYStartPos, float YAxisLB, float YAxisUB, bool logYPad1, vector<TString> * mcLegends, vector<TH1F *> * indMCHists, bool doMean, TString cutUsed, float inputLumi) {
+void SpectrumDrawSyst(TCanvas * InputCanvas, TH1F * Hist1, TString legHist1, TH1F * Hist2, THStack * MCStack, TGraphAsymmErrors * errGraph, TGraphAsymmErrors * errGraphjustSyst, TH1F * fracRatioHist, TGraphAsymmErrors * fracRatioGraph, float TextXPos, float TextYStartPos, float YAxisLB, float YAxisUB, bool logYPad1, vector<TString> * mcLegends, vector<TH1F *> * indMCHists, bool doMean, TString cutUsed, float inputLumi, TLegend * &leg) {
     TLatex * tl = new TLatex();
-    TLegend * leg;
     tl->SetTextAlign(12);
     tl->SetNDC();
     tl->SetTextSize(0.03);
@@ -1343,6 +1997,7 @@ void SpectrumDrawSyst(TCanvas * InputCanvas, TH1F * Hist1, TString legHist1, TH1
     XAxis->SetNdivisions(6,5,0);
     TGraphAsymmErrors * fracRatioDrawGraph = clonePoints(fracRatioHist, false);
     HistToGraphCopyAttributes(fracRatioHist, fracRatioDrawGraph);
+    fracRatioGraph->SetFillColor(kYellow);
     TH1F * patsy = (TH1F*) fracRatioHist->Clone("frac patsy");
     patsy->SetLineColor(kWhite);
     patsy->SetMarkerColor(kWhite);
@@ -1350,10 +2005,51 @@ void SpectrumDrawSyst(TCanvas * InputCanvas, TH1F * Hist1, TString legHist1, TH1
     patsy->Draw("e1");    
     fracRatioGraph->Draw("2 same");
     //    fracRatioHist->Draw("e1 same");
-    fracRatioDrawGraph->Draw("p0 same");
+    fracRatioDrawGraph->Draw("p0 same");    
+    TLegend * fracRatioLegend = new TLegend(0.8, 0.8, 0.95, 0.95);
+    fracRatioLegend->AddEntry(fracRatioGraph, "Syst. Uncert.", "f");
+    fracRatioLegend->Draw("same");    
     Pad2->Update();
     Pad2->Modified();
 }
+
+
+void SpectrumDrawSyst_AddSignal(TCanvas * InputCanvas, vector<TH1F *> * vecSignalHists, vector<vector<TGraphAsymmErrors *> *> * vecSigErrGraph, unsigned int whichSyst, vector<TString> * vecSignalLegends, TLegend * leg) {
+    TH1F * currSigHist;
+    TGraphAsymmErrors * currSigErrGraph;
+    
+    TPad * Pad1 = (TPad *) InputCanvas->cd(1);
+    for (unsigned int iSigPoints = 0; iSigPoints < vecSignalHists->size(); ++iSigPoints) {
+        currSigHist = vecSignalHists->at(iSigPoints);
+        currSigErrGraph = vecSigErrGraph->at(iSigPoints)->at(whichSyst);
+        cout << "SigErrGraph name " << currSigErrGraph->GetName() << endl;
+        cout << "SigErrGraph high error at point 2 " << currSigErrGraph->GetErrorYhigh(2) << endl;
+        cout << "SigErrGraph low  error at point 2 " << currSigErrGraph->GetErrorYlow(2) << endl;
+        currSigErrGraph->Draw("2 same");
+        currSigHist->Draw("hist same");
+        leg->AddEntry(currSigHist, vecSignalLegends->at(iSigPoints), "l");
+        leg->Draw("same");
+    }
+    Pad1->Update();
+    Pad1->Modified();
+    /*
+     TPad * Pad2 = (TPad *) InputCanvas->cd(2);    
+     TGraphAsymmErrors * fracRatioDrawGraph = clonePoints(fracRatioHist, false);
+     HistToGraphCopyAttributes(fracRatioHist, fracRatioDrawGraph);
+     TH1F * patsy = (TH1F*) fracRatioHist->Clone("frac patsy");
+     patsy->SetLineColor(kWhite);
+     patsy->SetMarkerColor(kWhite);
+     fracRatioHist->SetLineColor(kBlack);
+     patsy->Draw("e1");    
+     fracRatioDrawGraph->Draw("p0 same");
+     //    fracRatioHist->Draw("e1");
+     Pad2->Update();
+     Pad2->Modified();
+     */
+}
+
+
+
 
 
 void SpectrumDrawSingSampCompare(TCanvas * InputCanvas, TH1F * Hist1, TString legHist1, TH1F * Hist2, TString legHist2, TH1F * fracRatioHist, float TextXPos, float TextYStartPos, float YAxisLB, float YAxisUB, bool logYPad1, bool doMean, TString cutUsed, float inputLumi) {
@@ -1363,7 +2059,7 @@ void SpectrumDrawSingSampCompare(TCanvas * InputCanvas, TH1F * Hist1, TString le
     tl->SetNDC();
     tl->SetTextSize(0.03);
     char buf[99];        
-    TPad * Pad1, * Pad2;
+    TPad * Pad1;
     Color_t hist1Color, hist2Color;
     bool doTwoHists = !(fracRatioHist == NULL || Hist2 == NULL);
     if (!doTwoHists) {
