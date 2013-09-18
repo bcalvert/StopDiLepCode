@@ -22,6 +22,7 @@
 #include "TCut.h"
 //#include "mt2bisect.h"
 //#include "StopDict_ver2.h"
+#include "../../HeaderFiles/StopFillFunctions.h"
 #include "../../HeaderFiles/StopFunctionDefinitions_v2.h"
 
 //#include "PileUpMC.h"
@@ -35,18 +36,6 @@
 #include <map>
 
 using namespace std;
-void MetPhiCorrect(bool doData, float &MetX, float &MetY, int nVtx) {
-    int c0 = 0;
-    int c1 = 1;
-    if (!doData) {
-        c0 = 2;
-        c1 = 3;
-    }
-    float CorrType1PFMETX[4] = {-0.165731, 0.393398, 0.0637551, 0.000364516};
-    float CorrType1PFMETY[4] = {-0.00360751, -0.253457, 0.430063, -0.228208};
-    MetX = MetX - CorrType1PFMETX[c0] - nVtx * CorrType1PFMETX[c1];
-    MetY = MetY - CorrType1PFMETY[c0] - nVtx * CorrType1PFMETY[c1];
-}
 int main( int argc, const char* argv[] ) {
     /////////Variable initializations/////////////////
     /////Organization Variables//////////////   
@@ -61,11 +50,21 @@ int main( int argc, const char* argv[] ) {
     //    float intMCPU = truePUDistMC->
     TH1F * nVtxSFHist = (TH1F*) inputPUFileMC->Get("nVtxSF_preRW");
     TH1F * nVtxSFHistOviToDESY = (TH1F*) inputPUFileMCOviToDESY->Get("normFrac");
-    TString fileTreeName;    
+    TFile * JetESFile = new TFile("../../PlotShowingCode/Summer13JESUncert.root");
+    TH2F * h_JetESUp = (TH2F *) JetESFile->Get("h_JESSystUncertUp");
+    TH2F * h_JetESDown = (TH2F *) JetESFile->Get("h_JESSystUncertDown");
+
+    TString fileInTreeName, fileOutTreeName;
     TString fInName;
-    TString fOutName;    
+    TString fOutName;
+//    Double_t relIsoBins[] = {-1.01, 0., 0.005, 0.01, 0.015, 0.02, 0.025, 0.03, 0.035, 0.04, 0.045, 0.05, 0.055, 0.06, 0.065, 0.07, 0.075, 0.08, 0.085, 0.09, 0.095, 0.1, 0.105, 0.11, 0.115, 0.12, 0.125, 0.13, 0.135, 0.14, 0.145, 0.15, 0.155, 0.16};
     TH1F * h_eventCount = new TH1F("h_eventCount", "; numEvents (# of Entries);", 2, -0.5, 1.5);
-    
+    TH1F * h_CutFlow = new TH1F("h_CutFlow", "; Cut Stage; N_{evts} passing Cut Stage", 3, 0.5, 3.5);
+    TH1F * h_CutFlow_LepESUp, * h_CutFlow_LepESDown;
+    TH1F * h_ElecCharIso = new TH1F("h_ElecCharIso", "; Electron Char. Had. Iso.; N_{evts} / bin", 51, -2, 100);
+    TH1F * h_ElecNeutIso = new TH1F("h_ElecNeutIso", "; Electron Neut. Had. Iso.; N_{evts} / bin", 51, -2, 100);
+    TH1F * h_ElecPhotIso = new TH1F("h_ElecPhotIso", "; Electron Photon Iso.; N_{evts} / bin", 51, -2, 100);
+//    TH1F * h_ElecRelIso = new TH1F("h_ElecRelIso", "; Electron Relative Iso.; N_{evts} / bin", 32, 0., 0.16);
     /////Event Variables/////////////////////
     
     //////bunch of vectors
@@ -84,6 +83,7 @@ int main( int argc, const char* argv[] ) {
     bool filterECalDeadCell, filterLogErrorTooManyClusters, filterTrackingFailure, filterHCalLaser, filterECalLaserCorr, filterTooManyStripClus, filterManyStripClus, filterEEBadSC;    
     vector<bool> * regularMETFilterVec = new vector<bool>;
     vector<bool> * oppositeMETFilterVec = new vector<bool>;
+    bool passTrigDoubleEl, passTrigDoubleMu, passTrigElMu;
     
     //Vertex info (both for nVtx info and also muon dZ)
     vector<float> * VertZ;    
@@ -139,15 +139,72 @@ int main( int argc, const char* argv[] ) {
     int   Type, nVtx, nVtxTrue;
     int   RunNum, EventNum, LumiBlock;
     float MET,MET_Phi,METSig;
-    float METX, METY;
+//    float METX, METY;
+    float eventRhoIso;
+
+    TLorentzVector Lep0Vec, Lep1Vec;
+    TLorentzVector Jet0Vec, Jet1Vec, BtagJet0Vec, BtagJet1Vec;
+    
     float Lep0Px,Lep0Py,Lep0Pz,Lep0E,Lep1Px,Lep1Py,Lep1Pz,Lep1E;
     int   Lep0PDGID, Lep1PDGID;
+    int   lep0Index, lep1Index;
+    float Lep0RelPFIso, Lep1RelPFIso;
+    vector<int> * vecLeptonInfo;
+    int   NIsoElecs_pT20, NIsoMuons_pT20, NIsoPosits_pT20, NIsoMubars_pT20;
+    int   NIsoElecs_pT10to20, NIsoMuons_pT10to20, NIsoPosits_pT10to20, NIsoMubars_pT10to20;
+    int   NViableLepPairsPreMassCut;
     int   NJets, NBtagJets;
-    float HT, Btag_j0,Btag_j1;
-    float Jet0Px,Jet0Py,Jet0Pz,Jet0E,Jet0Et,Jet1Px,Jet1Py,Jet1Pz,Jet1E,Jet1Et;
-    float BtagJet0Px,BtagJet0Py,BtagJet0Pz,BtagJet0E,BtagJet0Et,BtagJet1Px,BtagJet1Py,BtagJet1Pz,BtagJet1E,BtagJet1Et;
+    float HT;//, Btag_j0,Btag_j1;
+
+    
+    float Jet0Px,Jet0Py,Jet0Pz,Jet0E,Jet1Px,Jet1Py,Jet1Pz,Jet1E;
+    float BtagJet0Px,BtagJet0Py,BtagJet0Pz,BtagJet0E,BtagJet1Px,BtagJet1Py,BtagJet1Pz,BtagJet1E;
     int   BtagJet0Index, BtagJet1Index;
-    float BDT,BDTDis;
+
+    bool  hasTopInfo = 0, hasMETInfo = 0;
+    
+    //variables for MC systematics
+    int   Type_LepESUp, Type_LepESDown;
+    float MET_LepESUp, MET_Phi_LepESUp;
+    float MET_LepESDown, MET_Phi_LepESDown;
+    float MET_JetESUp, MET_Phi_JetESUp;
+    float MET_JetESDown, MET_Phi_JetESDown;
+//    float METX_LepESUp, METY_LepESUp;
+//    float METX_LepESDown, METY_LepESDown;
+//    float METX_JetESUp, METY_JetESUp;
+//    float METX_JetESDown, METY_JetESDown;
+    
+    float Lep0Px_LepESUp, Lep0Py_LepESUp, Lep0Pz_LepESUp, Lep0E_LepESUp, Lep1Px_LepESUp, Lep1Py_LepESUp, Lep1Pz_LepESUp, Lep1E_LepESUp;
+    float Lep0Px_LepESDown, Lep0Py_LepESDown, Lep0Pz_LepESDown, Lep0E_LepESDown, Lep1Px_LepESDown, Lep1Py_LepESDown, Lep1Pz_LepESDown, Lep1E_LepESDown;
+    int   Lep0PDGID_LepESUp, Lep1PDGID_LepESUp;
+    int   Lep0PDGID_LepESDown, Lep1PDGID_LepESDown;
+    int   lep0Index_LepESUp, lep1Index_LepESUp;
+    int   lep0Index_LepESDown, lep1Index_LepESDown;
+    float Lep0RelPFIso_LepESUp, Lep1RelPFIso_LepESUp;
+    float Lep0RelPFIso_LepESDown, Lep1RelPFIso_LepESDown;
+    
+    TLorentzVector Jet0Vec_JetESUp, Jet1Vec_JetESUp, BtagJet0Vec_JetESUp, BtagJet1Vec_JetESUp;
+    TLorentzVector Jet0Vec_JetESDown, Jet1Vec_JetESDown, BtagJet0Vec_JetESDown, BtagJet1Vec_JetESDown;
+    
+    vector<int> * vecLeptonInfo_LepESUp, * vecLeptonInfo_LepESDown;
+    int   NIsoElecs_pT20_LepESUp, NIsoMuons_pT20_LepESUp, NIsoPosits_pT20_LepESUp, NIsoMubars_pT20_LepESUp;
+    int   NIsoElecs_pT20_LepESDown, NIsoMuons_pT20_LepESDown, NIsoPosits_pT20_LepESDown, NIsoMubars_pT20_LepESDown;
+    int   NIsoElecs_pT10to20_LepESUp, NIsoMuons_pT10to20_LepESUp, NIsoPosits_pT10to20_LepESUp, NIsoMubars_pT10to20_LepESUp;
+    int   NIsoElecs_pT10to20_LepESDown, NIsoMuons_pT10to20_LepESDown, NIsoPosits_pT10to20_LepESDown, NIsoMubars_pT10to20_LepESDown;
+    int   NViableLepPairsPreMassCut_LepESUp, NViableLepPairsPreMassCut_LepESDown;
+    
+    int   NJets_JetESUp, NBtagJets_JetESUp;
+    int   NJets_JetESDown, NBtagJets_JetESDown;
+    float HT_JetESUp;//, Btag_j0_JetESUp, Btag_j1_JetESUp;
+    float HT_JetESDown;//, Btag_j0_JetESDown, Btag_j1_JetESDown;
+    float Jet0Px_JetESUp,Jet0Py_JetESUp,Jet0Pz_JetESUp,Jet0E_JetESUp,Jet1Px_JetESUp,Jet1Py_JetESUp,Jet1Pz_JetESUp,Jet1E_JetESUp;
+    float Jet0Px_JetESDown,Jet0Py_JetESDown,Jet0Pz_JetESDown,Jet0E_JetESDown,Jet1Px_JetESDown,Jet1Py_JetESDown,Jet1Pz_JetESDown,Jet1E_JetESDown;
+    float BtagJet0Px_JetESUp,BtagJet0Py_JetESUp,BtagJet0Pz_JetESUp,BtagJet0E_JetESUp,BtagJet1Px_JetESUp,BtagJet1Py_JetESUp,BtagJet1Pz_JetESUp,BtagJet1E_JetESUp;
+    float BtagJet0Px_JetESDown,BtagJet0Py_JetESDown,BtagJet0Pz_JetESDown,BtagJet0E_JetESDown,BtagJet1Px_JetESDown,BtagJet1Py_JetESDown,BtagJet1Pz_JetESDown,BtagJet1E_JetESDown;
+    int   BtagJet0Index_JetESUp, BtagJet1Index_JetESUp;
+    int   BtagJet0Index_JetESDown, BtagJet1Index_JetESDown;
+    
+    //SUSY particle Gen Mass stuff
     
     int genStopMass0, genStopMass1, genChi0Mass0, genChi0Mass1, genCharginoMass0, genCharginoMass1;
     float genStopMassCut, genChi0MassCut, genCharginoMassCut;
@@ -162,7 +219,7 @@ int main( int argc, const char* argv[] ) {
     genCharginoMass = new vector<float>;
     genPolWeights = new vector<double>;  
     
-    float StopMass0, StopMass1, Chi0Mass0, Chi0Mass1;
+//    float StopMass0, StopMass1, Chi0Mass0, Chi0Mass1;
     // Leading Status 3 particle characteristics
     float genTopSt3_0_Energy, genTopSt3_0_Pt, genTopSt3_0_Eta, genTopSt3_0_Phi;
     int   genTopSt3_0_PID, genTopSt3_0_Index, genTopSt3_0_FirstMom;
@@ -377,16 +434,38 @@ int main( int argc, const char* argv[] ) {
     
     float genMET, genMETPhi;
     
-    float SysVar;
+    bool doEvent, doEvent_LepESDown, doEvent_LepESUp;    
     
-    TLorentzVector Lep0Vec, Lep1Vec;
-    TLorentzVector Jet0Vec, Jet1Vec, BtagJet0Vec, BtagJet1Vec;
     float weight;
     
-    float lumi = 19603.691; //5296.3; // ipb                                                                                     
-    const float genStopMassMin = 295, genStopMassMax = 355, genDeltaM_stopChi0_Min = 195, genDeltaM_stopChi0_Max = 255; 
+    //DESY stuff
+    TBranch * b_runNumber, * b_lumiBlock, * b_eventNumber;
+    TBranch * b_vertMulti, * b_vertMultiTrue;
+    TBranch * b_lepton, * b_lepPdgId, * b_lepPFIso;
+    VLV            * leptons = 0;
+    vector<int>    * lepPdgId = 0;
+    vector<double> * lepPFIso = 0;
+    
+    TBranch * b_jet, * b_jetBTagCSV;
+    VLV            * jets = 0;
+    vector<double> * jetBTagCSV = 0;
+    
+    TBranch * b_GenTop, * b_GenAntiTop;
+    LV * genTop = 0, * genAntiTop = 0;
+    /// MET branches
+    TBranch        * b_met;
+    LV             * met = 0;
+    
+    /// GenMET branch
+    TBranch        * b_genMET;
+    LV             * genMETVec = 0;
+
+    TBranch        * b_GenWeight;
+    double         GenWeight;        
+    
+//    const float genStopMassMin = 295, genStopMassMax = 355, genDeltaM_stopChi0_Min = 195, genDeltaM_stopChi0_Max = 255; 
     // add 5 GeV safety margin (deltaM = 10 GeV in the FineBin sample)  
-    float Nevt_stop_oneMassPoint = 50000 * ( (genStopMassMax-genStopMassMin)/10. ) * ( (genDeltaM_stopChi0_Max-genDeltaM_stopChi0_Min)/10. );  
+//    float Nevt_stop_oneMassPoint = 50000 * ( (genStopMassMax-genStopMassMin)/10. ) * ( (genDeltaM_stopChi0_Max-genDeltaM_stopChi0_Min)/10. );  
     // 50k evts per point x Npoints
     ////input cuts/commands    
     //    const double PI = 3.14159265;
@@ -401,6 +480,8 @@ int main( int argc, const char* argv[] ) {
     bool doSignal        = 0;
     bool printEventNum   = 0;
     bool doMassCut       = 0;
+    bool doSpecRun       = 0;
+    int  whichRun        = -1;
     /////loop over inputs
     for (int k = 0; k < argc; ++k) {
         cout << "argv[k] for k = " << k << " is: " << argv[k] << endl;
@@ -430,6 +511,10 @@ int main( int argc, const char* argv[] ) {
         }
         else if (strncmp (argv[k],"pEvNum", 6) == 0) {
             printEventNum = 1;
+        }    
+        else if (strncmp (argv[k],"doSpecRun", 9) == 0) {
+            doSpecRun = 1;
+            whichRun = strtol(argv[k+1], NULL, 10);
         }
         else if (strncmp (argv[k],"doMassCut", 9) == 0) {
             doMassCut = 1;
@@ -439,7 +524,6 @@ int main( int argc, const char* argv[] ) {
         }
     }
     char Buffer[500];
-    char MyRootFile[2000];
     ifstream * outDirFile;
     TRegexp fCutSlash("[^/]+$");
     fOutName = "";
@@ -452,11 +536,16 @@ int main( int argc, const char* argv[] ) {
         }
     }
     fOutName += fInName(fCutSlash);
-    
-    if (fInName.Contains("MuEG") || fInName.Contains("DoubleMu") || fInName.Contains("DoubleEl")) {
+//    int counter = 0;
+    if (fInName.Contains("MuEG") || fInName.Contains("DoubleMu") || fInName.Contains("DoubleEl") || fInName.Contains("run")) {
         cout << "Running on Data" << endl;
         doData = 1;
+    }    
+    if (!doData) {
+        h_CutFlow_LepESUp = new TH1F("h_CutFlow_LepESUp", "; Cut Stage; N_{evts} passing Cut Stage", 3, 0.5, 3.5);
+        h_CutFlow_LepESDown = new TH1F("h_CutFlow_LepESDown", "; Cut Stage; N_{evts} passing Cut Stage", 3, 0.5, 3.5);
     }
+    
     if (whichNTupleType == 0) {
         fOutName += "_Oviedo";        
     }
@@ -465,199 +554,257 @@ int main( int argc, const char* argv[] ) {
     }
     if (doPURW && !doData) fOutName += "_PURW";
     if (doPURWOviToDESY && !doData) fOutName += "OviToDESY";
+    if (doSpecRun) {
+        fOutName += "_specRun";
+    }
     fOutName += "_SkimOutput.root";
     cout << "saving to " << fOutName << endl;
     TFile * outputFile;
-    outputFile = new TFile(fOutName,"RECREATE");
-    TTree * outTree = new TTree("OviSkimTree", "OviSkimTree");
-    TChain fileTree("Tree");
+    outputFile = new TFile(fOutName, "RECREATE");
+    fileOutTreeName = (whichNTupleType == 1) ? "DESY" : "Ovi";
+    fileOutTreeName += "SkimTree";
+    TTree * outTree = new TTree(fileOutTreeName, fileOutTreeName);
+    
+    fileInTreeName = (whichNTupleType == 1) ? "writeNTuple/NTuple" : "Tree";
+    TChain fileTree(fileInTreeName);
     TFile inputFile(fInName + TString(".root"));
     //////////////////////////
     fileTree.Add(fInName + TString(".root"));
-    if (doPFElecMu) {
-        fileTree.SetBranchAddress("T_Elec_PFElecPt", &ElecPt);
-        fileTree.SetBranchAddress("T_Elec_PFElecPx", &ElecPx);
-        fileTree.SetBranchAddress("T_Elec_PFElecPy", &ElecPy);
-        fileTree.SetBranchAddress("T_Elec_PFElecPz", &ElecPz);
-        fileTree.SetBranchAddress("T_Elec_PFElecE",  &ElecE);
+    if (whichNTupleType == 0) {
+        if (doPFElecMu) {
+            fileTree.SetBranchAddress("T_Elec_PFElecPt", &ElecPt);
+            fileTree.SetBranchAddress("T_Elec_PFElecPx", &ElecPx);
+            fileTree.SetBranchAddress("T_Elec_PFElecPy", &ElecPy);
+            fileTree.SetBranchAddress("T_Elec_PFElecPz", &ElecPz);
+            fileTree.SetBranchAddress("T_Elec_PFElecE",  &ElecE);
+            
+            fileTree.SetBranchAddress("T_Muon_PFMuonPt", &MuonPt);
+            fileTree.SetBranchAddress("T_Muon_PFMuonPx", &MuonPx);
+            fileTree.SetBranchAddress("T_Muon_PFMuonPy", &MuonPy);
+            fileTree.SetBranchAddress("T_Muon_PFMuonPz", &MuonPz);
+            fileTree.SetBranchAddress("T_Muon_PFMuonE", &MuonE);
+        }
+        else {
+            fileTree.SetBranchAddress("T_Elec_Pt", &ElecPt);
+            fileTree.SetBranchAddress("T_Elec_Px", &ElecPx);
+            fileTree.SetBranchAddress("T_Elec_Py", &ElecPy);
+            fileTree.SetBranchAddress("T_Elec_Pz", &ElecPz);
+            fileTree.SetBranchAddress("T_Elec_Energy", &ElecE);
+            
+            fileTree.SetBranchAddress("T_Muon_Pt", &MuonPt);
+            fileTree.SetBranchAddress("T_Muon_Px", &MuonPx);
+            fileTree.SetBranchAddress("T_Muon_Py", &MuonPy);
+            fileTree.SetBranchAddress("T_Muon_Pz", &MuonPz);
+            fileTree.SetBranchAddress("T_Muon_Energy", &MuonE);                    
+        }    
+        fileTree.SetBranchAddress("T_Elec_Eta", &ElecEta);
+        fileTree.SetBranchAddress("T_Elec_Charge", &ElecCharge);    
+        fileTree.SetBranchAddress("T_Elec_chargedHadronIso", &ElecPFCharIso);
+        fileTree.SetBranchAddress("T_Elec_neutralHadronIso", &ElecPFNeutIso);
+        fileTree.SetBranchAddress("T_Elec_photonIso", &ElecPFPhotIso);
+        fileTree.SetBranchAddress("T_Elec_passConversionVeto", &passConvVeto);
+        fileTree.SetBranchAddress("T_Elec_isPF", &isPFElectron);
         
-        fileTree.SetBranchAddress("T_Muon_PFMuonPt", &MuonPt);
-        fileTree.SetBranchAddress("T_Muon_PFMuonPx", &MuonPx);
-        fileTree.SetBranchAddress("T_Muon_PFMuonPy", &MuonPy);
-        fileTree.SetBranchAddress("T_Muon_PFMuonPz", &MuonPz);
-        fileTree.SetBranchAddress("T_Muon_PFMuonE", &MuonE);
+        
+        fileTree.SetBranchAddress("T_Muon_Eta", &MuonEta);
+        fileTree.SetBranchAddress("T_Muon_Charge", &MuonCharge);    
+        fileTree.SetBranchAddress("T_Muon_chargedHadronIsoR04", &MuonPFCharIso);
+        fileTree.SetBranchAddress("T_Muon_neutralHadronIsoR04", &MuonPFNeutIso);
+        fileTree.SetBranchAddress("T_Muon_photonIsoR04", &MuonPFPhotIso);
+        fileTree.SetBranchAddress("T_Muon_sumPUPtR04", &MuonSumPUPt);
+        fileTree.SetBranchAddress("T_Muon_IsGMPTMuons", &isGMPTMuons);
+        fileTree.SetBranchAddress("T_Muon_isPFMuon", &isPFMuon);
+        fileTree.SetBranchAddress("T_Muon_IPwrtAveBSInTrack", &MuonD0);
+        fileTree.SetBranchAddress("T_Muon_vz", &MuonVertZ);
+        
+        
+        fileTree.SetBranchAddress("T_JetAKCHS_Et", &JetEt);
+        fileTree.SetBranchAddress("T_JetAKCHS_Eta", &JetEta);  
+        fileTree.SetBranchAddress("T_JetAKCHS_Px", &JetPx);
+        fileTree.SetBranchAddress("T_JetAKCHS_Py", &JetPy);
+        fileTree.SetBranchAddress("T_JetAKCHS_Pz", &JetPz);
+        fileTree.SetBranchAddress("T_JetAKCHS_Energy", &JetE);
+        fileTree.SetBranchAddress("T_JetAKCHS_NeutHadEnergyFrac", &JetNHF);
+        fileTree.SetBranchAddress("T_JetAKCHS_NeutEmEnergyFrac", &JetNEF);
+        fileTree.SetBranchAddress("T_JetAKCHS_CharHadEnergyFrac", &JetCHF);
+        fileTree.SetBranchAddress("T_JetAKCHS_CharEmEnergyFrac", &JetCEF);
+        fileTree.SetBranchAddress("T_JetAKCHS_Tag_CombSVtx", &JetBTag);
+        fileTree.SetBranchAddress("T_JetAKCHS_nDaughters", &JetNDaug);
+        fileTree.SetBranchAddress("T_JetAKCHS_ChargedMultiplicity", &JetCharMult);
+        fileTree.SetBranchAddress("T_Vertex_z", &VertZ);
+        
+        fileTree.SetBranchAddress( "T_METPFTypeI_ET",     &MET );
+        fileTree.SetBranchAddress( "T_METPFTypeI_Phi", &MET_Phi );
+        fileTree.SetBranchAddress( "T_METPFTypeI_Sig",  &METSig );
+        
+        fileTree.SetBranchAddress( "T_EventF_EcalDeadCell", &filterECalDeadCell );
+        fileTree.SetBranchAddress( "T_EventF_logErrorTooManyClusters", &filterLogErrorTooManyClusters );
+        fileTree.SetBranchAddress( "T_EventF_trackingFailure", &filterTrackingFailure );
+        fileTree.SetBranchAddress( "T_EventF_hcalLaser", &filterHCalLaser );
+        fileTree.SetBranchAddress( "T_EventF_ecalLaserCorr", &filterECalLaserCorr );
+        fileTree.SetBranchAddress( "T_EventF_toomanystripclus", &filterTooManyStripClus );
+        fileTree.SetBranchAddress( "T_EventF_manystripclus", &filterManyStripClus );
+        fileTree.SetBranchAddress( "T_EventF_eeBadSc", &filterEEBadSC );
+        
+        //// Generator information
+        fileTree.SetBranchAddress( "T_METgen_ET", &genMET );
+        fileTree.SetBranchAddress( "T_METgen_Phi", &genMETPhi );
+        /// Status 3 particles
+        fileTree.SetBranchAddress( "T_Gen_tSt3_pdgId", &genTopSt3_pdgId );
+        fileTree.SetBranchAddress( "T_Gen_tSt3_firstMother", &genTopSt3_firstMom );
+        fileTree.SetBranchAddress( "T_Gen_tSt3_i", &genTopSt3_i  );
+        fileTree.SetBranchAddress( "T_Gen_tSt3_energy", &genTopSt3En );
+        fileTree.SetBranchAddress( "T_Gen_tSt3_pt", &genTopSt3Pt );
+        fileTree.SetBranchAddress( "T_Gen_tSt3_eta", &genTopSt3Eta );
+        fileTree.SetBranchAddress( "T_Gen_tSt3_phi", &genTopSt3Phi );
+        
+        fileTree.SetBranchAddress( "T_Gen_bSt3_pdgId", &genBSt3_pdgId );
+        fileTree.SetBranchAddress( "T_Gen_bSt3_firstMother", &genBSt3_firstMom );
+        fileTree.SetBranchAddress( "T_Gen_bSt3_i", &genBSt3_i  );
+        fileTree.SetBranchAddress( "T_Gen_bSt3_energy", &genBSt3En );
+        fileTree.SetBranchAddress( "T_Gen_bSt3_pt", &genBSt3Pt );
+        fileTree.SetBranchAddress( "T_Gen_bSt3_eta", &genBSt3Eta );
+        fileTree.SetBranchAddress( "T_Gen_bSt3_phi", &genBSt3Phi );
+        
+        fileTree.SetBranchAddress( "T_Gen_MuonSt3_pdgId", &genMuonSt3_pdgId );
+        fileTree.SetBranchAddress( "T_Gen_MuonSt3_firstMother", &genMuonSt3_firstMom );
+        fileTree.SetBranchAddress( "T_Gen_MuonSt3_i", &genMuonSt3_i  );
+        fileTree.SetBranchAddress( "T_Gen_MuonSt3_energy", &genMuonSt3En );
+        fileTree.SetBranchAddress( "T_Gen_MuonSt3_pt", &genMuonSt3Pt );
+        fileTree.SetBranchAddress( "T_Gen_MuonSt3_eta", &genMuonSt3Eta );
+        fileTree.SetBranchAddress( "T_Gen_MuonSt3_phi", &genMuonSt3Phi );
+        
+        fileTree.SetBranchAddress( "T_Gen_ElecSt3_pdgId", &genElecSt3_pdgId );
+        fileTree.SetBranchAddress( "T_Gen_ElecSt3_firstMother", &genElecSt3_firstMom );
+        fileTree.SetBranchAddress( "T_Gen_ElecSt3_i", &genElecSt3_i  );
+        fileTree.SetBranchAddress( "T_Gen_ElecSt3_energy", &genElecSt3En );
+        fileTree.SetBranchAddress( "T_Gen_ElecSt3_pt", &genElecSt3Pt );
+        fileTree.SetBranchAddress( "T_Gen_ElecSt3_eta", &genElecSt3Eta );
+        fileTree.SetBranchAddress( "T_Gen_ElecSt3_phi", &genElecSt3Phi );
+        
+        /// Status 1 particles (technically, b-quark is a status 2 -- intermediate particle)
+        fileTree.SetBranchAddress( "T_Gen_b_PID", &genBSt1_pdgId );
+        fileTree.SetBranchAddress( "T_Gen_b_Px", &genBSt1Px );
+        fileTree.SetBranchAddress( "T_Gen_b_Py", &genBSt1Py );
+        fileTree.SetBranchAddress( "T_Gen_b_Pz", &genBSt1Pz );
+        fileTree.SetBranchAddress( "T_Gen_b_Energy", &genBSt1En );
+        fileTree.SetBranchAddress( "T_Gen_b_MPID", &genBSt1MomPID );
+        fileTree.SetBranchAddress( "T_Gen_b_MPx", &genBSt1MomPx );
+        fileTree.SetBranchAddress( "T_Gen_b_MPy", &genBSt1MomPy );
+        fileTree.SetBranchAddress( "T_Gen_b_MPz", &genBSt1MomPz );
+        fileTree.SetBranchAddress( "T_Gen_b_MEnergy", &genBSt1MomEn );
+        fileTree.SetBranchAddress( "T_Gen_b_MSt", &genBSt1MomStatus );
+        
+        fileTree.SetBranchAddress( "T_Gen_Muon_PID", &genMuonSt1_pdgId );
+        fileTree.SetBranchAddress( "T_Gen_Muon_Px", &genMuonSt1Px );
+        fileTree.SetBranchAddress( "T_Gen_Muon_Py", &genMuonSt1Py );
+        fileTree.SetBranchAddress( "T_Gen_Muon_Pz", &genMuonSt1Pz );
+        fileTree.SetBranchAddress( "T_Gen_Muon_Energy", &genMuonSt1En );
+        fileTree.SetBranchAddress( "T_Gen_Muon_MPID", &genMuonSt1MomPID );
+        fileTree.SetBranchAddress( "T_Gen_Muon_MPx", &genMuonSt1MomPx );
+        fileTree.SetBranchAddress( "T_Gen_Muon_MPy", &genMuonSt1MomPy );
+        fileTree.SetBranchAddress( "T_Gen_Muon_MPz", &genMuonSt1MomPz );
+        fileTree.SetBranchAddress( "T_Gen_Muon_MEnergy", &genMuonSt1MomEn );
+        fileTree.SetBranchAddress( "T_Gen_Muon_MSt", &genMuonSt1MomStatus );
+        
+        fileTree.SetBranchAddress( "T_Gen_Elec_PID", &genElecSt1_pdgId );
+        fileTree.SetBranchAddress( "T_Gen_Elec_Px", &genElecSt1Px );
+        fileTree.SetBranchAddress( "T_Gen_Elec_Py", &genElecSt1Py );
+        fileTree.SetBranchAddress( "T_Gen_Elec_Pz", &genElecSt1Pz );
+        fileTree.SetBranchAddress( "T_Gen_Elec_Energy", &genElecSt1En );
+        fileTree.SetBranchAddress( "T_Gen_Elec_MPID", &genElecSt1MomPID );
+        fileTree.SetBranchAddress( "T_Gen_Elec_MPx", &genElecSt1MomPx );
+        fileTree.SetBranchAddress( "T_Gen_Elec_MPy", &genElecSt1MomPy );
+        fileTree.SetBranchAddress( "T_Gen_Elec_MPz", &genElecSt1MomPz );
+        fileTree.SetBranchAddress( "T_Gen_Elec_MEnergy", &genElecSt1MomEn );
+        fileTree.SetBranchAddress( "T_Gen_Elec_MSt", &genElecSt1MomStatus );
+        
+        //Signal stuff
+        fileTree.SetBranchAddress( "T_Gen_StopMass", &genStopMass );
+        fileTree.SetBranchAddress( "T_Gen_Chi0Mass", &genChi0Mass );
+        fileTree.SetBranchAddress( "T_Gen_CharginoMass", &genCharginoMass );
+        
+        //run information
+        fileTree.SetBranchAddress( "T_Event_RunNumber", &RunNum );
+        fileTree.SetBranchAddress( "T_Event_EventNumber", &EventNum );
+        fileTree.SetBranchAddress( "T_Event_LuminosityBlock", &LumiBlock );
+        
+        //event Rho variable (used for electron Isolation)        
+        fileTree.SetBranchAddress( "T_Event_RhoIso", &eventRhoIso );
+        
+        //Trigger information
+        fileTree.SetBranchAddress( "T_passTriggerDoubleMu", &passTrigDoubleMu );
+        fileTree.SetBranchAddress( "T_passTriggerDoubleEl", &passTrigDoubleEl );
+        fileTree.SetBranchAddress( "T_passTriggerElMu", &passTrigElMu );
     }
-    else {
-        fileTree.SetBranchAddress("T_Elec_Pt", &ElecPt);
-        fileTree.SetBranchAddress("T_Elec_Px", &ElecPx);
-        fileTree.SetBranchAddress("T_Elec_Py", &ElecPy);
-        fileTree.SetBranchAddress("T_Elec_Pz", &ElecPz);
-        fileTree.SetBranchAddress("T_Elec_Energy", &ElecE);
-        
-        fileTree.SetBranchAddress("T_Muon_Pt", &MuonPt);
-        fileTree.SetBranchAddress("T_Muon_Px", &MuonPx);
-        fileTree.SetBranchAddress("T_Muon_Py", &MuonPy);
-        fileTree.SetBranchAddress("T_Muon_Pz", &MuonPz);
-        fileTree.SetBranchAddress("T_Muon_Energy", &MuonE);                    
-    }    
-    fileTree.SetBranchAddress("T_Elec_Eta", &ElecEta);
-    fileTree.SetBranchAddress("T_Elec_Charge", &ElecCharge);    
-    fileTree.SetBranchAddress("T_Elec_chargedHadronIso", &ElecPFCharIso);
-    fileTree.SetBranchAddress("T_Elec_neutralHadronIso", &ElecPFNeutIso);
-    fileTree.SetBranchAddress("T_Elec_photonIso", &ElecPFPhotIso);
-    fileTree.SetBranchAddress("T_Elec_passConversionVeto", &passConvVeto);
-    fileTree.SetBranchAddress("T_Elec_isPF", &isPFElectron);
-    
-    
-    fileTree.SetBranchAddress("T_Muon_Eta", &MuonEta);
-    fileTree.SetBranchAddress("T_Muon_Charge", &MuonCharge);    
-    fileTree.SetBranchAddress("T_Muon_chargedHadronIsoR04", &MuonPFCharIso);
-    fileTree.SetBranchAddress("T_Muon_neutralHadronIsoR04", &MuonPFNeutIso);
-    fileTree.SetBranchAddress("T_Muon_photonIsoR04", &MuonPFPhotIso);
-    fileTree.SetBranchAddress("T_Muon_sumPUPtR04", &MuonSumPUPt);
-    fileTree.SetBranchAddress("T_Muon_IsGMPTMuons", &isGMPTMuons);
-    fileTree.SetBranchAddress("T_Muon_isPFMuon", &isPFMuon);
-    fileTree.SetBranchAddress("T_Muon_IPwrtAveBSInTrack", &MuonD0);
-    fileTree.SetBranchAddress("T_Muon_vz", &MuonVertZ);
-    
-    
-    fileTree.SetBranchAddress("T_JetAKCHS_Et", &JetEt);
-    fileTree.SetBranchAddress("T_JetAKCHS_Eta", &JetEta);  
-    fileTree.SetBranchAddress("T_JetAKCHS_Px", &JetPx);
-    fileTree.SetBranchAddress("T_JetAKCHS_Py", &JetPy);
-    fileTree.SetBranchAddress("T_JetAKCHS_Pz", &JetPz);
-    fileTree.SetBranchAddress("T_JetAKCHS_Energy", &JetE);
-    fileTree.SetBranchAddress("T_JetAKCHS_NeutHadEnergyFrac", &JetNHF);
-    fileTree.SetBranchAddress("T_JetAKCHS_NeutEmEnergyFrac", &JetNEF);
-    fileTree.SetBranchAddress("T_JetAKCHS_CharHadEnergyFrac", &JetCHF);
-    fileTree.SetBranchAddress("T_JetAKCHS_CharEmEnergyFrac", &JetCEF);
-    fileTree.SetBranchAddress("T_JetAKCHS_Tag_CombSVtx", &JetBTag);
-    fileTree.SetBranchAddress("T_JetAKCHS_nDaughters", &JetNDaug);
-    fileTree.SetBranchAddress("T_JetAKCHS_ChargedMultiplicity", &JetCharMult);
-    fileTree.SetBranchAddress("T_Vertex_z", &VertZ);
-    
-    fileTree.SetBranchAddress( "T_METPFTypeI_ET",     &MET );
-    fileTree.SetBranchAddress( "T_METPFTypeI_Phi", &MET_Phi );
-    fileTree.SetBranchAddress( "T_METPFTypeI_Sig",  &METSig );
-    
-    fileTree.SetBranchAddress( "T_EventF_EcalDeadCell", &filterECalDeadCell );
-    fileTree.SetBranchAddress( "T_EventF_logErrorTooManyClusters", &filterLogErrorTooManyClusters );
-    fileTree.SetBranchAddress( "T_EventF_trackingFailure", &filterTrackingFailure );
-    fileTree.SetBranchAddress( "T_EventF_hcalLaser", &filterHCalLaser );
-    fileTree.SetBranchAddress( "T_EventF_ecalLaserCorr", &filterECalLaserCorr );
-    fileTree.SetBranchAddress( "T_EventF_toomanystripclus", &filterTooManyStripClus );
-    fileTree.SetBranchAddress( "T_EventF_manystripclus", &filterManyStripClus );
-    fileTree.SetBranchAddress( "T_EventF_eeBadSc", &filterEEBadSC );
-    
-    //// Generator information
-    fileTree.SetBranchAddress( "T_METgen_ET", &genMET );
-    fileTree.SetBranchAddress( "T_METgen_Phi", &genMETPhi );
-    /// Status 3 particles
-    fileTree.SetBranchAddress( "T_Gen_tSt3_pdgId", &genTopSt3_pdgId );
-    fileTree.SetBranchAddress( "T_Gen_tSt3_firstMother", &genTopSt3_firstMom );
-    fileTree.SetBranchAddress( "T_Gen_tSt3_i", &genTopSt3_i  );
-    fileTree.SetBranchAddress( "T_Gen_tSt3_energy", &genTopSt3En );
-    fileTree.SetBranchAddress( "T_Gen_tSt3_pt", &genTopSt3Pt );
-    fileTree.SetBranchAddress( "T_Gen_tSt3_eta", &genTopSt3Eta );
-    fileTree.SetBranchAddress( "T_Gen_tSt3_phi", &genTopSt3Phi );
-    
-    fileTree.SetBranchAddress( "T_Gen_bSt3_pdgId", &genBSt3_pdgId );
-    fileTree.SetBranchAddress( "T_Gen_bSt3_firstMother", &genBSt3_firstMom );
-    fileTree.SetBranchAddress( "T_Gen_bSt3_i", &genBSt3_i  );
-    fileTree.SetBranchAddress( "T_Gen_bSt3_energy", &genBSt3En );
-    fileTree.SetBranchAddress( "T_Gen_bSt3_pt", &genBSt3Pt );
-    fileTree.SetBranchAddress( "T_Gen_bSt3_eta", &genBSt3Eta );
-    fileTree.SetBranchAddress( "T_Gen_bSt3_phi", &genBSt3Phi );
-    
-    fileTree.SetBranchAddress( "T_Gen_MuonSt3_pdgId", &genMuonSt3_pdgId );
-    fileTree.SetBranchAddress( "T_Gen_MuonSt3_firstMother", &genMuonSt3_firstMom );
-    fileTree.SetBranchAddress( "T_Gen_MuonSt3_i", &genMuonSt3_i  );
-    fileTree.SetBranchAddress( "T_Gen_MuonSt3_energy", &genMuonSt3En );
-    fileTree.SetBranchAddress( "T_Gen_MuonSt3_pt", &genMuonSt3Pt );
-    fileTree.SetBranchAddress( "T_Gen_MuonSt3_eta", &genMuonSt3Eta );
-    fileTree.SetBranchAddress( "T_Gen_MuonSt3_phi", &genMuonSt3Phi );
-    
-    fileTree.SetBranchAddress( "T_Gen_ElecSt3_pdgId", &genElecSt3_pdgId );
-    fileTree.SetBranchAddress( "T_Gen_ElecSt3_firstMother", &genElecSt3_firstMom );
-    fileTree.SetBranchAddress( "T_Gen_ElecSt3_i", &genElecSt3_i  );
-    fileTree.SetBranchAddress( "T_Gen_ElecSt3_energy", &genElecSt3En );
-    fileTree.SetBranchAddress( "T_Gen_ElecSt3_pt", &genElecSt3Pt );
-    fileTree.SetBranchAddress( "T_Gen_ElecSt3_eta", &genElecSt3Eta );
-    fileTree.SetBranchAddress( "T_Gen_ElecSt3_phi", &genElecSt3Phi );
-    
-    /// Status 1 particles (technically, b-quark is a status 2 -- intermediate particle)
-    fileTree.SetBranchAddress( "T_Gen_b_PID", &genBSt1_pdgId );
-    fileTree.SetBranchAddress( "T_Gen_b_Px", &genBSt1Px );
-    fileTree.SetBranchAddress( "T_Gen_b_Py", &genBSt1Py );
-    fileTree.SetBranchAddress( "T_Gen_b_Pz", &genBSt1Pz );
-    fileTree.SetBranchAddress( "T_Gen_b_Energy", &genBSt1En );
-    fileTree.SetBranchAddress( "T_Gen_b_MPID", &genBSt1MomPID );
-    fileTree.SetBranchAddress( "T_Gen_b_MPx", &genBSt1MomPx );
-    fileTree.SetBranchAddress( "T_Gen_b_MPy", &genBSt1MomPy );
-    fileTree.SetBranchAddress( "T_Gen_b_MPz", &genBSt1MomPz );
-    fileTree.SetBranchAddress( "T_Gen_b_MEnergy", &genBSt1MomEn );
-    fileTree.SetBranchAddress( "T_Gen_b_MSt", &genBSt1MomStatus );
-    
-    fileTree.SetBranchAddress( "T_Gen_Muon_PID", &genMuonSt1_pdgId );
-    fileTree.SetBranchAddress( "T_Gen_Muon_Px", &genMuonSt1Px );
-    fileTree.SetBranchAddress( "T_Gen_Muon_Py", &genMuonSt1Py );
-    fileTree.SetBranchAddress( "T_Gen_Muon_Pz", &genMuonSt1Pz );
-    fileTree.SetBranchAddress( "T_Gen_Muon_Energy", &genMuonSt1En );
-    fileTree.SetBranchAddress( "T_Gen_Muon_MPID", &genMuonSt1MomPID );
-    fileTree.SetBranchAddress( "T_Gen_Muon_MPx", &genMuonSt1MomPx );
-    fileTree.SetBranchAddress( "T_Gen_Muon_MPy", &genMuonSt1MomPy );
-    fileTree.SetBranchAddress( "T_Gen_Muon_MPz", &genMuonSt1MomPz );
-    fileTree.SetBranchAddress( "T_Gen_Muon_MEnergy", &genMuonSt1MomEn );
-    fileTree.SetBranchAddress( "T_Gen_Muon_MSt", &genMuonSt1MomStatus );
-    
-    fileTree.SetBranchAddress( "T_Gen_Elec_PID", &genElecSt1_pdgId );
-    fileTree.SetBranchAddress( "T_Gen_Elec_Px", &genElecSt1Px );
-    fileTree.SetBranchAddress( "T_Gen_Elec_Py", &genElecSt1Py );
-    fileTree.SetBranchAddress( "T_Gen_Elec_Pz", &genElecSt1Pz );
-    fileTree.SetBranchAddress( "T_Gen_Elec_Energy", &genElecSt1En );
-    fileTree.SetBranchAddress( "T_Gen_Elec_MPID", &genElecSt1MomPID );
-    fileTree.SetBranchAddress( "T_Gen_Elec_MPx", &genElecSt1MomPx );
-    fileTree.SetBranchAddress( "T_Gen_Elec_MPy", &genElecSt1MomPy );
-    fileTree.SetBranchAddress( "T_Gen_Elec_MPz", &genElecSt1MomPz );
-    fileTree.SetBranchAddress( "T_Gen_Elec_MEnergy", &genElecSt1MomEn );
-    fileTree.SetBranchAddress( "T_Gen_Elec_MSt", &genElecSt1MomStatus );
-    
-    //Signal stuff
-    fileTree.SetBranchAddress( "T_Gen_StopMass", &genStopMass );
-    fileTree.SetBranchAddress( "T_Gen_Chi0Mass", &genChi0Mass );
-    fileTree.SetBranchAddress( "T_Gen_CharginoMass", &genCharginoMass );
-    
-    //run information
-    fileTree.SetBranchAddress( "T_Event_RunNumber", &RunNum );
-    fileTree.SetBranchAddress( "T_Event_EventNumber", &EventNum );
-    fileTree.SetBranchAddress( "T_Event_LuminosityBlock", &LumiBlock );
-    
+    else if (whichNTupleType == 1) {
+        fileTree.SetBranchAddress("runNumber", &RunNum, &b_runNumber);
+        fileTree.SetBranchAddress("lumiBlock", &LumiBlock, &b_lumiBlock);
+        fileTree.SetBranchAddress("eventNumber", &EventNum, &b_eventNumber);
+        fileTree.SetBranchAddress("vertMulti", &nVtx, &b_vertMulti);
+        fileTree.SetBranchAddress("vertMultiTrue", &nVtxTrue, &b_vertMultiTrue);
+        fileTree.SetBranchAddress("lepPdgId", &lepPdgId, &b_lepPdgId );	
+        fileTree.SetBranchAddress("lepPfIso", &lepPFIso, &b_lepPFIso );	
+        fileTree.SetBranchAddress("jets", &jets, &b_jet );
+        fileTree.SetBranchAddress("leptons", &leptons, &b_lepton );
+        fileTree.SetBranchAddress("jetBTagCSV", &jetBTagCSV, &b_jetBTagCSV );
+        fileTree.SetBranchAddress("met", &met, &b_met );
+        fileTree.SetBranchAddress("weightGenerator", &GenWeight, &b_GenWeight);
+        if (fileTree.GetBranch("GenTop")) {
+            hasTopInfo = 1;
+            fileTree.SetBranchAddress("GenTop", &genTop, &b_GenTop );   
+        }
+        if (fileTree.GetBranch("GenAntiTop")) {
+            fileTree.SetBranchAddress("GenAntiTop", &genAntiTop, &b_GenAntiTop );   
+        }
+        if (fileTree.GetBranch("GenMET")) {
+            hasMETInfo = 1;
+            fileTree.SetBranchAddress("GenMET", &genMETVec, &b_genMET );   
+        }
+    }
     
     ///Out tree information
+    if (whichNTupleType == 0) {
+        outTree->Branch("TPassDoubleEl",  &passTrigDoubleEl);
+        outTree->Branch("TPassDoubleMu",  &passTrigDoubleMu);
+        outTree->Branch("TPassElMu",  &passTrigElMu);
+    }
     
-    outTree->Branch("TWeight",   &weight);
-    outTree->Branch("TChannel",  &Type);
-    outTree->Branch("TNPV",      &nVtx);
-    outTree->Branch("TRunNum",   &RunNum);
-    outTree->Branch("TEventNum", &EventNum);
-    outTree->Branch("TLumiBlock",&LumiBlock);
-    outTree->Branch("TMET",      &MET);
-    outTree->Branch("TMET_Phi",  &MET_Phi);
-    outTree->Branch("TMETSig",   &METSig);
+    outTree->Branch("TWeight",      &weight);
+    outTree->Branch("TChannel",     &Type);
+    outTree->Branch("TNPV",         &nVtx);
+    outTree->Branch("TNPV_True",    &nVtxTrue);
+    outTree->Branch("TRunNum",      &RunNum);
+    outTree->Branch("TEventNum",    &EventNum);
+    outTree->Branch("TLumiBlock",   &LumiBlock);
+    outTree->Branch("TMET",         &MET);
+    outTree->Branch("TMET_Phi",     &MET_Phi);
+    outTree->Branch("TMETSig",      &METSig);
     
-    outTree->Branch("TLep0Px",   &Lep0Px); 
-    outTree->Branch("TLep0Py",   &Lep0Py); 
-    outTree->Branch("TLep0Pz",   &Lep0Pz); 
-    outTree->Branch("TLep0E",    &Lep0E);
-    outTree->Branch("TLep0PdgId",&Lep0PDGID);
-    outTree->Branch("TLep1Px",   &Lep1Px); 
-    outTree->Branch("TLep1Py",   &Lep1Py); 
-    outTree->Branch("TLep1Pz",   &Lep1Pz); 
-    outTree->Branch("TLep1E",    &Lep1E);
-    outTree->Branch("TLep1PdgId",&Lep0PDGID);
+    outTree->Branch("TLep0Px",          &Lep0Px); 
+    outTree->Branch("TLep0Py",          &Lep0Py); 
+    outTree->Branch("TLep0Pz",          &Lep0Pz); 
+    outTree->Branch("TLep0E",           &Lep0E);
+    outTree->Branch("TLep0PdgId",       &Lep0PDGID);
+    outTree->Branch("TLep0RelPFIso",    &Lep0RelPFIso);
+    outTree->Branch("TLep1Px",          &Lep1Px); 
+    outTree->Branch("TLep1Py",          &Lep1Py); 
+    outTree->Branch("TLep1Pz",          &Lep1Pz); 
+    outTree->Branch("TLep1E",           &Lep1E);
+    outTree->Branch("TLep1PdgId",       &Lep1PDGID);
+    outTree->Branch("TLep1RelPFIso",    &Lep1RelPFIso);
+    
+    outTree->Branch("TNIsoElecs_pT20",       &NIsoElecs_pT20);
+    outTree->Branch("TNIsoMuons_pT20",       &NIsoMuons_pT20);
+    outTree->Branch("TNIsoPosits_pT20",      &NIsoPosits_pT20);
+    outTree->Branch("TNIsoMubars_pT20",      &NIsoMubars_pT20);
+    outTree->Branch("TNIsoElecs_pT10to20",       &NIsoElecs_pT10to20);
+    outTree->Branch("TNIsoMuons_pT10to20",       &NIsoMuons_pT10to20);
+    outTree->Branch("TNIsoPosits_pT10to20",      &NIsoPosits_pT10to20);
+    outTree->Branch("TNIsoMubars_pT10to20",      &NIsoMubars_pT10to20);
+    outTree->Branch("TNViableLepPairsPreMassCut",   &NViableLepPairsPreMassCut);
     
     outTree->Branch("TNJets",    &NJets); 
-    //    outTree->Branch("THT",     &Jet0Py); 
     outTree->Branch("TNJetsBtag",&NBtagJets); 
     
     outTree->Branch("HT",        &HT);
@@ -670,189 +817,318 @@ int main( int argc, const char* argv[] ) {
     outTree->Branch("TJet1Pz",   &Jet1Pz); 
     outTree->Branch("TJet1E",    &Jet1E);
     
-    outTree->Branch("TBtagJet0Px",   &BtagJet0Px); 
-    outTree->Branch("TBtagJet0Py",   &BtagJet0Py); 
-    outTree->Branch("TBtagJet0Pz",   &BtagJet0Pz); 
-    outTree->Branch("TBtagJet0E",    &BtagJet0E);
-    outTree->Branch("TBtagJet0Index",    &BtagJet0Index);    
-    outTree->Branch("TBtagJet1Px",   &BtagJet1Px); 
-    outTree->Branch("TBtagJet1Py",   &BtagJet1Py); 
-    outTree->Branch("TBtagJet1Pz",   &BtagJet1Pz); 
-    outTree->Branch("TBtagJet1E",    &BtagJet1E);
-    outTree->Branch("TBtagJet1Index",    &BtagJet1Index);
+    outTree->Branch("TBtagJet0Px",      &BtagJet0Px); 
+    outTree->Branch("TBtagJet0Py",      &BtagJet0Py); 
+    outTree->Branch("TBtagJet0Pz",      &BtagJet0Pz); 
+    outTree->Branch("TBtagJet0E",       &BtagJet0E);
+    outTree->Branch("TBtagJet0Index",   &BtagJet0Index);    
+    outTree->Branch("TBtagJet1Px",      &BtagJet1Px); 
+    outTree->Branch("TBtagJet1Py",      &BtagJet1Py); 
+    outTree->Branch("TBtagJet1Pz",      &BtagJet1Pz); 
+    outTree->Branch("TBtagJet1E",       &BtagJet1E);
+    outTree->Branch("TBtagJet1Index",   &BtagJet1Index);
     
     if (doSignal) {
-        outTree->Branch("TGenStopMass0", &genStopMass0);
-        outTree->Branch("TGenStopMass1", &genStopMass1);
-        outTree->Branch("TGenChi0Mass0", &genChi0Mass0);
-        outTree->Branch("TGenChi0Mass1", &genChi0Mass1);
+        outTree->Branch("TGenStopMass0",     &genStopMass0);
+        outTree->Branch("TGenStopMass1",     &genStopMass1);
+        outTree->Branch("TGenChi0Mass0",     &genChi0Mass0);
+        outTree->Branch("TGenChi0Mass1",     &genChi0Mass1);
         outTree->Branch("TGenCharginoMass0", &genCharginoMass0);
         outTree->Branch("TGenCharginoMass1", &genCharginoMass1);
     }
     
     if (!doData) {
-        outTree->Branch("TGenMET", &genMET);
-        outTree->Branch("TGenMETPhi", &genMETPhi);
+        outTree->Branch("TChannel_LepESUp",         &Type_LepESUp);
+        outTree->Branch("TChannel_LepESDown",       &Type_LepESDown);
+        
+        outTree->Branch("TDoEvent",                 &doEvent);
+        outTree->Branch("TDoEvent_LepESUp",         &doEvent_LepESUp);
+        outTree->Branch("TDoEvent_LepESDown",       &doEvent_LepESDown);
+        
+        outTree->Branch("TLep0Px_LepESUp",          &Lep0Px_LepESUp); 
+        outTree->Branch("TLep0Px_LepESDown",        &Lep0Px_LepESDown); 
+        outTree->Branch("TLep0Py_LepESUp",          &Lep0Py_LepESUp);
+        outTree->Branch("TLep0Py_LepESDown",        &Lep0Py_LepESDown);
+        outTree->Branch("TLep0Pz_LepESUp",          &Lep0Pz_LepESUp);
+        outTree->Branch("TLep0Pz_LepESDown",        &Lep0Pz_LepESDown); 
+        outTree->Branch("TLep0E_LepESUp",           &Lep0E_LepESUp);
+        outTree->Branch("TLep0E_LepESDown",         &Lep0E_LepESDown);
+        outTree->Branch("TLep0PdgId_LepESUp",       &Lep0PDGID_LepESUp);
+        outTree->Branch("TLep0PdgId_LepESDown",     &Lep0PDGID_LepESDown);
+        outTree->Branch("TLep0RelPFIso_LepESUp",    &Lep0RelPFIso_LepESUp);
+        outTree->Branch("TLep0RelPFIso_LepESDown",  &Lep0RelPFIso_LepESDown);
+        outTree->Branch("TLep1Px_LepESUp",          &Lep1Px_LepESUp);
+        outTree->Branch("TLep1Px_LepESDown",        &Lep1Px_LepESDown);
+        outTree->Branch("TLep1Py_LepESUp",          &Lep1Py_LepESUp);
+        outTree->Branch("TLep1Py_LepESDown",        &Lep1Py_LepESDown);
+        outTree->Branch("TLep1Pz_LepESUp",          &Lep1Pz_LepESUp);
+        outTree->Branch("TLep1Pz_LepESDown",        &Lep1Pz_LepESDown);
+        outTree->Branch("TLep1E_LepESUp",           &Lep1E_LepESUp);
+        outTree->Branch("TLep1E_LepESDown",         &Lep1E_LepESDown);
+        outTree->Branch("TLep1PdgId_LepESUp",       &Lep1PDGID_LepESUp);
+        outTree->Branch("TLep1PdgId_LepESDown",     &Lep1PDGID_LepESDown);
+        outTree->Branch("TLep1RelPFIso_LepESUp",    &Lep1RelPFIso_LepESUp);
+        outTree->Branch("TLep1RelPFIso_LepESDown",  &Lep1RelPFIso_LepESDown);
+        
+        outTree->Branch("TNIsoElecs_pT20_LepESUp",       &NIsoElecs_pT20_LepESUp);
+        outTree->Branch("TNIsoElecs_pT20_LepESDown",       &NIsoElecs_pT20_LepESDown);
+        outTree->Branch("TNIsoMuons_pT20_LepESUp",       &NIsoMuons_pT20_LepESUp);
+        outTree->Branch("TNIsoMuons_pT20_LepESDown",       &NIsoMuons_pT20_LepESDown);
+        outTree->Branch("TNIsoPosits_pT20_LepESUp",      &NIsoPosits_pT20_LepESUp);
+        outTree->Branch("TNIsoPosits_pT20_LepESDown",      &NIsoPosits_pT20_LepESDown);
+        outTree->Branch("TNIsoMubars_pT20_LepESUp",      &NIsoMubars_pT20_LepESUp);
+        outTree->Branch("TNIsoMubars_pT20_LepESDown",      &NIsoMubars_pT20_LepESDown);
+        outTree->Branch("TNIsoElecs_pT10to20_LepESUp",       &NIsoElecs_pT10to20_LepESUp);
+        outTree->Branch("TNIsoElecs_pT10to20_LepESDown",       &NIsoElecs_pT10to20_LepESDown);
+        outTree->Branch("TNIsoMuons_pT10to20_LepESUp",       &NIsoMuons_pT10to20_LepESUp);
+        outTree->Branch("TNIsoMuons_pT10to20_LepESDown",       &NIsoMuons_pT10to20_LepESDown);
+        outTree->Branch("TNIsoPosits_pT10to20_LepESUp",      &NIsoPosits_pT10to20_LepESUp);
+        outTree->Branch("TNIsoPosits_pT10to20_LepESDown",      &NIsoPosits_pT10to20_LepESDown);
+        outTree->Branch("TNIsoMubars_pT10to20_LepESUp",      &NIsoMubars_pT10to20_LepESUp);
+        outTree->Branch("TNIsoMubars_pT10to20_LepESDown",      &NIsoMubars_pT10to20_LepESDown);
+        outTree->Branch("TNViableLepPairsPreMassCut_LepESUp",     &NViableLepPairsPreMassCut_LepESUp);
+        outTree->Branch("TNViableLepPairsPreMassCut_LepESDown",   &NViableLepPairsPreMassCut_LepESDown);
+        
+        outTree->Branch("TNJets_JetESUp",       &NJets_JetESUp); 
+        outTree->Branch("TNJets_JetESDown",     &NJets_JetESDown); 
+        outTree->Branch("TNJetsBtag_JetESUp",   &NBtagJets_JetESUp);
+        outTree->Branch("TNJetsBtag_JetESDown", &NBtagJets_JetESDown);
+        outTree->Branch("HT_JetESUp",           &HT_JetESUp);
+        outTree->Branch("HT_JetESDown",         &HT_JetESDown);
+        
+        outTree->Branch("TJet0Px_JetESUp",      &Jet0Px_JetESUp); 
+        outTree->Branch("TJet0Px_JetESDown",    &Jet0Px_JetESDown); 
+        outTree->Branch("TJet0Py_JetESUp",      &Jet0Py_JetESUp); 
+        outTree->Branch("TJet0Py_JetESDown",    &Jet0Py_JetESDown); 
+        outTree->Branch("TJet0Pz_JetESUp",      &Jet0Pz_JetESUp); 
+        outTree->Branch("TJet0Pz_JetESDown",    &Jet0Pz_JetESDown); 
+        outTree->Branch("TJet0E_JetESUp",       &Jet0E_JetESUp);
+        outTree->Branch("TJet0E_JetESDown",     &Jet0E_JetESDown);
+        outTree->Branch("TJet1Px_JetESUp",      &Jet1Px_JetESUp); 
+        outTree->Branch("TJet1Px_JetESDown",    &Jet1Px_JetESDown); 
+        outTree->Branch("TJet1Py_JetESUp",      &Jet1Py_JetESUp); 
+        outTree->Branch("TJet1Py_JetESDown",    &Jet1Py_JetESDown); 
+        outTree->Branch("TJet1Pz_JetESUp",      &Jet1Pz_JetESUp); 
+        outTree->Branch("TJet1Pz_JetESDown",    &Jet1Pz_JetESDown); 
+        outTree->Branch("TJet1E_JetESUp",       &Jet1E_JetESUp);
+        outTree->Branch("TJet1E_JetESDown",     &Jet1E_JetESDown);
+        
+        outTree->Branch("TBtagJet0Px_JetESUp",      &BtagJet0Px_JetESUp); 
+        outTree->Branch("TBtagJet0Px_JetESDown",    &BtagJet0Px_JetESDown); 
+        outTree->Branch("TBtagJet0Py_JetESUp",      &BtagJet0Py_JetESUp); 
+        outTree->Branch("TBtagJet0Py_JetESDown",    &BtagJet0Py_JetESDown); 
+        outTree->Branch("TBtagJet0Pz_JetESUp",      &BtagJet0Pz_JetESUp); 
+        outTree->Branch("TBtagJet0Pz_JetESDown",    &BtagJet0Pz_JetESDown); 
+        outTree->Branch("TBtagJet0E_JetESUp",       &BtagJet0E_JetESUp);
+        outTree->Branch("TBtagJet0E_JetESDown",     &BtagJet0E_JetESDown);
+        outTree->Branch("TBtagJet0Index_JetESUp",   &BtagJet0Index_JetESUp);    
+        outTree->Branch("TBtagJet0Index_JetESDown", &BtagJet0Index_JetESDown);    
+        outTree->Branch("TBtagJet1Px_JetESUp",      &BtagJet1Px_JetESUp); 
+        outTree->Branch("TBtagJet1Px_JetESDown",    &BtagJet1Px_JetESDown); 
+        outTree->Branch("TBtagJet1Py_JetESUp",      &BtagJet1Py_JetESUp); 
+        outTree->Branch("TBtagJet1Py_JetESDown",    &BtagJet1Py_JetESDown); 
+        outTree->Branch("TBtagJet1Pz_JetESUp",      &BtagJet1Pz_JetESUp); 
+        outTree->Branch("TBtagJet1Pz_JetESDown",    &BtagJet1Pz_JetESDown); 
+        outTree->Branch("TBtagJet1E_JetESUp",       &BtagJet1E_JetESUp);
+        outTree->Branch("TBtagJet1E_JetESDown",     &BtagJet1E_JetESDown);
+        outTree->Branch("TBtagJet1Index_JetESUp",   &BtagJet1Index_JetESUp);
+        outTree->Branch("TBtagJet1Index_JetESDown", &BtagJet1Index_JetESDown);
+        
+        
+        outTree->Branch("TMET_LepESUp",         &MET_LepESUp);
+        outTree->Branch("TMET_LepESDown",       &MET_LepESDown);
+        outTree->Branch("TMET_JetESUp",         &MET_JetESUp);
+        outTree->Branch("TMET_JetESDown",       &MET_JetESDown);
+        outTree->Branch("TMET_Phi_LepESUp",     &MET_Phi_LepESUp);
+        outTree->Branch("TMET_Phi_LepESDown",   &MET_Phi_LepESDown);
+        outTree->Branch("TMET_Phi_JetESUp",     &MET_Phi_JetESUp);
+        outTree->Branch("TMET_Phi_JetESDown",   &MET_Phi_JetESDown);        
+        
+        outTree->Branch("TGenMET",              &genMET);
+        outTree->Branch("TGenMETPhi",           &genMETPhi);        
         
         /// Status 3 lead particle branches
-        outTree->Branch("TGenTopSt3_0_PDGID", &genTopSt3_0_PID );
-        outTree->Branch("TGenTopSt3_0_FirstMom", &genTopSt3_0_FirstMom );
-        outTree->Branch("TGenTopSt3_0_Index", &genTopSt3_0_Index );
-        outTree->Branch("TGenTopSt3_0_Energy", &genTopSt3_0_Energy );
-        outTree->Branch("TGenTopSt3_0_Pt", &genTopSt3_0_Pt );
-        outTree->Branch("TGenTopSt3_0_Eta", &genTopSt3_0_Eta );
-        outTree->Branch("TGenTopSt3_0_Phi", &genTopSt3_0_Phi );
+        outTree->Branch("TGenTopSt3_0_PDGID",       &genTopSt3_0_PID );
+        outTree->Branch("TGenTopSt3_0_FirstMom",    &genTopSt3_0_FirstMom );
+        outTree->Branch("TGenTopSt3_0_Index",       &genTopSt3_0_Index );
+        outTree->Branch("TGenTopSt3_0_Energy",      &genTopSt3_0_Energy );
+        outTree->Branch("TGenTopSt3_0_Pt",          &genTopSt3_0_Pt );
+        outTree->Branch("TGenTopSt3_0_Eta",         &genTopSt3_0_Eta );
+        outTree->Branch("TGenTopSt3_0_Phi",         &genTopSt3_0_Phi );
         
-        outTree->Branch("TGenBSt3_0_PDGID", &genBSt3_0_PID );
-        outTree->Branch("TGenBSt3_0_FirstMom", &genBSt3_0_FirstMom );
-        outTree->Branch("TGenBSt3_0_Index", &genBSt3_0_Index );
-        outTree->Branch("TGenBSt3_0_Energy", &genBSt3_0_Energy );
-        outTree->Branch("TGenBSt3_0_Pt", &genBSt3_0_Pt );
-        outTree->Branch("TGenBSt3_0_Eta", &genBSt3_0_Eta );
-        outTree->Branch("TGenBSt3_0_Phi", &genBSt3_0_Phi );
+        outTree->Branch("TGenBSt3_0_PDGID",         &genBSt3_0_PID );
+        outTree->Branch("TGenBSt3_0_FirstMom",      &genBSt3_0_FirstMom );
+        outTree->Branch("TGenBSt3_0_Index",         &genBSt3_0_Index );
+        outTree->Branch("TGenBSt3_0_Energy",        &genBSt3_0_Energy );
+        outTree->Branch("TGenBSt3_0_Pt",            &genBSt3_0_Pt );
+        outTree->Branch("TGenBSt3_0_Eta",           &genBSt3_0_Eta );
+        outTree->Branch("TGenBSt3_0_Phi",           &genBSt3_0_Phi );
         
-        outTree->Branch("TGenMuonSt3_0_PDGID", &genMuonSt3_0_PID );
-        outTree->Branch("TGenMuonSt3_0_FirstMom", &genMuonSt3_0_FirstMom );
-        outTree->Branch("TGenMuonSt3_0_Index", &genMuonSt3_0_Index );
-        outTree->Branch("TGenMuonSt3_0_Energy", &genMuonSt3_0_Energy );
-        outTree->Branch("TGenMuonSt3_0_Pt", &genMuonSt3_0_Pt );
-        outTree->Branch("TGenMuonSt3_0_Eta", &genMuonSt3_0_Eta );
-        outTree->Branch("TGenMuonSt3_0_Phi", &genMuonSt3_0_Phi );
+        outTree->Branch("TGenMuonSt3_0_PDGID",      &genMuonSt3_0_PID );
+        outTree->Branch("TGenMuonSt3_0_FirstMom",   &genMuonSt3_0_FirstMom );
+        outTree->Branch("TGenMuonSt3_0_Index",      &genMuonSt3_0_Index );
+        outTree->Branch("TGenMuonSt3_0_Energy",     &genMuonSt3_0_Energy );
+        outTree->Branch("TGenMuonSt3_0_Pt",         &genMuonSt3_0_Pt );
+        outTree->Branch("TGenMuonSt3_0_Eta",        &genMuonSt3_0_Eta );
+        outTree->Branch("TGenMuonSt3_0_Phi",        &genMuonSt3_0_Phi );
         
-        outTree->Branch("TGenElecSt3_0_PDGID", &genElecSt3_0_PID );
-        outTree->Branch("TGenElecSt3_0_FirstMom", &genElecSt3_0_FirstMom );
-        outTree->Branch("TGenElecSt3_0_Index", &genElecSt3_0_Index );
-        outTree->Branch("TGenElecSt3_0_Energy", &genElecSt3_0_Energy );
-        outTree->Branch("TGenElecSt3_0_Pt", &genElecSt3_0_Pt );
-        outTree->Branch("TGenElecSt3_0_Eta", &genElecSt3_0_Eta );
-        outTree->Branch("TGenElecSt3_0_Phi", &genElecSt3_0_Phi );
+        outTree->Branch("TGenElecSt3_0_PDGID",      &genElecSt3_0_PID );
+        outTree->Branch("TGenElecSt3_0_FirstMom",   &genElecSt3_0_FirstMom );
+        outTree->Branch("TGenElecSt3_0_Index",      &genElecSt3_0_Index );
+        outTree->Branch("TGenElecSt3_0_Energy",     &genElecSt3_0_Energy );
+        outTree->Branch("TGenElecSt3_0_Pt",         &genElecSt3_0_Pt );
+        outTree->Branch("TGenElecSt3_0_Eta",        &genElecSt3_0_Eta );
+        outTree->Branch("TGenElecSt3_0_Phi",        &genElecSt3_0_Phi );
         
         /// Status 3 sub-lead particle branches
-        outTree->Branch("TGenTopSt3_1_PDGID", &genTopSt3_1_PID );
-        outTree->Branch("TGenTopSt3_1_FirstMom", &genTopSt3_1_FirstMom );
-        outTree->Branch("TGenTopSt3_1_Index", &genTopSt3_1_Index );
-        outTree->Branch("TGenTopSt3_1_Energy", &genTopSt3_1_Energy );
-        outTree->Branch("TGenTopSt3_1_Pt", &genTopSt3_1_Pt );
-        outTree->Branch("TGenTopSt3_1_Eta", &genTopSt3_1_Eta );
-        outTree->Branch("TGenTopSt3_1_Phi", &genTopSt3_1_Phi );
+        outTree->Branch("TGenTopSt3_1_PDGID",       &genTopSt3_1_PID );
+        outTree->Branch("TGenTopSt3_1_FirstMom",    &genTopSt3_1_FirstMom );
+        outTree->Branch("TGenTopSt3_1_Index",       &genTopSt3_1_Index );
+        outTree->Branch("TGenTopSt3_1_Energy",      &genTopSt3_1_Energy );
+        outTree->Branch("TGenTopSt3_1_Pt",          &genTopSt3_1_Pt );
+        outTree->Branch("TGenTopSt3_1_Eta",         &genTopSt3_1_Eta );
+        outTree->Branch("TGenTopSt3_1_Phi",         &genTopSt3_1_Phi );
         
-        outTree->Branch("TGenBSt3_1_PDGID", &genBSt3_1_PID );
-        outTree->Branch("TGenBSt3_1_FirstMom", &genBSt3_1_FirstMom );
-        outTree->Branch("TGenBSt3_1_Index", &genBSt3_1_Index );
-        outTree->Branch("TGenBSt3_1_Energy", &genBSt3_1_Energy );
-        outTree->Branch("TGenBSt3_1_Pt", &genBSt3_1_Pt );
-        outTree->Branch("TGenBSt3_1_Eta", &genBSt3_1_Eta );
-        outTree->Branch("TGenBSt3_1_Phi", &genBSt3_1_Phi );
+        outTree->Branch("TGenBSt3_1_PDGID",         &genBSt3_1_PID );
+        outTree->Branch("TGenBSt3_1_FirstMom",      &genBSt3_1_FirstMom );
+        outTree->Branch("TGenBSt3_1_Index",         &genBSt3_1_Index );
+        outTree->Branch("TGenBSt3_1_Energy",        &genBSt3_1_Energy );
+        outTree->Branch("TGenBSt3_1_Pt",            &genBSt3_1_Pt );
+        outTree->Branch("TGenBSt3_1_Eta",           &genBSt3_1_Eta );
+        outTree->Branch("TGenBSt3_1_Phi",           &genBSt3_1_Phi );
         
-        outTree->Branch("TGenMuonSt3_1_PDGID", &genMuonSt3_1_PID );
-        outTree->Branch("TGenMuonSt3_1_FirstMom", &genMuonSt3_1_FirstMom );
-        outTree->Branch("TGenMuonSt3_1_Index", &genMuonSt3_1_Index );
-        outTree->Branch("TGenMuonSt3_1_Energy", &genMuonSt3_1_Energy );
-        outTree->Branch("TGenMuonSt3_1_Pt", &genMuonSt3_1_Pt );
-        outTree->Branch("TGenMuonSt3_1_Eta", &genMuonSt3_1_Eta );
-        outTree->Branch("TGenMuonSt3_1_Phi", &genMuonSt3_1_Phi );
+        outTree->Branch("TGenMuonSt3_1_PDGID",      &genMuonSt3_1_PID );
+        outTree->Branch("TGenMuonSt3_1_FirstMom",   &genMuonSt3_1_FirstMom );
+        outTree->Branch("TGenMuonSt3_1_Index",      &genMuonSt3_1_Index );
+        outTree->Branch("TGenMuonSt3_1_Energy",     &genMuonSt3_1_Energy );
+        outTree->Branch("TGenMuonSt3_1_Pt",         &genMuonSt3_1_Pt );
+        outTree->Branch("TGenMuonSt3_1_Eta",        &genMuonSt3_1_Eta );
+        outTree->Branch("TGenMuonSt3_1_Phi",        &genMuonSt3_1_Phi );
         
-        outTree->Branch("TGenElecSt3_1_PDGID", &genElecSt3_1_PID );
-        outTree->Branch("TGenElecSt3_1_FirstMom", &genElecSt3_1_FirstMom );
-        outTree->Branch("TGenElecSt3_1_Index", &genElecSt3_1_Index );
-        outTree->Branch("TGenElecSt3_1_Energy", &genElecSt3_1_Energy );
-        outTree->Branch("TGenElecSt3_1_Pt", &genElecSt3_1_Pt );
-        outTree->Branch("TGenElecSt3_1_Eta", &genElecSt3_1_Eta );
-        outTree->Branch("TGenElecSt3_1_Phi", &genElecSt3_1_Phi );
+        outTree->Branch("TGenElecSt3_1_PDGID",      &genElecSt3_1_PID );
+        outTree->Branch("TGenElecSt3_1_FirstMom",   &genElecSt3_1_FirstMom );
+        outTree->Branch("TGenElecSt3_1_Index",      &genElecSt3_1_Index );
+        outTree->Branch("TGenElecSt3_1_Energy",     &genElecSt3_1_Energy );
+        outTree->Branch("TGenElecSt3_1_Pt",         &genElecSt3_1_Pt );
+        outTree->Branch("TGenElecSt3_1_Eta",        &genElecSt3_1_Eta );
+        outTree->Branch("TGenElecSt3_1_Phi",        &genElecSt3_1_Phi );
         
         /// Status 1 lead particle branches
-        outTree->Branch( "T_Gen_BSt1_0_PID", &genBSt1_0_PID );
-        outTree->Branch( "T_Gen_BSt1_0_Px", &genBSt1_0_Px );
-        outTree->Branch( "T_Gen_BSt1_0_Py", &genBSt1_0_Py );
-        outTree->Branch( "T_Gen_BSt1_0_Pz", &genBSt1_0_Pz );
-        outTree->Branch( "T_Gen_BSt1_0_Energy", &genBSt1_0_Energy );
-        outTree->Branch( "T_Gen_BSt1_0_MomPID", &genBSt1_0_MomPID );
-        outTree->Branch( "T_Gen_BSt1_0_MomPx", &genBSt1_0_MomPx );
-        outTree->Branch( "T_Gen_BSt1_0_MomPy", &genBSt1_0_MomPy );
-        outTree->Branch( "T_Gen_BSt1_0_MomPz", &genBSt1_0_MomPz );
-        outTree->Branch( "T_Gen_BSt1_0_MomEnergy", &genBSt1_0_MomEnergy );
-        outTree->Branch( "T_Gen_BSt1_0_MomStat", &genBSt1_0_MomStatus );
+        outTree->Branch( "T_Gen_BSt1_0_PID",        &genBSt1_0_PID );
+        outTree->Branch( "T_Gen_BSt1_0_Px",         &genBSt1_0_Px );
+        outTree->Branch( "T_Gen_BSt1_0_Py",         &genBSt1_0_Py );
+        outTree->Branch( "T_Gen_BSt1_0_Pz",         &genBSt1_0_Pz );
+        outTree->Branch( "T_Gen_BSt1_0_Energy",     &genBSt1_0_Energy );
+        outTree->Branch( "T_Gen_BSt1_0_MomPID",     &genBSt1_0_MomPID );
+        outTree->Branch( "T_Gen_BSt1_0_MomPx",      &genBSt1_0_MomPx );
+        outTree->Branch( "T_Gen_BSt1_0_MomPy",      &genBSt1_0_MomPy );
+        outTree->Branch( "T_Gen_BSt1_0_MomPz",      &genBSt1_0_MomPz );
+        outTree->Branch( "T_Gen_BSt1_0_MomEnergy",  &genBSt1_0_MomEnergy );
+        outTree->Branch( "T_Gen_BSt1_0_MomStat",    &genBSt1_0_MomStatus );
         
-        outTree->Branch( "T_Gen_MuonSt1_0_PID", &genMuonSt1_0_PID );
-        outTree->Branch( "T_Gen_MuonSt1_0_Px", &genMuonSt1_0_Px );
-        outTree->Branch( "T_Gen_MuonSt1_0_Py", &genMuonSt1_0_Py );
-        outTree->Branch( "T_Gen_MuonSt1_0_Pz", &genMuonSt1_0_Pz );
-        outTree->Branch( "T_Gen_MuonSt1_0_Energy", &genMuonSt1_0_Energy );
-        outTree->Branch( "T_Gen_MuonSt1_0_MomPID", &genMuonSt1_0_MomPID );
-        outTree->Branch( "T_Gen_MuonSt1_0_MomPx", &genMuonSt1_0_MomPx );
-        outTree->Branch( "T_Gen_MuonSt1_0_MomPy", &genMuonSt1_0_MomPy );
-        outTree->Branch( "T_Gen_MuonSt1_0_MomPz", &genMuonSt1_0_MomPz );
-        outTree->Branch( "T_Gen_MuonSt1_0_MomEnergy", &genMuonSt1_0_MomEnergy );
-        outTree->Branch( "T_Gen_MuonSt1_0_MomStat", &genMuonSt1_0_MomStatus );
+        outTree->Branch( "T_Gen_MuonSt1_0_PID",         &genMuonSt1_0_PID );
+        outTree->Branch( "T_Gen_MuonSt1_0_Px",          &genMuonSt1_0_Px );
+        outTree->Branch( "T_Gen_MuonSt1_0_Py",          &genMuonSt1_0_Py );
+        outTree->Branch( "T_Gen_MuonSt1_0_Pz",          &genMuonSt1_0_Pz );
+        outTree->Branch( "T_Gen_MuonSt1_0_Energy",      &genMuonSt1_0_Energy );
+        outTree->Branch( "T_Gen_MuonSt1_0_MomPID",      &genMuonSt1_0_MomPID );
+        outTree->Branch( "T_Gen_MuonSt1_0_MomPx",       &genMuonSt1_0_MomPx );
+        outTree->Branch( "T_Gen_MuonSt1_0_MomPy",       &genMuonSt1_0_MomPy );
+        outTree->Branch( "T_Gen_MuonSt1_0_MomPz",       &genMuonSt1_0_MomPz );
+        outTree->Branch( "T_Gen_MuonSt1_0_MomEnergy",   &genMuonSt1_0_MomEnergy );
+        outTree->Branch( "T_Gen_MuonSt1_0_MomStat",     &genMuonSt1_0_MomStatus );
         
-        outTree->Branch( "T_Gen_ElecSt1_0_PID", &genElecSt1_0_PID );
-        outTree->Branch( "T_Gen_ElecSt1_0_Px", &genElecSt1_0_Px );
-        outTree->Branch( "T_Gen_ElecSt1_0_Py", &genElecSt1_0_Py );
-        outTree->Branch( "T_Gen_ElecSt1_0_Pz", &genElecSt1_0_Pz );
-        outTree->Branch( "T_Gen_ElecSt1_0_Energy", &genElecSt1_0_Energy );
-        outTree->Branch( "T_Gen_ElecSt1_0_MomPID", &genElecSt1_0_MomPID );
-        outTree->Branch( "T_Gen_ElecSt1_0_MomPx", &genElecSt1_0_MomPx );
-        outTree->Branch( "T_Gen_ElecSt1_0_MomPy", &genElecSt1_0_MomPy );
-        outTree->Branch( "T_Gen_ElecSt1_0_MomPz", &genElecSt1_0_MomPz );
-        outTree->Branch( "T_Gen_ElecSt1_0_MomEnergy", &genElecSt1_0_MomEnergy );
-        outTree->Branch( "T_Gen_ElecSt1_0_MomStat", &genElecSt1_0_MomStatus );  
+        outTree->Branch( "T_Gen_ElecSt1_0_PID",         &genElecSt1_0_PID );
+        outTree->Branch( "T_Gen_ElecSt1_0_Px",          &genElecSt1_0_Px );
+        outTree->Branch( "T_Gen_ElecSt1_0_Py",          &genElecSt1_0_Py );
+        outTree->Branch( "T_Gen_ElecSt1_0_Pz",          &genElecSt1_0_Pz );
+        outTree->Branch( "T_Gen_ElecSt1_0_Energy",      &genElecSt1_0_Energy );
+        outTree->Branch( "T_Gen_ElecSt1_0_MomPID",      &genElecSt1_0_MomPID );
+        outTree->Branch( "T_Gen_ElecSt1_0_MomPx",       &genElecSt1_0_MomPx );
+        outTree->Branch( "T_Gen_ElecSt1_0_MomPy",       &genElecSt1_0_MomPy );
+        outTree->Branch( "T_Gen_ElecSt1_0_MomPz",       &genElecSt1_0_MomPz );
+        outTree->Branch( "T_Gen_ElecSt1_0_MomEnergy",   &genElecSt1_0_MomEnergy );
+        outTree->Branch( "T_Gen_ElecSt1_0_MomStat",     &genElecSt1_0_MomStatus );  
         
         /// Status 1 sub-lead particle branches
-        outTree->Branch( "T_Gen_BSt1_1_PID", &genBSt1_1_PID );
-        outTree->Branch( "T_Gen_BSt1_1_Px", &genBSt1_1_Px );
-        outTree->Branch( "T_Gen_BSt1_1_Py", &genBSt1_1_Py );
-        outTree->Branch( "T_Gen_BSt1_1_Pz", &genBSt1_1_Pz );
-        outTree->Branch( "T_Gen_BSt1_1_Energy", &genBSt1_1_Energy );
-        outTree->Branch( "T_Gen_BSt1_1_MomPID", &genBSt1_1_MomPID );
-        outTree->Branch( "T_Gen_BSt1_1_MomPx", &genBSt1_1_MomPx );
-        outTree->Branch( "T_Gen_BSt1_1_MomPy", &genBSt1_1_MomPy );
-        outTree->Branch( "T_Gen_BSt1_1_MomPz", &genBSt1_1_MomPz );
-        outTree->Branch( "T_Gen_BSt1_1_MomEnergy", &genBSt1_1_MomEnergy );
-        outTree->Branch( "T_Gen_BSt1_1_MomStat", &genBSt1_1_MomStatus );
+        outTree->Branch( "T_Gen_BSt1_1_PID",            &genBSt1_1_PID );
+        outTree->Branch( "T_Gen_BSt1_1_Px",             &genBSt1_1_Px );
+        outTree->Branch( "T_Gen_BSt1_1_Py",             &genBSt1_1_Py );
+        outTree->Branch( "T_Gen_BSt1_1_Pz",             &genBSt1_1_Pz );
+        outTree->Branch( "T_Gen_BSt1_1_Energy",         &genBSt1_1_Energy );
+        outTree->Branch( "T_Gen_BSt1_1_MomPID",         &genBSt1_1_MomPID );
+        outTree->Branch( "T_Gen_BSt1_1_MomPx",          &genBSt1_1_MomPx );
+        outTree->Branch( "T_Gen_BSt1_1_MomPy",          &genBSt1_1_MomPy );
+        outTree->Branch( "T_Gen_BSt1_1_MomPz",          &genBSt1_1_MomPz );
+        outTree->Branch( "T_Gen_BSt1_1_MomEnergy",      &genBSt1_1_MomEnergy );
+        outTree->Branch( "T_Gen_BSt1_1_MomStat",        &genBSt1_1_MomStatus );
         
-        outTree->Branch( "T_Gen_MuonSt1_1_PID", &genMuonSt1_1_PID );
-        outTree->Branch( "T_Gen_MuonSt1_1_Px", &genMuonSt1_1_Px );
-        outTree->Branch( "T_Gen_MuonSt1_1_Py", &genMuonSt1_1_Py );
-        outTree->Branch( "T_Gen_MuonSt1_1_Pz", &genMuonSt1_1_Pz );
-        outTree->Branch( "T_Gen_MuonSt1_1_Energy", &genMuonSt1_1_Energy );
-        outTree->Branch( "T_Gen_MuonSt1_1_MomPID", &genMuonSt1_1_MomPID );
-        outTree->Branch( "T_Gen_MuonSt1_1_MomPx", &genMuonSt1_1_MomPx );
-        outTree->Branch( "T_Gen_MuonSt1_1_MomPy", &genMuonSt1_1_MomPy );
-        outTree->Branch( "T_Gen_MuonSt1_1_MomPz", &genMuonSt1_1_MomPz );
-        outTree->Branch( "T_Gen_MuonSt1_1_MomEnergy", &genMuonSt1_1_MomEnergy );
-        outTree->Branch( "T_Gen_MuonSt1_1_MomStat", &genMuonSt1_1_MomStatus );
+        outTree->Branch( "T_Gen_MuonSt1_1_PID",         &genMuonSt1_1_PID );
+        outTree->Branch( "T_Gen_MuonSt1_1_Px",          &genMuonSt1_1_Px );
+        outTree->Branch( "T_Gen_MuonSt1_1_Py",          &genMuonSt1_1_Py );
+        outTree->Branch( "T_Gen_MuonSt1_1_Pz",          &genMuonSt1_1_Pz );
+        outTree->Branch( "T_Gen_MuonSt1_1_Energy",      &genMuonSt1_1_Energy );
+        outTree->Branch( "T_Gen_MuonSt1_1_MomPID",      &genMuonSt1_1_MomPID );
+        outTree->Branch( "T_Gen_MuonSt1_1_MomPx",       &genMuonSt1_1_MomPx );
+        outTree->Branch( "T_Gen_MuonSt1_1_MomPy",       &genMuonSt1_1_MomPy );
+        outTree->Branch( "T_Gen_MuonSt1_1_MomPz",       &genMuonSt1_1_MomPz );
+        outTree->Branch( "T_Gen_MuonSt1_1_MomEnergy",   &genMuonSt1_1_MomEnergy );
+        outTree->Branch( "T_Gen_MuonSt1_1_MomStat",     &genMuonSt1_1_MomStatus );
         
-        outTree->Branch( "T_Gen_ElecSt1_1_PID", &genElecSt1_1_PID );
-        outTree->Branch( "T_Gen_ElecSt1_1_Px", &genElecSt1_1_Px );
-        outTree->Branch( "T_Gen_ElecSt1_1_Py", &genElecSt1_1_Py );
-        outTree->Branch( "T_Gen_ElecSt1_1_Pz", &genElecSt1_1_Pz );
-        outTree->Branch( "T_Gen_ElecSt1_1_Energy", &genElecSt1_1_Energy );
-        outTree->Branch( "T_Gen_ElecSt1_1_MomPID", &genElecSt1_1_MomPID );
-        outTree->Branch( "T_Gen_ElecSt1_1_MomPx", &genElecSt1_1_MomPx );
-        outTree->Branch( "T_Gen_ElecSt1_1_MomPy", &genElecSt1_1_MomPy );
-        outTree->Branch( "T_Gen_ElecSt1_1_MomPz", &genElecSt1_1_MomPz );
-        outTree->Branch( "T_Gen_ElecSt1_1_MomEnergy", &genElecSt1_1_MomEnergy );
-        outTree->Branch( "T_Gen_ElecSt1_1_MomStat", &genElecSt1_1_MomStatus );
+        outTree->Branch( "T_Gen_ElecSt1_1_PID",         &genElecSt1_1_PID );
+        outTree->Branch( "T_Gen_ElecSt1_1_Px",          &genElecSt1_1_Px );
+        outTree->Branch( "T_Gen_ElecSt1_1_Py",          &genElecSt1_1_Py );
+        outTree->Branch( "T_Gen_ElecSt1_1_Pz",          &genElecSt1_1_Pz );
+        outTree->Branch( "T_Gen_ElecSt1_1_Energy",      &genElecSt1_1_Energy );
+        outTree->Branch( "T_Gen_ElecSt1_1_MomPID",      &genElecSt1_1_MomPID );
+        outTree->Branch( "T_Gen_ElecSt1_1_MomPx",       &genElecSt1_1_MomPx );
+        outTree->Branch( "T_Gen_ElecSt1_1_MomPy",       &genElecSt1_1_MomPy );
+        outTree->Branch( "T_Gen_ElecSt1_1_MomPz",       &genElecSt1_1_MomPz );
+        outTree->Branch( "T_Gen_ElecSt1_1_MomEnergy",   &genElecSt1_1_MomEnergy );
+        outTree->Branch( "T_Gen_ElecSt1_1_MomStat",     &genElecSt1_1_MomStatus );
     }
     
     cout << "--- Processing: " << fileTree.GetEntries() << " events" << endl;
     h_eventCount->Fill(1);
     h_eventCount->SetEntries(fileTree.GetEntries());
-    outputFile->cd();
-    //    int lep0Index, lep1Index;
-    bool doEvent;
-    // cout << "test2 " << endl;
+    outputFile->cd();    
     
-    
-    vector<TLorentzVector> * Jets = new vector<TLorentzVector>;
-    vector<int> * BJetIndices = new vector<int>;
-    vector<int> * ElecIndices = new vector<int>;
-    vector<int> * MuonIndices = new vector<int>;
-    vector<int> * pdgId = new vector<int>;
-    vector<TLorentzVector> * Leptons = new vector<TLorentzVector>;
+    vector<TLorentzVector> * Jets, * Jets_wPtCut;   // Will contain all jets not overlapping with isolated electrons or muons
+    vector<int> * BJetIndices;
+//    vector<int> * ElecIndices;
+//    vector<int> * MuonIndices;
+//    int E0I, E1I, M0I, M1I;
+//    vector<int> * pdgId;
+//    vector<TLorentzVector> * Leptons;
+    vector<TLorentzVector> * vecIsoLeptons;
+    vector<float>          * vecLepPFRelIso; 
+    vector<int> * vecIsoLeptonPDGIDs;
+//    vector<TLorentzVector> * vecElectrons;          // Will contain all isolated electrons
+//    vector<TLorentzVector> * vecMuons;              // Will contain all isolated muons
     TLorentzVector patsyVec;
-    /////Iterate over events    
     
+    vector<TLorentzVector> * Jets_JetESUp, * Jets_JetESDown, * Jets_wPtCut_JetESUp, * Jets_wPtCut_JetESDown;
+    vector<int> * BJetIndices_JetESUp;
+    vector<int> * BJetIndices_JetESDown;
+//    vector<int> * ElecIndices_LepESUp;
+//    vector<int> * ElecIndices_LepESDown;
+//    vector<int> * MuonIndices_LepESUp;
+//    vector<int> * MuonIndices_LepESDown;
+//    int E0I_LepESUp, E1I_LepESUp, M0I_LepESUp, M1I_LepESUp;
+//    int E0I_LepESDown, E1I_LepESDown, M0I_LepESDown, M1I_LepESDown;
+//    vector<int> * pdgId_LepESUp;
+//    vector<int> * pdgId_LepESDown;
+    vector<TLorentzVector> * vecIsoLeptons_LepESUp, * vecIsoLeptons_LepESDown, * vecIsoLeptonsCentValMETPatsy_LepESUp, * vecIsoLeptonsCentValMETPatsy_LepESDown;
+    vector<int> * vecIsoLeptonPDGIDs_LepESUp;
+    vector<int> * vecIsoLeptonPDGIDs_LepESDown;
+    vector<float>          * vecLepPFRelIso_LepESUp;
+    vector<float>          * vecLepPFRelIso_LepESDown;
+//    vector<TLorentzVector> * Leptons_LepESUp;
+//    vector<TLorentzVector> * Leptons_LepESDown;
+//    vector<TLorentzVector> * vecElectrons_LepESUp;
+//    vector<TLorentzVector> * vecElectrons_LepESDown;
+//    vector<TLorentzVector> * vecMuons_LepESUp;
+//    vector<TLorentzVector> * vecMuons_LepESDown;
     
     float roundNum = 1.0;
     int roundMult = 1;
@@ -860,19 +1136,59 @@ int main( int argc, const char* argv[] ) {
         roundNum = (fInName.Contains("to") || fInName.Contains("FineBin")) ? 10.0 : 1.0;
         roundMult = (fInName.Contains("to") || fInName.Contains("FineBin")) ? 10 : 1;
     }
-    
+        /////Iterate over events  
     for (Long64_t ievt=0; ievt<fileTree.GetEntries();ievt++) {
         //    for (Long64_t ievt=0; ievt<100;ievt++) {
-        Leptons = new vector<TLorentzVector>;
-        pdgId = new vector<int>;
+//        Leptons = new vector<TLorentzVector>;
+        vecIsoLeptons = new vector<TLorentzVector>;
+        vecIsoLeptonPDGIDs = new vector<int>;
+        vecLepPFRelIso = new vector<float>;
+        vecLeptonInfo = new vector<int>;
+//        vecElectrons = new vector<TLorentzVector>;
+//        vecMuons = new vector<TLorentzVector>;
+//        pdgId = new vector<int>;
         Jets = new vector<TLorentzVector>;
+        Jets_wPtCut = new vector<TLorentzVector>;
         BJetIndices = new vector<int>;
-        ElecIndices = new vector<int>;
-        MuonIndices = new vector<int>;
-        //        lep0Index = 0; lep1Index = 1;
-        doEvent = true;
-        map<string, float> stringKeyToVar;
-        fileTree.GetEntry(ievt);
+//        ElecIndices = new vector<int>;
+//        MuonIndices = new vector<int>;
+        doEvent = true;        
+        if (!doData) {
+            Jets_JetESUp = new vector<TLorentzVector>;
+            Jets_wPtCut_JetESUp = new vector<TLorentzVector>;
+            Jets_JetESDown = new vector<TLorentzVector>;
+            Jets_wPtCut_JetESDown = new vector<TLorentzVector>;
+            vecIsoLeptonsCentValMETPatsy_LepESUp = new vector<TLorentzVector>;
+            vecIsoLeptonsCentValMETPatsy_LepESDown = new vector<TLorentzVector>;
+            vecIsoLeptons_LepESUp = new vector<TLorentzVector>;
+            vecIsoLeptons_LepESDown = new vector<TLorentzVector>;
+            vecIsoLeptonPDGIDs_LepESUp = new vector<int>;
+            vecIsoLeptonPDGIDs_LepESDown = new vector<int>;
+            vecLepPFRelIso_LepESUp = new vector<float>;
+            vecLepPFRelIso_LepESDown = new vector<float>;
+            vecLeptonInfo_LepESUp = new vector<int>;
+            vecLeptonInfo_LepESDown = new vector<int>;
+//            Leptons_LepESUp = new vector<TLorentzVector>;
+//            Leptons_LepESDown = new vector<TLorentzVector>;
+//            vecElectrons_LepESUp = new vector<TLorentzVector>;
+//            vecElectrons_LepESDown = new vector<TLorentzVector>;
+//            vecMuons_LepESUp = new vector<TLorentzVector>;
+//            vecMuons_LepESDown = new vector<TLorentzVector>;
+            BJetIndices_JetESUp = new vector<int>;
+            BJetIndices_JetESDown = new vector<int>;
+//            ElecIndices_LepESUp = new vector<int>;
+//            ElecIndices_LepESDown = new vector<int>;
+//            MuonIndices_LepESUp = new vector<int>;
+//            MuonIndices_LepESDown = new vector<int>;
+//            pdgId_LepESUp = new vector<int>;
+//            pdgId_LepESDown = new vector<int>;
+            doEvent_LepESUp = true;
+            doEvent_LepESDown = true;
+        }
+        
+
+//        map<string, float> stringKeyToVar;
+        fileTree.GetEntry(ievt);                                
         genStopMass0 = -1.;
         genStopMass1 = -1.;
         genChi0Mass0 = -1.;
@@ -902,245 +1218,384 @@ int main( int argc, const char* argv[] ) {
             cout << "in format EventNum:genStopMass:genChi0Mass:genCharginoMass ";
             cout << EventNum << ":" << genStopMass0 << ":" << genChi0Mass0 << ":" <<  genCharginoMass0 << endl;
         }
-        /// Status 3 lead particle info
-        genTopSt3_0_Energy = ((int) genTopSt3En->size() > 0) ? genTopSt3En->at(0) : -1;
-        genTopSt3_0_Pt = ((int) genTopSt3Pt->size() > 0) ? genTopSt3Pt->at(0) : -1;
-        genTopSt3_0_Eta = ((int) genTopSt3Eta->size() > 0) ? genTopSt3Eta->at(0) : -1;
-        genTopSt3_0_Phi = ((int) genTopSt3Phi->size() > 0) ? genTopSt3Phi->at(0) : -1;
-        genTopSt3_0_PID = ((int) genTopSt3_pdgId->size() > 0) ? genTopSt3_pdgId->at(0) : -1;
-        genTopSt3_0_Index = ((int) genTopSt3_i->size() > 0) ? genTopSt3_i->at(0) : -1;
-        genTopSt3_0_FirstMom = ((int) genTopSt3_firstMom->size() > 0) ? genTopSt3_firstMom->at(0) : -1;
+
         
-        genBSt3_0_Energy = ((int) genBSt3En->size() > 0) ? genBSt3En->at(0) : -1;
-        genBSt3_0_Pt = ((int) genBSt3Pt->size() > 0) ? genBSt3Pt->at(0) : -1;
-        genBSt3_0_Eta = ((int) genBSt3Eta->size() > 0) ? genBSt3Eta->at(0) : -1;
-        genBSt3_0_Phi = ((int) genBSt3Phi->size() > 0) ? genBSt3Phi->at(0) : -1;
-        genBSt3_0_PID = ((int) genBSt3_pdgId->size() > 0) ? genBSt3_pdgId->at(0) : -1;
-        genBSt3_0_Index = ((int) genBSt3_i->size() > 0) ? genBSt3_i->at(0) : -1;
-        genBSt3_0_FirstMom = ((int) genBSt3_firstMom->size() > 0) ? genBSt3_firstMom->at(0) : -1;
-        
-        genMuonSt3_0_Energy = ((int) genMuonSt3En->size() > 0) ? genMuonSt3En->at(0) : -1;
-        genMuonSt3_0_Pt = ((int) genMuonSt3Pt->size() > 0) ? genMuonSt3Pt->at(0) : -1;
-        genMuonSt3_0_Eta = ((int) genMuonSt3Eta->size() > 0) ? genMuonSt3Eta->at(0) : -1;
-        genMuonSt3_0_Phi = ((int) genMuonSt3Phi->size() > 0) ? genMuonSt3Phi->at(0) : -1;
-        genMuonSt3_0_PID = ((int) genMuonSt3_pdgId->size() > 0) ? genMuonSt3_pdgId->at(0) : -1;
-        genMuonSt3_0_Index = ((int) genMuonSt3_i->size() > 0) ? genMuonSt3_i->at(0) : -1;
-        genMuonSt3_0_FirstMom = ((int) genMuonSt3_firstMom->size() > 0) ? genMuonSt3_firstMom->at(0) : -1;
-        
-        genElecSt3_0_Energy = ((int) genElecSt3En->size() > 0) ? genElecSt3En->at(0) : -1;
-        genElecSt3_0_Pt = ((int) genElecSt3Pt->size() > 0) ? genElecSt3Pt->at(0) : -1;
-        genElecSt3_0_Eta = ((int) genElecSt3Eta->size() > 0) ? genElecSt3Eta->at(0) : -1;
-        genElecSt3_0_Phi = ((int) genElecSt3Phi->size() > 0) ? genElecSt3Phi->at(0) : -1;
-        genElecSt3_0_PID = ((int) genElecSt3_pdgId->size() > 0) ? genElecSt3_pdgId->at(0) : -1;
-        genElecSt3_0_Index = ((int) genElecSt3_i->size() > 0) ? genElecSt3_i->at(0) : -1;
-        genElecSt3_0_FirstMom = ((int) genElecSt3_firstMom->size() > 0) ? genElecSt3_firstMom->at(0) : -1;
-        
-        /// Status 3 sub-lead particle info
-        genTopSt3_1_Energy = ((int) genTopSt3En->size() > 1) ? genTopSt3En->at(1) : -1;
-        genTopSt3_1_Pt = ((int) genTopSt3Pt->size() > 1) ? genTopSt3Pt->at(1) : -1;
-        genTopSt3_1_Eta = ((int) genTopSt3Eta->size() > 1) ? genTopSt3Eta->at(1) : -1;
-        genTopSt3_1_Phi = ((int) genTopSt3Phi->size() > 1) ? genTopSt3Phi->at(1) : -1;
-        genTopSt3_1_PID = ((int) genTopSt3_pdgId->size() > 1) ? genTopSt3_pdgId->at(1) : -1;
-        genTopSt3_1_Index = ((int) genTopSt3_i->size() > 1) ? genTopSt3_i->at(1) : -1;
-        genTopSt3_1_FirstMom = ((int) genTopSt3_firstMom->size() > 1) ? genTopSt3_firstMom->at(1) : -1;
-        
-        genBSt3_1_Energy = ((int) genBSt3En->size() > 1) ? genBSt3En->at(1) : -1;
-        genBSt3_1_Pt = ((int) genBSt3Pt->size() > 1) ? genBSt3Pt->at(1) : -1;
-        genBSt3_1_Eta = ((int) genBSt3Eta->size() > 1) ? genBSt3Eta->at(1) : -1;
-        genBSt3_1_Phi = ((int) genBSt3Phi->size() > 1) ? genBSt3Phi->at(1) : -1;
-        genBSt3_1_PID = ((int) genBSt3_pdgId->size() > 1) ? genBSt3_pdgId->at(1) : -1;
-        genBSt3_1_Index = ((int) genBSt3_i->size() > 1) ? genBSt3_i->at(1) : -1;
-        genBSt3_1_FirstMom = ((int) genBSt3_firstMom->size() > 1) ? genBSt3_firstMom->at(1) : -1;
-        
-        genMuonSt3_1_Energy = ((int) genMuonSt3En->size() > 1) ? genMuonSt3En->at(1) : -1;
-        genMuonSt3_1_Pt = ((int) genMuonSt3Pt->size() > 1) ? genMuonSt3Pt->at(1) : -1;
-        genMuonSt3_1_Eta = ((int) genMuonSt3Eta->size() > 1) ? genMuonSt3Eta->at(1) : -1;
-        genMuonSt3_1_Phi = ((int) genMuonSt3Phi->size() > 1) ? genMuonSt3Phi->at(1) : -1;
-        genMuonSt3_1_PID = ((int) genMuonSt3_pdgId->size() > 1) ? genMuonSt3_pdgId->at(1) : -1;
-        genMuonSt3_1_Index = ((int) genMuonSt3_i->size() > 1) ? genMuonSt3_i->at(1) : -1;
-        genMuonSt3_1_FirstMom = ((int) genMuonSt3_firstMom->size() > 1) ? genMuonSt3_firstMom->at(1) : -1;
-        
-        genElecSt3_1_Energy = ((int) genElecSt3En->size() > 1) ? genElecSt3En->at(1) : -1;
-        genElecSt3_1_Pt = ((int) genElecSt3Pt->size() > 1) ? genElecSt3Pt->at(1) : -1;
-        genElecSt3_1_Eta = ((int) genElecSt3Eta->size() > 1) ? genElecSt3Eta->at(1) : -1;
-        genElecSt3_1_Phi = ((int) genElecSt3Phi->size() > 1) ? genElecSt3Phi->at(1) : -1;
-        genElecSt3_1_PID = ((int) genElecSt3_pdgId->size() > 1) ? genElecSt3_pdgId->at(1) : -1;
-        genElecSt3_1_Index = ((int) genElecSt3_i->size() > 1) ? genElecSt3_i->at(1) : -1;
-        genElecSt3_1_FirstMom = ((int) genElecSt3_firstMom->size() > 1) ? genElecSt3_firstMom->at(1) : -1;
-        
-        /// Status 1 lead-particle info
-        genBSt1_0_Energy = ((int) genBSt1En->size() > 0) ? genBSt1En->at(0) : -1;
-        genBSt1_0_MomEnergy = ((int) genBSt1MomEn->size() > 0) ? genBSt1MomEn->at(0) : -1;
-        genBSt1_0_Px = ((int) genBSt1Px->size() > 0) ? genBSt1Px->at(0) : -1;
-        genBSt1_0_MomPx = ((int) genBSt1MomPx->size() > 0) ? genBSt1MomPx->at(0) : -1;
-        genBSt1_0_Py = ((int) genBSt1Py->size() > 0) ? genBSt1Py->at(0) : -1;
-        genBSt1_0_MomPy = ((int) genBSt1MomPy->size() > 0) ? genBSt1MomPy->at(0) : -1;
-        genBSt1_0_Pz = ((int) genBSt1Pz->size() > 0) ? genBSt1Pz->at(0) : -1;
-        genBSt1_0_MomPz = ((int) genBSt1MomPz->size() > 0) ? genBSt1MomPz->at(0) : -1;
-        genBSt1_0_PID = ((int) genBSt1_pdgId->size() > 0) ? genBSt1_pdgId->at(0) : -1;
-        genBSt1_0_MomPID = ((int) genBSt1MomPID->size() > 0) ? genBSt1MomPID->at(0) : -1;
-        genBSt1_0_MomStatus = ((int) genBSt1MomStatus->size() > 0) ? genBSt1MomStatus->at(0) : -1;
-        
-        genMuonSt1_0_Energy = ((int) genMuonSt1En->size() > 0) ? genMuonSt1En->at(0) : -1;
-        genMuonSt1_0_MomEnergy = ((int) genMuonSt1MomEn->size() > 0) ? genMuonSt1MomEn->at(0) : -1;
-        genMuonSt1_0_Px = ((int) genMuonSt1Px->size() > 0) ? genMuonSt1Px->at(0) : -1;
-        genMuonSt1_0_MomPx = ((int) genMuonSt1MomPx->size() > 0) ? genMuonSt1MomPx->at(0) : -1;
-        genMuonSt1_0_Py = ((int) genMuonSt1Py->size() > 0) ? genMuonSt1Py->at(0) : -1;
-        genMuonSt1_0_MomPy = ((int) genMuonSt1MomPy->size() > 0) ? genMuonSt1MomPy->at(0) : -1;
-        genMuonSt1_0_Pz = ((int) genMuonSt1Pz->size() > 0) ? genMuonSt1Pz->at(0) : -1;
-        genMuonSt1_0_MomPz = ((int) genMuonSt1MomPz->size() > 0) ? genMuonSt1MomPz->at(0) : -1;
-        genMuonSt1_0_PID = ((int) genMuonSt1_pdgId->size() > 0) ? genMuonSt1_pdgId->at(0) : -1;
-        genMuonSt1_0_MomPID = ((int) genMuonSt1MomPID->size() > 0) ? genMuonSt1MomPID->at(0) : -1;
-        genMuonSt1_0_MomStatus = ((int) genMuonSt1MomStatus->size() > 0) ? genMuonSt1MomStatus->at(0) : -1;
-        
-        genElecSt1_0_Energy = ((int) genElecSt1En->size() > 0) ? genElecSt1En->at(0) : -1;
-        genElecSt1_0_MomEnergy = ((int) genElecSt1MomEn->size() > 0) ? genElecSt1MomEn->at(0) : -1;
-        genElecSt1_0_Px = ((int) genElecSt1Px->size() > 0) ? genElecSt1Px->at(0) : -1;
-        genElecSt1_0_MomPx = ((int) genElecSt1MomPx->size() > 0) ? genElecSt1MomPx->at(0) : -1;
-        genElecSt1_0_Py = ((int) genElecSt1Py->size() > 0) ? genElecSt1Py->at(0) : -1;
-        genElecSt1_0_MomPy = ((int) genElecSt1MomPy->size() > 0) ? genElecSt1MomPy->at(0) : -1;
-        genElecSt1_0_Pz = ((int) genElecSt1Pz->size() > 0) ? genElecSt1Pz->at(0) : -1;
-        genElecSt1_0_MomPz = ((int) genElecSt1MomPz->size() > 0) ? genElecSt1MomPz->at(0) : -1;
-        genElecSt1_0_PID = ((int) genElecSt1_pdgId->size() > 0) ? genElecSt1_pdgId->at(0) : -1;
-        genElecSt1_0_MomPID = ((int) genElecSt1MomPID->size() > 0) ? genElecSt1MomPID->at(0) : -1;
-        genElecSt1_0_MomStatus = ((int) genElecSt1MomStatus->size() > 0) ? genElecSt1MomStatus->at(0) : -1; 
-        
-        /// Status 1 sub-lead-particle info
-        genBSt1_1_Energy = ((int) genBSt1En->size() > 1) ? genBSt1En->at(1) : -1;
-        genBSt1_1_MomEnergy = ((int) genBSt1MomEn->size() > 1) ? genBSt1MomEn->at(1) : -1;
-        genBSt1_1_Px = ((int) genBSt1Px->size() > 1) ? genBSt1Px->at(1) : -1;
-        genBSt1_1_MomPx = ((int) genBSt1MomPx->size() > 1) ? genBSt1MomPx->at(1) : -1;
-        genBSt1_1_Py = ((int) genBSt1Py->size() > 1) ? genBSt1Py->at(1) : -1;
-        genBSt1_1_MomPy = ((int) genBSt1MomPy->size() > 1) ? genBSt1MomPy->at(1) : -1;
-        genBSt1_1_Pz = ((int) genBSt1Pz->size() > 1) ? genBSt1Pz->at(1) : -1;
-        genBSt1_1_MomPz = ((int) genBSt1MomPz->size() > 1) ? genBSt1MomPz->at(1) : -1;
-        genBSt1_1_PID = ((int) genBSt1_pdgId->size() > 1) ? genBSt1_pdgId->at(1) : -1;
-        genBSt1_1_MomPID = ((int) genBSt1MomPID->size() > 1) ? genBSt1MomPID->at(1) : -1;
-        genBSt1_1_MomStatus = ((int) genBSt1MomStatus->size() > 1) ? genBSt1MomStatus->at(1) : -1;
-        
-        genMuonSt1_1_Energy = ((int) genMuonSt1En->size() > 1) ? genMuonSt1En->at(1) : -1;
-        genMuonSt1_1_MomEnergy = ((int) genMuonSt1MomEn->size() > 1) ? genMuonSt1MomEn->at(1) : -1;
-        genMuonSt1_1_Px = ((int) genMuonSt1Px->size() > 1) ? genMuonSt1Px->at(1) : -1;
-        genMuonSt1_1_MomPx = ((int) genMuonSt1MomPx->size() > 1) ? genMuonSt1MomPx->at(1) : -1;
-        genMuonSt1_1_Py = ((int) genMuonSt1Py->size() > 1) ? genMuonSt1Py->at(1) : -1;
-        genMuonSt1_1_MomPy = ((int) genMuonSt1MomPy->size() > 1) ? genMuonSt1MomPy->at(1) : -1;
-        genMuonSt1_1_Pz = ((int) genMuonSt1Pz->size() > 1) ? genMuonSt1Pz->at(1) : -1;
-        genMuonSt1_1_MomPz = ((int) genMuonSt1MomPz->size() > 1) ? genMuonSt1MomPz->at(1) : -1;
-        genMuonSt1_1_PID = ((int) genMuonSt1_pdgId->size() > 1) ? genMuonSt1_pdgId->at(1) : -1;
-        genMuonSt1_1_MomPID = ((int) genMuonSt1MomPID->size() > 1) ? genMuonSt1MomPID->at(1) : -1;
-        genMuonSt1_1_MomStatus = ((int) genMuonSt1MomStatus->size() > 1) ? genMuonSt1MomStatus->at(1) : -1;
-        
-        genElecSt1_1_Energy = ((int) genElecSt1En->size() > 1) ? genElecSt1En->at(1) : -1;
-        genElecSt1_1_MomEnergy = ((int) genElecSt1MomEn->size() > 1) ? genElecSt1MomEn->at(1) : -1;
-        genElecSt1_1_Px = ((int) genElecSt1Px->size() > 1) ? genElecSt1Px->at(1) : -1;
-        genElecSt1_1_MomPx = ((int) genElecSt1MomPx->size() > 1) ? genElecSt1MomPx->at(1) : -1;
-        genElecSt1_1_Py = ((int) genElecSt1Py->size() > 1) ? genElecSt1Py->at(1) : -1;
-        genElecSt1_1_MomPy = ((int) genElecSt1MomPy->size() > 1) ? genElecSt1MomPy->at(1) : -1;
-        genElecSt1_1_Pz = ((int) genElecSt1Pz->size() > 1) ? genElecSt1Pz->at(1) : -1;
-        genElecSt1_1_MomPz = ((int) genElecSt1MomPz->size() > 1) ? genElecSt1MomPz->at(1) : -1;
-        genElecSt1_1_PID = ((int) genElecSt1_pdgId->size() > 1) ? genElecSt1_pdgId->at(1) : -1;
-        genElecSt1_1_MomPID = ((int) genElecSt1MomPID->size() > 1) ? genElecSt1MomPID->at(1) : -1;
-        genElecSt1_1_MomStatus = ((int) genElecSt1MomStatus->size() > 1) ? genElecSt1MomStatus->at(1) : -1;
-        
-        weight = 1.;
-        float preNVtxRWweight = 1;  
-        
-        if (doData) {
-            regularMETFilterVec = new vector<bool>;
-            regularMETFilterVec->push_back(filterECalDeadCell);
-            regularMETFilterVec->push_back(filterTrackingFailure);
-            regularMETFilterVec->push_back(filterHCalLaser);
-            regularMETFilterVec->push_back(filterECalLaserCorr);
-            regularMETFilterVec->push_back(filterEEBadSC);
+        if (whichNTupleType == 0) {
+            weight = 1.;
             
-            oppositeMETFilterVec = new vector<bool>;
-            oppositeMETFilterVec->push_back(filterLogErrorTooManyClusters);
-            oppositeMETFilterVec->push_back(filterTooManyStripClus);
-            oppositeMETFilterVec->push_back(filterManyStripClus);
-            doEvent = FilterMET(regularMETFilterVec, oppositeMETFilterVec);
-        } 
+            /// Status 3 lead particle info
+            genTopSt3_0_Energy = ((int) genTopSt3En->size() > 0) ? genTopSt3En->at(0) : -1;
+            genTopSt3_0_Pt = ((int) genTopSt3Pt->size() > 0) ? genTopSt3Pt->at(0) : -1;
+            genTopSt3_0_Eta = ((int) genTopSt3Eta->size() > 0) ? genTopSt3Eta->at(0) : -1;
+            genTopSt3_0_Phi = ((int) genTopSt3Phi->size() > 0) ? genTopSt3Phi->at(0) : -1;
+            genTopSt3_0_PID = ((int) genTopSt3_pdgId->size() > 0) ? genTopSt3_pdgId->at(0) : -1;
+            genTopSt3_0_Index = ((int) genTopSt3_i->size() > 0) ? genTopSt3_i->at(0) : -1;
+            genTopSt3_0_FirstMom = ((int) genTopSt3_firstMom->size() > 0) ? genTopSt3_firstMom->at(0) : -1;
+            
+            genBSt3_0_Energy = ((int) genBSt3En->size() > 0) ? genBSt3En->at(0) : -1;
+            genBSt3_0_Pt = ((int) genBSt3Pt->size() > 0) ? genBSt3Pt->at(0) : -1;
+            genBSt3_0_Eta = ((int) genBSt3Eta->size() > 0) ? genBSt3Eta->at(0) : -1;
+            genBSt3_0_Phi = ((int) genBSt3Phi->size() > 0) ? genBSt3Phi->at(0) : -1;
+            genBSt3_0_PID = ((int) genBSt3_pdgId->size() > 0) ? genBSt3_pdgId->at(0) : -1;
+            genBSt3_0_Index = ((int) genBSt3_i->size() > 0) ? genBSt3_i->at(0) : -1;
+            genBSt3_0_FirstMom = ((int) genBSt3_firstMom->size() > 0) ? genBSt3_firstMom->at(0) : -1;
+            
+            genMuonSt3_0_Energy = ((int) genMuonSt3En->size() > 0) ? genMuonSt3En->at(0) : -1;
+            genMuonSt3_0_Pt = ((int) genMuonSt3Pt->size() > 0) ? genMuonSt3Pt->at(0) : -1;
+            genMuonSt3_0_Eta = ((int) genMuonSt3Eta->size() > 0) ? genMuonSt3Eta->at(0) : -1;
+            genMuonSt3_0_Phi = ((int) genMuonSt3Phi->size() > 0) ? genMuonSt3Phi->at(0) : -1;
+            genMuonSt3_0_PID = ((int) genMuonSt3_pdgId->size() > 0) ? genMuonSt3_pdgId->at(0) : -1;
+            genMuonSt3_0_Index = ((int) genMuonSt3_i->size() > 0) ? genMuonSt3_i->at(0) : -1;
+            genMuonSt3_0_FirstMom = ((int) genMuonSt3_firstMom->size() > 0) ? genMuonSt3_firstMom->at(0) : -1;
+            
+            genElecSt3_0_Energy = ((int) genElecSt3En->size() > 0) ? genElecSt3En->at(0) : -1;
+            genElecSt3_0_Pt = ((int) genElecSt3Pt->size() > 0) ? genElecSt3Pt->at(0) : -1;
+            genElecSt3_0_Eta = ((int) genElecSt3Eta->size() > 0) ? genElecSt3Eta->at(0) : -1;
+            genElecSt3_0_Phi = ((int) genElecSt3Phi->size() > 0) ? genElecSt3Phi->at(0) : -1;
+            genElecSt3_0_PID = ((int) genElecSt3_pdgId->size() > 0) ? genElecSt3_pdgId->at(0) : -1;
+            genElecSt3_0_Index = ((int) genElecSt3_i->size() > 0) ? genElecSt3_i->at(0) : -1;
+            genElecSt3_0_FirstMom = ((int) genElecSt3_firstMom->size() > 0) ? genElecSt3_firstMom->at(0) : -1;
+            
+            /// Status 3 sub-lead particle info
+            genTopSt3_1_Energy = ((int) genTopSt3En->size() > 1) ? genTopSt3En->at(1) : -1;
+            genTopSt3_1_Pt = ((int) genTopSt3Pt->size() > 1) ? genTopSt3Pt->at(1) : -1;
+            genTopSt3_1_Eta = ((int) genTopSt3Eta->size() > 1) ? genTopSt3Eta->at(1) : -1;
+            genTopSt3_1_Phi = ((int) genTopSt3Phi->size() > 1) ? genTopSt3Phi->at(1) : -1;
+            genTopSt3_1_PID = ((int) genTopSt3_pdgId->size() > 1) ? genTopSt3_pdgId->at(1) : -1;
+            genTopSt3_1_Index = ((int) genTopSt3_i->size() > 1) ? genTopSt3_i->at(1) : -1;
+            genTopSt3_1_FirstMom = ((int) genTopSt3_firstMom->size() > 1) ? genTopSt3_firstMom->at(1) : -1;
+            
+            genBSt3_1_Energy = ((int) genBSt3En->size() > 1) ? genBSt3En->at(1) : -1;
+            genBSt3_1_Pt = ((int) genBSt3Pt->size() > 1) ? genBSt3Pt->at(1) : -1;
+            genBSt3_1_Eta = ((int) genBSt3Eta->size() > 1) ? genBSt3Eta->at(1) : -1;
+            genBSt3_1_Phi = ((int) genBSt3Phi->size() > 1) ? genBSt3Phi->at(1) : -1;
+            genBSt3_1_PID = ((int) genBSt3_pdgId->size() > 1) ? genBSt3_pdgId->at(1) : -1;
+            genBSt3_1_Index = ((int) genBSt3_i->size() > 1) ? genBSt3_i->at(1) : -1;
+            genBSt3_1_FirstMom = ((int) genBSt3_firstMom->size() > 1) ? genBSt3_firstMom->at(1) : -1;
+            
+            genMuonSt3_1_Energy = ((int) genMuonSt3En->size() > 1) ? genMuonSt3En->at(1) : -1;
+            genMuonSt3_1_Pt = ((int) genMuonSt3Pt->size() > 1) ? genMuonSt3Pt->at(1) : -1;
+            genMuonSt3_1_Eta = ((int) genMuonSt3Eta->size() > 1) ? genMuonSt3Eta->at(1) : -1;
+            genMuonSt3_1_Phi = ((int) genMuonSt3Phi->size() > 1) ? genMuonSt3Phi->at(1) : -1;
+            genMuonSt3_1_PID = ((int) genMuonSt3_pdgId->size() > 1) ? genMuonSt3_pdgId->at(1) : -1;
+            genMuonSt3_1_Index = ((int) genMuonSt3_i->size() > 1) ? genMuonSt3_i->at(1) : -1;
+            genMuonSt3_1_FirstMom = ((int) genMuonSt3_firstMom->size() > 1) ? genMuonSt3_firstMom->at(1) : -1;
+            
+            genElecSt3_1_Energy = ((int) genElecSt3En->size() > 1) ? genElecSt3En->at(1) : -1;
+            genElecSt3_1_Pt = ((int) genElecSt3Pt->size() > 1) ? genElecSt3Pt->at(1) : -1;
+            genElecSt3_1_Eta = ((int) genElecSt3Eta->size() > 1) ? genElecSt3Eta->at(1) : -1;
+            genElecSt3_1_Phi = ((int) genElecSt3Phi->size() > 1) ? genElecSt3Phi->at(1) : -1;
+            genElecSt3_1_PID = ((int) genElecSt3_pdgId->size() > 1) ? genElecSt3_pdgId->at(1) : -1;
+            genElecSt3_1_Index = ((int) genElecSt3_i->size() > 1) ? genElecSt3_i->at(1) : -1;
+            genElecSt3_1_FirstMom = ((int) genElecSt3_firstMom->size() > 1) ? genElecSt3_firstMom->at(1) : -1;
+            
+            /// Status 1 lead-particle info
+            genBSt1_0_Energy = ((int) genBSt1En->size() > 0) ? genBSt1En->at(0) : -1;
+            genBSt1_0_MomEnergy = ((int) genBSt1MomEn->size() > 0) ? genBSt1MomEn->at(0) : -1;
+            genBSt1_0_Px = ((int) genBSt1Px->size() > 0) ? genBSt1Px->at(0) : -1;
+            genBSt1_0_MomPx = ((int) genBSt1MomPx->size() > 0) ? genBSt1MomPx->at(0) : -1;
+            genBSt1_0_Py = ((int) genBSt1Py->size() > 0) ? genBSt1Py->at(0) : -1;
+            genBSt1_0_MomPy = ((int) genBSt1MomPy->size() > 0) ? genBSt1MomPy->at(0) : -1;
+            genBSt1_0_Pz = ((int) genBSt1Pz->size() > 0) ? genBSt1Pz->at(0) : -1;
+            genBSt1_0_MomPz = ((int) genBSt1MomPz->size() > 0) ? genBSt1MomPz->at(0) : -1;
+            genBSt1_0_PID = ((int) genBSt1_pdgId->size() > 0) ? genBSt1_pdgId->at(0) : -1;
+            genBSt1_0_MomPID = ((int) genBSt1MomPID->size() > 0) ? genBSt1MomPID->at(0) : -1;
+            genBSt1_0_MomStatus = ((int) genBSt1MomStatus->size() > 0) ? genBSt1MomStatus->at(0) : -1;
+            
+            genMuonSt1_0_Energy = ((int) genMuonSt1En->size() > 0) ? genMuonSt1En->at(0) : -1;
+            genMuonSt1_0_MomEnergy = ((int) genMuonSt1MomEn->size() > 0) ? genMuonSt1MomEn->at(0) : -1;
+            genMuonSt1_0_Px = ((int) genMuonSt1Px->size() > 0) ? genMuonSt1Px->at(0) : -1;
+            genMuonSt1_0_MomPx = ((int) genMuonSt1MomPx->size() > 0) ? genMuonSt1MomPx->at(0) : -1;
+            genMuonSt1_0_Py = ((int) genMuonSt1Py->size() > 0) ? genMuonSt1Py->at(0) : -1;
+            genMuonSt1_0_MomPy = ((int) genMuonSt1MomPy->size() > 0) ? genMuonSt1MomPy->at(0) : -1;
+            genMuonSt1_0_Pz = ((int) genMuonSt1Pz->size() > 0) ? genMuonSt1Pz->at(0) : -1;
+            genMuonSt1_0_MomPz = ((int) genMuonSt1MomPz->size() > 0) ? genMuonSt1MomPz->at(0) : -1;
+            genMuonSt1_0_PID = ((int) genMuonSt1_pdgId->size() > 0) ? genMuonSt1_pdgId->at(0) : -1;
+            genMuonSt1_0_MomPID = ((int) genMuonSt1MomPID->size() > 0) ? genMuonSt1MomPID->at(0) : -1;
+            genMuonSt1_0_MomStatus = ((int) genMuonSt1MomStatus->size() > 0) ? genMuonSt1MomStatus->at(0) : -1;
+            
+            genElecSt1_0_Energy = ((int) genElecSt1En->size() > 0) ? genElecSt1En->at(0) : -1;
+            genElecSt1_0_MomEnergy = ((int) genElecSt1MomEn->size() > 0) ? genElecSt1MomEn->at(0) : -1;
+            genElecSt1_0_Px = ((int) genElecSt1Px->size() > 0) ? genElecSt1Px->at(0) : -1;
+            genElecSt1_0_MomPx = ((int) genElecSt1MomPx->size() > 0) ? genElecSt1MomPx->at(0) : -1;
+            genElecSt1_0_Py = ((int) genElecSt1Py->size() > 0) ? genElecSt1Py->at(0) : -1;
+            genElecSt1_0_MomPy = ((int) genElecSt1MomPy->size() > 0) ? genElecSt1MomPy->at(0) : -1;
+            genElecSt1_0_Pz = ((int) genElecSt1Pz->size() > 0) ? genElecSt1Pz->at(0) : -1;
+            genElecSt1_0_MomPz = ((int) genElecSt1MomPz->size() > 0) ? genElecSt1MomPz->at(0) : -1;
+            genElecSt1_0_PID = ((int) genElecSt1_pdgId->size() > 0) ? genElecSt1_pdgId->at(0) : -1;
+            genElecSt1_0_MomPID = ((int) genElecSt1MomPID->size() > 0) ? genElecSt1MomPID->at(0) : -1;
+            genElecSt1_0_MomStatus = ((int) genElecSt1MomStatus->size() > 0) ? genElecSt1MomStatus->at(0) : -1; 
+            
+            /// Status 1 sub-lead-particle info
+            genBSt1_1_Energy = ((int) genBSt1En->size() > 1) ? genBSt1En->at(1) : -1;
+            genBSt1_1_MomEnergy = ((int) genBSt1MomEn->size() > 1) ? genBSt1MomEn->at(1) : -1;
+            genBSt1_1_Px = ((int) genBSt1Px->size() > 1) ? genBSt1Px->at(1) : -1;
+            genBSt1_1_MomPx = ((int) genBSt1MomPx->size() > 1) ? genBSt1MomPx->at(1) : -1;
+            genBSt1_1_Py = ((int) genBSt1Py->size() > 1) ? genBSt1Py->at(1) : -1;
+            genBSt1_1_MomPy = ((int) genBSt1MomPy->size() > 1) ? genBSt1MomPy->at(1) : -1;
+            genBSt1_1_Pz = ((int) genBSt1Pz->size() > 1) ? genBSt1Pz->at(1) : -1;
+            genBSt1_1_MomPz = ((int) genBSt1MomPz->size() > 1) ? genBSt1MomPz->at(1) : -1;
+            genBSt1_1_PID = ((int) genBSt1_pdgId->size() > 1) ? genBSt1_pdgId->at(1) : -1;
+            genBSt1_1_MomPID = ((int) genBSt1MomPID->size() > 1) ? genBSt1MomPID->at(1) : -1;
+            genBSt1_1_MomStatus = ((int) genBSt1MomStatus->size() > 1) ? genBSt1MomStatus->at(1) : -1;
+            
+            genMuonSt1_1_Energy = ((int) genMuonSt1En->size() > 1) ? genMuonSt1En->at(1) : -1;
+            genMuonSt1_1_MomEnergy = ((int) genMuonSt1MomEn->size() > 1) ? genMuonSt1MomEn->at(1) : -1;
+            genMuonSt1_1_Px = ((int) genMuonSt1Px->size() > 1) ? genMuonSt1Px->at(1) : -1;
+            genMuonSt1_1_MomPx = ((int) genMuonSt1MomPx->size() > 1) ? genMuonSt1MomPx->at(1) : -1;
+            genMuonSt1_1_Py = ((int) genMuonSt1Py->size() > 1) ? genMuonSt1Py->at(1) : -1;
+            genMuonSt1_1_MomPy = ((int) genMuonSt1MomPy->size() > 1) ? genMuonSt1MomPy->at(1) : -1;
+            genMuonSt1_1_Pz = ((int) genMuonSt1Pz->size() > 1) ? genMuonSt1Pz->at(1) : -1;
+            genMuonSt1_1_MomPz = ((int) genMuonSt1MomPz->size() > 1) ? genMuonSt1MomPz->at(1) : -1;
+            genMuonSt1_1_PID = ((int) genMuonSt1_pdgId->size() > 1) ? genMuonSt1_pdgId->at(1) : -1;
+            genMuonSt1_1_MomPID = ((int) genMuonSt1MomPID->size() > 1) ? genMuonSt1MomPID->at(1) : -1;
+            genMuonSt1_1_MomStatus = ((int) genMuonSt1MomStatus->size() > 1) ? genMuonSt1MomStatus->at(1) : -1;
+            
+            genElecSt1_1_Energy = ((int) genElecSt1En->size() > 1) ? genElecSt1En->at(1) : -1;
+            genElecSt1_1_MomEnergy = ((int) genElecSt1MomEn->size() > 1) ? genElecSt1MomEn->at(1) : -1;
+            genElecSt1_1_Px = ((int) genElecSt1Px->size() > 1) ? genElecSt1Px->at(1) : -1;
+            genElecSt1_1_MomPx = ((int) genElecSt1MomPx->size() > 1) ? genElecSt1MomPx->at(1) : -1;
+            genElecSt1_1_Py = ((int) genElecSt1Py->size() > 1) ? genElecSt1Py->at(1) : -1;
+            genElecSt1_1_MomPy = ((int) genElecSt1MomPy->size() > 1) ? genElecSt1MomPy->at(1) : -1;
+            genElecSt1_1_Pz = ((int) genElecSt1Pz->size() > 1) ? genElecSt1Pz->at(1) : -1;
+            genElecSt1_1_MomPz = ((int) genElecSt1MomPz->size() > 1) ? genElecSt1MomPz->at(1) : -1;
+            genElecSt1_1_PID = ((int) genElecSt1_pdgId->size() > 1) ? genElecSt1_pdgId->at(1) : -1;
+            genElecSt1_1_MomPID = ((int) genElecSt1MomPID->size() > 1) ? genElecSt1MomPID->at(1) : -1;
+            genElecSt1_1_MomStatus = ((int) genElecSt1MomStatus->size() > 1) ? genElecSt1MomStatus->at(1) : -1;
+            
+            if (doData) {
+                regularMETFilterVec = new vector<bool>;
+                regularMETFilterVec->push_back(filterECalDeadCell);
+                regularMETFilterVec->push_back(filterTrackingFailure);
+                regularMETFilterVec->push_back(filterHCalLaser);
+                regularMETFilterVec->push_back(filterECalLaserCorr);
+                regularMETFilterVec->push_back(filterEEBadSC);
+                
+                oppositeMETFilterVec = new vector<bool>;
+                oppositeMETFilterVec->push_back(filterLogErrorTooManyClusters);
+                oppositeMETFilterVec->push_back(filterTooManyStripClus);
+                oppositeMETFilterVec->push_back(filterManyStripClus);
+                doEvent = FilterMET(regularMETFilterVec, oppositeMETFilterVec);
+            }
+        }
+        else {
+            weight = (float) GenWeight;                      
+        }
+        h_CutFlow->Fill(1.);
+        if (!doData) {
+            h_CutFlow_LepESUp->Fill(1);
+            h_CutFlow_LepESDown->Fill(1);
+        }
         if (!doEvent) continue;
-        ElecIndices = ElectronPickOvi(ElecPt, ElecEta, ElecCharge, ElecPFNeutIso, ElecPFCharIso, ElecPFPhotIso, passConvVeto, isPFElectron);
-        if (doVerbosity) {
-            cout << "iEvent " << ievt << endl;
-            cout << "E0 Index " << ElecIndices->at(0) << endl;
-            cout << "E1 Index " << ElecIndices->at(1) << endl;
+        if (doSpecRun) {
+            if (RunNum == whichRun) {
+                cout << "Pre LepCut Run:Event:Lumi" << RunNum << ":" << EventNum << ":" << LumiBlock << endl;
+            }
+            else {
+                continue;
+            }
         }
-        MuonIndices = MuonPickOvi(MuonPt, MuonEta, MuonCharge, MuonD0, MuonVertZ, VertZ, MuonPFNeutIso, MuonPFCharIso, MuonPFPhotIso, MuonSumPUPt, isGMPTMuons, isPFMuon);
-        if (doVerbosity) {
-            cout << "Mu0 Index " << MuonIndices->at(0) << endl;
-            cout << "Mu1 Index " << MuonIndices->at(1) << endl;
+        h_CutFlow->Fill(2.);
+        if (!doData) {
+            h_CutFlow_LepESUp->Fill(2.);
+            h_CutFlow_LepESDown->Fill(2.);
         }
-        int E0I = ElecIndices->at(0);
-        int E1I = ElecIndices->at(1);
-        int M0I = MuonIndices->at(0);
-        int M1I = MuonIndices->at(1);
-        if (!(M0I < 0)) {
-            //            cout << "muon E 0 " << MuonE->at(MuonIndices->at(0)) << endl;
-            //            cout << "muon Px " << MuonPx->at(MuonIndices->at(0)) << endl;
-            //            cout << "muon Py " << MuonPy->at(MuonIndices->at(0)) << endl;
-            //            cout << "muon Pz " << MuonPz->at(MuonIndices->at(0)) << endl;
-            patsyVec.SetPxPyPzE(MuonPx->at(MuonIndices->at(0)), MuonPy->at(MuonIndices->at(0)), MuonPz->at(MuonIndices->at(0)), MuonE->at(MuonIndices->at(0)));
-            //            cout << " patsyVec Eta " << patsyVec.Eta() << endl;
-            //            cout << "MuonEtavector " << MuonEta->at(MuonIndices->at(0)) << endl;
-            //            patsyVec.SetPtEtaPhiE(MuonPt->at(MuonIndices->at(0)), MuonEta->at(MuonIndices->at(0)), patsyVec.Phi(), patsyVec.E());
-            //            cout << "MuonEtapatsy " << patsyVec.Eta() << endl;
-            //            cout << "MuonE " << patsyVec.E() << endl;
-            Leptons->push_back(patsyVec);
-            pdgId->push_back(-13);
+        if (whichNTupleType == 0) {
+            ElectronPickOvi(ElecPx, ElecPy, ElecPz, ElecE, ElecCharge, ElecPFNeutIso, ElecPFCharIso, ElecPFPhotIso, passConvVeto, isPFElectron, eventRhoIso, vecIsoLeptons, vecIsoLeptonPDGIDs, vecLepPFRelIso);
+            MuonPickOvi(MuonPx, MuonPy, MuonPz, MuonE, MuonCharge, MuonD0, MuonVertZ, VertZ, MuonPFNeutIso, MuonPFCharIso, MuonPFPhotIso, MuonSumPUPt, isGMPTMuons, isPFMuon, vecIsoLeptons, vecIsoLeptonPDGIDs, vecLepPFRelIso);            
+            if (!doData) {
+                ElectronPickOvi(ElecPx, ElecPy, ElecPz, ElecE, ElecCharge, ElecPFNeutIso, ElecPFCharIso, ElecPFPhotIso, passConvVeto, isPFElectron, eventRhoIso, 1., vecIsoLeptons_LepESUp, vecIsoLeptonPDGIDs_LepESUp, vecLepPFRelIso_LepESUp, vecIsoLeptonsCentValMETPatsy_LepESUp);
+                MuonPickOvi(MuonPx, MuonPy, MuonPz, MuonE, MuonCharge, MuonD0, MuonVertZ, VertZ, MuonPFNeutIso, MuonPFCharIso, MuonPFPhotIso, MuonSumPUPt, isGMPTMuons, isPFMuon, 1., vecIsoLeptons_LepESUp, vecIsoLeptonPDGIDs_LepESUp, vecLepPFRelIso_LepESUp, vecIsoLeptonsCentValMETPatsy_LepESUp);
+                vecLeptonInfo_LepESUp = LeptonPair(vecIsoLeptons_LepESUp, vecIsoLeptonPDGIDs_LepESUp, lep0Index_LepESUp, lep1Index_LepESUp, doEvent_LepESUp, Type_LepESUp, Lep0PDGID_LepESUp, Lep1PDGID_LepESUp);            
+                MET_LepESUp = MET; MET_Phi_LepESUp = MET_Phi;
+                METSystShift(vecIsoLeptonsCentValMETPatsy_LepESUp, vecIsoLeptons_LepESUp, MET_LepESUp, MET_Phi_LepESUp, MET, MET_Phi);            
+                
+                ElectronPickOvi(ElecPx, ElecPy, ElecPz, ElecE, ElecCharge, ElecPFNeutIso, ElecPFCharIso, ElecPFPhotIso, passConvVeto, isPFElectron, eventRhoIso, -1., vecIsoLeptons_LepESDown, vecIsoLeptonPDGIDs_LepESDown, vecLepPFRelIso_LepESDown, vecIsoLeptonsCentValMETPatsy_LepESDown);
+                MuonPickOvi(MuonPx, MuonPy, MuonPz, MuonE, MuonCharge, MuonD0, MuonVertZ, VertZ, MuonPFNeutIso, MuonPFCharIso, MuonPFPhotIso, MuonSumPUPt, isGMPTMuons, isPFMuon, -1., vecIsoLeptons_LepESDown, vecIsoLeptonPDGIDs_LepESDown, vecLepPFRelIso_LepESDown, vecIsoLeptonsCentValMETPatsy_LepESDown);
+                vecLeptonInfo_LepESDown = LeptonPair(vecIsoLeptons_LepESDown, vecIsoLeptonPDGIDs_LepESDown, lep0Index_LepESDown, lep1Index_LepESDown, doEvent_LepESDown, Type_LepESDown, Lep0PDGID_LepESDown, Lep1PDGID_LepESDown);
+                MET_LepESDown = MET; MET_Phi_LepESDown = MET_Phi;
+                METSystShift(vecIsoLeptonsCentValMETPatsy_LepESDown, vecIsoLeptons_LepESDown, MET_LepESDown, MET_Phi_LepESDown, MET, MET_Phi);                
+            }
         }
-        if (!(M1I < 0)) {            
-            patsyVec.SetPxPyPzE(MuonPx->at(MuonIndices->at(1)), MuonPy->at(MuonIndices->at(1)), MuonPz->at(MuonIndices->at(1)), MuonE->at(MuonIndices->at(1)));
-            Leptons->push_back(patsyVec);
-            pdgId->push_back(13);
+        else {
+//            cout << "here 2.0" << endl;
+            MET = met->Pt();
+            MET_Phi = met->Phi();
+            IsoLeptonsPickDESY(leptons, lepPdgId, lepPFIso, vecIsoLeptons, vecIsoLeptonPDGIDs, vecLepPFRelIso);
+            if (!doData) {
+//                cout << "here 3.0" << endl;
+                IsoLeptonsPickDESY(leptons, lepPdgId, lepPFIso, 1., vecIsoLeptons_LepESUp, vecIsoLeptonPDGIDs_LepESUp, vecLepPFRelIso_LepESUp, vecIsoLeptonsCentValMETPatsy_LepESUp);
+                vecLeptonInfo_LepESUp = LeptonPair(vecIsoLeptons_LepESUp, vecIsoLeptonPDGIDs_LepESUp, lep0Index_LepESUp, lep1Index_LepESUp, doEvent_LepESUp, Type_LepESUp, Lep0PDGID_LepESUp, Lep1PDGID_LepESUp);
+                MET_LepESUp = MET; MET_Phi_LepESUp = MET_Phi;
+                METSystShift(vecIsoLeptonsCentValMETPatsy_LepESUp, vecIsoLeptons_LepESUp, MET_LepESUp, MET_Phi_LepESUp, MET, MET_Phi);
+                
+                IsoLeptonsPickDESY(leptons, lepPdgId, lepPFIso, -11., vecIsoLeptons_LepESDown, vecIsoLeptonPDGIDs_LepESDown, vecLepPFRelIso_LepESDown, vecIsoLeptonsCentValMETPatsy_LepESDown);
+                vecLeptonInfo_LepESDown = LeptonPair(vecIsoLeptons_LepESDown, vecIsoLeptonPDGIDs_LepESDown, lep0Index_LepESDown, lep1Index_LepESDown, doEvent_LepESDown, Type_LepESDown, Lep0PDGID_LepESDown, Lep1PDGID_LepESDown);
+                MET_LepESDown = MET; MET_Phi_LepESDown = MET_Phi;
+                METSystShift(vecIsoLeptonsCentValMETPatsy_LepESDown, vecIsoLeptons_LepESDown, MET_LepESDown, MET_Phi_LepESDown, MET, MET_Phi);
+            }
         }
-        if (!(E0I < 0)) {      
-            //            cout << "elec E 0" << ElecE->at(ElecIndices->at(0)) << endl;
-            //            cout << "elec Px " << ElecPx->at(ElecIndices->at(0)) << endl;
-            //            cout << "elec Py " << ElecPy->at(ElecIndices->at(0)) << endl;
-            //            cout << "elec Pz " << ElecPz->at(ElecIndices->at(0)) << endl;
-            patsyVec.SetPxPyPzE(ElecPx->at(ElecIndices->at(0)), ElecPy->at(ElecIndices->at(0)), ElecPz->at(ElecIndices->at(0)), ElecE->at(ElecIndices->at(0)));
-            //            cout << "elec E 1 " << patsyVec.E() << endl;
-            //            cout << "elec E 2 " << ElecE->at(ElecIndices->at(0)) << endl;
-            Leptons->push_back(patsyVec);
-            pdgId->push_back(-11); 
+//        cout << "vecIsoLeptons size " << vecIsoLeptons->size() << endl;
+//        cout << "vecIsoLeptonPDGIDs size " << vecIsoLeptonPDGIDs->size() << endl;
+        vecLeptonInfo = LeptonPair(vecIsoLeptons, vecIsoLeptonPDGIDs, lep0Index, lep1Index, doEvent, Type, Lep0PDGID, Lep1PDGID);
+//        cout << "here 4.0 " << endl;
+//        if (!doEvent) continue;
+        if (!doData) {
+            if (!doEvent && !doEvent_LepESUp && !doEvent_LepESDown) {
+//                counter += 1;
+//                cout << "counter " << counter << endl;
+                continue;                
+            }
         }
-        if (!(E1I < 0)) {            
-            patsyVec.SetPxPyPzE(ElecPx->at(ElecIndices->at(1)), ElecPy->at(ElecIndices->at(1)), ElecPz->at(ElecIndices->at(1)), ElecE->at(ElecIndices->at(1)));
-            Leptons->push_back(patsyVec);
-            pdgId->push_back(11);
+        if (!doEvent) {
+            if (doData) continue;
+            NIsoElecs_pT20              = -1;
+            NIsoElecs_pT10to20          = -1;
+            NIsoMuons_pT20              = -1;
+            NIsoMuons_pT10to20          = -1;
+            NIsoPosits_pT20             = -1;
+            NIsoPosits_pT10to20         = -1;
+            NIsoMubars_pT20             = -1;
+            NIsoMubars_pT10to20         = -1;
+            NViableLepPairsPreMassCut   = -1;
+            Lep0RelPFIso = -9999.;
+            Lep1RelPFIso = -9999.;
+            Lep0Px = -99999.;
+            Lep0Py = -99999.;
+            Lep0Pz = -99999.;
+            Lep0E  = -99999.;
+            Lep1Px = -99999.;
+            Lep1Py = -99999.;
+            Lep1Pz = -99999.;
+            Lep1E  = -99999.;
         }
-        if (Leptons->size() < 2) continue;
-        LeptonPairOvi(Lep0Vec, Lep1Vec, Type, doEvent, Leptons, pdgId, Lep0PDGID, Lep1PDGID);
-        if (!doEvent) continue;   
-        Lep0Px = Lep0Vec.Px();
-        Lep0Py = Lep0Vec.Py();
-        Lep0Pz = Lep0Vec.Pz();
-        Lep0E  = Lep0Vec.E();
-        Lep1Px = Lep1Vec.Px();
-        Lep1Py = Lep1Vec.Py();
-        Lep1Pz = Lep1Vec.Pz();
-        Lep1E  = Lep1Vec.E();
-        /*
-         cout << "Lep0Px " << Lep0Px << endl;
-         cout << "Lep0Py " << Lep0Py << endl;
-         cout << "Lep0Pz " << Lep0Pz << endl;
-         cout << "Lep1Px " << Lep1Px << endl;
-         cout << "Lep1Py " << Lep1Py << endl;
-         cout << "Lep1Pz " << Lep1Pz << endl;
-         */
-        
-        Jets = JetInfo(Leptons, JetEt, JetEta, JetPx, JetPy, JetPz, JetE, JetNHF, JetNEF, JetCHF, JetCEF, JetBTag, JetNDaug, JetCharMult, NJets, NBtagJets, BJetIndices, HT);
+        else {
+            NIsoElecs_pT20              = vecLeptonInfo->at(0);
+            NIsoElecs_pT10to20          = vecLeptonInfo->at(1);
+            NIsoPosits_pT20             = vecLeptonInfo->at(2);
+            NIsoPosits_pT10to20         = vecLeptonInfo->at(3);
+            NIsoMuons_pT20              = vecLeptonInfo->at(4);
+            NIsoMuons_pT10to20          = vecLeptonInfo->at(5);
+            NIsoMubars_pT20             = vecLeptonInfo->at(6);
+            NIsoMubars_pT10to20         = vecLeptonInfo->at(7);
+            NViableLepPairsPreMassCut   = vecLeptonInfo->at(8);
+            Lep0RelPFIso = vecLepPFRelIso->at(lep0Index);
+            Lep1RelPFIso = vecLepPFRelIso->at(lep1Index);        
+            Lep0Px = vecIsoLeptons->at(lep0Index).Px();
+            Lep0Py = vecIsoLeptons->at(lep0Index).Py();
+            Lep0Pz = vecIsoLeptons->at(lep0Index).Pz();
+            Lep0E  = vecIsoLeptons->at(lep0Index).E();
+            Lep1Px = vecIsoLeptons->at(lep1Index).Px();
+            Lep1Py = vecIsoLeptons->at(lep1Index).Py();
+            Lep1Pz = vecIsoLeptons->at(lep1Index).Pz();
+            Lep1E  = vecIsoLeptons->at(lep1Index).E();
+        }
+        if (!doData) {
+            if (!doEvent_LepESUp) {
+                NIsoElecs_pT20_LepESUp              = -1;
+                NIsoElecs_pT10to20_LepESUp          = -1;
+                NIsoMuons_pT20_LepESUp              = -1;
+                NIsoMuons_pT10to20_LepESUp          = -1;
+                NIsoPosits_pT20_LepESUp             = -1;
+                NIsoPosits_pT10to20_LepESUp         = -1;
+                NIsoMubars_pT20_LepESUp             = -1;
+                NIsoMubars_pT10to20_LepESUp         = -1;
+                NViableLepPairsPreMassCut_LepESUp   = -1;
+                Lep0RelPFIso_LepESUp = -9999.;
+                Lep1RelPFIso_LepESUp = -9999.;
+                Lep0Px_LepESUp = -99999.;
+                Lep0Py_LepESUp = -99999.;
+                Lep0Pz_LepESUp = -99999.;
+                Lep0E_LepESUp =  -99999.;
+                Lep1Px_LepESUp = -99999.;
+                Lep1Py_LepESUp = -99999.;
+                Lep1Pz_LepESUp = -99999.;
+                Lep1E_LepESUp =  -99999.;
+            }
+            else {
+                NIsoElecs_pT20_LepESUp              = vecLeptonInfo_LepESUp->at(0);
+                NIsoElecs_pT10to20_LepESUp          = vecLeptonInfo_LepESUp->at(1);
+                NIsoPosits_pT20_LepESUp             = vecLeptonInfo_LepESUp->at(2);
+                NIsoPosits_pT10to20_LepESUp         = vecLeptonInfo_LepESUp->at(3);
+                NIsoMuons_pT20_LepESUp              = vecLeptonInfo_LepESUp->at(4);
+                NIsoMuons_pT10to20_LepESUp          = vecLeptonInfo_LepESUp->at(5);
+                NIsoMubars_pT20_LepESUp             = vecLeptonInfo_LepESUp->at(6);
+                NIsoMubars_pT10to20_LepESUp         = vecLeptonInfo_LepESUp->at(7);
+                NViableLepPairsPreMassCut_LepESUp   = vecLeptonInfo_LepESUp->at(8);
+                Lep0RelPFIso_LepESUp = vecLepPFRelIso_LepESUp->at(lep0Index_LepESUp);
+                Lep1RelPFIso_LepESUp = vecLepPFRelIso_LepESUp->at(lep1Index_LepESUp);
+                Lep0Px_LepESUp = vecIsoLeptons_LepESUp->at(lep0Index_LepESUp).Px();
+                Lep0Py_LepESUp = vecIsoLeptons_LepESUp->at(lep0Index_LepESUp).Py();
+                Lep0Pz_LepESUp = vecIsoLeptons_LepESUp->at(lep0Index_LepESUp).Pz();
+                Lep0E_LepESUp  = vecIsoLeptons_LepESUp->at(lep0Index_LepESUp).E();
+                Lep1Px_LepESUp = vecIsoLeptons_LepESUp->at(lep1Index_LepESUp).Px();
+                Lep1Py_LepESUp = vecIsoLeptons_LepESUp->at(lep1Index_LepESUp).Py();
+                Lep1Pz_LepESUp = vecIsoLeptons_LepESUp->at(lep1Index_LepESUp).Pz();
+                Lep1E_LepESUp  = vecIsoLeptons_LepESUp->at(lep1Index_LepESUp).E();   
+            }
+            if (!doEvent_LepESDown) {
+                NIsoElecs_pT20_LepESDown              = -1;
+                NIsoElecs_pT10to20_LepESDown          = -1;
+                NIsoMuons_pT20_LepESDown              = -1;
+                NIsoMuons_pT10to20_LepESDown          = -1;
+                NIsoPosits_pT20_LepESDown             = -1;
+                NIsoPosits_pT10to20_LepESDown         = -1;
+                NIsoMubars_pT20_LepESDown             = -1;
+                NIsoMubars_pT10to20_LepESDown         = -1;
+                NViableLepPairsPreMassCut_LepESDown   = -1;
+                Lep0RelPFIso_LepESDown = -999.;
+                Lep1RelPFIso_LepESDown = -999.;
+                Lep0Px_LepESDown = -99999.;
+                Lep0Py_LepESDown = -99999.;
+                Lep0Pz_LepESDown = -99999.;
+                Lep0E_LepESDown =  -99999.;
+                Lep1Px_LepESDown = -99999.;
+                Lep1Py_LepESDown = -99999.;
+                Lep1Pz_LepESDown = -99999.;
+                Lep1E_LepESDown =  -99999.;
+            }
+            else {
+                NIsoElecs_pT20_LepESDown              = vecLeptonInfo_LepESDown->at(0);
+                NIsoElecs_pT10to20_LepESDown          = vecLeptonInfo_LepESDown->at(1);
+                NIsoPosits_pT20_LepESDown             = vecLeptonInfo_LepESDown->at(2);
+                NIsoPosits_pT10to20_LepESDown         = vecLeptonInfo_LepESDown->at(3);
+                NIsoMuons_pT20_LepESDown              = vecLeptonInfo_LepESDown->at(4);
+                NIsoMuons_pT10to20_LepESDown          = vecLeptonInfo_LepESDown->at(5);
+                NIsoMubars_pT20_LepESDown             = vecLeptonInfo_LepESDown->at(6);
+                NIsoMubars_pT10to20_LepESDown         = vecLeptonInfo_LepESDown->at(7);
+                NViableLepPairsPreMassCut_LepESDown   = vecLeptonInfo_LepESDown->at(8);
+                Lep0RelPFIso_LepESDown = vecLepPFRelIso_LepESDown->at(lep0Index_LepESDown);
+                Lep1RelPFIso_LepESDown = vecLepPFRelIso_LepESDown->at(lep1Index_LepESDown);
+                Lep0Px_LepESDown = vecIsoLeptons_LepESDown->at(lep0Index_LepESDown).Px();
+                Lep0Py_LepESDown = vecIsoLeptons_LepESDown->at(lep0Index_LepESDown).Py();
+                Lep0Pz_LepESDown = vecIsoLeptons_LepESDown->at(lep0Index_LepESDown).Pz();
+                Lep0E_LepESDown  = vecIsoLeptons_LepESDown->at(lep0Index_LepESDown).E();
+                Lep1Px_LepESDown = vecIsoLeptons_LepESDown->at(lep1Index_LepESDown).Px();
+                Lep1Py_LepESDown = vecIsoLeptons_LepESDown->at(lep1Index_LepESDown).Py();
+                Lep1Pz_LepESDown = vecIsoLeptons_LepESDown->at(lep1Index_LepESDown).Pz();
+                Lep1E_LepESDown  = vecIsoLeptons_LepESDown->at(lep1Index_LepESDown).E();   
+            }
+        }
+//        cout << "here 5.0 " << endl;
+        if (whichNTupleType == 0) {
+            Jets = JetInfo(vecIsoLeptons, JetPx, JetPy, JetPz, JetE, JetNHF, JetNEF, JetCHF, JetCEF, JetNDaug, JetCharMult, 0., h_JetESUp);            
+            Jets_wPtCut = JetPtCut(Jets, JetBTag, NJets, NBtagJets, BJetIndices, HT);
+        }
+        else {
+            Jets = JetInfoDESY(vecIsoLeptons, jets, 0., h_JetESUp);
+            Jets_wPtCut = JetPtCut(Jets, jetBTagCSV, NJets, NBtagJets, BJetIndices, HT);
+        }
+//        cout << "here 6.0 " << endl;
         BtagJet0Index = (NBtagJets > 0) ? BJetIndices->at(0) : -1;
         BtagJet1Index = (NBtagJets > 1) ? BJetIndices->at(1) : -1;
         if (NJets > 0) {
-            Jet0Vec = Jets->at(0);
+            Jet0Vec = Jets_wPtCut->at(0);
             Jet0Px = Jet0Vec.Px();
             Jet0Py = Jet0Vec.Py();
             Jet0Pz = Jet0Vec.Pz();
             Jet0E  = Jet0Vec.E();
             if (NJets > 1) {
-                Jet1Vec = Jets->at(1); 
+                Jet1Vec = Jets_wPtCut->at(1); 
                 Jet1Px = Jet1Vec.Px();
                 Jet1Py = Jet1Vec.Py();
                 Jet1Pz = Jet1Vec.Pz();
@@ -1172,13 +1627,13 @@ int main( int argc, const char* argv[] ) {
             BtagJet1E  = -99999;            
         }
         if (NBtagJets > 0) {
-            BtagJet0Vec = Jets->at(BJetIndices->at(0));
+            BtagJet0Vec = Jets_wPtCut->at(BJetIndices->at(0));
             BtagJet0Px = BtagJet0Vec.Px();
             BtagJet0Py = BtagJet0Vec.Py();
             BtagJet0Pz = BtagJet0Vec.Pz();
             BtagJet0E  = BtagJet0Vec.E();
             if (NBtagJets > 1) {
-                BtagJet1Vec = Jets->at(BJetIndices->at(1));
+                BtagJet1Vec = Jets_wPtCut->at(BJetIndices->at(1));
                 BtagJet1Px = BtagJet1Vec.Px();
                 BtagJet1Py = BtagJet1Vec.Py();
                 BtagJet1Pz = BtagJet1Vec.Pz();
@@ -1191,30 +1646,263 @@ int main( int argc, const char* argv[] ) {
                 BtagJet1E  = -99999; 
             }
         }
-        nVtx = VertZ->size();
+        
+//        cout << "here 8.0 " << endl;
+        if (!doData) {
+            if (whichNTupleType == 0) {
+                Jets_JetESUp = JetInfo(vecIsoLeptons, JetPx, JetPy, JetPz, JetE, JetNHF, JetNEF, JetCHF, JetCEF, JetNDaug, JetCharMult, 1.0, h_JetESUp);
+                Jets_wPtCut_JetESUp = JetPtCut(Jets_JetESUp, JetBTag, NJets_JetESUp, NBtagJets_JetESUp, BJetIndices_JetESUp, HT_JetESUp);           
+            }
+            else {
+                Jets_JetESUp = JetInfoDESY(vecIsoLeptons, jets, 1.0, h_JetESUp);
+                Jets_wPtCut_JetESUp = JetPtCut(Jets_JetESUp, jetBTagCSV, NJets_JetESUp, NBtagJets_JetESUp, BJetIndices_JetESUp, HT_JetESUp);           
+            }
+            MET_JetESUp = MET; MET_Phi_JetESUp = MET_Phi;
+            METSystShift(Jets, Jets_JetESUp, MET_JetESUp, MET_Phi_JetESUp, MET, MET_Phi);
+            
+            BtagJet0Index_JetESUp = (NBtagJets_JetESUp > 0) ? BJetIndices_JetESUp->at(0) : -1;
+            BtagJet1Index_JetESUp = (NBtagJets_JetESUp > 1) ? BJetIndices_JetESUp->at(1) : -1;
+            if (NJets_JetESUp > 0) {
+                Jet0Vec_JetESUp = Jets_wPtCut_JetESUp->at(0);
+                Jet0Px_JetESUp = Jet0Vec_JetESUp.Px();
+                Jet0Py_JetESUp = Jet0Vec_JetESUp.Py();
+                Jet0Pz_JetESUp = Jet0Vec_JetESUp.Pz();
+                Jet0E_JetESUp  = Jet0Vec_JetESUp.E();
+                if (NJets_JetESUp > 1) {
+                    Jet1Vec_JetESUp = Jets_wPtCut_JetESUp->at(1); 
+                    Jet1Px_JetESUp = Jet1Vec_JetESUp.Px();
+                    Jet1Py_JetESUp = Jet1Vec_JetESUp.Py();
+                    Jet1Pz_JetESUp = Jet1Vec_JetESUp.Pz();
+                    Jet1E_JetESUp  = Jet1Vec_JetESUp.E();
+                }  
+                else {
+                    Jet1Px_JetESUp = -99999;
+                    Jet1Py_JetESUp = -99999;
+                    Jet1Pz_JetESUp = -99999;
+                    Jet1E_JetESUp  = -99999;
+                }
+            }
+            else {
+                Jet0Px_JetESUp = -99999;
+                Jet0Py_JetESUp = -99999;
+                Jet0Pz_JetESUp = -99999;
+                Jet0E_JetESUp  = -99999;
+                Jet1Px_JetESUp = -99999;
+                Jet1Py_JetESUp = -99999;
+                Jet1Pz_JetESUp = -99999;
+                Jet1E_JetESUp  = -99999;
+                BtagJet0Px_JetESUp = -99999;
+                BtagJet0Py_JetESUp = -99999;
+                BtagJet0Pz_JetESUp = -99999;
+                BtagJet0E_JetESUp  = -99999;
+                BtagJet1Px_JetESUp = -99999;
+                BtagJet1Py_JetESUp = -99999;
+                BtagJet1Pz_JetESUp = -99999;
+                BtagJet1E_JetESUp  = -99999;            
+            }
+            if (NBtagJets_JetESUp > 0) {
+                BtagJet0Vec_JetESUp = Jets_wPtCut_JetESUp->at(BJetIndices_JetESUp->at(0));
+                BtagJet0Px_JetESUp = BtagJet0Vec_JetESUp.Px();
+                BtagJet0Py_JetESUp = BtagJet0Vec_JetESUp.Py();
+                BtagJet0Pz_JetESUp = BtagJet0Vec_JetESUp.Pz();
+                BtagJet0E_JetESUp  = BtagJet0Vec_JetESUp.E();
+                if (NBtagJets_JetESUp > 1) {
+                    BtagJet1Vec_JetESUp = Jets_wPtCut_JetESUp->at(BJetIndices_JetESUp->at(1));
+                    BtagJet1Px_JetESUp = BtagJet1Vec_JetESUp.Px();
+                    BtagJet1Py_JetESUp = BtagJet1Vec_JetESUp.Py();
+                    BtagJet1Pz_JetESUp = BtagJet1Vec_JetESUp.Pz();
+                    BtagJet1E_JetESUp  = BtagJet1Vec_JetESUp.E();
+                }
+                else {
+                    BtagJet1Px_JetESUp = -99999;
+                    BtagJet1Py_JetESUp = -99999;
+                    BtagJet1Pz_JetESUp = -99999;
+                    BtagJet1E_JetESUp  = -99999; 
+                }
+            }    
+            if (whichNTupleType == 0) {
+                Jets_JetESDown = JetInfo(vecIsoLeptons, JetPx, JetPy, JetPz, JetE, JetNHF, JetNEF, JetCHF, JetCEF, JetNDaug, JetCharMult, -1.0, h_JetESDown);
+                Jets_wPtCut_JetESDown = JetPtCut(Jets_JetESDown, JetBTag, NJets_JetESDown, NBtagJets_JetESDown, BJetIndices_JetESDown, HT_JetESDown);
+            }
+            else {
+                Jets_JetESDown = JetInfoDESY(vecIsoLeptons, jets, -1.0, h_JetESDown);
+                Jets_wPtCut_JetESDown = JetPtCut(Jets_JetESDown, jetBTagCSV, NJets_JetESDown, NBtagJets_JetESDown, BJetIndices_JetESDown, HT_JetESDown);
+            }
+
+            MET_JetESDown = MET; MET_Phi_JetESDown = MET_Phi;
+            METSystShift(Jets, Jets_JetESDown, MET_JetESDown, MET_Phi_JetESDown, MET, MET_Phi);
+            
+            BtagJet0Index_JetESDown = (NBtagJets_JetESDown > 0) ? BJetIndices_JetESDown->at(0) : -1;
+            BtagJet1Index_JetESDown = (NBtagJets_JetESDown > 1) ? BJetIndices_JetESDown->at(1) : -1;
+            if (NJets_JetESDown > 0) {
+                Jet0Vec_JetESDown = Jets_wPtCut_JetESDown->at(0);
+                Jet0Px_JetESDown = Jet0Vec_JetESDown.Px();
+                Jet0Py_JetESDown = Jet0Vec_JetESDown.Py();
+                Jet0Pz_JetESDown = Jet0Vec_JetESDown.Pz();
+                Jet0E_JetESDown  = Jet0Vec_JetESDown.E();
+                if (NJets_JetESDown > 1) {
+                    Jet1Vec_JetESDown = Jets_wPtCut_JetESDown->at(1); 
+                    Jet1Px_JetESDown = Jet1Vec_JetESDown.Px();
+                    Jet1Py_JetESDown = Jet1Vec_JetESDown.Py();
+                    Jet1Pz_JetESDown = Jet1Vec_JetESDown.Pz();
+                    Jet1E_JetESDown  = Jet1Vec_JetESDown.E();
+                }  
+                else {
+                    Jet1Px_JetESDown = -99999;
+                    Jet1Py_JetESDown = -99999;
+                    Jet1Pz_JetESDown = -99999;
+                    Jet1E_JetESDown  = -99999;
+                }
+            }
+            else {
+                Jet0Px_JetESDown = -99999;
+                Jet0Py_JetESDown = -99999;
+                Jet0Pz_JetESDown = -99999;
+                Jet0E_JetESDown  = -99999;
+                Jet1Px_JetESDown = -99999;
+                Jet1Py_JetESDown = -99999;
+                Jet1Pz_JetESDown = -99999;
+                Jet1E_JetESDown  = -99999;
+                BtagJet0Px_JetESDown = -99999;
+                BtagJet0Py_JetESDown = -99999;
+                BtagJet0Pz_JetESDown = -99999;
+                BtagJet0E_JetESDown  = -99999;
+                BtagJet1Px_JetESDown = -99999;
+                BtagJet1Py_JetESDown = -99999;
+                BtagJet1Pz_JetESDown = -99999;
+                BtagJet1E_JetESDown  = -99999;            
+            }
+            if (NBtagJets_JetESDown > 0) {
+                BtagJet0Vec_JetESDown = Jets_wPtCut_JetESDown->at(BJetIndices_JetESDown->at(0));
+                BtagJet0Px_JetESDown = BtagJet0Vec_JetESDown.Px();
+                BtagJet0Py_JetESDown = BtagJet0Vec_JetESDown.Py();
+                BtagJet0Pz_JetESDown = BtagJet0Vec_JetESDown.Pz();
+                BtagJet0E_JetESDown  = BtagJet0Vec_JetESDown.E();
+                if (NBtagJets_JetESDown > 1) {
+                    BtagJet1Vec_JetESDown = Jets_wPtCut_JetESDown->at(BJetIndices_JetESDown->at(1));
+                    BtagJet1Px_JetESDown = BtagJet1Vec_JetESDown.Px();
+                    BtagJet1Py_JetESDown = BtagJet1Vec_JetESDown.Py();
+                    BtagJet1Pz_JetESDown = BtagJet1Vec_JetESDown.Pz();
+                    BtagJet1E_JetESDown  = BtagJet1Vec_JetESDown.E();
+                }
+                else {
+                    BtagJet1Px_JetESDown = -99999;
+                    BtagJet1Py_JetESDown = -99999;
+                    BtagJet1Pz_JetESDown = -99999;
+                    BtagJet1E_JetESDown  = -99999; 
+                }
+            }
+        }
+        if (whichNTupleType == 0) {
+            nVtx = VertZ->size();
+            nVtxTrue = nVtx;
+        }
         if (doPURW && !doData) {
             if (doHackPURW) weight = PileupRW(nVtxSFHist, nVtx);
         }
         
-        if(Type==-2) Type=2;
+        if (Type == -2) Type = 2;
         if (doData) {
             if (Type == 0) {
-                if (!(fInName.Contains("DoubleMu"))) continue;
+                if (!(fInName.Contains("DoubleMu") || fInName.Contains("mumu_run2012"))) continue;
             }
             else if (Type == 1) {
-                if (!(fInName.Contains("DoubleEl"))) continue;
+                if (!(fInName.Contains("DoubleEl") || fInName.Contains("ee_run2012"))) continue;
             }
             else if (Type == 2) {
-                if (!(fInName.Contains("MuEG"))) continue;
+                if (!(fInName.Contains("MuEG") || fInName.Contains("emu_run2012"))) continue;
             }
-        }         
+        }
+        /*
+        if (whichNTupleType == 0) {
+            if (Type == 0) {
+                if (!passTrigDoubleMu) {
+                    doEvent = false;
+                    if (doData) continue;
+                }
+            }
+            else if (Type == 1) {
+                if (!passTrigDoubleEl) {
+                    doEvent = false;
+                    if (doData) continue;
+                }
+            }
+            else if (Type == 2) {
+                if (!passTrigElMu) {
+                    doEvent = false;
+                    if (doData) continue;
+                }
+            }
+            if (!doData) {
+                if (Type_LepESUp == 0 && !passTrigDoubleMu) doEvent_LepESUp = false;
+                if (Type_LepESDown == 0 && !passTrigDoubleMu) doEvent_LepESDown = false;
+                if (Type_LepESUp == 1 && !passTrigDoubleEl) doEvent_LepESUp = false;
+                if (Type_LepESDown == 1 && !passTrigDoubleEl) doEvent_LepESDown = false;
+                if (Type_LepESUp == 2 && !passTrigElMu) doEvent_LepESUp = false;
+                if (Type_LepESDown == 2 && !passTrigElMu) doEvent_LepESDown = false;
+            }
+        }
+        */
+        if (doEvent) {
+            h_CutFlow->Fill(3.);    
+        }
+        if (!doData) {
+            if (doEvent_LepESUp) {
+                h_CutFlow_LepESUp->Fill(3.);
+            }
+            if (doEvent_LepESDown) {
+                h_CutFlow_LepESDown->Fill(3.);
+            }
+        }
+        ////Grab Generator Info
+        // grab generator MET info if there
+        if (whichNTupleType == 1) {            
+            if (hasMETInfo) {
+                genMET = genMETVec->Pt();
+                genMETPhi = genMETVec->Phi();
+            }
+            //grab Generator Top info if there
+            if (fInName.Contains("ttbar") && hasTopInfo) {
+                genTopSt3_0_Energy = genTop->E();
+                genTopSt3_0_Pt = genTop->Pt();
+                genTopSt3_0_Phi = genTop->Phi();
+                genTopSt3_0_Eta = genTop->Eta();
+                genTopSt3_0_PID = 6;
+                
+                genTopSt3_1_Energy = genAntiTop->E();
+                genTopSt3_1_Pt = genAntiTop->Pt();
+                genTopSt3_1_Phi = genAntiTop->Phi();
+                genTopSt3_1_Eta = genAntiTop->Eta();
+                genTopSt3_1_PID = -6;                
+            }
+//            cout << "here 9.0 " << endl;
+        }        
+        if (doSpecRun) {
+            if (RunNum == whichRun) {
+                cout << "Post LepCut Run:Event:Lumi" << RunNum << ":" << EventNum << ":" << LumiBlock << endl;
+            }
+            else {
+                continue;
+            }
+        }
         outTree->Fill();
     }
     cout << "All events done" << endl;
     outputFile->cd();
     cout << "cd-ing to output directory" << endl;
     outputFile->Write();
+    if (whichNTupleType == 1) {
+        h_eventCount = (TH1F*) inputFile.Get("EventsBeforeSelection/weightedEvents");
+    }
     h_eventCount->Write();
+    h_CutFlow->Write();
+    if (!doData) {
+        h_CutFlow_LepESUp->Write();
+        h_CutFlow_LepESDown->Write();
+    }
+    h_ElecCharIso->Write();
+    h_ElecNeutIso->Write();
+    h_ElecPhotIso->Write();
     cout << "Writing of output file done" << endl;
     outputFile->Close();
     cout << "end of code" << endl;

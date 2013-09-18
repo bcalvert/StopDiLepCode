@@ -1,3 +1,75 @@
+9/18/13 
+HeaderFiles/StopFunctionDefinitions_v2.h
+Moved a number of functions into a different file, StopFillFunctions.h, in the same directory
+Added a function, OneDProjectionReturnVec, related to the purposes of calculating OneD pdfs (by projecting from input 2D histograms) for the MT2 Unclustered energy systematics
+Added a function, DeltaMT2UncEn, which given an input vector of TH1Fs (i.e. input PDFs), an input 2D histogram (to find which TH1F to grab), and an input MT2 value, calculates the DeltaMT2 coming from unclustered energy systematics
+
+Added in a function, ElectronEffectiveArea, for calculating effective area of electrons (related to picking isolated electrons)
+Updated the electron picking functions to be in line with Oviedo's strategy (and the correct one from EGamma POG perspective)
+Modified the Electron and Muon picking functions to allow for calculating systematic shifted (lepton ES systematic) versions of the muons/electrons
+
+Added in a function, IsoLeptonsPickDESY, to pick the IsoLeptons for Skimming DESY
+(including lepton energy scale systematics)
+
+Added in a function, LeptonPair, that takes in the vector of input "isolated" leptons and finds the pair satisfying event selection requirements (if any exist)
+
+Added in a function, JESUncertFactor, that calculates the JES systematic uncertainty given an input 2D histogram of uncertainties, what shift direction (and magnitude!) and the input jet Pt and jet Eta
+
+Added in a function, JetInfoDESY, that finds the number of jets passing selection requirements (including being separate from the isolated leptons in the event), and allows for JES systematics calculations. This function does NOT do the Pt cut; that has been relegated to a different function, JetPtCut
+
+Added in MT2 Unclustered Energy systematics and Jet Energy systematics to the relevant spots
+Re-added back in systematics for 2D histograms (made it general, but in the end it only applies additionally for 2D histograms now)
+
+Changed binning for energy/pT plots to be every 10 GeV (to better show cuts)
+Added three 1D hists, relative lepton PF isolation (for lead and sub-lead lep) and the "channel cut flow"
+
+Removed some unnecessary 2D histograms and added in MT2ll vs. MT2lb histogram
+
+Properly blinded the emu in Z mass region w/ jet cuts
+
+Added a MT2ll > 80 blinded sub-channel
+
+Added events in the Z mass, with either exactly 0 or 1 jets (two separate channels)
+==
+StopPlotHaddInfo.h
+Changed how the Oviedo normalization numbers are accessed
+
+fixed some minor bugs, notable one being with ttbar exclusive sample cross sections
+Added in some additional samples (in appropriate spots) that were available from Oviedo
+==
+StopPlotSetup.h
+Fixed some minor bugs
+Fixed inputfile grabbing to work with DESY skimmed outputs
+Added in JetEnergy Scale systematics (need to add in unclustered energy systematics still)
+Added in "Other nTuple ratio plots", an option to show whichever nTuple wasn't grabbed (of the di-set of Oviedo/DESY) and display it on the same ratio plot (as a different color) for comparison purposes
+Added in "Smart Ratio Axes", an option that "smartly" sets the ratio axes to facilitate full visibility of the Data/MC ratios
+==
+NewOviStopPlotFillerRunOnSkim_wSyst.C
+Moved MetPhiCorrect function to the function header files
+Added in unclustered energy and Jet energy systematics (Jet energy to everything where it's relevant, unclustered just to MT2 variables)
+Added in option for changing the sub-lepton pT cut
+Re-added in systematics for 2D plots
+Added in proper effects of energy scale systematics on event selection (i.e. lepton ES on dilepton selection as an example) -- NOTE this was a NON-TRIVIAL CHANGE. MANY LINES changed as a result!
+Added in trigger stuff
+Removed DESY plot making from this script (DESY now gets skimmed like Oviedo)
+Moved getMT2 function out of this file into a header file
+==
+NewOviStopPlotSkimmer.C
+Added in JES systematics, including grabbing JES systematics 2D hists
+Accounted for the effects of JES and LepES systematics on event selections (affecting what gets saved)
+Included trigger information
+Updated electron and muon selections (especially electrons) for Oviedo Skimming
+ADDED DESY to the skimmer -- lots of lines of code
+Added option for picking out a specific run and printing information from that run
+==
+StopDict.h (in both PlotMaking and PlotSkimming areas)
+Updated to include the additional relevant file, StopFillFunctions.h"
+==
+StopPlotsSpectraShowNewDESY_wSyst.C
+Lots of minor changes related to what's been discussed for above listed changes in other files
+Some cleaning of the code
+==
+
 8/16/13 9:13 A.M. EST
 HeaderFiles/HistogramSystematics2.h
 -Removed some extraneous debug statements

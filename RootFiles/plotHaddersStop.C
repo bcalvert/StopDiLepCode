@@ -12,6 +12,7 @@
 #include "TTree.h"
 #include "TString.h"
 #include "TProfile.h"
+#include <TChain.h>
 #include "TKey.h"
 #include <cmath>
 #include <sstream>
@@ -93,6 +94,9 @@ int main( int argc, const char* argv[] ) {
     bool doPURW       = 0;          // grab the nVtx reweighted MC files
     bool doSyst       = 1;          // look at systematics plots -- (6/25/13) don't turn off for now haven't validated code fully when not making systematics
     bool beVerbose    = 0;
+    bool doSubLepCut  = 0;
+    int  versNumber   = 1;
+    int  subLepPtCut  = 10;
     bool doHardCodeNumParFiles = 0; // fix for an issue with Oviedo nTuples -- temporary (put in 7/18/13
     bool doExcSamp    = 0;          // For doing the exclusive DY and TTbar samples
     for (int k = 0; k < argc; ++k) {
@@ -109,11 +113,18 @@ int main( int argc, const char* argv[] ) {
         else if (strncmp (argv[k],"noSyst", 6) == 0) {
             doSyst = 0;
         }
+        else if (strncmp (argv[k],"versNum", 7) == 0) {
+            versNumber = strtol(argv[k+1], NULL, 10 );
+        }
         else if (strncmp (argv[k],"beVerbose", 9) == 0) {
             beVerbose = 1;
         }
         else if (strncmp (argv[k],"doExcSamp", 11) == 0) {
             doExcSamp = 1;
+        }
+        else if (strncmp (argv[k],"doSubLepCut", 11) == 0) {
+            doSubLepCut = 1;
+            subLepPtCut = strtol(argv[k+1], NULL, 10 );
         }
     }
     gROOT->ProcessLine("#include <vector>");
@@ -130,27 +141,39 @@ int main( int argc, const char* argv[] ) {
     
     // set up input/output strings
     vector<TString> * nameStringVec = new vector<TString>;
-    TString nTupleString, PURWString, doSystString;
+    TString nTupleString, PURWString, doSystString, outString = "";
     TString TTBarSystString = WhichTTBarString(whichTTBarSyst, whichNTuple);
-    cout << "TTBarstring " << TTBarSystString << endl;
+    cout << "TTBarstring " << TTBarSystString << endl;    
     switch (whichNTuple) {
         case 0:
-            nTupleString = "_Oviedo";
+            if (versNumber == 2) {
+                doSubLepCut = true;
+                subLepPtCut = 20;
+            }
+            nTupleString += "_Oviedo";
             break;
         case 1:
-            nTupleString = "_DESY";
+            if (versNumber == 2) {
+                nTupleString += "_DESY_SkimOutput";
+            }
+            nTupleString += "_DESY";
             break;
         default:
             cout << "whichNTuple not Ovi or DESY!!!" << endl;
             break;
     }
     PURWString = (doPURW) ? "_PURW": "";
-    doSystString = (doSyst) ? "_wSyst" : "";
+    doSystString = (doSyst) ? "_wSyst" : "";    
+    if (doSubLepCut) {
+        doSystString += "_subLepPtCut";
+        doSystString += subLepPtCut;
+    }
+    outString += "_Output.root";
     nameStringVec->push_back(TTBarSystString);
     nameStringVec->push_back(nTupleString);
     nameStringVec->push_back(PURWString);
-    nameStringVec->push_back(doSystString); 
-    nameStringVec->push_back(TString("_Output.root"));
+    nameStringVec->push_back(doSystString);
+    nameStringVec->push_back(outString);
     // set up input/output strings
     
     // boolean vector for which files to hadd
@@ -271,7 +294,9 @@ int main( int argc, const char* argv[] ) {
                 default:
                     break;
             }
-            
+            for (unsigned int iWeight = 0; iWeight < weightVec->at(j)->size(); ++iWeight) {
+                cout << "weight for j = " << j << " and iWeight = " << iWeight << " is " << weightVec->at(j)->at(iWeight) << endl;
+            }
             MergeRootfileHists(outFileVec->at(j), fileListVec->at(j), weightVec->at(j), beVerbose); //I think this needs some work..       
             outFileVec->at(j)->Close();
             switch (j) {

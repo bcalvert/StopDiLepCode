@@ -9,8 +9,7 @@
 #include "TRegexp.h"
 using namespace std;
 
-void sampleStartPositionsNames(int whichNTuple, vector<TString> * sampleAddNames, vector<int> * sampleStartPositions, bool doExcSamp) {
-
+void sampleStartPositionsNames(int whichNTuple, int whichTTBarGen, vector<TString> * sampleAddNames, vector<int> * sampleStartPositions, bool doExcSamp) {
     TString TTbarName       = "_TTBar";
     TString VVName          = "_VV";
     TString SingTopName     = "_SingTop";
@@ -21,7 +20,8 @@ void sampleStartPositionsNames(int whichNTuple, vector<TString> * sampleAddNames
     TString HiggsName       = "_Higgs";
     TString RareName        = "_Rare";
 
-    int numTTBar = doExcSamp ? 2 : 1;
+    int numTTBar = (doExcSamp && whichTTBarGen == 0) ? 2 : 1;
+    if (whichNTuple == 1) numTTBar = 2;
     int numVV               = 3;
     int numSingTop          = 1;
     int numWJ               = 1;
@@ -66,7 +66,6 @@ void sampleStartPositionsNames(int whichNTuple, vector<TString> * sampleAddNames
     }    
 
     sampleAddNames->push_back("patsy");
-
 }
 vector<TH1F *> * sortedVector(vector<TH1F *> * inputVector, vector<int> * whichOrder) {
     int currCounter = 0;
@@ -171,7 +170,7 @@ vector<float> * SignalSkimEfficiencyCalc(TString typeSMS, TString prefixT2tt, ve
     int numEvents[5] = {127789, 126051, 122413, 120570, 118333};
     if (prefixT2tt.Contains("FineBin")) {
         whichT2tt = 0;
-        basePath = "../PlotMakingCode/FineBinNormFiles/";
+        basePath = "../PlotMakingCode/T2ttFineBinNormFiles/";
         nameNormFileSignalBase = "NormNumbers_StopMass";
     }
     else if (prefixT2tt.Contains("225to350")) {
@@ -292,6 +291,7 @@ void HistogramUnderflowOverflow(TH1F * inputHist, bool doUnderflow, bool doOverf
 vector<TString> * StopFileNames(int whichNTuple, int whichTTBarGen, bool doExcSamp) {
     vector<TString> * outVec = new vector<TString>;
     const int numOviTypes = 18;
+    cout << "test " << endl;
     TString fileInNameSpecOviedo[numOviTypes] = {"DataMuMu", "DataEMu", "DataEE", "TTBarComp", "TTBarBkg", "WW", "WZ", "ZZ", "SingleTop", "WToLNu", "ZDY", "WG", "ZG", "HiggsWW", "HiggsVBF", "HiggsZZ4L", "TripVecBoson", "TTBarVecBoson"};
     const int numDESYTypes = 12;
     TString fileInNameSpecDESY[numDESYTypes] = {"DataMuMu", "DataEMu", "DataEE", "TTBarSig", "TTBarBkg", "WW", "WZ", "ZZ", "SingleTop", "WToLNu", "ZDY", "QCD"};
@@ -301,7 +301,8 @@ vector<TString> * StopFileNames(int whichNTuple, int whichTTBarGen, bool doExcSa
     switch (whichNTuple) {
         case 0:
             for (int i = 0; i < numOviTypes; ++i) {
-                if (!doExcSamp && fileInNameSpecOviedo[i].Contains("TTBarBkg")) continue;
+                cout << "file name to nominally push back " << fileInNameSpecOviedo[i] << endl;
+                if ((!doExcSamp || whichTTBarGen != 0) && fileInNameSpecOviedo[i].Contains("TTBarBkg")) continue;
                 outVec->push_back(fileInNameSpecOviedo[i]);
             }
             break;
@@ -315,7 +316,7 @@ vector<TString> * StopFileNames(int whichNTuple, int whichTTBarGen, bool doExcSa
     }
     return outVec;
 }
-vector<TFile *> * StopFiles(int whichNTuple, vector<TString> * fileNames, bool doExcSamp, int whichTTBarGen, bool doPURW, bool doSyst) {
+vector<TFile *> * StopFiles(int whichNTuple, vector<TString> * fileNames, bool doExcSamp, int whichTTBarGen, bool doPURW, bool doSyst, int versNumber) {
     vector<TFile *> * outVec = new vector<TFile *>;
     TFile * outTFile;
     TString addPath, fileInNameBase, specNTupString, fileNameSuffix, fileName, TTBarGenString, PURWString, SystString;
@@ -324,7 +325,12 @@ vector<TFile *> * StopFiles(int whichNTuple, vector<TString> * fileNames, bool d
         addPath        = "../RootFiles/";
         fileInNameBase = "";
         specNTupString = "_Oviedo";
-        fileNameSuffix = "Haddplots.root";
+        if (versNumber == 2) {
+            fileNameSuffix = "_subLepPtCut20Haddplots.root";
+        }
+        else {
+            fileNameSuffix = "Haddplots.root";   
+        }
         TTBarGenString = "";
         switch (whichTTBarGen) {
             case 0:
@@ -342,8 +348,8 @@ vector<TFile *> * StopFiles(int whichNTuple, vector<TString> * fileNames, bool d
     }
     else {
         addPath        = "../RootFiles/";
-        fileInNameBase = "";
-        specNTupString = "_DESY";
+        fileInNameBase = "";        
+        specNTupString = versNumber == 2 ? "_DESY_SkimOutput_DESY" : "_DESY";
         fileNameSuffix =  "Haddplots.root";
         TTBarGenString = "";
         switch (whichTTBarGen) {
@@ -391,7 +397,7 @@ vector<TFile *> * StopSignalFiles(int whichNTuple, TString typeSMS, TString pref
     TString fileName;
     for (unsigned int i = 0; i < vecStopMassGrab->size(); ++i) {
         fileName = addPath + baseString;
-        fileName += "_SignalStop";
+        fileName += "_SignalStop_";
         fileName += vecStopMassGrab->at(i);
         fileName += "_Chi0_";
         fileName += vecChi0MassGrab->at(i);
@@ -409,7 +415,17 @@ vector<TFile *> * StopSignalFiles(int whichNTuple, TString typeSMS, TString pref
     }
     return outVec;
 }
-
+vector<TString> * IsoPlotNames(int whichNTuple) {
+    vector<TString> * outVec = new vector<TString>;
+    outVec->push_back("h_CutFlow");
+    outVec->push_back("h_ElecRelIso");
+    if (whichNTuple == 0) {
+        outVec->push_back("h_ElecCharIso");
+        outVec->push_back("h_ElecNeutIso");
+        outVec->push_back("h_ElecPhotIso");
+    }
+    return outVec;
+}
 
 vector<TString> * MCLegends(int whichNTuple, bool addThings) {
     vector<TString> * outVec = new vector<TString>;
@@ -995,7 +1011,7 @@ void HistogramAdderData(vector<TH1 *> * dataHistVec, TH1F * &DataComp, int RBNX,
     cout << "DataComp Content bin 25 " << DataComp->GetBinContent(25) << endl;
     HistogramUnderflowOverflow(DataComp, doUnderflow, doOverflow);
 }
-void HistogramAdderMC(vector<TH1 *> * mcIndHistCentValVec, vector<TH1F *> * mcCompHistCentValVec, vector<int> * sampleStartPositions, vector<TString> * sampleAddNames, TH1F * &MCComp, int whichNTuple, int RBNX, int numDims, int whichAxis, int axis1LB, int axis1UB, int axis2LB, int axis2UB, TString nameProject, bool doOverflow, bool doUnderflow, TString addName) {
+void HistogramAdderMC(vector<TH1 *> * mcIndHistCentValVec, vector<TH1F *> * mcCompHistCentValVec, vector<int> * sampleStartPositions, vector<TString> * sampleAddNames, TH1F * &MCComp, int RBNX, int numDims, int whichAxis, int axis1LB, int axis1UB, int axis2LB, int axis2UB, TString nameProject, bool doOverflow, bool doUnderflow, TString addName) {
     TH1F * currSampHist1D;
     TH2F * currSampHist2DPatsy, * mcComp2DPatsy;
     TH3F * currSampHist3DPatsy, * mcComp3DPatsy;
@@ -1038,7 +1054,6 @@ void HistogramAdderMC(vector<TH1 *> * mcIndHistCentValVec, vector<TH1F *> * mcCo
                     default:
                         break;
                 }
-                MCComp->Add((TH1F*) mcComp2DPatsy->ProjectionX(nameMCComp + patsyName, axis1LB, axis1UB, "e"));
             }
             break;
         case 3:
@@ -1059,7 +1074,7 @@ void HistogramAdderMC(vector<TH1 *> * mcIndHistCentValVec, vector<TH1F *> * mcCo
             for (unsigned int iMC = 1; iMC < mcIndHistCentValVec->size(); ++iMC) {
                 patsyName = patsyNamebase;
                 patsyName += iMC;
-                mcComp2DPatsy = (TH2F *) mcIndHistCentValVec->at(iMC);
+                mcComp3DPatsy = (TH3F *) mcIndHistCentValVec->at(iMC);
                 switch (whichAxis) {
                     case 1:
                         MCComp->Add((TH1F*) mcComp3DPatsy->ProjectionX(nameMCComp + patsyName, axis1LB, axis1UB, axis2LB, axis2UB, "e"));
@@ -1073,7 +1088,6 @@ void HistogramAdderMC(vector<TH1 *> * mcIndHistCentValVec, vector<TH1F *> * mcCo
                     default:
                         break;
                 }
-                MCComp->Add((TH1F*) mcComp2DPatsy->ProjectionX(nameMCComp + patsyName, axis1LB, axis1UB, "e"));
             }
             break;
         default:
@@ -1082,6 +1096,8 @@ void HistogramAdderMC(vector<TH1 *> * mcIndHistCentValVec, vector<TH1F *> * mcCo
     MCComp->RebinX(RBNX);
     cout << "MCComp error bin 25 " << MCComp->GetBinError(25) << endl;
     cout << "MCComp Content bin 25 " << MCComp->GetBinContent(25) << endl;
+    HistogramUnderflowOverflow(MCComp, doUnderflow, doOverflow);
+/*
     float newHistErr;
     int NBins = MCComp->GetNbinsX();
     if (doUnderflow) {
@@ -1094,6 +1110,7 @@ void HistogramAdderMC(vector<TH1 *> * mcIndHistCentValVec, vector<TH1F *> * mcCo
         newHistErr = TMath::Sqrt(MCComp->GetBinError(NBins)*MCComp->GetBinError(NBins) + MCComp->GetBinError(NBins+1)*MCComp->GetBinError(NBins+1));
         MCComp->SetBinError(NBins, newHistErr);
     }
+    */
     for (unsigned int iSamp = 0; iSamp < sampleStartPositions->size() - 1; ++iSamp) {
         currSampHist1D = NULL;
         currSampHist2DPatsy = NULL;
@@ -1443,30 +1460,20 @@ void SystGraphMakers(TH1F * inputBaseMCHist, vector<TH1F *> * inputBaseMCSystHis
     
     TString stringLepEffSF = "LepEffSF";
     TString stringLepEnSc = "LepES";
+    TString stringJetEnSc = "JetES";
     TString stringMT2ll = "MT2ll";  
     TString stringGenTopRW = "genTopRW";
     TString stringStopXSecUncert = "genStopXSec";
     
     TGraphAsymmErrors * errCompStatCentVal, * errSystQuadSum, * errSystQuadSum_pStat;
-    TGraphAsymmErrors * errLepEnSc, * errLepEffSF, * errMT2ll, * errGenTopRW, * errStopXSecUncert;
-    TGraphAsymmErrors * errLepEnSc_pStat, * errLepEffSF_pStat, * errMT2ll_pStat, * errGenTopRW_pStat, * errStopXSecUncert_pStat;    
+    TGraphAsymmErrors * errLepEnSc, * errLepEffSF, * errJetEnSc, * errMT2ll, * errGenTopRW, * errStopXSecUncert;
+    TGraphAsymmErrors * errLepEnSc_pStat, * errLepEffSF_pStat, * errJetEnSc_pStat, * errMT2ll_pStat, * errGenTopRW_pStat, * errStopXSecUncert_pStat;
     TGraphAsymmErrors * currFracRatioGraph;
 
     cout << "plotVarName " << plotVarName << endl;
     
     errCompStatCentVal = clonePoints(inputBaseMCHist);
-    
-    errLepEffSF = GraphSystErrorSet_SingleSource(inputBaseMCHist, inputBaseMCSystHists, stringLepEffSF + TString("Shift"), doSymErr, 0);
-    errLepEffSF_pStat = GraphSystErrorSumErrors(errCompStatCentVal, stringLepEffSF, errLepEffSF, inputBaseMCHist);
-    GraphMainAttSet(errLepEffSF, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
-    GraphMainAttSet(errLepEffSF_pStat, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
-    errCompSpecSource->push_back(errLepEffSF);
-    errCompSpecSource_pStat->push_back(errLepEffSF_pStat);
-    if (!doSignal) {
-        systCanvNameVec->push_back(stringLepEffSF); 
-        currFracRatioGraph = fracGraph(inputBaseMCHist, errLepEffSF, doAbsRatio, fracRatioYAxisRange);
-        fracRatioSystVec->push_back(currFracRatioGraph);
-    }
+
     errLepEnSc = GraphSystErrorSet_SingleSource(inputBaseMCHist, inputBaseMCSystHists, stringLepEnSc + TString("Shift"), doSymErr, 0);
     errLepEnSc_pStat = GraphSystErrorSumErrors(errCompStatCentVal, stringLepEnSc, errLepEnSc, inputBaseMCHist);
     GraphMainAttSet(errLepEnSc, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
@@ -1478,6 +1485,19 @@ void SystGraphMakers(TH1F * inputBaseMCHist, vector<TH1F *> * inputBaseMCSystHis
         currFracRatioGraph = fracGraph(inputBaseMCHist, errLepEnSc, doAbsRatio, fracRatioYAxisRange);
         fracRatioSystVec->push_back(currFracRatioGraph);
     }
+    
+    errJetEnSc = GraphSystErrorSet_SingleSource(inputBaseMCHist, inputBaseMCSystHists, stringJetEnSc + TString("Shift"), doSymErr, 0);
+    errJetEnSc_pStat = GraphSystErrorSumErrors(errCompStatCentVal, stringJetEnSc, errJetEnSc, inputBaseMCHist);
+    GraphMainAttSet(errJetEnSc, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
+    GraphMainAttSet(errJetEnSc_pStat, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
+    errCompSpecSource->push_back(errJetEnSc);
+    errCompSpecSource_pStat->push_back(errJetEnSc_pStat);
+    if (!doSignal) {
+        systCanvNameVec->push_back(stringJetEnSc);
+        currFracRatioGraph = fracGraph(inputBaseMCHist, errJetEnSc, doAbsRatio, fracRatioYAxisRange);
+        fracRatioSystVec->push_back(currFracRatioGraph);
+    }
+    
     if (plotVarName.Contains("MT2ll")) {
         errMT2ll = GraphSystErrorSet_SingleSource(inputBaseMCHist, inputBaseMCSystHists, stringMT2ll + TString("Shift"), doSymErr, 1);
         errMT2ll_pStat = GraphSystErrorSumErrors(errCompStatCentVal, stringMT2ll, errMT2ll, inputBaseMCHist);
@@ -1494,6 +1514,19 @@ void SystGraphMakers(TH1F * inputBaseMCHist, vector<TH1F *> * inputBaseMCSystHis
     else {
         errMT2ll = NULL;
     }
+    
+    errLepEffSF = GraphSystErrorSet_SingleSource(inputBaseMCHist, inputBaseMCSystHists, stringLepEffSF + TString("Shift"), doSymErr, 0);
+    errLepEffSF_pStat = GraphSystErrorSumErrors(errCompStatCentVal, stringLepEffSF, errLepEffSF, inputBaseMCHist);
+    GraphMainAttSet(errLepEffSF, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
+    GraphMainAttSet(errLepEffSF_pStat, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
+    errCompSpecSource->push_back(errLepEffSF);
+    errCompSpecSource_pStat->push_back(errLepEffSF_pStat);
+    if (!doSignal) {
+        systCanvNameVec->push_back(stringLepEffSF); 
+        currFracRatioGraph = fracGraph(inputBaseMCHist, errLepEffSF, doAbsRatio, fracRatioYAxisRange);
+        fracRatioSystVec->push_back(currFracRatioGraph);
+    }
+    
     errGenTopRW = GraphSystErrorSet_SingleSource(inputBaseMCHist, inputBaseMCSystHists, stringGenTopRW, doSymErr, 0);
     errGenTopRW_pStat = GraphSystErrorSumErrors(errCompStatCentVal, stringGenTopRW, errGenTopRW, inputBaseMCHist);
     GraphMainAttSet(errGenTopRW, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
@@ -1743,7 +1776,7 @@ void HistogramAdderSyst(vector<TH1F *> * dataHistVec, vector<TH1F *> * mcIndHist
     //    if (StopComp->Integral() > 0) mcCompHistCentValVec->push_back(StopComp);
     cout << "inside Histogram Adder Syst line: 344" << endl;
 }
-void SpectrumDraw(TCanvas * InputCanvas, TH1F * Hist1, TString legHist1, TH1F * Hist2, TH1F * fracRatioHist, TH1F * errHist, THStack * MCStack, float TextXPos, float TextYStartPos, float YAxisLB, float YAxisUB, bool logYPad1, vector<TString> * mcLegends, vector<TH1F *> * indMCHists, bool doMean, TString cutUsed, float inputLumi, TLegend * &leg) {
+void SpectrumDraw(TCanvas * InputCanvas, TH1F * Hist1, TString legHist1, TH1F * Hist2, TH1F * fracRatioHist, TH1F * errHist, THStack * MCStack, float TextXPos, float TextYStartPos, float YAxisLB, float YAxisUB, bool logYPad1, vector<TString> * mcLegends, vector<TH1F *> * indMCHists, bool doMean, TString cutUsed, float inputLumi, TLegend * &leg, bool doSFR, bool doODFR, TH1F * fracRatioHist_Other) {
     TLatex * tl = new TLatex();
     //    TLegend * leg;
     tl->SetTextAlign(12);
@@ -1838,22 +1871,37 @@ void SpectrumDraw(TCanvas * InputCanvas, TH1F * Hist1, TString legHist1, TH1F * 
     Pad2->SetGridy(1);
     YAxis = fracRatioHist->GetYaxis();
     XAxis = fracRatioHist->GetXaxis();
-    //    cout << XAxis->GetTitle() << endl;
-    //    HistAxisAttSet(XAxis, XAxisTitle, .17, 1.03, .12,.07, 0.0, 0.0);
-    //    HistAxisAttSet(YAxis, YAxis->GetTitle(),);
-    //    HistAxisAttSet(XAxis, XAxisTitle, .18, 1.03, .18,.07, 0.0, 0.0);
     HistAxisAttSet(XAxis, XAxisTitle, .17, 1.03, .12,.07, 0.0, 0.0);
     YAxis->SetNdivisions(3,5,0);
     XAxis->SetNdivisions(6,5,0);
+    float RatioMax;
+    float RatioMin;  
+    if (doSFR) {
+        RatioMax = fracRatioHist->GetBinContent(fracRatioHist->GetMaximumBin());
+        RatioMin = fracRatioHist->GetBinContent(fracRatioHist->GetMinimumBin());
+        if (abs(RatioMin - 0) < 1E-3) RatioMin = fracRatioHist->GetMinimum(1E-3);
+        YAxis->SetRangeUser(RatioMin - 0.1, RatioMax + 0.1);
+    }
     TGraphAsymmErrors * fracRatioDrawGraph = clonePoints(fracRatioHist, false);
+    fracRatioHist->SetLineColor(kBlack);
     HistToGraphCopyAttributes(fracRatioHist, fracRatioDrawGraph);
     TH1F * patsy = (TH1F*) fracRatioHist->Clone("frac patsy");
     patsy->SetLineColor(kWhite);
     patsy->SetMarkerColor(kWhite);
-    fracRatioHist->SetLineColor(kBlack);
     patsy->Draw("e1");    
     fracRatioDrawGraph->Draw("p0 same");
-    //    fracRatioHist->Draw("e1");
+    TLegend * fracRatioLegend = new TLegend(0.8, 0.65, 0.95, 0.95);
+    TGraphAsymmErrors * fracRatioDrawGraph_Other;
+    if (doODFR) {
+        fracRatioDrawGraph_Other = clonePoints(fracRatioHist_Other, false);
+        fracRatioHist_Other->SetLineColor(kRed);
+        fracRatioHist_Other->SetMarkerColor(kRed);
+        HistToGraphCopyAttributes(fracRatioHist_Other, fracRatioDrawGraph_Other);
+        fracRatioLegend->AddEntry(fracRatioHist, "Selected NTuple Ratio Plot", "pl");
+        fracRatioLegend->AddEntry(fracRatioHist_Other, "Other NTuples Ratio Plot", "pl");
+        fracRatioDrawGraph_Other->Draw("p0 same"); 
+        fracRatioLegend->Draw("same");
+    }
     Pad2->Update();
     Pad2->Modified();
 }
@@ -1890,7 +1938,7 @@ void SpectrumDraw_AddSignal(TCanvas * InputCanvas, vector<TH1F *> * vecSignalHis
      Pad2->Modified();
      */
 }
-void SpectrumDrawSyst(TCanvas * InputCanvas, TH1F * Hist1, TString legHist1, TH1F * Hist2, THStack * MCStack, TGraphAsymmErrors * errGraph, TGraphAsymmErrors * errGraphjustSyst, TH1F * fracRatioHist, TGraphAsymmErrors * fracRatioGraph, float TextXPos, float TextYStartPos, float YAxisLB, float YAxisUB, bool logYPad1, vector<TString> * mcLegends, vector<TH1F *> * indMCHists, bool doMean, TString cutUsed, float inputLumi, TLegend * &leg) {
+void SpectrumDrawSyst(TCanvas * InputCanvas, TH1F * Hist1, TString legHist1, TH1F * Hist2, THStack * MCStack, TGraphAsymmErrors * errGraph, TGraphAsymmErrors * errGraphjustSyst, TH1F * fracRatioHist, TGraphAsymmErrors * fracRatioGraph, float TextXPos, float TextYStartPos, float YAxisLB, float YAxisUB, bool logYPad1, vector<TString> * mcLegends, vector<TH1F *> * indMCHists, bool doMean, TString cutUsed, float inputLumi, TLegend * &leg, bool doSFR, bool doODFR, TH1F * fracRatioHist_Other) {
     TLatex * tl = new TLatex();
     tl->SetTextAlign(12);
     tl->SetNDC();
@@ -1995,6 +2043,14 @@ void SpectrumDrawSyst(TCanvas * InputCanvas, TH1F * Hist1, TString legHist1, TH1
     HistAxisAttSet(XAxis, XAxisTitle, .17, 1.03, .12,.07, 0.0, 0.0);
     YAxis->SetNdivisions(3,5,0);
     XAxis->SetNdivisions(6,5,0);
+    float RatioMax;
+    float RatioMin;
+    if (doSFR) {
+        RatioMax = fracRatioHist->GetBinContent(fracRatioHist->GetMaximumBin());
+        RatioMin = fracRatioHist->GetBinContent(fracRatioHist->GetMinimumBin());
+        if (abs(RatioMin - 0) < 1E-3) RatioMin = fracRatioHist->GetMinimum(1E-3);        
+        YAxis->SetRangeUser(RatioMin - 0.1, RatioMax + 0.1);
+    }
     TGraphAsymmErrors * fracRatioDrawGraph = clonePoints(fracRatioHist, false);
     HistToGraphCopyAttributes(fracRatioHist, fracRatioDrawGraph);
     fracRatioGraph->SetFillColor(kYellow);
@@ -2008,7 +2064,16 @@ void SpectrumDrawSyst(TCanvas * InputCanvas, TH1F * Hist1, TString legHist1, TH1
     fracRatioDrawGraph->Draw("p0 same");    
     TLegend * fracRatioLegend = new TLegend(0.8, 0.8, 0.95, 0.95);
     fracRatioLegend->AddEntry(fracRatioGraph, "Syst. Uncert.", "f");
-    fracRatioLegend->Draw("same");    
+    TGraphAsymmErrors * fracRatioDrawGraph_Other;
+    if (doODFR) {
+        fracRatioDrawGraph_Other = clonePoints(fracRatioHist_Other, false);
+        fracRatioHist_Other->SetLineColor(kRed);
+        fracRatioHist_Other->SetMarkerColor(kRed);
+        HistToGraphCopyAttributes(fracRatioHist_Other, fracRatioDrawGraph_Other);
+        fracRatioLegend->AddEntry(fracRatioHist_Other, "Other NTuples Ratio Plot", "pl");
+        fracRatioDrawGraph_Other->Draw("p0 same"); 
+    }
+    fracRatioLegend->Draw("same");
     Pad2->Update();
     Pad2->Modified();
 }

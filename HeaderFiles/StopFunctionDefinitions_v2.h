@@ -99,7 +99,6 @@ typedef struct {
     
 } SpecHistBinT;
 
-
 typedef std::pair<HistogramT, SampleT> histKey;
 inline bool operator<(const histKey &a, const histKey &b)
 {
@@ -146,6 +145,8 @@ inline double deltaR(double eta1, double phi1, double eta2, double phi2) {
     result = sqrt(result);
     return result;
 }
+
+
 /*
  currently not working with this error:
  error: passing 'const TString' as 'this' argument of 'TString& TString::operator=(const TString&)' discards qualifiers [-fpermissive]
@@ -168,6 +169,115 @@ inline float PileupRW(TH1 * nVtxSFHist, int nVtx) {
     return (float) nVtxSFHist->GetBinContent(nVtxSFHist->FindBin(nVtx));
 }
 
+inline vector<TH1F *> * OneDProjectionReturnVec(TH1 * inputHist, int numDims, int whichAxisToProjTo, int whichAxisForDist, int axisProjLB, int axisProjUB, TString nameBase) {
+    TString name;
+    vector<TH1F *> * outHistVector = new vector<TH1F *>;
+    TH1F * projHist;
+    TH2F * projPatsy2DHist;
+    TH3F * projPatsy3DHist;
+    TString patsyNamebase = "patsy";
+    TString patsyName;
+    int NBins;
+    int whichAxisToMix = 6 - (whichAxisForDist + whichAxisToProjTo);
+    int axis1LB, axis1UB, axis2LB, axis2UB;
+    switch (whichAxisForDist) {
+        case 1:
+            NBins = inputHist->GetNbinsX();
+            break;
+        case 2:
+            NBins = inputHist->GetNbinsY();
+            break;
+        case 3:
+            NBins = inputHist->GetNbinsZ();
+            break;
+        default:
+            break;
+    }    
+    for (int ib = 1; ib <= NBins; ++ib) {
+        axis1LB = (whichAxisToMix > whichAxisForDist) ? ib : axisProjLB;
+        axis1UB = (whichAxisToMix > whichAxisForDist) ? ib : axisProjUB;
+        axis2LB = (whichAxisToMix > whichAxisForDist) ? axisProjLB : ib;
+        axis2UB = (whichAxisToMix > whichAxisForDist) ? axisProjUB : ib;
+        name = nameBase;
+        name += ib;
+        patsyName = patsyNamebase;
+        patsyName += name;
+        switch (whichAxisToProjTo) {
+            case 1:
+                if (numDims > 2) {
+                    projPatsy3DHist = (TH3F *) inputHist->Clone(patsyName);
+                    projHist = (TH1F *) projPatsy3DHist->ProjectionX(name, axis1LB, axis1UB, axis2LB, axis2UB);   
+                }
+                else {
+                    projPatsy2DHist = (TH2F *) inputHist->Clone(patsyName);
+                    
+                    projHist = (TH1F *) projPatsy2DHist->ProjectionX(name, axis1LB, axis1UB);   
+                }
+                break;
+            case 2:
+                if (numDims > 2) {
+                    projPatsy3DHist = (TH3F *) inputHist->Clone(patsyName);
+                    projHist = (TH1F *) projPatsy3DHist->ProjectionY(name, axis1LB, axis1UB, axis2LB, axis2UB);   
+                }
+                else {
+                    projPatsy2DHist = (TH2F *) inputHist->Clone(patsyName);
+                    
+                    projHist = (TH1F *) projPatsy2DHist->ProjectionY(name, axis1LB, axis1UB);   
+                }
+                break;
+            case 3:
+                if (numDims > 2) {
+                    projPatsy3DHist = (TH3F *) inputHist->Clone(patsyName);
+                    projHist = (TH1F *) projPatsy3DHist->ProjectionZ(name, axis1LB, axis1UB, axis2LB, axis2UB);   
+                }
+                break;
+            default:
+                break;
+        }
+        outHistVector->push_back(projHist);
+    }
+    return outHistVector;
+}
+inline float DeltaMT2UncEn(vector<TH1F *> * vecOneDeeHists, TH2F * TwoDeeHist, float inputMT2Value) {
+    //returns float which is a random number drawn from the distribution of MT2 Central Value minus MT2 Unclustered ES shifted version
+    
+    int whichOneDeeHist = TwoDeeHist->GetXaxis()->FindBin(inputMT2Value) - 1;
+    unsigned int numOneDeeHists = vecOneDeeHists->size();
+    if (whichOneDeeHist < 0) {
+        cout << inputMT2Value << endl;
+        cout << "ERROR with which one dee hist!" << endl;
+        return 0.;
+    }
+    else if (whichOneDeeHist >= numOneDeeHists) {
+        whichOneDeeHist = (int) numOneDeeHists - 1;
+    }
+    if (vecOneDeeHists->at(whichOneDeeHist)->Integral() == 0) {
+        return 0;
+    }
+    else {
+        return vecOneDeeHists->at(whichOneDeeHist)->GetRandom();   
+    }
+}
+
+
+inline TLorentzVector LeptonScaleSystShift(TLorentzVector inputLepVec, int inputLepPDGID, float shiftDirection) {
+    float barrelEtaEnd = 1.442; float endcapEtaStart = 1.566; 
+    float electronESEB = 0.006; float electronESEE = 0.015;
+    float muonES = 0.002;
+    float scaleToUse = 0;
+    TLorentzVector outShiftVec = inputLepVec;
+    if (abs(inputLepPDGID) == 11) {
+        scaleToUse = ((inputLepVec.Eta() < barrelEtaEnd) ? electronESEB : electronESEE);
+    }
+    else if (abs(inputLepPDGID) == 13) {
+        scaleToUse = muonES;
+    }
+    else {
+        cout << "wtf?! not dealing with electron or muon" << endl;
+    }
+    outShiftVec *= (1 + shiftDirection * scaleToUse);
+    return outShiftVec;
+}
 inline vector<float> * SystWeights(TH1 * origHist, TH1 * rwHist) {
     // origHist is histogram for initial distribution, //rwHist is histogram for distribution
     // you wish to RW to -- both should be 1D (functionality for now) and have same nBins
@@ -189,142 +299,13 @@ inline vector<float> * SystWeights(TH1 * origHist, TH1 * rwHist) {
     }
     return weightVec;
 }
-inline TLorentzVector LeptonScaleSystShift(TLorentzVector inputLepVec, int inputLepPDGID, float shiftDirection) {
-    float barrelEtaEnd = 1.442; float endcapEtaStart = 1.566; 
-    float electronESEB = 0.006; float electronESEE = 0.015;
-    float muonES = 0.002;
-    float scaleToUse = 0;
-    TLorentzVector outShiftVec = inputLepVec;
-    if (abs(inputLepPDGID) == 11) {
-        scaleToUse = ((inputLepVec.Eta() < barrelEtaEnd) ? electronESEB : electronESEE);
-    }
-    else if (abs(inputLepPDGID) == 13) {
-        scaleToUse = muonES;
-    }
-    else {
-        cout << "wtf?! not dealing with electron or muon" << endl;
-    }
-    outShiftVec *= (1 + shiftDirection * scaleToUse);
-    return outShiftVec;
-}
+
 /*
  inline TLorentzVector JetScaleSystShift(TLorentzVector inputJetVec) {
  
  }
  */
-inline void METSystShift(vector<TLorentzVector> * inputObjVec, vector<TLorentzVector> * shiftObjVec, float &newMET, float &newMETPhi, float origMET, float origMETPhi) {
-    TVector3 vecMET;
-    TVector3 inputObjTotThreeVec; inputObjTotThreeVec.SetPtEtaPhi(0., 0., 0.);
-    TVector3 shiftObjTotThreeVec; shiftObjTotThreeVec.SetPtEtaPhi(0., 0., 0.);
-    TVector3 inputObjCurrThreeVec;
-    TVector3 shiftObjCurrThreeVec;
-    vecMET.SetPtEtaPhi(origMET, 0., origMETPhi);    
-    if (inputObjVec->size() != shiftObjVec->size()) {
-        cout << "inputObj size " << inputObjVec->size() << endl;
-        cout << "shiftObj size " << shiftObjVec->size() << endl;
-        cout << "issue: two input object vectors are not same size -- check it out" << endl;
-        return;
-    }
-    for (unsigned int i = 0; i < inputObjVec->size(); ++i) {
-        inputObjCurrThreeVec.SetPtEtaPhi(inputObjVec->at(i).Pt(), inputObjVec->at(i).Eta(), inputObjVec->at(i).Phi());
-        shiftObjCurrThreeVec.SetPtEtaPhi(shiftObjVec->at(i).Pt(), shiftObjVec->at(i).Eta(), shiftObjVec->at(i).Phi());
-        inputObjTotThreeVec = inputObjTotThreeVec + inputObjCurrThreeVec;
-        shiftObjTotThreeVec = shiftObjTotThreeVec + shiftObjCurrThreeVec;
-    }
-    vecMET = vecMET - inputObjTotThreeVec;
-    vecMET = vecMET + shiftObjTotThreeVec;
-    newMET = vecMET.Pt();
-    newMETPhi = vecMET.Phi();
-    return;
-}
 
-inline float GenLevelTopPtWeight(float pT_Top, float pT_AntiTop) {
-    if (pT_Top < 0 || pT_AntiTop < 0) {
-        cout << "bad mojo -- either pT is less than 0 " << endl;
-        cout << "pT_Top " << pT_Top << endl;
-        cout << "pT_AntiTop " << pT_AntiTop << endl;
-        return 0.;
-    }
-//    float pT_ToUse = TMath::Sqrt(pT_Top * pT_AntiTop);
-    /*
-     // Testing speed of using one of these guys
-     TF1 * genWeight = new TF1("genTopWeight", "expo");
-     genWeight->SetParameter("Constant", .156)
-     genWeight->SetParameter("Slope", -.00137)
-     return genWeight->Eval(pT_ToUse);
-    */
-    float expoConst = 0.156;
-    float expoSlope = -0.00137;
-/*    return TMath::Exp(expoConst) * TMath::Exp(expoSlope * pT_ToUse);*/
-//    cout << "TMath::Exp(expoConst) * TMath::Exp(expoSlope * pT_ToUse) " << (TMath::Exp(expoConst) * TMath::Exp(expoSlope * pT_ToUse)) << endl;
-    float weightTop = TMath::Exp(expoConst) * TMath::Exp(expoSlope * pT_Top);
-    float weightAntiTop = TMath::Exp(expoConst) * TMath::Exp(expoSlope * pT_AntiTop);
-//    cout << " weight Top " << weightTop << endl;
-//    cout << " weight antiTop " << weightAntiTop << endl;
-//    cout << "TMath::Sqrt(weightAntiTop * weightAntiTop + weightTop * weightTop) " << TMath::Sqrt((weightAntiTop * weightAntiTop) + (weightTop * weightTop)) << endl;
-//    return TMath::Sqrt(weightAntiTop * weightAntiTop + weightTop * weightTop);
-    return TMath::Sqrt(weightAntiTop * weightTop);
-}
-
-inline int EventType(vector<int> *lepPdgId, int lep0Index, int lep1Index) {
-    int Lep0Type = lepPdgId->at(lep0Index);
-    int Lep1Type = lepPdgId->at(lep1Index);
-    int Type;
-    if (TMath::Abs(Lep0Type) == 11) {
-        if (TMath::Abs(Lep1Type) == 11) {
-            Type = 1;
-        }
-        else if (TMath::Abs(Lep1Type) == 13) {
-            Type = 2;
-        }
-    }
-    else if (TMath::Abs(Lep0Type) == 13) {
-        if (TMath::Abs(Lep1Type) == 11) {
-            Type = 2;
-        }
-        else if (TMath::Abs(Lep1Type) == 13) {
-            Type = 0;
-        }
-    }
-    else {
-        cout <<"" << endl;
-        cout <<"something is wrong" << endl;
-        cout <<"Lep0 ID: " << Lep0Type << endl;
-        cout <<"Lep1 ID: " << Lep1Type << endl;
-        cout <<"" << endl;
-    }
-    return Type;
-}
-inline float ScaleFactorMC(int Type, int Syst) {
-    
-    // Type: 0 MuMu, 1 EE 2 EMu
-    // Syst: 0 CentVal, 1 SystShiftUp, 2 SystShiftDown
-    //    float SFTrig[3] = {0.994, 0.955, 0.978};
-    //    float SFIDIso[3] = {0.993, 0.979, 0.986};    
-    //return SFTrig[Type] * SFIDIso[Type];
-    // Note! As of 8/10/13, trying an additional SF just for funsies, ok not really just for funsies, basically we find that the DD TTBar normalization is different for the three separate channels, which is bad news bears because it is indicative of different lepton reconstruction efficiency scale factors for data/MC for the different leptons
-    float SFTotal[3] = {0.987, 0.957, 0.935};
-    float SFSystUp[3] = {0.011, 0.015, 0.013};
-    float SFSystDown[3] = {0.011, 0.015, 0.013};
-    float MuMuAdditionalSF = 1.02169370264668;
-    float EEAddtionalSF    = 0.977225138882017;
-    float EMuAdditionalSF  = 0.999212074818846;
-    float SFAdditional[3] = {MuMuAdditionalSF, EEAddtionalSF, EMuAdditionalSF};
-    switch (Syst) {
-        case 0:
-            return SFTotal[Type] * SFAdditional[Type];
-            break;
-        case 1:
-            return (SFTotal[Type] * SFAdditional[Type]) + SFSystUp[Type];
-            break;      
-        case -1:
-            return (SFTotal[Type] * SFAdditional[Type]) - SFSystDown[Type];
-            break;  
-        default:
-            return 1;
-            break;
-    }
-}
 inline bool FilterMET(vector<bool> * regFilterVec, vector<bool> * oppFilterVec) {
     for (unsigned int iReg = 0; iReg < regFilterVec->size(); ++iReg) {
         if (!regFilterVec->at(iReg)) return false;
@@ -334,14 +315,40 @@ inline bool FilterMET(vector<bool> * regFilterVec, vector<bool> * oppFilterVec) 
     }
     return true;
 }
-
-inline vector<int> * ElectronPickOvi(vector<float> * ElecPt, vector<float> * ElecEta, vector<int> * ElecCharge, vector<float> * ElecNeutHadIso, vector<float> * ElecCharHadIso, vector<float> * ElecPhotHadIso, vector<bool> * passConvVeto, vector<bool> * isPFElectron) {
-    //    cout << "doing electron info" << endl;
-    int leadElecIndex = -1; int subElecIndex = -1; int leadPositIndex = -1; int subPositIndex = -1;
-    float elecIsoRatioCut = 0.15; float elecEtaCut = 2.5; float leadElecPtCut = 20; float subElecPtCut = 10;
+Double_t ElectronEffectiveArea(float elecEta) {
+    //should check numbers here:
+    //http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/UserCode/EGamma/EGammaAnalysisTools/interface/ElectronEffectiveArea.h?revision=1.3&view=markup
+    Double_t Aeff = 0.;    
+    if (fabs(elecEta) < 1.0 )         Aeff = 0.13; // +/- 0.001
+    else if (fabs(elecEta) < 1.479)    Aeff = 0.14; // +/- 0.002
+    else if (fabs(elecEta) < 2.0)      Aeff = 0.07; // +/- 0.001
+    else if (fabs(elecEta) < 2.2)      Aeff = 0.09; // +/- 0.001
+    else if (fabs(elecEta) < 2.3)      Aeff = 0.11; // +/- 0.002
+    else if (fabs(elecEta) < 2.4)      Aeff = 0.11; // +/- 0.003
+    else if (fabs(elecEta) > 2.4)      Aeff = 0.14; // +/- 0.004
+    
+    return Aeff;
+}
+inline bool ElectronPassCut(bool isPFElectron, bool passConvVeto, float relPFElecIso, float elecIsoRatioCut, float elecEta, float elecEtaUB, float barrelEtaEnd, float endcapEtaStart) {
+    bool passCut;
+    if (!isPFElectron || !passConvVeto || relPFElecIso > elecIsoRatioCut || abs(elecEta) > elecEtaUB || (abs(elecEta) > barrelEtaEnd && abs(elecEta) < endcapEtaStart)) {
+        passCut = false;
+    }
+    else {
+        passCut = true;
+    }
+    return passCut;
+}
+inline void ElectronPickOvi(vector<float> * ElecPx, vector<float> * ElecPy, vector<float> * ElecPz, vector<float> * ElecEnergy, vector<int> * ElecCharge, vector<float> * ElecNeutHadIso, vector<float> * ElecCharHadIso, vector<float> * ElecPhotHadIso, vector<bool> * passConvVeto, vector<bool> * isPFElectron, float eventRhoIso, vector<TLorentzVector> * vecIsoLeptons, vector<int> * vecIsoPDGIDs, vector<float> * vecIsoLepPFRelIso) {
+    float elecIsoRatioCut = 0.15; float elecEtaCut = 2.5;// float leadElecPtCut = 20; float subElecPtCut = 10;
     float barrelEtaEnd = 1.442; float endcapEtaStart = 1.566;
-    //    cout << "i max " << ElecPt->size() << endl;
-    for (unsigned int i = 0; i < ElecPt->size(); ++i) {
+    bool currElecPassCut;
+    float currElecPt, currElecEta;
+//    float scaleToUse = 0;
+//    float electronESEB = 0.006; float electronESEE = 0.015;
+    float currRelPFElecIso;
+    TLorentzVector patsyVec;
+    for (unsigned int i = 0; i < ElecPx->size(); ++i) {
         /*
          cout << "i " << i << endl;
          cout << "passconv " << passConvVeto->at(i) << endl;
@@ -355,51 +362,86 @@ inline vector<int> * ElectronPickOvi(vector<float> * ElecPt, vector<float> * Ele
          cout << "ElecCharge " << ElecCharge->at(i) << endl;
          cout << "(ElecNeutHadIso->at(i) + ElecCharHadIso->at(i) + ElecPhotHadIso->at(i))/ElecPt->at(i) " << (ElecNeutHadIso->at(i) + ElecCharHadIso->at(i) + ElecPhotHadIso->at(i))/ElecPt->at(i) << endl;
          */
-        if (isPFElectron->at(i) && passConvVeto->at(i) && ((ElecNeutHadIso->at(i) + ElecCharHadIso->at(i) + ElecPhotHadIso->at(i))/ElecPt->at(i)) < elecIsoRatioCut && abs(ElecEta->at(i)) < elecEtaCut && !(abs(ElecEta->at(i)) > barrelEtaEnd && abs(ElecEta->at(i)) < endcapEtaStart)) {
-            if (ElecCharge->at(i) > 0) {
-                if (leadPositIndex < 0) {
-                    if (ElecPt->at(i) > leadElecPtCut) leadPositIndex = i;
-                }
-                else if (subPositIndex < 0) {
-                    if (ElecPt->at(i) > subElecPtCut) subPositIndex = i;
-                }
-                else {
-                    continue;
-                }
-            }
-            else {
-                if (leadElecIndex < 0) {
-                    if (ElecPt->at(i) > leadElecPtCut) leadElecIndex = i;
-                }
-                else if (subElecIndex < 0) {
-                    if (ElecPt->at(i) > subElecPtCut) subElecIndex = i;
-                }
-                else {
-                    continue;
-                }
-            }
+        patsyVec.SetPxPyPzE(ElecPx->at(i), ElecPy->at(i), ElecPz->at(i), ElecEnergy->at(i));
+        currElecPt = patsyVec.Pt(); currElecEta = patsyVec.Eta();
+        currRelPFElecIso = ElecCharHadIso->at(i) + TMath::Max(0., ElecNeutHadIso->at(i) +  ElecPhotHadIso->at(i) - (eventRhoIso * ElectronEffectiveArea(currElecEta)));
+        currRelPFElecIso /= currElecPt;
+        currElecPassCut = ElectronPassCut(isPFElectron->at(i), passConvVeto->at(i), currRelPFElecIso, elecIsoRatioCut, currElecEta, elecEtaCut, barrelEtaEnd, endcapEtaStart);
+        if (currElecPassCut) {
+            vecIsoLeptons->push_back(patsyVec);
+            vecIsoPDGIDs->push_back(ElecCharge->at(i) > 0 ? -11 : 11);
+            vecIsoLepPFRelIso->push_back(currRelPFElecIso);
         }
         else {
             continue;
         }
     }
-    vector<int> * indices = new vector<int>;
-    indices->push_back(leadElecIndex); 
-    //    indices->push_back(subElecIndex); 
-    indices->push_back(leadPositIndex); 
-    //    indices->push_back(subPositIndex);
-    return indices;
 }
 
+inline void ElectronPickOvi(vector<float> * ElecPx, vector<float> * ElecPy, vector<float> * ElecPz, vector<float> * ElecEnergy, vector<int> * ElecCharge, vector<float> * ElecNeutHadIso, vector<float> * ElecCharHadIso, vector<float> * ElecPhotHadIso, vector<bool> * passConvVeto, vector<bool> * isPFElectron, float eventRhoIso, float whichSystCase, vector<TLorentzVector> * vecIsoLeptons, vector<int> * vecIsoPDGIDs, vector<float> * vecIsoLepPFRelIso, vector<TLorentzVector> * vecIsoLeptons_CentVal) {
+    float elecIsoRatioCut = 0.15; float elecEtaCut = 2.5;// float leadElecPtCut = 20; float subElecPtCut = 10;
+    float barrelEtaEnd = 1.442; float endcapEtaStart = 1.566;
+    bool currElecPassCut;
+    float currElecPt, currElecEta;
+    //    float scaleToUse = 0;
+    //    float electronESEB = 0.006; float electronESEE = 0.015;
+    float currRelPFElecIso;
+    TLorentzVector patsyVec, patsyVec2;
+    for (unsigned int i = 0; i < ElecPx->size(); ++i) {
+        /*
+         cout << "i " << i << endl;
+         cout << "passconv " << passConvVeto->at(i) << endl;
+         cout << "isPFElec " << isPFElectron->at(i) << endl;
+         cout << "neuthadiso " << ElecNeutHadIso->at(i) << endl;
+         cout << "charhadiso " << ElecCharHadIso->at(i) << endl;
+         cout << "photiso " << ElecPhotHadIso->at(i) << endl;
+         cout << "ElecPt " << ElecPt->at(i) << endl;
+         cout << "ElecEta " << ElecEta->at(i) << endl;
+         cout << "ElecEta " << abs(ElecEta->at(i)) << endl;
+         cout << "ElecCharge " << ElecCharge->at(i) << endl;
+         cout << "(ElecNeutHadIso->at(i) + ElecCharHadIso->at(i) + ElecPhotHadIso->at(i))/ElecPt->at(i) " << (ElecNeutHadIso->at(i) + ElecCharHadIso->at(i) + ElecPhotHadIso->at(i))/ElecPt->at(i) << endl;
+         */
+        patsyVec.SetPxPyPzE(ElecPx->at(i), ElecPy->at(i), ElecPz->at(i), ElecEnergy->at(i));
+        patsyVec2.SetPxPyPzE(ElecPx->at(i), ElecPy->at(i), ElecPz->at(i), ElecEnergy->at(i));
+        if (whichSystCase != 0) {
+            patsyVec = LeptonScaleSystShift(patsyVec, 11, whichSystCase);
+        }
+        currElecPt = patsyVec.Pt(); currElecEta = patsyVec.Eta();
+        currRelPFElecIso = ElecCharHadIso->at(i) + TMath::Max(0., ElecNeutHadIso->at(i) +  ElecPhotHadIso->at(i) - (eventRhoIso * ElectronEffectiveArea(currElecEta)));
+        currRelPFElecIso /= currElecPt;
+        currElecPassCut = ElectronPassCut(isPFElectron->at(i), passConvVeto->at(i), currRelPFElecIso, elecIsoRatioCut, currElecEta, elecEtaCut, barrelEtaEnd, endcapEtaStart);
+        if (currElecPassCut) {
+            vecIsoLeptons->push_back(patsyVec);
+            vecIsoLeptons_CentVal->push_back(patsyVec2);
+            vecIsoPDGIDs->push_back(ElecCharge->at(i) > 0 ? -11 : 11);
+            vecIsoLepPFRelIso->push_back(currRelPFElecIso);
+        }
+        else {
+            continue;
+        }
+    }
+}
 
-inline vector<int> * MuonPickOvi(vector<float> * MuonPt, vector<float> * MuonEta, vector<int> * MuonCharge, vector<float> * MuonD0, vector<float> *MuonVertZ, vector<float> * VertexZ, vector<float> * MuonNeutHadIso, vector<float> * MuonCharHadIso, vector<float> * MuonPhotHadIso, vector<float> * MuonSumPUPt, vector<bool> * isGMPT, vector<bool> * isPFMuon) {
-    int leadMuonIndex = -1; int subMuonIndex = -1; int leadMuBarIndex = -1; int subMuBarIndex = -1;
-    float muonIsoRatioCut = 0.15; float muonEtaCut = 2.4; float leadMuonPtCut = 20; float subMuonPtCut = 10;
+inline bool MuonPassCut(bool isGMPT, bool isPFMuon, float relPFMuonIso, float muonIsoRatioCut, float muonEta, float muonEtaCut, float muonD0, float muonD0Cut, float muonDZ, float muonDZCut) {
+    bool muonPassCut;
+    if (!isGMPT || !isPFMuon || relPFMuonIso > muonIsoRatioCut || abs(muonEta) > muonEtaCut || muonD0 > muonD0Cut || muonDZ > muonDZCut) {
+        muonPassCut = false;
+    }
+    else {
+        muonPassCut = true;
+    }
+    return muonPassCut;
+}
+inline void MuonPickOvi(vector<float> * MuonPx, vector<float> * MuonPy, vector<float> * MuonPz, vector<float> * MuonEnergy, vector<int> * MuonCharge, vector<float> * MuonD0, vector<float> * MuonVertZ, vector<float> * VertexZ, vector<float> * MuonNeutHadIso, vector<float> * MuonCharHadIso, vector<float> * MuonPhotHadIso, vector<float> * MuonSumPUPt, vector<bool> * isGMPT, vector<bool> * isPFMuon, vector<TLorentzVector> * vecIsoLeptons, vector<int> * vecIsoPDGIDs, vector<float> * vecIsoLepPFRelIso) {
+//    int leadMuonIndex = -1; int subMuonIndex = -1; int leadMuBarIndex = -1; int subMuBarIndex = -1;
+    float muonIsoRatioCut = 0.15; float muonEtaCut = 2.4;// float leadMuonPtCut = 20; float subMuonPtCut = 10;
     float muonD0Cut = 0.2; float muonDZCut = 0.5;
-    
-    float muonPFIso;
-    //    cout << "i max " << MuonPt->size() << endl;
-    for (unsigned int i = 0; i < MuonPt->size(); ++i) {
+    float currMuonPt, currMuonEta;
+    float currMuonRelPFIso;
+    float currMuonDZ;
+    bool  currMuonPassCut;
+    TLorentzVector patsyVec;
+    for (unsigned int i = 0; i < MuonPx->size(); ++i) {
         /*
          cout << "i " << i << endl;
          cout << "isGMPT " << isGMPT->at(i) << endl;
@@ -415,42 +457,249 @@ inline vector<int> * MuonPickOvi(vector<float> * MuonPt, vector<float> * MuonEta
          cout << "abs(VertexZ->at(0) - MuonVertZ->at(i)) " << abs(VertexZ->at(0) - MuonVertZ->at(i)) << endl;
          */
         //         [sumChargedHadronPt+ max(0.,sumNeutralHadronPt+sumPhotonPt-0.5sumPUPt]/pt
-        muonPFIso = MuonCharHadIso->at(i) + TMath::Max((float)0., MuonPhotHadIso->at(i) + MuonNeutHadIso->at(i) - MuonSumPUPt->at(i));
-        if (isGMPT->at(i) && isPFMuon->at(i) && muonPFIso/MuonPt->at(i) < muonIsoRatioCut && abs(MuonEta->at(i)) < muonEtaCut && MuonD0->at(0) < muonD0Cut && abs(VertexZ->at(0) - MuonVertZ->at(i)) < muonDZCut) {
-            if (MuonCharge->at(i) > 0) {
-                if (leadMuBarIndex < 0) {
-                    if (MuonPt->at(i) > leadMuonPtCut) leadMuBarIndex = i;
-                }
-                else if (subMuBarIndex < 0) {
-                    if (MuonPt->at(i) > subMuonPtCut) subMuBarIndex = i;
-                }
-                else {
-                    continue;
-                }
-            }
-            else {
-                if (leadMuonIndex < 0) {
-                    if (MuonPt->at(i) > leadMuonPtCut) leadMuonIndex = i;
-                }
-                else if (subMuonIndex < 0) {
-                    if (MuonPt->at(i) > subMuonPtCut) subMuonIndex = i;
-                }
-                else {
-                    continue;
-                }
-            }
+        patsyVec.SetPxPyPzE(MuonPx->at(i), MuonPy->at(i), MuonPz->at(i), MuonEnergy->at(i));
+        currMuonPt = patsyVec.Pt();
+        currMuonEta = patsyVec.Eta();
+        currMuonRelPFIso = MuonCharHadIso->at(i) + TMath::Max((float)0., MuonPhotHadIso->at(i) + MuonNeutHadIso->at(i) - MuonSumPUPt->at(i));
+        currMuonRelPFIso /= currMuonPt;
+        currMuonDZ = abs(VertexZ->at(0) - MuonVertZ->at(i));
+        currMuonPassCut = MuonPassCut(isGMPT->at(i), isPFMuon->at(i), currMuonRelPFIso, muonIsoRatioCut, currMuonEta, muonEtaCut, MuonD0->at(i), muonD0Cut, currMuonDZ, muonDZCut);
+        if (currMuonPassCut){
+            vecIsoLeptons->push_back(patsyVec);
+            vecIsoPDGIDs->push_back(MuonCharge->at(i) > 0 ? -13 : 13);
+            vecIsoLepPFRelIso->push_back(currMuonRelPFIso);
         }
         else {
             continue;
         }
     }
-    vector<int> * indices = new vector<int>;
-    indices->push_back(leadMuonIndex); 
-    //    indices->push_back(subMuonIndex); 
-    indices->push_back(leadMuBarIndex); 
-    //indices->push_back(subMuBarIndex);
-    return indices;
 }
+
+inline void MuonPickOvi(vector<float> * MuonPx, vector<float> * MuonPy, vector<float> * MuonPz, vector<float> * MuonEnergy, vector<int> * MuonCharge, vector<float> * MuonD0, vector<float> * MuonVertZ, vector<float> * VertexZ, vector<float> * MuonNeutHadIso, vector<float> * MuonCharHadIso, vector<float> * MuonPhotHadIso, vector<float> * MuonSumPUPt, vector<bool> * isGMPT, vector<bool> * isPFMuon, float whichSystCase, vector<TLorentzVector> * vecIsoLeptons, vector<int> * vecIsoPDGIDs, vector<float> * vecIsoLepPFRelIso, vector<TLorentzVector> * vecIsoLeptons_CentVal) {
+    //    int leadMuonIndex = -1; int subMuonIndex = -1; int leadMuBarIndex = -1; int subMuBarIndex = -1;
+    float muonIsoRatioCut = 0.15; float muonEtaCut = 2.4;// float leadMuonPtCut = 20; float subMuonPtCut = 10;
+    float muonD0Cut = 0.2; float muonDZCut = 0.5;
+    float currMuonPt, currMuonEta;
+    float currMuonRelPFIso;
+    float currMuonDZ;
+    bool  currMuonPassCut;
+    TLorentzVector patsyVec, patsyVec2;
+    for (unsigned int i = 0; i < MuonPx->size(); ++i) {
+        /*
+         cout << "i " << i << endl;
+         cout << "isGMPT " << isGMPT->at(i) << endl;
+         cout << "isPFMuon " << isPFMuon->at(i) << endl;
+         cout << "neuthadiso " << MuonNeutHadIso->at(i) << endl;
+         cout << "charhadiso " << MuonCharHadIso->at(i) << endl;
+         cout << "photiso " << MuonPhotHadIso->at(i) << endl;
+         cout << "MuonPt " << MuonPt->at(i) << endl;
+         cout << "MuonEta " << MuonEta->at(i) << endl;
+         cout << "VertexZ->at " << VertexZ->at(0) << endl;
+         cout << "muonVertexZ->at " << MuonVertZ->at(i) << endl;
+         cout << "MuonCharge->at " << MuonCharge->at(i) << endl;
+         cout << "abs(VertexZ->at(0) - MuonVertZ->at(i)) " << abs(VertexZ->at(0) - MuonVertZ->at(i)) << endl;
+         */
+        //         [sumChargedHadronPt+ max(0.,sumNeutralHadronPt+sumPhotonPt-0.5sumPUPt]/pt
+        patsyVec.SetPxPyPzE(MuonPx->at(i), MuonPy->at(i), MuonPz->at(i), MuonEnergy->at(i));
+        patsyVec2.SetPxPyPzE(MuonPx->at(i), MuonPy->at(i), MuonPz->at(i), MuonEnergy->at(i));
+        if (whichSystCase != 0) {
+            patsyVec = LeptonScaleSystShift(patsyVec, 13, whichSystCase);
+        }    
+        currMuonPt = patsyVec.Pt();
+        currMuonEta = patsyVec.Eta();
+        currMuonRelPFIso = MuonCharHadIso->at(i) + TMath::Max((float)0., MuonPhotHadIso->at(i) + MuonNeutHadIso->at(i) - MuonSumPUPt->at(i));
+        currMuonRelPFIso /= currMuonPt;
+        currMuonDZ = abs(VertexZ->at(0) - MuonVertZ->at(i));
+        currMuonPassCut = MuonPassCut(isGMPT->at(i), isPFMuon->at(i), currMuonRelPFIso, muonIsoRatioCut, currMuonEta, muonEtaCut, MuonD0->at(i), muonD0Cut, currMuonDZ, muonDZCut);
+        if (currMuonPassCut){
+            vecIsoLeptons->push_back(patsyVec);
+            vecIsoLeptons_CentVal->push_back(patsyVec2);
+            vecIsoPDGIDs->push_back(MuonCharge->at(i) > 0 ? -13 : 13);
+            vecIsoLepPFRelIso->push_back(currMuonRelPFIso);
+        }
+        else {
+            continue;
+        }
+    }
+}
+
+inline void IsoLeptonsPickDESY(VLV * Leptons, vector<int> *lepPdgId, vector<double> *lepPFIso, float whichSystCase, vector<TLorentzVector> * vecIsoLeptons, vector<int> * vecIsoPDGIDs, vector<float> * vecIsoLepPFRelIso, vector<TLorentzVector> * vecIsoLeptons_CentVal) {    
+    unsigned int vecSize = Leptons->size();
+    if (vecSize < 2) {
+        return;
+    }
+    float muonIsoRatioCut = 0.15; float muonEtaCut = 2.4;
+    float elecIsoRatioCut = 0.15; float elecEtaCut = 2.5;
+    float barrelEtaEnd = 1.442; float endcapEtaStart = 1.566;
+    TLorentzVector patsyVec, patsyVec2;
+    float currLepEta, currLepRelPFIso;
+    int   currLepPDGID;
+    bool  currLepPassCut;    
+    for (unsigned int iLep = 0; iLep < vecSize; ++iLep) {
+        patsyVec.SetPxPyPzE(Leptons->at(iLep).Px(), Leptons->at(iLep).Py(), Leptons->at(iLep).Pz(), Leptons->at(iLep).E());
+        patsyVec2.SetPxPyPzE(Leptons->at(iLep).Px(), Leptons->at(iLep).Py(), Leptons->at(iLep).Pz(), Leptons->at(iLep).E());
+        currLepEta = patsyVec.Eta();
+        currLepRelPFIso = lepPFIso->at(iLep);
+        currLepPDGID = lepPdgId->at(iLep);        
+        if (whichSystCase != 0) {
+            patsyVec = LeptonScaleSystShift(patsyVec, abs(currLepPDGID), whichSystCase);
+        }
+        if (abs(currLepPDGID) == 13) {
+            currLepPassCut = MuonPassCut(true, true, currLepRelPFIso, muonIsoRatioCut, currLepEta, muonEtaCut, 0.0, 1., 0.0, 1.);
+        }
+        else if (abs(currLepPDGID) == 11) {
+            currLepPassCut = ElectronPassCut(true, true, currLepRelPFIso, elecIsoRatioCut, currLepEta, elecEtaCut, barrelEtaEnd, endcapEtaStart);
+        }
+        if (currLepPassCut) {
+            vecIsoLeptons->push_back(patsyVec);
+            vecIsoLeptons_CentVal->push_back(patsyVec2);
+            vecIsoPDGIDs->push_back(currLepPDGID);
+            vecIsoLepPFRelIso->push_back(currLepRelPFIso);
+        }
+        else {
+            continue;
+        }
+    }
+}
+
+inline void IsoLeptonsPickDESY(VLV * Leptons, vector<int> *lepPdgId, vector<double> *lepPFIso, vector<TLorentzVector> * vecIsoLeptons, vector<int> * vecIsoPDGIDs, vector<float> * vecIsoLepPFRelIso) {    
+    unsigned int vecSize = Leptons->size();
+    if (vecSize < 2) {
+        return;
+    }
+    float muonIsoRatioCut = 0.15; float muonEtaCut = 2.4;
+    float elecIsoRatioCut = 0.15; float elecEtaCut = 2.5;
+    float barrelEtaEnd = 1.442; float endcapEtaStart = 1.566;
+    TLorentzVector patsyVec;
+    float currLepEta, currLepRelPFIso;
+    int   currLepPDGID;
+    bool  currLepPassCut;    
+    for (unsigned int iLep = 0; iLep < vecSize; ++iLep) {
+        patsyVec.SetPxPyPzE(Leptons->at(iLep).Px(), Leptons->at(iLep).Py(), Leptons->at(iLep).Pz(), Leptons->at(iLep).E());
+        currLepEta = patsyVec.Eta();
+        currLepRelPFIso = lepPFIso->at(iLep);
+        currLepPDGID = lepPdgId->at(iLep);
+        if (abs(currLepPDGID) == 13) {
+            currLepPassCut = MuonPassCut(true, true, currLepRelPFIso, muonIsoRatioCut, currLepEta, muonEtaCut, 0.0, 1., 0.0, 1.);
+        }
+        else if (abs(currLepPDGID) == 11) {
+            currLepPassCut = ElectronPassCut(true, true, currLepRelPFIso, elecIsoRatioCut, currLepEta, elecEtaCut, barrelEtaEnd, endcapEtaStart);
+        }
+        if (currLepPassCut) {
+            vecIsoLeptons->push_back(patsyVec);
+            vecIsoPDGIDs->push_back(currLepPDGID);
+            vecIsoLepPFRelIso->push_back(currLepRelPFIso);
+        }
+        else {
+            continue;
+        }
+    }
+}
+
+inline vector<int> * LeptonPair(vector<TLorentzVector> * vecIsoLeptons, vector<int> * vecIsoPDGIDs, int &lep0Index, int &lep1Index, bool &doEvent, int &eventType, int &Lep0PdgId, int &Lep1PdgId) {
+    vector<int> * outVec = new vector<int>;
+    int NIsoElecs_pT20 = 0, NIsoElecs_pT10to20 = 0;
+    int NIsoMuons_pT20 = 0, NIsoMuons_pT10to20 = 0;
+    int NIsoPosits_pT20 = 0, NIsoPosits_pT10to20 = 0;
+    int NIsoMubars_pT20 = 0, NIsoMubars_pT10to20 = 0;
+    int numViableLepPairspreMassCut = 0;  
+    doEvent = true;
+    lep0Index = -1, lep1Index = -1;
+    int vecSize = vecIsoLeptons->size();
+    if (vecSize < 2) {
+        doEvent = false;
+        return outVec;
+    }
+    float leadLepPtCut = 20., subLepPtCut = 10.;
+    float currLeadLepPt, currSubLepPt;
+    float currLeadLepEta, currSubLepEta;
+    float currLeadLepCharge, currSubLepCharge;
+    int   currLeadLepPDGID, currSubLepPDGID;
+    int productPdgId;
+    float currDiLepPt;
+    float leadDiLepPt = 0;
+    float massCut = 20;
+    for (int iLep = 0; iLep < vecSize; ++iLep) {
+        currLeadLepPt = vecIsoLeptons->at(iLep).Pt();
+        currLeadLepEta = vecIsoLeptons->at(iLep).Eta();
+        currLeadLepPDGID = vecIsoPDGIDs->at(iLep);
+        currLeadLepCharge = TMath::Sign(1, currLeadLepPDGID);
+        if (currLeadLepPDGID == -13) {
+            if (currLeadLepPt > leadLepPtCut) {
+                NIsoMubars_pT20++;
+            }
+            else if (currLeadLepPt > subLepPtCut) {
+                NIsoMubars_pT10to20++;
+            }
+        }
+        else if (currLeadLepPDGID == 13) {
+            if (currLeadLepPt > leadLepPtCut) {
+                NIsoMuons_pT20++;
+            }
+            else if (currLeadLepPt > subLepPtCut) {
+                NIsoMuons_pT10to20++;
+            }
+        }
+        else if (currLeadLepPDGID == 11) {
+            if (currLeadLepPt > leadLepPtCut) {
+                NIsoElecs_pT20++;
+            }
+            else if (currLeadLepPt > subLepPtCut) {
+                NIsoElecs_pT10to20++;
+            }
+        }
+        else if (currLeadLepPDGID == -11) {
+            if (currLeadLepPt > leadLepPtCut) {
+                NIsoPosits_pT20++;
+            }
+            else if (currLeadLepPt > subLepPtCut) {
+                NIsoPosits_pT10to20++;
+            }
+        }
+        if (currLeadLepPt < leadLepPtCut) continue;
+//        cout << "testing a " << endl;
+        for (int iLep2 = iLep+1; iLep2 < vecSize; ++iLep2) {
+            currSubLepPt = vecIsoLeptons->at(iLep2).Pt();
+            currSubLepEta = vecIsoLeptons->at(iLep2).Eta();
+            currSubLepPDGID = vecIsoPDGIDs->at(iLep2);
+            currSubLepCharge = TMath::Sign(1, currSubLepPDGID);
+//            cout << "testing b " << endl;
+            if (currLeadLepCharge == currSubLepCharge) continue;    //// opposite sign charge requirement
+            if (currSubLepPt < subLepPtCut) continue;
+            numViableLepPairspreMassCut++;
+            if ((vecIsoLeptons->at(iLep) + vecIsoLeptons->at(iLep2)).M() < massCut) continue;
+            productPdgId = currLeadLepPDGID * currSubLepPDGID;
+            if (productPdgId > 0) continue; //i.e. same sign event
+            currDiLepPt = currLeadLepPt + currSubLepPt;
+
+            if (currDiLepPt > leadDiLepPt) {
+                leadDiLepPt = currDiLepPt;
+                lep0Index = iLep;
+                lep1Index = iLep2;
+            }
+        }
+    }
+    if (lep0Index < 0 || lep1Index < 0) {
+        doEvent = false;
+        return outVec;
+    }
+//    cout << "test 1 " << lep0Index << endl;
+//    cout << "test 2 " << lep1Index << endl;
+    Lep0PdgId = vecIsoPDGIDs->at(lep0Index);
+    Lep1PdgId = vecIsoPDGIDs->at(lep1Index);
+    productPdgId = Lep0PdgId * Lep1PdgId;
+    if (productPdgId == -169) eventType = 0;
+    if (productPdgId == -121) eventType = 1;
+    if (productPdgId == -143) eventType = 2;
+    outVec->push_back(NIsoElecs_pT20); outVec->push_back(NIsoElecs_pT10to20);
+    outVec->push_back(NIsoPosits_pT20); outVec->push_back(NIsoPosits_pT10to20);
+    outVec->push_back(NIsoMuons_pT20); outVec->push_back(NIsoMuons_pT10to20);
+    outVec->push_back(NIsoMubars_pT20); outVec->push_back(NIsoMubars_pT10to20);
+    outVec->push_back(numViableLepPairspreMassCut);
+    return outVec;
+}
+
+
 inline void LeptonPairOvi(TLorentzVector &Lep0Vec, TLorentzVector &Lep1Vec, int &eventType, bool &doEvent, vector<TLorentzVector> * Leptons, vector<int> * lepPdgId, int &Lep0PdgId,  int &Lep1PdgId) {
     //    cout << "making lepton pair" << endl;
     int lep0Index = -1; int lep1Index = -1;
@@ -505,23 +754,67 @@ inline void LeptonPairOvi(TLorentzVector &Lep0Vec, TLorentzVector &Lep1Vec, int 
             break;
     }    
 }
-
-inline vector<TLorentzVector> * JetInfo(vector<TLorentzVector> * Leptons, vector<float> * JetEt, vector<float> * JetEta, vector<float> * JetPx, vector<float> * JetPy, vector<float> * JetPz, vector<float> * JetE, vector<float> *JetNHF, vector<float> * JetNEF, vector<float> * JetCHF, vector<float> * JetCEF, vector<float> * JetBTag, vector<int> * JetNDaug, vector<int> * JetCharMult, int &NJets, int &NBJets, vector<int> * BJetIndices, float &HT) {
-    NJets = 0;
-    NBJets = 0;
-    HT = 0;
-    vector<TLorentzVector> * Jets = new vector<TLorentzVector>;
+inline float JESUncertFactor(TH2F * histJES, float shiftDirection, float JetPt, float JetEta) {
+    int NXbins = histJES->GetNbinsX();
+    TAxis * XAxis = histJES->GetXaxis();
+    TAxis * YAxis = histJES->GetYaxis();
+    int binX = XAxis->FindBin(JetPt);
+    int binY = YAxis->FindBin(JetEta);
+    float uncertFactor;
+    float linYPointOne, linYPointTwo, linXPointOne, linXPointTwo, rise, run, slope;
+    if (binX >= NXbins) uncertFactor = histJES->GetBinContent(NXbins, binY);
+    else if (binX < 1) uncertFactor = histJES->GetBinContent(1, binY);
+    else {
+        linYPointOne = histJES->GetBinContent(binX, binY);
+        linYPointTwo = histJES->GetBinContent(binX + 1, binY);
+        linXPointOne = XAxis->GetBinLowEdge(binX);
+        linXPointTwo = XAxis->GetBinUpEdge(binX);
+        rise = linYPointTwo - linYPointOne;
+        run = linXPointTwo - linXPointOne;
+        slope = rise / run;
+        uncertFactor = linYPointOne + slope * (JetPt - linXPointOne);
+    }
+    return (1 + shiftDirection * uncertFactor);
+}
+inline vector<TLorentzVector> * JetInfoDESY(vector<TLorentzVector> * isoLeptons, VLV * Jets, float whichSystCase, TH2F * shiftHist) {
+    vector<TLorentzVector> * outVecJets = new vector<TLorentzVector>;
     TLorentzVector currJet, patsyJet;
-    float BTagWP = 0.679;  //CSV Middle working point, see (remove underscore in address): h_ttps://twiki.cern.ch/twiki/bin/viewauth/CMS/BTagPerformanceOP
     bool leptonJet;
     float dRcut = 0.5;
-    //    cout << "iJet Max " << JetEt->size() << endl;
-    for (unsigned int iJet = 0; iJet < JetEt->size(); ++iJet) {
+    float JetFactor;
+    Double_t currJetPt, currJetEta, currJetPhi;
+    for (unsigned int iJet = 0; iJet < Jets->size(); ++iJet) {
+        leptonJet = 0;
+        patsyJet.SetPxPyPzE(Jets->at(iJet).Px(), Jets->at(iJet).Py(), Jets->at(iJet).Pz(), Jets->at(iJet).E());
+        currJetPt = patsyJet.Pt();
+        currJetEta = patsyJet.Eta();
+        currJetPhi = patsyJet.Phi();
+        for (unsigned int iLep = 0; iLep < isoLeptons->size(); ++iLep) {
+            if (deltaR(currJetEta, currJetPhi, isoLeptons->at(iLep).Eta(), isoLeptons->at(iLep).Phi()) < dRcut) leptonJet = 1;
+        }
+        if (leptonJet) continue;
+        if (abs(currJetEta) > 2.4) continue;
+        if (currJetPt < 9.0) continue;
+        if (whichSystCase != 0) {
+            JetFactor = JESUncertFactor(shiftHist, whichSystCase, (float) currJetPt, (float) currJetEta);
+            patsyJet *= JetFactor;
+        }
+        outVecJets->push_back(patsyJet);
+    }
+    return outVecJets;
+}
+inline vector<TLorentzVector> * JetInfo(vector<TLorentzVector> * Leptons, vector<float> * JetPx, vector<float> * JetPy, vector<float> * JetPz, vector<float> * JetE, vector<float> * JetNHF, vector<float> * JetNEF, vector<float> * JetCHF, vector<float> * JetCEF, vector<int> * JetNDaug, vector<int> * JetCharMult, float whichSystCase, TH2F * shiftHist) {
+    vector<TLorentzVector> * Jets = new vector<TLorentzVector>;
+    TLorentzVector currJet, patsyJet;
+    bool leptonJet;
+    float dRcut = 0.5;
+    float JetFactor;
+    Double_t currJetPt, currJetEta, currJetPhi;
+    for (unsigned int iJet = 0; iJet < JetPx->size(); ++iJet) {
         leptonJet = 0;
         /*
          cout << "iJet " << iJet << endl;        
          cout << "JetEta " << JetEta->at(iJet) << endl;
-         cout << "JetEt " << JetEt->at(iJet) << endl;
          cout << "JetNDaug " << JetNDaug->at(iJet) << endl;
          cout << "JetNHF " << JetNHF->at(iJet) << endl;
          cout << "JetNEF " << JetNEF->at(iJet) << endl;
@@ -532,24 +825,23 @@ inline vector<TLorentzVector> * JetInfo(vector<TLorentzVector> * Leptons, vector
          */
         //        cout << "JetPt " << TMath::Sqrt(JetPx->at(iJet)*JetPx->at(iJet) + JetPy->at(iJet)*JetPy->at(iJet)) << endl;
         patsyJet.SetPxPyPzE(JetPx->at(iJet), JetPy->at(iJet), JetPz->at(iJet), JetE->at(iJet));
+        currJetPt = patsyJet.Pt();
+        currJetEta = patsyJet.Eta();
+        currJetPhi = patsyJet.Phi();
         for (unsigned int iLep = 0; iLep < Leptons->size(); ++iLep) {
-            if (deltaR(patsyJet.Eta(), patsyJet.Phi(), Leptons->at(iLep).Eta(), Leptons->at(iLep).Phi()) < dRcut) leptonJet = 1;
+            if (deltaR(currJetEta, currJetPhi, Leptons->at(iLep).Eta(), Leptons->at(iLep).Phi()) < dRcut) leptonJet = 1;
         }
         if (leptonJet) continue;
-        if (abs(JetEta->at(iJet)) > 2.4) continue;
-        if (JetEt->at(iJet) < 30) continue;
+        if (abs(currJetEta) > 2.4) continue;
         //        if (JetNDaug->at(iJet) > 1 && JetNHF->at(iJet) < 0.99 && JetNEF->at(iJet) < 0.99 && JetCEF->at(iJet) < 0.99 && JetCHF->at(iJet) > 0 && JetCharMult->at(iJet) > 0) {
+        if (currJetPt < 9.0) continue;
         if (JetNHF->at(iJet) < 0.99 && JetNEF->at(iJet) < 0.99 && JetCEF->at(iJet) < 0.99 && JetCHF->at(iJet) > 0 && JetCharMult->at(iJet) > 0) {
-            currJet.SetPxPyPzE(JetPx->at(iJet), JetPy->at(iJet), JetPz->at(iJet), JetE->at(iJet));
-            ++NJets;
-            HT += JetEt->at(iJet);
-            if (JetBTag->at(iJet) > BTagWP) {
-                NBJets += 1;
-                //                cout << "BTAGG is now " << NBJets << " ocurring at " << iJet << endl;
-                BJetIndices->push_back(NJets - 1);
+            //            currJet.SetPxPyPzE(JetPx->at(iJet), JetPy->at(iJet), JetPz->at(iJet), JetE->at(iJet));
+            if (whichSystCase != 0) {
+                JetFactor = JESUncertFactor(shiftHist, whichSystCase, (float) currJetPt, (float) currJetEta);
+                patsyJet *= JetFactor;
             }
-            //            cout << "Jets size pre " << Jets->size() << endl;
-            Jets->push_back(currJet);
+            Jets->push_back(patsyJet);
             /*
              for (int iLep = 0; iLep < Leptons->size(); ++iLep) {
              cout << "deltaR for iLep " << iLep << " is " << deltaR(currJet.Eta(), currJet.Phi(), Leptons->at(iLep).Eta(), Leptons->at(iLep).Phi()) << endl;                
@@ -563,6 +855,52 @@ inline vector<TLorentzVector> * JetInfo(vector<TLorentzVector> * Leptons, vector
     }
     return Jets;
 }
+
+inline vector<TLorentzVector> * JetPtCut(vector<TLorentzVector> * goodJets, vector<float> * JetBTag, int &NJets, int &NBJets, vector<int> * BJetIndices, float &HT) {
+    NJets = 0;
+    NBJets = 0;
+    HT = 0;
+    vector<TLorentzVector> * vecGoodJets_wPtCut = new vector<TLorentzVector>;
+    TLorentzVector currJet, patsyJet;
+    float currJetPt;
+    float BTagWP = 0.679;  //CSV Middle working point, see (remove underscore in address): h_ttps://twiki.cern.ch/twiki/bin/viewauth/CMS/BTagPerformanceOP
+    for (unsigned int iJet = 0; iJet < goodJets->size(); ++iJet) {
+        currJetPt = goodJets->at(iJet).Pt();
+        if (currJetPt < 30) continue;
+        ++NJets;
+        HT += currJetPt;
+        if (JetBTag->at(iJet) > BTagWP) {
+            NBJets += 1;
+            BJetIndices->push_back(NJets - 1);
+        }
+        vecGoodJets_wPtCut->push_back(goodJets->at(iJet));        
+    }
+    return vecGoodJets_wPtCut;
+}
+
+inline vector<TLorentzVector> * JetPtCut(vector<TLorentzVector> * goodJets, vector<double> * JetBTag, int &NJets, int &NBJets, vector<int> * BJetIndices, float &HT) {
+    NJets = 0;
+    NBJets = 0;
+    HT = 0;
+    vector<TLorentzVector> * vecGoodJets_wPtCut = new vector<TLorentzVector>;
+    TLorentzVector currJet, patsyJet;
+    float currJetPt;
+    float BTagWP = 0.679;  //CSV Middle working point, see (remove underscore in address): h_ttps://twiki.cern.ch/twiki/bin/viewauth/CMS/BTagPerformanceOP
+    for (unsigned int iJet = 0; iJet < goodJets->size(); ++iJet) {
+        currJetPt = goodJets->at(iJet).Pt();
+        if (currJetPt < 30) continue;
+        ++NJets;
+        HT += currJetPt;
+        if (JetBTag->at(iJet) > BTagWP) {
+            NBJets += 1;
+            BJetIndices->push_back(NJets - 1);
+        }
+        vecGoodJets_wPtCut->push_back(goodJets->at(iJet));        
+    }
+    return vecGoodJets_wPtCut;
+}
+
+
 inline void LeptonInfo(VLV * Leptons, vector<int> *lepPdgId, vector<double> *lepPFIso, int &lep0Index, int &lep1Index, bool &doEvent, int &eventType, int &Lep0PdgId, int &Lep1PdgId) {
     doEvent = true;
     lep0Index = 0;
@@ -595,12 +933,12 @@ inline void LeptonInfo(VLV * Leptons, vector<int> *lepPdgId, vector<double> *lep
         if (abs(lepPdgId->at(iLep)) == 13) {
             //            cout << "IsoCut: " << lepPFIso->at(iLep)/currLeadLepPt << endl;
             if (currLeadLepPt < leadMuonPtCut) continue;
-            if (lepPFIso->at(iLep)/currLeadLepPt > muonIsoRatioCut) continue;
+            if (lepPFIso->at(iLep) > muonIsoRatioCut) continue;
             if (abs(currLeadLepEta) > muonEtaCut) continue;
         }
         else if (abs(lepPdgId->at(iLep)) == 11) {
             if (currLeadLepPt < leadElecPtCut) continue;
-            if (lepPFIso->at(iLep)/currLeadLepPt > elecIsoRatioCut) continue;
+            if (lepPFIso->at(iLep) > elecIsoRatioCut) continue;
             if (abs(currLeadLepEta) > elecEtaCut) continue;
             if (abs(currLeadLepEta) > barrelEtaEnd && abs(currLeadLepEta) < endcapEtaStart) continue;
         }
@@ -613,12 +951,12 @@ inline void LeptonInfo(VLV * Leptons, vector<int> *lepPdgId, vector<double> *lep
             //            cout << "sub lead lepPDGId" << lepPdgId->at(iLep2) << endl;
             if (abs(lepPdgId->at(iLep2)) == 13) {
                 if (currSubLepPt < subMuonPtCut) continue;
-                if (lepPFIso->at(iLep2)/currSubLepPt > muonIsoRatioCut) continue;
+                if (lepPFIso->at(iLep2) > muonIsoRatioCut) continue;
                 if (abs(currSubLepEta) > muonEtaCut) continue;
             }
             else if (abs(lepPdgId->at(iLep2)) == 11) {
                 if (currSubLepPt < subElecPtCut) continue;
-                if (lepPFIso->at(iLep2)/currSubLepPt > elecIsoRatioCut) continue;
+                if (lepPFIso->at(iLep2) > elecIsoRatioCut) continue;
                 if (abs(currSubLepEta) > elecEtaCut) continue;
                 if (abs(currSubLepEta) > barrelEtaEnd && abs(currSubLepEta) < endcapEtaStart) continue;
             }
@@ -717,25 +1055,37 @@ inline vector<HistogramT> * AddSystHists(vector<HistogramT> * inputHistTVec, vec
     HistogramT H_CurrNewSyst;
     SystT      Syst_Curr;
     vector<HistogramT> * histTSystVec = new vector<HistogramT>;
+    bool isLepXAxis = false, isJetXAxis = false, isOtherXAxis = false;
+    bool isLepYAxis = false, isJetYAxis = false, isOtherYAxis = false;
+    bool isLepZAxis = false, isJetZAxis = false, isOtherZAxis = false;
     for (unsigned int i = 0; i < inputHistTVec->size(); ++i) {
         H_Curr = inputHistTVec->at(i);
-        if (H_Curr.doXSyst) {
+        if (H_Curr.doXSyst || H_Curr.doYSyst || H_Curr.doZSyst) {
+            if (H_Curr.doXSyst) {
+                isLepXAxis = (TString(H_Curr.xVarKey).Contains("Lep"));
+                isJetXAxis = (TString(H_Curr.xVarKey).Contains("Jet"));
+                isOtherXAxis = (TString(H_Curr.xVarKey).Contains("MT2") || TString(H_Curr.xVarKey).Contains("MET"));
+            }
+            if (H_Curr.doYSyst) {
+                isLepYAxis = (TString(H_Curr.yVarKey).Contains("Lep"));
+                isJetYAxis = (TString(H_Curr.yVarKey).Contains("Jet"));
+                isOtherYAxis = (TString(H_Curr.yVarKey).Contains("MT2") || TString(H_Curr.yVarKey).Contains("MET"));            
+            }
+            if (H_Curr.doZSyst) {
+                isLepZAxis = (TString(H_Curr.zVarKey).Contains("Lep"));
+                isJetZAxis = (TString(H_Curr.zVarKey).Contains("Jet"));
+                isOtherZAxis = (TString(H_Curr.zVarKey).Contains("MT2") || TString(H_Curr.zVarKey).Contains("MET"));            
+            }
             for (unsigned int j = 0; j < inputSystTVec->size(); ++j) {
                 Syst_Curr = inputSystTVec->at(j);
-                
                 switch (Syst_Curr.whichSystType) {
-                        /*
-                         case 1:
-                         if (!(H_Curr.name.Contains("Lep"))) continue;
-                         break;
-                         case 2:
-                         if (!(H_Curr.name.Contains("Jet") || (H_Curr.name.Contains("HT")))) continue;
-                         break;
-                         */
                     case 3:
                         // temporary one for MT2ll
                         if (Syst_Curr.name.Contains("_MT2llShift")) {
                             if (!(H_Curr.name.Contains("MT2ll"))) continue;
+                        }
+                        if (Syst_Curr.name.Contains("_MT2UncES")) {
+                            if (!(H_Curr.name.Contains("MT2"))) continue;
                         }
                         if (Syst_Curr.name.Contains("genTopRW")) {
                             if (!(fileInName.Contains("TT") || fileInName.Contains("ttbar"))) continue;
@@ -747,10 +1097,35 @@ inline vector<HistogramT> * AddSystHists(vector<HistogramT> * inputHistTVec, vec
                     default:
                         break;
                 }
-                
                 H_CurrNewSyst = H_Curr;
                 H_CurrNewSyst.name += Syst_Curr.name;
-                H_CurrNewSyst.xVarKey += Syst_Curr.systVarKey;
+                if (isOtherXAxis) {
+                    H_CurrNewSyst.xVarKey += Syst_Curr.systVarKey;
+                }
+                else if (isLepXAxis && Syst_Curr.whichSystType == 1) {
+                    H_CurrNewSyst.xVarKey += Syst_Curr.systVarKey;
+                }                
+                else if (isJetXAxis && Syst_Curr.whichSystType == 2) {
+                    H_CurrNewSyst.xVarKey += Syst_Curr.systVarKey;
+                }
+                if (isOtherYAxis) {
+                    H_CurrNewSyst.yVarKey += Syst_Curr.systVarKey;
+                }
+                else if (isLepYAxis && Syst_Curr.whichSystType == 1) {
+                    H_CurrNewSyst.yVarKey += Syst_Curr.systVarKey;
+                }                
+                else if (isJetYAxis && Syst_Curr.whichSystType == 2) {
+                    H_CurrNewSyst.yVarKey += Syst_Curr.systVarKey;
+                }
+                if (isOtherZAxis) {
+                    H_CurrNewSyst.zVarKey += Syst_Curr.systVarKey;
+                }
+                else if (isLepZAxis && Syst_Curr.whichSystType == 1) {
+                    H_CurrNewSyst.zVarKey += Syst_Curr.systVarKey;
+                }                
+                else if (isJetZAxis && Syst_Curr.whichSystType == 2) {
+                    H_CurrNewSyst.zVarKey += Syst_Curr.systVarKey;
+                }
                 histTSystVec->push_back(H_CurrNewSyst);
             }
         }
@@ -760,7 +1135,7 @@ inline vector<HistogramT> * AddSystHists(vector<HistogramT> * inputHistTVec, vec
 
 inline vector<HistogramT> * OneDeeHistTVec() {
     const double PI = 3.14159265;
-    int EnergyPtBinN = 50;
+    int EnergyPtBinN = 40;
     int MassBinN     = 200;
     int EtaBinN      = 50;
     int PhiBinN      = 50;
@@ -783,6 +1158,26 @@ inline vector<HistogramT> * OneDeeHistTVec() {
     float nVtxBinUB     = 60.5;
     
     float numDivs;
+    
+    HistogramT H_RelLeadLepPFIso; H_RelLeadLepPFIso.name = "h_RelLeadLepPFIso";
+    H_RelLeadLepPFIso.xLabel = "Lead Lepton Relative PF Isolation"; H_RelLeadLepPFIso.xBinN = 32; H_RelLeadLepPFIso.xMin = 0.; H_RelLeadLepPFIso.xMax = 0.16;
+    H_RelLeadLepPFIso.yLabel = "Number of Events / ";
+    H_RelLeadLepPFIso.yLabel += "NUM"; H_RelLeadLepPFIso.yLabel += " of Iso.";
+    H_RelLeadLepPFIso.xVarKey = "lep0RelPFIso";
+    H_RelLeadLepPFIso.doXSyst = false;
+    
+    HistogramT H_RelSubLepPFIso; H_RelSubLepPFIso.name = "h_RelSubLepPFIso";
+    H_RelSubLepPFIso.xLabel = "Sub-Lead Lepton Relative PF Isolation"; H_RelSubLepPFIso.xBinN = 32; H_RelSubLepPFIso.xMin = 0.; H_RelSubLepPFIso.xMax = 0.16;
+    H_RelSubLepPFIso.yLabel = "Number of Events / ";
+    H_RelSubLepPFIso.yLabel += "NUM"; H_RelSubLepPFIso.yLabel += " of Iso.";
+    H_RelSubLepPFIso.xVarKey = "lep1RelPFIso";
+    H_RelSubLepPFIso.doXSyst = false;
+
+    HistogramT H_CutFlow; H_CutFlow.name = "h_ChannelCutFlow";
+    H_CutFlow.xLabel = "Cut Stage"; H_CutFlow.xBinN = 4; H_CutFlow.xMin = 0.5; H_CutFlow.xMax = 4.5;
+    H_CutFlow.yLabel = "Number of Events passing CutStage";
+    H_CutFlow.xVarKey = "CutFlowEntry";
+    H_CutFlow.doXSyst = false;
     
     HistogramT H_leadLepPt; H_leadLepPt.name = "h_leadLepPt"; 
     H_leadLepPt.xLabel = "Lead Lepton pT [GeV]"; H_leadLepPt.xBinN = EnergyPtBinN; H_leadLepPt.xMin = EnergyPtBinLB; H_leadLepPt.xMax = EnergyPtBinUB;  
@@ -1417,6 +1812,7 @@ inline vector<HistogramT> * OneDeeHistTVec() {
     
     //push the 1D histograms structures into a vector for eventual use in booking histograms
     vector<HistogramT> * histVec_1D = new vector<HistogramT>;
+    histVec_1D->push_back(H_RelLeadLepPFIso); histVec_1D->push_back(H_RelSubLepPFIso); histVec_1D->push_back(H_CutFlow);
     histVec_1D->push_back(H_leadLepPt); histVec_1D->push_back(H_leadLepEta); histVec_1D->push_back(H_subLepPt); histVec_1D->push_back(H_subLepEta);
     histVec_1D->push_back(H_leadJetPt); histVec_1D->push_back(H_leadJetEta); histVec_1D->push_back(H_subJetPt); histVec_1D->push_back(H_subJetEta);
     histVec_1D->push_back(H_leadBJetPt); histVec_1D->push_back(H_leadBJetEta); histVec_1D->push_back(H_leadBJetEn); histVec_1D->push_back(H_subBJetPt); histVec_1D->push_back(H_subBJetEta); histVec_1D->push_back(H_subBJetEn);
@@ -1511,14 +1907,6 @@ inline vector<HistogramT> * TwoDeeHistTVec() {
     H_MT2ll_vs_DeltaPhiLep0Lep1.doXSyst = true;
     H_MT2ll_vs_DeltaPhiLep0Lep1.doYSyst = true;
     
-    HistogramT H_MT2llControl_vs_DeltaPhiLep0Lep1; H_MT2llControl_vs_DeltaPhiLep0Lep1.name = "h_MT2llControl_vs_DeltaPhiLep0Lep1";
-    H_MT2llControl_vs_DeltaPhiLep0Lep1.xLabel = "MT2_{ll} [GeV]"; H_MT2llControl_vs_DeltaPhiLep0Lep1.xBinN = 20; H_MT2llControl_vs_DeltaPhiLep0Lep1.xMin = 0; H_MT2llControl_vs_DeltaPhiLep0Lep1.xMax = 80;
-    H_MT2llControl_vs_DeltaPhiLep0Lep1.yLabel = "#Delta #phi_{ll}"; H_MT2llControl_vs_DeltaPhiLep0Lep1.yBinN = PhiBinN; H_MT2llControl_vs_DeltaPhiLep0Lep1.yMin = 0; H_MT2llControl_vs_DeltaPhiLep0Lep1.yMax = PI;
-    H_MT2llControl_vs_DeltaPhiLep0Lep1.xVarKey = "MT2ll";
-    H_MT2llControl_vs_DeltaPhiLep0Lep1.yVarKey = "DPhiLep0Lep1";
-    H_MT2llControl_vs_DeltaPhiLep0Lep1.doXSyst = true;
-    H_MT2llControl_vs_DeltaPhiLep0Lep1.doYSyst = true;
-    /*
     HistogramT H_MT2lb_vs_DeltaPhiLepB0LepB1; H_MT2lb_vs_DeltaPhiLepB0LepB1.name = "h_MT2lb_vs_DeltaPhiLepB0LepB1";
     H_MT2lb_vs_DeltaPhiLepB0LepB1.xLabel = "MT2lb [GeV]"; H_MT2lb_vs_DeltaPhiLepB0LepB1.xBinN = METBinN; H_MT2lb_vs_DeltaPhiLepB0LepB1.xMin = METBinLB; H_MT2lb_vs_DeltaPhiLepB0LepB1.xMax = METBinUB;
     H_MT2lb_vs_DeltaPhiLepB0LepB1.yLabel = "#Delta #phi_{lb lb}"; H_MT2lb_vs_DeltaPhiLepB0LepB1.yBinN = PhiBinN; H_MT2lb_vs_DeltaPhiLepB0LepB1.yMin = 0; H_MT2lb_vs_DeltaPhiLepB0LepB1.yMax = PI;
@@ -1527,6 +1915,25 @@ inline vector<HistogramT> * TwoDeeHistTVec() {
     H_MT2lb_vs_DeltaPhiLepB0LepB1.doXSyst = true;
     H_MT2lb_vs_DeltaPhiLepB0LepB1.doYSyst = true;
     
+    
+    
+    HistogramT H_MT2ll_vs_MT2lb; H_MT2ll_vs_MT2lb.name = "h_MT2ll_vs_MT2lb";
+    H_MT2ll_vs_MT2lb.xLabel = "MT2_{ll} [GeV]"; H_MT2ll_vs_MT2lb.xBinN = METBinN; H_MT2ll_vs_MT2lb.xMin = METBinLB; H_MT2ll_vs_MT2lb.xMax = METBinUB;
+    H_MT2ll_vs_MT2lb.yLabel = "MT2lb [GeV]"; H_MT2ll_vs_MT2lb.yBinN = METBinN; H_MT2ll_vs_MT2lb.yMin = METBinLB; H_MT2ll_vs_MT2lb.yMax = METBinUB;
+    H_MT2ll_vs_MT2lb.xVarKey = "MT2ll";
+    H_MT2ll_vs_MT2lb.yVarKey = "MT2lb";
+    H_MT2ll_vs_MT2lb.doXSyst = true;
+    H_MT2ll_vs_MT2lb.doYSyst = true;
+    /*
+    HistogramT H_MT2llControl_vs_DeltaPhiLep0Lep1; H_MT2llControl_vs_DeltaPhiLep0Lep1.name = "h_MT2llControl_vs_DeltaPhiLep0Lep1";
+    H_MT2llControl_vs_DeltaPhiLep0Lep1.xLabel = "MT2_{ll} [GeV]"; H_MT2llControl_vs_DeltaPhiLep0Lep1.xBinN = 20; H_MT2llControl_vs_DeltaPhiLep0Lep1.xMin = 0; H_MT2llControl_vs_DeltaPhiLep0Lep1.xMax = 80;
+    H_MT2llControl_vs_DeltaPhiLep0Lep1.yLabel = "#Delta #phi_{ll}"; H_MT2llControl_vs_DeltaPhiLep0Lep1.yBinN = PhiBinN; H_MT2llControl_vs_DeltaPhiLep0Lep1.yMin = 0; H_MT2llControl_vs_DeltaPhiLep0Lep1.yMax = PI;
+    H_MT2llControl_vs_DeltaPhiLep0Lep1.xVarKey = "MT2ll";
+    H_MT2llControl_vs_DeltaPhiLep0Lep1.yVarKey = "DPhiLep0Lep1";
+    H_MT2llControl_vs_DeltaPhiLep0Lep1.doXSyst = true;
+    H_MT2llControl_vs_DeltaPhiLep0Lep1.doYSyst = true;
+    */
+    /*    
     HistogramT H_MT2lbControl_vs_DeltaPhiLepB0LepB1; H_MT2lbControl_vs_DeltaPhiLepB0LepB1.name = "h_MT2lbControl_vs_DeltaPhiLepB0LepB1";
     H_MT2lbControl_vs_DeltaPhiLepB0LepB1.xLabel = "MT2lb [GeV]"; H_MT2lbControl_vs_DeltaPhiLepB0LepB1.xBinN = 43; H_MT2lbControl_vs_DeltaPhiLepB0LepB1.xMin = 0; H_MT2lbControl_vs_DeltaPhiLepB0LepB1.xMax = 172;
     H_MT2lbControl_vs_DeltaPhiLepB0LepB1.yLabel = "#Delta #phi_{lb lb}"; H_MT2lbControl_vs_DeltaPhiLepB0LepB1.yBinN = PhiBinN; H_MT2lbControl_vs_DeltaPhiLepB0LepB1.yMin = 0; H_MT2lbControl_vs_DeltaPhiLepB0LepB1.yMax = PI;
@@ -1538,8 +1945,9 @@ inline vector<HistogramT> * TwoDeeHistTVec() {
     //push the 2D histograms structures into a vector for eventual use in booking histograms
     histVec_2D->push_back(H_METX_vs_nVtx); histVec_2D->push_back(H_METY_vs_nVtx);
     histVec_2D->push_back(H_METX_vs_nVtx_noPhiCorr); histVec_2D->push_back(H_METY_vs_nVtx_noPhiCorr);
-    histVec_2D->push_back(H_MT2ll_vs_DeltaPhiLep0Lep1); histVec_2D->push_back(H_MT2llControl_vs_DeltaPhiLep0Lep1);
-//    histVec_2D->push_back(H_MT2lb_vs_DeltaPhiLepB0LepB1); histVec_2D->push_back(H_MT2lbControl_vs_DeltaPhiLepB0LepB1);
+    histVec_2D->push_back(H_MT2ll_vs_DeltaPhiLep0Lep1); //histVec_2D->push_back(H_MT2llControl_vs_DeltaPhiLep0Lep1);
+    histVec_2D->push_back(H_MT2lb_vs_DeltaPhiLepB0LepB1); // histVec_2D->push_back(H_MT2lbControl_vs_DeltaPhiLepB0LepB1);
+    histVec_2D->push_back(H_MT2ll_vs_MT2lb);
     return histVec_2D;
 }
 
@@ -1592,6 +2000,7 @@ inline vector<HistogramT> * ThreeDeeHistTVec() {
     H_MT2ll_vs_DeltaPhiZMET_vs_NJets.doYSyst = true;
     H_MT2ll_vs_DeltaPhiZMET_vs_NJets.doZSyst = true;
     
+    /*
     HistogramT H_MT2ll_vs_DeltaPhiZMET_vs_NBJets; H_MT2ll_vs_DeltaPhiZMET_vs_NBJets.name = "h_MT2ll_vs_DeltaPhiZMET_vs_NBJets"; 
     H_MT2ll_vs_DeltaPhiZMET_vs_NBJets.xLabel = "MT2_{ll} [GeV]"; H_MT2ll_vs_DeltaPhiZMET_vs_NBJets.xBinN = METBinN; H_MT2ll_vs_DeltaPhiZMET_vs_NBJets.xMin = METBinLB; H_MT2ll_vs_DeltaPhiZMET_vs_NBJets.xMax = METBinUB;
     H_MT2ll_vs_DeltaPhiZMET_vs_NBJets.yLabel = "#Delta #phi_{Z, #slash{E}_{T}}"; H_MT2ll_vs_DeltaPhiZMET_vs_NBJets.yBinN = PhiBinN; H_MT2ll_vs_DeltaPhiZMET_vs_NBJets.yMin = 0.; H_MT2ll_vs_DeltaPhiZMET_vs_NBJets.yMax = PI;
@@ -1602,6 +2011,7 @@ inline vector<HistogramT> * ThreeDeeHistTVec() {
     H_MT2ll_vs_DeltaPhiZMET_vs_NBJets.doXSyst = true;
     H_MT2ll_vs_DeltaPhiZMET_vs_NBJets.doYSyst = true;
     H_MT2ll_vs_DeltaPhiZMET_vs_NBJets.doZSyst = true;
+    */
     
     
     HistogramT H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx1to10; H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx1to10.name = "h_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx1to10"; 
@@ -1640,7 +2050,7 @@ inline vector<HistogramT> * ThreeDeeHistTVec() {
     //push the 2D histograms structures into a vector for eventual use in booking histograms
     histVec_3D->push_back(H_MT2ll_vs_DeltaPhiZMET_vs_nVtx);
     histVec_3D->push_back(H_MT2ll_vs_DeltaPhiZMET_vs_NJets);
-    histVec_3D->push_back(H_MT2ll_vs_DeltaPhiZMET_vs_NBJets);
+//    histVec_3D->push_back(H_MT2ll_vs_DeltaPhiZMET_vs_NBJets);
     histVec_3D->push_back(H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx1to10);
     histVec_3D->push_back(H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx11to20);
     histVec_3D->push_back(H_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx21to30);
@@ -1992,6 +2402,7 @@ inline vector<SampleT> * SubSampVec() {
         
     }    
     events_LepOutZMassJet2BJet1[2].blindDataChannel = 1; // blind emu with ZVeto + jet cuts
+    events_LepInZMassJet2BJet1[2].blindDataChannel = 1; // blind emu without ZVeto + jet cuts
     /*
      int     whichdiLepType; // -1: inclusive, 0: MuMu, 1: EE, 2: EMu
      int     doZVeto;   // -1: inclusive, 0: ZMass window, 1: outside ZMass window;
@@ -2010,10 +2421,12 @@ inline vector<SampleT> * SubSampVec() {
     events_NBJetsGeq1.whichdiLepType = -1; events_NBJetsGeq1.doZVeto = -1; events_NBJetsGeq1.cutNJets = -1; events_NBJetsGeq1.cutNBJets = 1; events_NBJetsGeq1.cutMET = 0.;
     events_NBJetsGeq1.blindDataChannel = 0;
     */
+    /*
     SampleT events_NBJetsGeq2; events_NBJetsGeq2.histNameSuffix = "_NBJetsGeq2";
     events_NBJetsGeq2.histXaxisSuffix = ""; events_NBJetsGeq2.histYaxisSuffix = "";  events_NBJetsGeq2.histZaxisSuffix = "";
     events_NBJetsGeq2.whichdiLepType = -1; events_NBJetsGeq2.doZVeto = -1; events_NBJetsGeq2.cutNJets = -1; events_NBJetsGeq2.cutNBJets = 2; events_NBJetsGeq2.cutMET = 0.;
     events_NBJetsGeq2.blindDataChannel = 0;
+    */
     
     SampleT events_NJetsGeq2_NBJetsGeq1; events_NJetsGeq2_NBJetsGeq1.histNameSuffix = "_Jet2BJet1"; events_NJetsGeq2_NBJetsGeq1.histXaxisSuffix = ""; events_NJetsGeq2_NBJetsGeq1.histYaxisSuffix = ""; events_NJetsGeq2_NBJetsGeq1.histZaxisSuffix = "";
     events_NJetsGeq2_NBJetsGeq1.whichdiLepType = -1; events_NJetsGeq2_NBJetsGeq1.doZVeto = -1; events_NJetsGeq2_NBJetsGeq1.cutNJets = 2; events_NJetsGeq2_NBJetsGeq1.cutNBJets = 1; events_NJetsGeq2_NBJetsGeq1.cutMET = 0.;
@@ -2022,7 +2435,12 @@ inline vector<SampleT> * SubSampVec() {
     SampleT events_FullCut; events_FullCut.histNameSuffix = "_FullCut"; events_FullCut.histXaxisSuffix = ""; 
     events_FullCut.histYaxisSuffix = ""; events_FullCut.histZaxisSuffix = "";
     events_FullCut.whichdiLepType = -1; events_FullCut.doZVeto = 1; events_FullCut.cutNJets = 2; events_FullCut.cutNBJets = 1; events_FullCut.cutMET = 40.;
-    events_FullCut.blindDataChannel = 1;    
+    events_FullCut.blindDataChannel = 1;
+    
+    SampleT events_FullCutBlind; events_FullCutBlind.histNameSuffix = "_FullCutBlind"; events_FullCutBlind.histXaxisSuffix = ""; 
+    events_FullCutBlind.histYaxisSuffix = ""; events_FullCutBlind.histZaxisSuffix = "";
+    events_FullCutBlind.whichdiLepType = -1; events_FullCutBlind.doZVeto = 1; events_FullCutBlind.cutNJets = 2; events_FullCutBlind.cutNBJets = 1; events_FullCutBlind.cutMET = 40.;
+    events_FullCutBlind.blindDataChannel = 1; 
     //"Inclusive subsample"//
     SampleT allEvents; allEvents.histNameSuffix = "_inclusive"; 
     allEvents.histXaxisSuffix = ""; allEvents.histYaxisSuffix = ""; allEvents.histZaxisSuffix = "";
@@ -2049,6 +2467,16 @@ inline vector<SampleT> * SubSampVec() {
     events_inZMassJet2BJet1MET40.whichdiLepType = -1; events_inZMassJet2BJet1MET40.doZVeto = 0; events_inZMassJet2BJet1MET40.cutNJets = 2; events_inZMassJet2BJet1MET40.cutNBJets = 1; events_inZMassJet2BJet1MET40.cutMET = 40.;
     events_inZMassJet2BJet1MET40.blindDataChannel = 0;
     
+    SampleT events_inZMass0Jets; events_inZMass0Jets.histNameSuffix = "_allLep_inZ_0Jets";
+    events_inZMass0Jets.histXaxisSuffix = ""; events_inZMass0Jets.histYaxisSuffix = ""; events_inZMass0Jets.histZaxisSuffix = "";
+    events_inZMass0Jets.whichdiLepType = -1; events_inZMass0Jets.doZVeto = 0; events_inZMass0Jets.cutNJets = -1; events_inZMass0Jets.cutNBJets = 0; events_inZMass0Jets.cutMET = 0.;
+    events_inZMass0Jets.blindDataChannel = 0;
+    
+    SampleT events_inZMass1Jet; events_inZMass1Jet.histNameSuffix = "_allLep_inZ_1Jet";
+    events_inZMass1Jet.histXaxisSuffix = ""; events_inZMass1Jet.histYaxisSuffix = ""; events_inZMass1Jet.histZaxisSuffix = "";
+    events_inZMass1Jet.whichdiLepType = -1; events_inZMass1Jet.doZVeto = 0; events_inZMass1Jet.cutNJets = -1; events_inZMass1Jet.cutNBJets = 0; events_inZMass1Jet.cutMET = 0.;
+    events_inZMass1Jet.blindDataChannel = 0;
+    
     ///push Sample_Ts into a vector    
     vector<SampleT> * subSampVec = new vector<SampleT>;
     for (int k = 0; k < 3; ++k) {
@@ -2069,11 +2497,13 @@ inline vector<SampleT> * SubSampVec() {
         subSampVec->push_back(events_LepOutZMass0BJetsJet2MET40[k]);        
     }
     subSampVec->push_back(events_NJetsGeq2);// subSampVec->push_back(events_NBJetsGeq1); 
-    subSampVec->push_back(events_NBJetsGeq2); subSampVec->push_back(events_NJetsGeq2_NBJetsGeq1);
-    subSampVec->push_back(events_FullCut);
+//    subSampVec->push_back(events_NBJetsGeq2); 
+    subSampVec->push_back(events_NJetsGeq2_NBJetsGeq1);
+    subSampVec->push_back(events_FullCut); subSampVec->push_back(events_FullCutBlind);
     subSampVec->push_back(allEvents);
     subSampVec->push_back(events_inZMass); subSampVec->push_back(events_inZMassJet2BJet1);
     subSampVec->push_back(events_inZMassMET40); subSampVec->push_back(events_inZMassJet2BJet1MET40);
+    subSampVec->push_back(events_inZMass0Jets); subSampVec->push_back(events_inZMass1Jet);
     return subSampVec;
 }
 
@@ -2108,6 +2538,16 @@ inline vector<SystT> * SystVec() {
     SystT LepESShiftDown; LepESShiftDown.name = "_LepESShiftDown"; LepESShiftDown.systVarKey = "_LepESShiftDown";
     LepESShiftDown.whichSystType = 1;
     
+    SystT JetESShiftUp; JetESShiftUp.name = "_JetESShiftUp"; JetESShiftUp.systVarKey = "_JetESShiftUp";
+    JetESShiftUp.whichSystType = 2;
+    SystT JetESShiftDown; JetESShiftDown.name = "_JetESShiftDown"; JetESShiftDown.systVarKey = "_JetESShiftDown";
+    JetESShiftDown.whichSystType = 2;
+    
+    SystT MT2UncEnShiftUp; MT2UncEnShiftUp.name = "_MT2UncESShiftUp"; MT2UncEnShiftUp.systVarKey = "_MT2UncESShiftUp";
+    MT2UncEnShiftUp.whichSystType = 3;
+    SystT MT2UncEnShiftDown; MT2UncEnShiftDown.name = "_MT2UncESShiftDown"; MT2UncEnShiftDown.systVarKey = "_MT2UncESShiftDown";
+    MT2UncEnShiftDown.whichSystType = 3;
+    
     /*
      SystT LepERShiftUp; LepERShiftUp.name = "_LepERShiftUp"; LepERShiftUp.systVarKey = "_LepERShiftUp";
      SystT LepERShiftDown; LepERShiftDown.name = "_LepERShiftDown"; LepERShiftDown.systVarKey = "_LepERShiftDown";
@@ -2120,6 +2560,8 @@ inline vector<SystT> * SystVec() {
     systVec->push_back(MT2llShiftUp);// systVec->push_back(MT2llShiftDown);
     systVec->push_back(LepEffSFShiftUp); systVec->push_back(LepEffSFShiftDown);
     systVec->push_back(LepESShiftUp); systVec->push_back(LepESShiftDown);
+    systVec->push_back(JetESShiftUp); systVec->push_back(JetESShiftDown);
+    systVec->push_back(MT2UncEnShiftUp), systVec->push_back(MT2UncEnShiftDown);
     systVec->push_back(genTopReweight);
     systVec->push_back(genStopXSecShiftUp); systVec->push_back(genStopXSecShiftDown);
     //    systVec->push_back(LepERShiftUp); systVec->push_back(LepERShiftDown);

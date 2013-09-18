@@ -1,5 +1,5 @@
 #include <vector>
-#include "./StopFunctionDefinitions_v2.h"
+//#include "./StopFunctionDefinitions_v2.h"
 //#include <boost/format.hpp>
 #include <sstream>
 using namespace std;
@@ -81,43 +81,49 @@ void WeightVecFiller(TList * sourcelist, vector<double> * weightVec, TString his
 }
 float OviedoNEvents(TString sourceName) {
     // Numbers taken from https://docs.google.com/spreadsheet/ccc?key=0Aq5OAopf_dtsdDJqREJReGQyY21wbERldVFSZVJHbFE&hl=en_US&pli=1#gid=57
-    if (sourceName.Contains("TTbar_Powheg")) return 28150723;
-    if (sourceName.Contains("TTbar_Madgraph")) return 6923750;
-    if (sourceName.Contains("TTbar_MCatNLO")) return 32852589;
-    if (sourceName.Contains("TTJetsFullHadrMG")) return 28123821;
-    if (sourceName.Contains("TTJetsSemiLeptMG")) return 24424818;
-    if (sourceName.Contains("TTJetsFullLeptMGtauola")) return 11673402;
-    if (sourceName.Contains("TTJetsFullLeptMG")) return 12114013;
-    if (sourceName.Contains("TWDilep")) return 2976510;
-    if (sourceName.Contains("TbarWDilep")) return 2971482;
-    if (sourceName.Contains("DYJets_Madgraph")) return 7132223;
-    if (sourceName.Contains("DY50toLLMad1jet")) return 24045248;
-    if (sourceName.Contains("DY50toLLMad2jet")) return 2352304;
-    if (sourceName.Contains("DY50toLLMad3jet")) return 11015445;
-    if (sourceName.Contains("DY50toLLMad4jet")) return 6402827;
-    if (sourceName.Contains("ZJets_Madgraph")) return 30459503;
-    if (sourceName.Contains("ggWWto2L")) return 109987;
-    if (sourceName.Contains("WWTo2L2Nu_Madgraph")) return 1933235;
-    if (sourceName.Contains("WGstarToElNuMad")) return 314653;
-    if (sourceName.Contains("WGstarToMuNuMad")) return 299973;
-    if (sourceName.Contains("WGstarToTauNuMad")) return 49997;
-    if (sourceName.Contains("WZ")) return 10000283;
-    if (sourceName.Contains("ZZ")) return 9799908;
-    if (sourceName.Contains("WJets_Madgraph")) return 76102995;
-    if (sourceName.Contains("ZgammaToLLG")) return 6588161;
-    if (sourceName.Contains("WgammaToLNuG")) return 4802358;
-    if (sourceName.Contains("HWW125")) return 299975;
-    if (sourceName.Contains("VBF125")) return 299687;
-    if (sourceName.Contains("HZZ4L")) return 995117;
-    if (sourceName.Contains("WWGJets")) return 215121;
-    if (sourceName.Contains("WZZJets")) return 219835;
-    if (sourceName.Contains("ZZZJets")) return 224904;
-    if (sourceName.Contains("WWZJets")) return 222234;
-    if (sourceName.Contains("WWWJets")) return 220549;
-    if (sourceName.Contains("TTWJets")) return 196046;
-    if (sourceName.Contains("TTZJets")) return 210160;
-    if (sourceName.Contains("TTWWJets")) return 197820;
-    if (sourceName.Contains("TTGJets")) return 71598;
+    if (sourceName.BeginsWith("TTbar_Powheg")) return 28150723;
+    if (sourceName.BeginsWith("TTbar_Madgraph")) return 6923750;
+    if (sourceName.BeginsWith("TTbar_MCatNLO")) return 32852589;
+    if (sourceName.BeginsWith("TTJetsFullHadrMG")) return 28123821;
+    if (sourceName.BeginsWith("TTJetsSemiLeptMG")) return 24424818;
+    if (sourceName.BeginsWith("TTJetsFullLeptMGtauola")) return 11673402;
+    if (sourceName.BeginsWith("TTJetsFullLeptMG")) return 12114013;
+    if (sourceName.BeginsWith("TWDilep")) return 2976510;
+    if (sourceName.BeginsWith("TbarWDilep")) return 2971482;
+    if (sourceName.BeginsWith("SingleTop_Tchannel")) return 3748227;
+    if (sourceName.BeginsWith("SingleTopBar_Tchannel")) return 1935072;
+    if (sourceName.BeginsWith("SingleTop_Schannel")) return 259961;
+    if (sourceName.BeginsWith("SingleTopBar_Schannel")) return 139974;
+    if (sourceName.BeginsWith("DYJets_Madgraph")) return 7132223;
+    if (sourceName.BeginsWith("DY50toLLMad1jet")) return 24045248;
+    if (sourceName.BeginsWith("DY50toLLMad2jet") && !sourceName.BeginsWith("DY50toLLMad2jetV7C")) return 2352304;
+    if (sourceName.BeginsWith("DY50toLLMad2jetV7C")) return 21852156;
+    if (sourceName.BeginsWith("DY50toLLMad3jet")) return 11015445;
+    if (sourceName.BeginsWith("DY50toLLMad4jet")) return 6402827;
+    if (sourceName.BeginsWith("ZJets_Madgraph")) return 30459503;
+    if (sourceName.BeginsWith("WWincl")) return 9980431;
+    if (sourceName.BeginsWith("ggWWto2L")) return 109987;
+    if (sourceName.BeginsWith("WWTo2L2Nu_Madgraph")) return 1933235;
+    if (sourceName.BeginsWith("WGstarToElNuMad")) return 314653;
+    if (sourceName.BeginsWith("WGstarToMuNuMad")) return 299973;
+    if (sourceName.BeginsWith("WGstarToTauNuMad")) return 49997;
+    if (sourceName.BeginsWith("WZ_")) return 10000283;
+    if (sourceName.BeginsWith("ZZ_")) return 9799908;
+    if (sourceName.BeginsWith("WJets_Madgraph")) return 76102995;
+    if (sourceName.BeginsWith("ZgammaToLLG")) return 6588161;
+    if (sourceName.BeginsWith("WgammaToLNuG")) return 4802358;
+    if (sourceName.BeginsWith("HWW125")) return 299975;
+    if (sourceName.BeginsWith("VBF125")) return 299687;
+    if (sourceName.BeginsWith("HZZ4L")) return 995117;
+    if (sourceName.BeginsWith("WWGJets")) return 215121;
+    if (sourceName.BeginsWith("WZZJets")) return 219835;
+    if (sourceName.BeginsWith("ZZZJets")) return 224904;
+    if (sourceName.BeginsWith("WWZJets")) return 222234;
+    if (sourceName.BeginsWith("WWWJets")) return 220549;
+    if (sourceName.BeginsWith("TTWJets")) return 196046;
+    if (sourceName.BeginsWith("TTZJets")) return 210160;
+    if (sourceName.BeginsWith("TTWWJets")) return 197820;
+    if (sourceName.BeginsWith("TTGJets")) return 71598;
     cout << "didn't MATCH ANY" << endl;
     return 0;
 }
@@ -142,7 +148,12 @@ vector<double> * WeightBaseVec(int whichNTuple, vector<TList *> * fileListVec, u
     cout << "first_source name = " << sourceName << endl;
     if (whichNTuple == 1) {
         h_eventCount = (TH1F*) first_source->Get(nEventHistName);
-        nEvents = h_eventCount->Integral();
+        if (h_eventCount == NULL) {
+            nEvents = 1;
+        }
+        else {
+            nEvents = h_eventCount->Integral();
+        }
     }
     else {
         nEvents = OviedoNEvents(sourceName);
@@ -158,7 +169,12 @@ vector<double> * WeightBaseVec(int whichNTuple, vector<TList *> * fileListVec, u
         cout << "nextsource " << sourceName << endl;
         if (whichNTuple == 1) {
             h_eventCount = (TH1F*) nextsource->Get(nEventHistName);
-            nEvents = h_eventCount->Integral();
+            if (h_eventCount == NULL) {
+                nEvents = 1;
+            }
+            else {
+                nEvents = h_eventCount->Integral();
+            }
         }
         else {
             nEvents = OviedoNEvents(sourceName);
@@ -180,6 +196,8 @@ vector<double> * WeightVec(int whichNTuple, float L_data, vector<double> * baseW
     // ttbar cross section taken from 
 
     
+
+    
     ////Top and Single Top cross sections
     // Basic TTBar xsec
     //    double xsecTTbar                = 244.849; //old one used...new one is approx 1.003 times larger
@@ -187,21 +205,27 @@ vector<double> * WeightVec(int whichNTuple, float L_data, vector<double> * baseW
     // Specific Decay Mode TTBar; Only Oviedo and only Madgraph
     //branching ratios taken from the Oviedo Spreadsheet
     double branchRatioTTBarHadronic = 106.9/235;
-    double branchRatioTTBarFullLeptonic = 103./235.;
-    double branchRatioTTBarSemiLeptonic = 0.108 * 0.108 * 9;
+    double branchRatioTTBarSemiLeptonic = 103./235.;
+    double branchRatioTTBarFullLeptonic = 0.108 * 0.108 * 9;
     double xsecTTbarHadronic        = xsecTTbar * branchRatioTTBarHadronic;
     double xsecTTbarFullLeptonic    = xsecTTbar * branchRatioTTBarFullLeptonic;
-    double xsecTTbarSemiLeptonic   = xsecTTbar * branchRatioTTBarSemiLeptonic;
-    // Basic Single Top XSec, note that number is quite different for Oviedo...see below
-    double xsecSingTop              = 11.1;
+    double xsecTTbarSemiLeptonic    = xsecTTbar * branchRatioTTBarSemiLeptonic;
+    // Basic Single Top XSec
+    double xsecSingTopplusW         = 11.1;// Original amount I had from Cross section site
+//    double xsecSingTopplusW         = 11.1773;
+    double xsecSingTopTchan         = 59.5364608;
+    double xsecSingTopBarTchan      = 32.168436;
+    double xsecSingTopSchan         = 4.5305656;
+    double xsecSingTopBarSchan      = 2.0451456;
     
     //// Di-Weak Vector Boson cross section
     double xsecWW                   = 54.838;
     double xsecWZ                   = 33.21; // Note Oviedo's different versions for WZ and ZZ
     double xsecZZ                   = 17.654;
     // Oviedo version of DiW production
-    double xsecWW2L2Nu = 5.8123;
-    double xsecWW4L = 0.182852;
+    double xsecWWincl               = 57.1;
+    double xsecWW2L2Nu              = 5.8123;
+    double xsecggWW2L                 = 0.182852;
     
     ////Drell Yan
     // "Inclusive DY"
@@ -258,11 +282,11 @@ vector<double> * WeightVec(int whichNTuple, float L_data, vector<double> * baseW
     if (whichNTuple == 0) {
         // for xsecs that are different between the two types of nTuples
         cout << "whichNTuple is 0 " << endl;
-        xsecZDY50toInf = 3532.8;
-        xsecSingTop = 1.17334824;
-        xsecWZ = 22.44;
-        xsecZZ = 9.03;
-        xsecWLNu = 37509;
+        xsecZDY50toInf              = 3532.8;
+        xsecSingTopplusW            = 1.1733482448; //so different because it's dilepton channel
+        xsecWZ                      = 22.44;
+        xsecZZ                      = 9.03;
+        xsecWLNu                    = 37509;
     }
     cout << "Case: " << whichFileList << " numParFilesVec size " << numParFilesVec->size() << endl;
     cout << "baseWeightVec-> size " << baseWeightVec->size() << endl;
@@ -286,9 +310,17 @@ vector<double> * WeightVec(int whichNTuple, float L_data, vector<double> * baseW
                     break;
                 case 2:
                     numParFiles = numParFilesVec->at(0);
-                    outVec->push_back(numParFiles * L_data * xsecSingTop / baseWeightVec->at(0));
+                    outVec->push_back(numParFiles * L_data * xsecSingTopplusW / baseWeightVec->at(0));
                     numParFiles = numParFilesVec->at(1);
-                    outVec->push_back(numParFiles * L_data * xsecSingTop / baseWeightVec->at(1));
+                    outVec->push_back(numParFiles * L_data * xsecSingTopplusW / baseWeightVec->at(1));                    
+                    numParFiles = numParFilesVec->at(2);
+                    outVec->push_back(numParFiles * L_data * xsecSingTopTchan / baseWeightVec->at(2));
+                    numParFiles = numParFilesVec->at(3);
+                    outVec->push_back(numParFiles * L_data * xsecSingTopBarTchan / baseWeightVec->at(3));
+                    numParFiles = numParFilesVec->at(4);
+                    outVec->push_back(numParFiles * L_data * xsecSingTopSchan / baseWeightVec->at(4));
+                    numParFiles = numParFilesVec->at(5);
+                    outVec->push_back(numParFiles * L_data * xsecSingTopBarSchan / baseWeightVec->at(5));
                     break;
                 case 3:
                     numParFiles = numParFilesVec->at(0);
@@ -298,9 +330,11 @@ vector<double> * WeightVec(int whichNTuple, float L_data, vector<double> * baseW
                         outVec->push_back(numParFiles * L_data * xsecZDY50toInf_1Jets / baseWeightVec->at(1));
                         numParFiles = numParFilesVec->at(2);                        
                         outVec->push_back(numParFiles * L_data * xsecZDY50toInf_2Jets / baseWeightVec->at(2));
-                        numParFiles = numParFilesVec->at(3);                        
+//                        numParFiles = numParFilesVec->at(3);                        
+//                        outVec->push_back(numParFiles * L_data * xsecZDY50toInf_2Jets / baseWeightVec->at(3));
+                        numParFiles = numParFilesVec->at(3);
                         outVec->push_back(numParFiles * L_data * xsecZDY50toInf_3Jets / baseWeightVec->at(3));
-                        numParFiles = numParFilesVec->at(4);                        
+                        numParFiles = numParFilesVec->at(4);
                         outVec->push_back(numParFiles * L_data * xsecZDY50toInf_4Jets / baseWeightVec->at(4));
                     }
                     else {
@@ -312,7 +346,7 @@ vector<double> * WeightVec(int whichNTuple, float L_data, vector<double> * baseW
                     numParFiles = numParFilesVec->at(0);
                     outVec->push_back(numParFiles * L_data * xsecWW2L2Nu / baseWeightVec->at(0));
                     numParFiles = numParFilesVec->at(1);
-                    outVec->push_back(numParFiles * L_data * xsecWW4L / baseWeightVec->at(1));
+                    outVec->push_back(numParFiles * L_data * xsecggWW2L / baseWeightVec->at(1));
                     break;
                 case 5:
                     numParFiles = numParFilesVec->at(0);
@@ -329,14 +363,12 @@ vector<double> * WeightVec(int whichNTuple, float L_data, vector<double> * baseW
                 case 8:            
                     numParFiles = numParFilesVec->at(0);
                     outVec->push_back(numParFiles * L_data * xsecWG / baseWeightVec->at(0));
-                    /*
                     numParFiles = numParFilesVec->at(1);
                     outVec->push_back(numParFiles * L_data * xsecWGstarToElNu / baseWeightVec->at(1));
                     numParFiles = numParFilesVec->at(2);
                     outVec->push_back(numParFiles * L_data * xsecWGstarToMuNu / baseWeightVec->at(2));
                     numParFiles = numParFilesVec->at(3);
                     outVec->push_back(numParFiles * L_data * xsecWGstarToTauNu / baseWeightVec->at(3));
-                    */
                     break;            
                 case 9:            
                     numParFiles = numParFilesVec->at(0);
@@ -392,9 +424,9 @@ vector<double> * WeightVec(int whichNTuple, float L_data, vector<double> * baseW
                     break;
                 case 2:
                     numParFiles = numParFilesVec->at(0);
-                    outVec->push_back(numParFiles * L_data * xsecSingTop / baseWeightVec->at(0));
+                    outVec->push_back(numParFiles * L_data * xsecSingTopplusW / baseWeightVec->at(0));
                     numParFiles = numParFilesVec->at(1);
-                    outVec->push_back(numParFiles * L_data * xsecSingTop / baseWeightVec->at(1));
+                    outVec->push_back(numParFiles * L_data * xsecSingTopplusW / baseWeightVec->at(1));
                     break;
                 case 3:
                     numParFiles = numParFilesVec->at(0);
@@ -572,6 +604,10 @@ vector<TList *> * FileListVec(int whichNTuple, vector<TString> * nameVec, vector
                 FileListSingTop = new TList();
                 FileListSingTop->Add(TFile::Open(TString("TWDilep") + whichNTupleString + PURWString + doSystString + suffixString));
                 FileListSingTop->Add(TFile::Open(TString("TbarWDilep") + whichNTupleString + PURWString + doSystString + suffixString));
+                FileListSingTop->Add(TFile::Open(TString("SingleTop_Tchannel") + whichNTupleString + PURWString + doSystString + suffixString));
+                FileListSingTop->Add(TFile::Open(TString("SingleTopBar_Tchannel") + whichNTupleString + PURWString + doSystString + suffixString));
+                FileListSingTop->Add(TFile::Open(TString("SingleTop_Schannel") + whichNTupleString + PURWString + doSystString + suffixString));
+                FileListSingTop->Add(TFile::Open(TString("SingleTopBar_Schannel") + whichNTupleString + PURWString + doSystString + suffixString));                
                 outVec->push_back(FileListSingTop);
             }
             if (boolVec->at(3)) {
@@ -579,7 +615,8 @@ vector<TList *> * FileListVec(int whichNTuple, vector<TString> * nameVec, vector
                 FileListZDY->Add(TFile::Open(TString("DYJets_Madgraph") + whichNTupleString + PURWString + doSystString + suffixString));
                 if (doExclusiveSample) {
                     FileListZDY->Add(TFile::Open(TString("DY50toLLMad1jet") + whichNTupleString + PURWString + doSystString + suffixString));
-                    FileListZDY->Add(TFile::Open(TString("DY50toLLMad2jet") + whichNTupleString + PURWString + doSystString + suffixString));
+//                    FileListZDY->Add(TFile::Open(TString("DY50toLLMad2jet") + whichNTupleString + PURWString + doSystString + suffixString));
+                    FileListZDY->Add(TFile::Open(TString("DY50toLLMad2jetV7C") + whichNTupleString + PURWString + doSystString + suffixString));
                     FileListZDY->Add(TFile::Open(TString("DY50toLLMad3jet") + whichNTupleString + PURWString + doSystString + suffixString));
                     FileListZDY->Add(TFile::Open(TString("DY50toLLMad4jet") + whichNTupleString + PURWString + doSystString + suffixString));
                 }
@@ -608,12 +645,10 @@ vector<TList *> * FileListVec(int whichNTuple, vector<TString> * nameVec, vector
             if (boolVec->at(8)) {
                 FileListWG = new TList();
                 FileListWG->Add(TFile::Open(TString("WgammaToLNuG") + whichNTupleString + PURWString
-                                            + doSystString + suffixString));
-                /*
+                                            + doSystString + suffixString));                
                 FileListWG->Add(TFile::Open(TString("WGstarToElNuMad") + whichNTupleString + PURWString + doSystString + suffixString));
                 FileListWG->Add(TFile::Open(TString("WGstarToMuNuMad") + whichNTupleString + PURWString + doSystString + suffixString));
-                FileListWG->Add(TFile::Open(TString("WGstarToTauNuMad") + whichNTupleString + PURWString + doSystString + suffixString));
-                 */
+                FileListWG->Add(TFile::Open(TString("WGstarToTauNuMad") + whichNTupleString + PURWString + doSystString + suffixString));            
                 outVec->push_back(FileListWG);
                 FileListZG = new TList();
                 FileListZG->Add(TFile::Open(TString("ZgammaToLLG") + whichNTupleString + PURWString + doSystString + suffixString));
