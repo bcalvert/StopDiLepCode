@@ -248,7 +248,7 @@ inline float DeltaMT2UncEn(vector<TH1F *> * vecOneDeeHists, TH2F * TwoDeeHist, f
         cout << "ERROR with which one dee hist!" << endl;
         return 0.;
     }
-    else if (whichOneDeeHist >= numOneDeeHists) {
+    else if (whichOneDeeHist >= (int) numOneDeeHists) {
         whichOneDeeHist = (int) numOneDeeHists - 1;
     }
     if (vecOneDeeHists->at(whichOneDeeHist)->Integral() == 0) {
@@ -261,7 +261,7 @@ inline float DeltaMT2UncEn(vector<TH1F *> * vecOneDeeHists, TH2F * TwoDeeHist, f
 
 
 inline TLorentzVector LeptonScaleSystShift(TLorentzVector inputLepVec, int inputLepPDGID, float shiftDirection) {
-    float barrelEtaEnd = 1.442; float endcapEtaStart = 1.566; 
+    float barrelEtaEnd = 1.4442; float endcapEtaStart = 1.566; 
     float electronESEB = 0.006; float electronESEE = 0.015;
     float muonES = 0.002;
     float scaleToUse = 0;
@@ -329,9 +329,54 @@ Double_t ElectronEffectiveArea(float elecEta) {
     
     return Aeff;
 }
-inline bool ElectronPassCut(bool isPFElectron, bool passConvVeto, float relPFElecIso, float elecIsoRatioCut, float elecEta, float elecEtaUB, float barrelEtaEnd, float endcapEtaStart) {
+inline bool ElectronPassCutStage1(bool isEB, bool isEE, float SCEta, float deltaPhiIn, float deltaEtaIn, float sigIetaIeta, float HtoERatio) {
+    float EBDeltaPhiInCut = 0.06, EEDeltaPhiInCut = 0.03, deltaPhiInCut;
+    float EBDeltaEtaInCut = 0.004, EEDeltaEtaInCut = 0.007, deltaEtaInCut;
+    float EBSigIetaIetaCut = 0.01, EESigIetaIetaCut = 0.03, sigIetaIetaCut;
+    float EBHtoERatio = 0.12, EEHtoERatio = 0.10, HtoERatioCut;
+    float SCEtaMax = 2.5, SCEtaBarrelCut = 1.4442, SCEtaEndcapCut = 1.566;
+    bool passCut = false;
+    if (SCEta >= SCEtaMax || ((SCEta >= SCEtaBarrelCut ) && (SCEta <= SCEtaEndcapCut))) {
+        passCut = false;
+        return passCut;
+    }
+    if (isEB) {
+        deltaPhiInCut  = EBDeltaPhiInCut;
+        deltaEtaInCut  = EBDeltaEtaInCut;
+        sigIetaIetaCut = EBSigIetaIetaCut;
+        HtoERatioCut   = EBHtoERatio;
+    }
+    else if (isEE) {
+        deltaPhiInCut  = EEDeltaPhiInCut;
+        deltaEtaInCut  = EEDeltaEtaInCut;
+        sigIetaIetaCut = EESigIetaIetaCut;
+        HtoERatioCut   = EEHtoERatio;
+    }
+    else {
+        passCut = false;
+        return passCut;
+    }
+    passCut = ((deltaPhiIn < deltaPhiInCut) && (deltaEtaIn < deltaEtaInCut) && (sigIetaIeta < sigIetaIetaCut) && (HtoERatio < HtoERatioCut));
+    return passCut;
+}
+inline bool ElectronPassCutStage2(bool isPFElectron, bool passConvVeto, float relPFElecIso, float elecIP, float elecDZ, float elecE, float elecEoverP, float elecMissHits) {
     bool passCut;
-    if (!isPFElectron || !passConvVeto || relPFElecIso > elecIsoRatioCut || abs(elecEta) > elecEtaUB || (abs(elecEta) > barrelEtaEnd && abs(elecEta) < endcapEtaStart)) {
+    float elecIsoRatioCut = 0.15;
+    float elecEPCut = 0.05, elecDZCut = 0.1, elecIPCut = 0.02;
+    int elecNumMissHitsCut = 1;
+    if (!isPFElectron || !passConvVeto || relPFElecIso >= elecIsoRatioCut) {
+        passCut = false;
+        return passCut;
+    }
+    passCut = ((elecIP < elecIPCut) && (elecDZ < elecDZCut) && (fabs((1/elecE) * (1 - elecEoverP)) < elecEPCut) && (elecMissHits <= elecNumMissHitsCut));
+    return passCut;
+    //https://twiki.cern.ch/twiki/bin/viewauth/CMS/EgammaCutBasedIdentification    
+}
+inline bool ElectronPassCutDESY(float relPFElecIso, float elecEta) {
+    bool passCut;        
+    float elecIsoRatioCut = 0.15; float elecEtaUB = 2.5;
+    float barrelEtaEnd = 1.4442; float endcapEtaStart = 1.566;
+    if (relPFElecIso > elecIsoRatioCut || fabs(elecEta) > elecEtaUB || (fabs(elecEta) > barrelEtaEnd && fabs(elecEta) < endcapEtaStart)) {
         passCut = false;
     }
     else {
@@ -339,14 +384,14 @@ inline bool ElectronPassCut(bool isPFElectron, bool passConvVeto, float relPFEle
     }
     return passCut;
 }
-inline void ElectronPickOvi(vector<float> * ElecPx, vector<float> * ElecPy, vector<float> * ElecPz, vector<float> * ElecEnergy, vector<int> * ElecCharge, vector<float> * ElecNeutHadIso, vector<float> * ElecCharHadIso, vector<float> * ElecPhotHadIso, vector<bool> * passConvVeto, vector<bool> * isPFElectron, float eventRhoIso, vector<TLorentzVector> * vecIsoLeptons, vector<int> * vecIsoPDGIDs, vector<float> * vecIsoLepPFRelIso) {
-    float elecIsoRatioCut = 0.15; float elecEtaCut = 2.5;// float leadElecPtCut = 20; float subElecPtCut = 10;
-    float barrelEtaEnd = 1.442; float endcapEtaStart = 1.566;
+inline void ElectronPickOvi(vector<float> * ElecPx, vector<float> * ElecPy, vector<float> * ElecPz, vector<float> * ElecEnergy, vector<int> * ElecCharge, vector<float> * ElecPFPT, vector<float> * ElecSCEta, vector<float> * ElecDeltaPhiIn, vector<float> * ElecDeltaEtaIn, vector<float> * ElecSigIetaIeta, vector<float> * ElecHtoERatio, vector<float> * ElecIP, vector<float> * ElecDZ, vector<float> * ElecECalE, vector<float> * ElecSCEOverP, vector<int> * ElecNumMissHits, vector<float> * ElecNeutHadIso, vector<float> * ElecCharHadIso, vector<float> * ElecPhotHadIso, vector<bool> * passConvVeto, vector<bool> * isPFElectron, vector<bool> * ElecisEB, vector<bool> * ElecisEE, float eventRhoIso,  vector<TLorentzVector> * vecIsoLeptons, vector<int> * vecIsoPDGIDs, vector<float> * vecIsoLepPFRelIso) {
     bool currElecPassCut;
     float currElecPt, currElecEta;
-//    float scaleToUse = 0;
-//    float electronESEB = 0.006; float electronESEE = 0.015;
     float currRelPFElecIso;
+    float currElecECalE, currElecSCEOverP, currElecSCEta;
+    float currElecIP, currElecDZ;
+    float currElecDeltaPhiIn, currElecDeltaEtaIn, currElecSigIetaIeta, currElecHtoERatio;
+    int currElecNumMissHits;
     TLorentzVector patsyVec;
     for (unsigned int i = 0; i < ElecPx->size(); ++i) {
         /*
@@ -358,15 +403,33 @@ inline void ElectronPickOvi(vector<float> * ElecPx, vector<float> * ElecPy, vect
          cout << "photiso " << ElecPhotHadIso->at(i) << endl;
          cout << "ElecPt " << ElecPt->at(i) << endl;
          cout << "ElecEta " << ElecEta->at(i) << endl;
-         cout << "ElecEta " << abs(ElecEta->at(i)) << endl;
+         cout << "ElecEta " << fabs(ElecEta->at(i)) << endl;
          cout << "ElecCharge " << ElecCharge->at(i) << endl;
-         cout << "(ElecNeutHadIso->at(i) + ElecCharHadIso->at(i) + ElecPhotHadIso->at(i))/ElecPt->at(i) " << (ElecNeutHadIso->at(i) + ElecCharHadIso->at(i) + ElecPhotHadIso->at(i))/ElecPt->at(i) << endl;
+         cout << "(ElecNeutHadIso->at(i) + ElecCharHadIso->at(i) + ElecPhotHadIso->at(i))/ElecPt->at(i) " << (ElecNeutHadIso->at(i) + ElecCharHadIso->at(i) + ElecPhotHadIso->at(i))/ElecPt->at(i) << endl                
          */
+//        cout << " test 1 " << endl;
         patsyVec.SetPxPyPzE(ElecPx->at(i), ElecPy->at(i), ElecPz->at(i), ElecEnergy->at(i));
+//        cout << " test 2 " << endl;
         currElecPt = patsyVec.Pt(); currElecEta = patsyVec.Eta();
+        if (fabs(currElecPt - ElecPFPT->at(i)) >= 10) continue;
+//        cout << " test 3 " << endl;
         currRelPFElecIso = ElecCharHadIso->at(i) + TMath::Max(0., ElecNeutHadIso->at(i) +  ElecPhotHadIso->at(i) - (eventRhoIso * ElectronEffectiveArea(currElecEta)));
+//        cout << " test 4 " << endl;
         currRelPFElecIso /= currElecPt;
-        currElecPassCut = ElectronPassCut(isPFElectron->at(i), passConvVeto->at(i), currRelPFElecIso, elecIsoRatioCut, currElecEta, elecEtaCut, barrelEtaEnd, endcapEtaStart);
+//        cout << " test 5 " << endl;
+        currElecECalE = ElecECalE->at(i); currElecSCEOverP = ElecSCEOverP->at(i); currElecSCEta = ElecSCEta->at(i);
+//        cout << " test 6 " << endl;
+        currElecDZ = ElecDZ->at(i); currElecIP = ElecIP->at(i);
+//        cout << " test 7 " << endl;
+        currElecDeltaPhiIn = ElecDeltaPhiIn->at(i); currElecDeltaEtaIn = ElecDeltaEtaIn->at(i); 
+//        cout << " test 8 " << endl;
+        currElecSigIetaIeta = ElecSigIetaIeta->at(i); currElecHtoERatio = ElecHtoERatio->at(i);
+//        cout << " test 9 " << endl;
+        currElecNumMissHits = ElecNumMissHits->at(i);
+//        cout << " test 10 " << endl;
+        currElecPassCut = ElectronPassCutStage1(ElecisEB->at(i), ElecisEE->at(i), currElecSCEta, currElecDeltaPhiIn, currElecDeltaEtaIn, currElecSigIetaIeta, currElecHtoERatio);
+//        cout << " test 11 " << endl;
+        currElecPassCut &= ElectronPassCutStage2(isPFElectron->at(i), passConvVeto->at(i), currRelPFElecIso, currElecIP, currElecDZ, currElecECalE, currElecSCEOverP, currElecNumMissHits);
         if (currElecPassCut) {
             vecIsoLeptons->push_back(patsyVec);
             vecIsoPDGIDs->push_back(ElecCharge->at(i) > 0 ? -11 : 11);
@@ -378,14 +441,14 @@ inline void ElectronPickOvi(vector<float> * ElecPx, vector<float> * ElecPy, vect
     }
 }
 
-inline void ElectronPickOvi(vector<float> * ElecPx, vector<float> * ElecPy, vector<float> * ElecPz, vector<float> * ElecEnergy, vector<int> * ElecCharge, vector<float> * ElecNeutHadIso, vector<float> * ElecCharHadIso, vector<float> * ElecPhotHadIso, vector<bool> * passConvVeto, vector<bool> * isPFElectron, float eventRhoIso, float whichSystCase, vector<TLorentzVector> * vecIsoLeptons, vector<int> * vecIsoPDGIDs, vector<float> * vecIsoLepPFRelIso, vector<TLorentzVector> * vecIsoLeptons_CentVal) {
-    float elecIsoRatioCut = 0.15; float elecEtaCut = 2.5;// float leadElecPtCut = 20; float subElecPtCut = 10;
-    float barrelEtaEnd = 1.442; float endcapEtaStart = 1.566;
+inline void ElectronPickOvi(vector<float> * ElecPx, vector<float> * ElecPy, vector<float> * ElecPz, vector<float> * ElecEnergy, vector<int> * ElecCharge, vector<float> * ElecPFPT, vector<float> * ElecSCEta, vector<float> * ElecDeltaPhiIn, vector<float> * ElecDeltaEtaIn, vector<float> * ElecSigIetaIeta, vector<float> * ElecHtoERatio, vector<float> * ElecIP, vector<float> * ElecDZ, vector<float> * ElecECalE, vector<float> * ElecSCEOverP, vector<int> * ElecNumMissHits, vector<float> * ElecNeutHadIso, vector<float> * ElecCharHadIso, vector<float> * ElecPhotHadIso, vector<bool> * passConvVeto, vector<bool> * isPFElectron, vector<bool> * ElecisEB, vector<bool> * ElecisEE, float eventRhoIso, float whichSystCase, vector<TLorentzVector> * vecIsoLeptons, vector<int> * vecIsoPDGIDs, vector<float> * vecIsoLepPFRelIso, vector<TLorentzVector> * vecIsoLeptons_CentVal) {
     bool currElecPassCut;
     float currElecPt, currElecEta;
-    //    float scaleToUse = 0;
-    //    float electronESEB = 0.006; float electronESEE = 0.015;
     float currRelPFElecIso;
+    float currElecECalE, currElecSCEOverP, currElecSCEta;
+    float currElecIP, currElecDZ;
+    float currElecDeltaPhiIn, currElecDeltaEtaIn, currElecSigIetaIeta, currElecHtoERatio;
+    int currElecNumMissHits;
     TLorentzVector patsyVec, patsyVec2;
     for (unsigned int i = 0; i < ElecPx->size(); ++i) {
         /*
@@ -397,11 +460,12 @@ inline void ElectronPickOvi(vector<float> * ElecPx, vector<float> * ElecPy, vect
          cout << "photiso " << ElecPhotHadIso->at(i) << endl;
          cout << "ElecPt " << ElecPt->at(i) << endl;
          cout << "ElecEta " << ElecEta->at(i) << endl;
-         cout << "ElecEta " << abs(ElecEta->at(i)) << endl;
+         cout << "ElecEta " << fabs(ElecEta->at(i)) << endl;
          cout << "ElecCharge " << ElecCharge->at(i) << endl;
          cout << "(ElecNeutHadIso->at(i) + ElecCharHadIso->at(i) + ElecPhotHadIso->at(i))/ElecPt->at(i) " << (ElecNeutHadIso->at(i) + ElecCharHadIso->at(i) + ElecPhotHadIso->at(i))/ElecPt->at(i) << endl;
          */
         patsyVec.SetPxPyPzE(ElecPx->at(i), ElecPy->at(i), ElecPz->at(i), ElecEnergy->at(i));
+        if (fabs(patsyVec.Pt() - ElecPFPT->at(i)) >= 10) continue;
         patsyVec2.SetPxPyPzE(ElecPx->at(i), ElecPy->at(i), ElecPz->at(i), ElecEnergy->at(i));
         if (whichSystCase != 0) {
             patsyVec = LeptonScaleSystShift(patsyVec, 11, whichSystCase);
@@ -409,7 +473,13 @@ inline void ElectronPickOvi(vector<float> * ElecPx, vector<float> * ElecPy, vect
         currElecPt = patsyVec.Pt(); currElecEta = patsyVec.Eta();
         currRelPFElecIso = ElecCharHadIso->at(i) + TMath::Max(0., ElecNeutHadIso->at(i) +  ElecPhotHadIso->at(i) - (eventRhoIso * ElectronEffectiveArea(currElecEta)));
         currRelPFElecIso /= currElecPt;
-        currElecPassCut = ElectronPassCut(isPFElectron->at(i), passConvVeto->at(i), currRelPFElecIso, elecIsoRatioCut, currElecEta, elecEtaCut, barrelEtaEnd, endcapEtaStart);
+        currElecECalE = ElecECalE->at(i); currElecSCEOverP = ElecSCEOverP->at(i); currElecSCEta = ElecSCEta->at(i);
+        currElecDZ = ElecDZ->at(i); currElecIP = ElecIP->at(i);
+        currElecDeltaPhiIn = ElecDeltaPhiIn->at(i); currElecDeltaEtaIn = ElecDeltaEtaIn->at(i); 
+        currElecSigIetaIeta = ElecSigIetaIeta->at(i); currElecHtoERatio = ElecHtoERatio->at(i);
+        currElecNumMissHits = ElecNumMissHits->at(i);
+        currElecPassCut = ElectronPassCutStage1(ElecisEB->at(i), ElecisEE->at(i), currElecSCEta, currElecDeltaPhiIn, currElecDeltaEtaIn, currElecSigIetaIeta, currElecHtoERatio);
+        currElecPassCut &= ElectronPassCutStage2(isPFElectron->at(i), passConvVeto->at(i), currRelPFElecIso, currElecIP, currElecDZ, currElecECalE, currElecSCEOverP, currElecNumMissHits);
         if (currElecPassCut) {
             vecIsoLeptons->push_back(patsyVec);
             vecIsoLeptons_CentVal->push_back(patsyVec2);
@@ -421,10 +491,36 @@ inline void ElectronPickOvi(vector<float> * ElecPx, vector<float> * ElecPy, vect
         }
     }
 }
-
-inline bool MuonPassCut(bool isGMPT, bool isPFMuon, float relPFMuonIso, float muonIsoRatioCut, float muonEta, float muonEtaCut, float muonD0, float muonD0Cut, float muonDZ, float muonDZCut) {
+inline float goodVertexSelection(vector<float> * VertZ, vector<float> * VertRho, vector<float> * VertNDOF, vector<bool> * VertIsFake, int &nGoodVertices) {
+    float firstGoodVertZ = -99;
+    nGoodVertices = 0;
+    for (unsigned int iVert = 0; iVert < VertZ->size(); ++iVert) {
+        /*
+        cout << "VertZ->at(iVert) " << VertZ->at(iVert) << endl;
+        cout << "fabs(VertZ->at(iVert)) < 24 " << (fabs(VertZ->at(iVert)) < 24) << endl;
+        cout << "VertRho   ->at(iVert) " << VertRho   ->at(iVert) << endl;
+        cout << "VertRho   ->at(iVert)  <  2 " << (VertRho   ->at(iVert)  <  2) << endl;
+        cout << "VertIsFake ->at(iVert) " << VertIsFake ->at(iVert) << endl;
+        cout << "!VertIsFake ->at(iVert) " << (!VertIsFake ->at(iVert)) << endl;
+        cout << " VertNDOF  ->at(iVert) " << VertNDOF  ->at(iVert) << endl;
+        cout << " VertNDOF  ->at(iVert)  >  4 " << (VertNDOF  ->at(iVert)  >  4) << endl;
+         */
+        if (fabs(VertZ->at(iVert)) < 24 &&
+            VertRho   ->at(iVert)  <  2 &&
+            VertNDOF  ->at(iVert)  >  4 &&
+            !VertIsFake ->at(iVert)) {
+            //cout << " passed vertex cut! " << endl;
+            ++nGoodVertices;
+            if (nGoodVertices == 1) firstGoodVertZ = VertZ->at(iVert);
+        }
+    }
+    //cout << "number of good vertices " << nGoodVertices << endl;
+    return firstGoodVertZ;
+}
+inline bool MuonPassCutStage1(bool isGMPT, bool isPFMuon, bool isGlobMuon, bool isTrackArbitMuon, float relPFMuonIso, float muonEta) {
     bool muonPassCut;
-    if (!isGMPT || !isPFMuon || relPFMuonIso > muonIsoRatioCut || abs(muonEta) > muonEtaCut || muonD0 > muonD0Cut || muonDZ > muonDZCut) {
+    float muonIsoRatioCut = 0.15; float muonEtaCut = 2.4;
+    if (!isGMPT || !isPFMuon || (!isGlobMuon && !isTrackArbitMuon) || !(relPFMuonIso < muonIsoRatioCut) || !(fabs(muonEta) < muonEtaCut)) {
         muonPassCut = false;
     }
     else {
@@ -432,14 +528,37 @@ inline bool MuonPassCut(bool isGMPT, bool isPFMuon, float relPFMuonIso, float mu
     }
     return muonPassCut;
 }
-inline void MuonPickOvi(vector<float> * MuonPx, vector<float> * MuonPy, vector<float> * MuonPz, vector<float> * MuonEnergy, vector<int> * MuonCharge, vector<float> * MuonD0, vector<float> * MuonVertZ, vector<float> * VertexZ, vector<float> * MuonNeutHadIso, vector<float> * MuonCharHadIso, vector<float> * MuonPhotHadIso, vector<float> * MuonSumPUPt, vector<bool> * isGMPT, vector<bool> * isPFMuon, vector<TLorentzVector> * vecIsoLeptons, vector<int> * vecIsoPDGIDs, vector<float> * vecIsoLepPFRelIso) {
-//    int leadMuonIndex = -1; int subMuonIndex = -1; int leadMuBarIndex = -1; int subMuBarIndex = -1;
-    float muonIsoRatioCut = 0.15; float muonEtaCut = 2.4;// float leadMuonPtCut = 20; float subMuonPtCut = 10;
+inline bool MuonPassCutStage2(float muonD0, float muonDZ, int muonNumMatchStations, int muonNumValidPixHitsinTrack, int muonNumLayers) {
     float muonD0Cut = 0.2; float muonDZCut = 0.5;
+    int muonNumMatchStationsCut = 1, muonNumValidPixHitsinTrackCut = 0, muonNumLayersCut = 5;
+    bool muonPassCut;
+    if (!(muonD0 < muonD0Cut) || !(muonDZ < muonDZCut) || !(muonNumMatchStations > muonNumMatchStationsCut) || !(muonNumLayers > muonNumLayersCut) || !(muonNumValidPixHitsinTrack > muonNumValidPixHitsinTrackCut)) {
+        muonPassCut = false;
+    }
+    else {
+        muonPassCut = true;
+    }
+    return muonPassCut;
+}
+inline bool MuonPassCutDESY(float relPFMuonIso, float muonEta) {
+    bool muonPassCut;
+    float muonIsoRatioCut = 0.15; float muonEtaCut = 2.4;
+    if (!(relPFMuonIso < muonIsoRatioCut) || !(fabs(muonEta) < muonEtaCut)) {
+        muonPassCut = false;
+    }
+    else {
+        muonPassCut = true;
+    }
+    return muonPassCut;
+}
+inline void MuonPickOvi(vector<float> * MuonPx, vector<float> * MuonPy, vector<float> * MuonPz, vector<float> * MuonEnergy, vector<int> * MuonCharge, vector<float> * MuonPFPT, vector<float> * MuonD0, vector<float> * MuonVertZ, float firstGoodVertZ, vector<float> * MuonNeutHadIso, vector<float> * MuonCharHadIso, vector<float> * MuonPhotHadIso, vector<float> * MuonSumPUPt, vector<int> * MuonNumLayers, vector<int> * MuonNumMatchStations, vector<int> * MuonNumValidPixHitsinTrack, vector<bool> * isGMPT, vector<bool> * isPFMuon, vector<bool> * isGlobMuon, vector<bool> * isTrackArbitMuon, vector<TLorentzVector> * vecIsoLeptons, vector<int> * vecIsoPDGIDs, vector<float> * vecIsoLepPFRelIso) {
+
+    int currMuonNumMatchStations, currMuonNumValidPixHitsinTrack, currMuonNumLayers;
     float currMuonPt, currMuonEta;
     float currMuonRelPFIso;
-    float currMuonDZ;
+    float currMuonDZ, currMuonD0;
     bool  currMuonPassCut;
+    
     TLorentzVector patsyVec;
     for (unsigned int i = 0; i < MuonPx->size(); ++i) {
         /*
@@ -454,16 +573,28 @@ inline void MuonPickOvi(vector<float> * MuonPx, vector<float> * MuonPy, vector<f
          cout << "VertexZ->at " << VertexZ->at(0) << endl;
          cout << "muonVertexZ->at " << MuonVertZ->at(i) << endl;
          cout << "MuonCharge->at " << MuonCharge->at(i) << endl;
-         cout << "abs(VertexZ->at(0) - MuonVertZ->at(i)) " << abs(VertexZ->at(0) - MuonVertZ->at(i)) << endl;
+         cout << "fabs(VertexZ->at(0) - MuonVertZ->at(i)) " << fabs(VertexZ->at(0) - MuonVertZ->at(i)) << endl;
+         
+         
+         RelIso Double_t relIso= (T_Muon_chargedHadronIsoR03->at(iMuon) + max( 0.0, T_Muon_neutralHadronIsoR03->at(iMuon) +T_Muon_photonIsoR03->at(iMuon) -0.5*T_Muon_sumPUPtR03->at(iMuon)))/Muon.Pt();
+         
          */
-        //         [sumChargedHadronPt+ max(0.,sumNeutralHadronPt+sumPhotonPt-0.5sumPUPt]/pt
+        //          https://twiki.cern.ch/twiki/bin/viewauth/CMS/SingleLepton2012#Muon_Selection
+        //          https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideMuonId
         patsyVec.SetPxPyPzE(MuonPx->at(i), MuonPy->at(i), MuonPz->at(i), MuonEnergy->at(i));
         currMuonPt = patsyVec.Pt();
+        
+        if (fabs(currMuonPt - MuonPFPT->at(i)) >= 5.) continue;
         currMuonEta = patsyVec.Eta();
-        currMuonRelPFIso = MuonCharHadIso->at(i) + TMath::Max((float)0., MuonPhotHadIso->at(i) + MuonNeutHadIso->at(i) - MuonSumPUPt->at(i));
+        currMuonRelPFIso = MuonCharHadIso->at(i) + TMath::Max(0., MuonPhotHadIso->at(i) + MuonNeutHadIso->at(i) - 0.5 * MuonSumPUPt->at(i));
         currMuonRelPFIso /= currMuonPt;
-        currMuonDZ = abs(VertexZ->at(0) - MuonVertZ->at(i));
-        currMuonPassCut = MuonPassCut(isGMPT->at(i), isPFMuon->at(i), currMuonRelPFIso, muonIsoRatioCut, currMuonEta, muonEtaCut, MuonD0->at(i), muonD0Cut, currMuonDZ, muonDZCut);
+        currMuonDZ = fabs(firstGoodVertZ - MuonVertZ->at(i));        
+        currMuonD0 = MuonD0->at(i);
+        currMuonNumMatchStations = MuonNumMatchStations->at(i);
+        currMuonNumLayers = MuonNumLayers->at(i);
+        currMuonNumValidPixHitsinTrack = MuonNumValidPixHitsinTrack->at(i);
+        currMuonPassCut = MuonPassCutStage1(isGMPT->at(i), isPFMuon->at(i), isGlobMuon->at(i), isTrackArbitMuon->at(i), currMuonRelPFIso, currMuonEta);
+        currMuonPassCut &= MuonPassCutStage2(currMuonD0, currMuonDZ, currMuonNumMatchStations, currMuonNumValidPixHitsinTrack, currMuonNumLayers);
         if (currMuonPassCut){
             vecIsoLeptons->push_back(patsyVec);
             vecIsoPDGIDs->push_back(MuonCharge->at(i) > 0 ? -13 : 13);
@@ -475,15 +606,15 @@ inline void MuonPickOvi(vector<float> * MuonPx, vector<float> * MuonPy, vector<f
     }
 }
 
-inline void MuonPickOvi(vector<float> * MuonPx, vector<float> * MuonPy, vector<float> * MuonPz, vector<float> * MuonEnergy, vector<int> * MuonCharge, vector<float> * MuonD0, vector<float> * MuonVertZ, vector<float> * VertexZ, vector<float> * MuonNeutHadIso, vector<float> * MuonCharHadIso, vector<float> * MuonPhotHadIso, vector<float> * MuonSumPUPt, vector<bool> * isGMPT, vector<bool> * isPFMuon, float whichSystCase, vector<TLorentzVector> * vecIsoLeptons, vector<int> * vecIsoPDGIDs, vector<float> * vecIsoLepPFRelIso, vector<TLorentzVector> * vecIsoLeptons_CentVal) {
-    //    int leadMuonIndex = -1; int subMuonIndex = -1; int leadMuBarIndex = -1; int subMuBarIndex = -1;
-    float muonIsoRatioCut = 0.15; float muonEtaCut = 2.4;// float leadMuonPtCut = 20; float subMuonPtCut = 10;
-    float muonD0Cut = 0.2; float muonDZCut = 0.5;
+inline void MuonPickOvi(vector<float> * MuonPx, vector<float> * MuonPy, vector<float> * MuonPz, vector<float> * MuonEnergy, vector<int> * MuonCharge, vector<float> * MuonPFPT, vector<float> * MuonD0, vector<float> * MuonVertZ, float firstGoodVertZ, vector<float> * MuonNeutHadIso, vector<float> * MuonCharHadIso, vector<float> * MuonPhotHadIso, vector<float> * MuonSumPUPt, vector<int> * MuonNumLayers, vector<int> * MuonNumMatchStations, vector<int> * MuonNumValidPixHitsinTrack, vector<bool> * isGMPT, vector<bool> * isPFMuon, vector<bool> * isGlobMuon, vector<bool> * isTrackArbitMuon, float whichSystCase, vector<TLorentzVector> * vecIsoLeptons, vector<int> * vecIsoPDGIDs, vector<float> * vecIsoLepPFRelIso, vector<TLorentzVector> * vecIsoLeptons_CentVal) {    
+    
+    int currMuonNumMatchStations, currMuonNumValidPixHitsinTrack, currMuonNumLayers;
     float currMuonPt, currMuonEta;
     float currMuonRelPFIso;
-    float currMuonDZ;
-    bool  currMuonPassCut;
-    TLorentzVector patsyVec, patsyVec2;
+    float currMuonDZ, currMuonD0;
+    bool  currMuonPassCut;        
+
+    TLorentzVector patsyVec, patsyVec2;        
     for (unsigned int i = 0; i < MuonPx->size(); ++i) {
         /*
          cout << "i " << i << endl;
@@ -497,20 +628,26 @@ inline void MuonPickOvi(vector<float> * MuonPx, vector<float> * MuonPy, vector<f
          cout << "VertexZ->at " << VertexZ->at(0) << endl;
          cout << "muonVertexZ->at " << MuonVertZ->at(i) << endl;
          cout << "MuonCharge->at " << MuonCharge->at(i) << endl;
-         cout << "abs(VertexZ->at(0) - MuonVertZ->at(i)) " << abs(VertexZ->at(0) - MuonVertZ->at(i)) << endl;
+         cout << "fabs(VertexZ->at(0) - MuonVertZ->at(i)) " << fabs(VertexZ->at(0) - MuonVertZ->at(i)) << endl;
          */
         //         [sumChargedHadronPt+ max(0.,sumNeutralHadronPt+sumPhotonPt-0.5sumPUPt]/pt
         patsyVec.SetPxPyPzE(MuonPx->at(i), MuonPy->at(i), MuonPz->at(i), MuonEnergy->at(i));
         patsyVec2.SetPxPyPzE(MuonPx->at(i), MuonPy->at(i), MuonPz->at(i), MuonEnergy->at(i));
+        if (fabs(patsyVec.Pt() - MuonPFPT->at(i)) >= 5.) continue; // want to check before shifting energy scale around
         if (whichSystCase != 0) {
             patsyVec = LeptonScaleSystShift(patsyVec, 13, whichSystCase);
         }    
         currMuonPt = patsyVec.Pt();
         currMuonEta = patsyVec.Eta();
-        currMuonRelPFIso = MuonCharHadIso->at(i) + TMath::Max((float)0., MuonPhotHadIso->at(i) + MuonNeutHadIso->at(i) - MuonSumPUPt->at(i));
+        currMuonRelPFIso = MuonCharHadIso->at(i) + TMath::Max(0., MuonPhotHadIso->at(i) + MuonNeutHadIso->at(i) - 0.5 * MuonSumPUPt->at(i));
         currMuonRelPFIso /= currMuonPt;
-        currMuonDZ = abs(VertexZ->at(0) - MuonVertZ->at(i));
-        currMuonPassCut = MuonPassCut(isGMPT->at(i), isPFMuon->at(i), currMuonRelPFIso, muonIsoRatioCut, currMuonEta, muonEtaCut, MuonD0->at(i), muonD0Cut, currMuonDZ, muonDZCut);
+        currMuonDZ = fabs(firstGoodVertZ - MuonVertZ->at(i));
+        currMuonD0 = MuonD0->at(i);
+        currMuonNumMatchStations = MuonNumMatchStations->at(i);
+        currMuonNumLayers = MuonNumLayers->at(i);
+        currMuonNumValidPixHitsinTrack = MuonNumValidPixHitsinTrack->at(i);
+        currMuonPassCut = MuonPassCutStage1(isGMPT->at(i), isPFMuon->at(i), isGlobMuon->at(i), isTrackArbitMuon->at(i), currMuonRelPFIso, currMuonEta);
+        currMuonPassCut &= MuonPassCutStage2(currMuonD0, currMuonDZ, currMuonNumMatchStations, currMuonNumValidPixHitsinTrack, currMuonNumLayers);
         if (currMuonPassCut){
             vecIsoLeptons->push_back(patsyVec);
             vecIsoLeptons_CentVal->push_back(patsyVec2);
@@ -528,13 +665,15 @@ inline void IsoLeptonsPickDESY(VLV * Leptons, vector<int> *lepPdgId, vector<doub
     if (vecSize < 2) {
         return;
     }
+    /*
     float muonIsoRatioCut = 0.15; float muonEtaCut = 2.4;
     float elecIsoRatioCut = 0.15; float elecEtaCut = 2.5;
-    float barrelEtaEnd = 1.442; float endcapEtaStart = 1.566;
+    float barrelEtaEnd = 1.4442; float endcapEtaStart = 1.566;
+    */
     TLorentzVector patsyVec, patsyVec2;
     float currLepEta, currLepRelPFIso;
     int   currLepPDGID;
-    bool  currLepPassCut;    
+    bool  currLepPassCut = false;    
     for (unsigned int iLep = 0; iLep < vecSize; ++iLep) {
         patsyVec.SetPxPyPzE(Leptons->at(iLep).Px(), Leptons->at(iLep).Py(), Leptons->at(iLep).Pz(), Leptons->at(iLep).E());
         patsyVec2.SetPxPyPzE(Leptons->at(iLep).Px(), Leptons->at(iLep).Py(), Leptons->at(iLep).Pz(), Leptons->at(iLep).E());
@@ -545,10 +684,10 @@ inline void IsoLeptonsPickDESY(VLV * Leptons, vector<int> *lepPdgId, vector<doub
             patsyVec = LeptonScaleSystShift(patsyVec, abs(currLepPDGID), whichSystCase);
         }
         if (abs(currLepPDGID) == 13) {
-            currLepPassCut = MuonPassCut(true, true, currLepRelPFIso, muonIsoRatioCut, currLepEta, muonEtaCut, 0.0, 1., 0.0, 1.);
+            currLepPassCut = MuonPassCutDESY(currLepRelPFIso, currLepEta);
         }
         else if (abs(currLepPDGID) == 11) {
-            currLepPassCut = ElectronPassCut(true, true, currLepRelPFIso, elecIsoRatioCut, currLepEta, elecEtaCut, barrelEtaEnd, endcapEtaStart);
+            currLepPassCut = ElectronPassCutDESY(currLepRelPFIso, currLepEta);
         }
         if (currLepPassCut) {
             vecIsoLeptons->push_back(patsyVec);
@@ -569,21 +708,21 @@ inline void IsoLeptonsPickDESY(VLV * Leptons, vector<int> *lepPdgId, vector<doub
     }
     float muonIsoRatioCut = 0.15; float muonEtaCut = 2.4;
     float elecIsoRatioCut = 0.15; float elecEtaCut = 2.5;
-    float barrelEtaEnd = 1.442; float endcapEtaStart = 1.566;
+    float barrelEtaEnd = 1.4442; float endcapEtaStart = 1.566;
     TLorentzVector patsyVec;
     float currLepEta, currLepRelPFIso;
     int   currLepPDGID;
-    bool  currLepPassCut;    
+    bool  currLepPassCut = false;    
     for (unsigned int iLep = 0; iLep < vecSize; ++iLep) {
         patsyVec.SetPxPyPzE(Leptons->at(iLep).Px(), Leptons->at(iLep).Py(), Leptons->at(iLep).Pz(), Leptons->at(iLep).E());
         currLepEta = patsyVec.Eta();
         currLepRelPFIso = lepPFIso->at(iLep);
         currLepPDGID = lepPdgId->at(iLep);
         if (abs(currLepPDGID) == 13) {
-            currLepPassCut = MuonPassCut(true, true, currLepRelPFIso, muonIsoRatioCut, currLepEta, muonEtaCut, 0.0, 1., 0.0, 1.);
+            currLepPassCut = MuonPassCutDESY(currLepRelPFIso, currLepEta);
         }
         else if (abs(currLepPDGID) == 11) {
-            currLepPassCut = ElectronPassCut(true, true, currLepRelPFIso, elecIsoRatioCut, currLepEta, elecEtaCut, barrelEtaEnd, endcapEtaStart);
+            currLepPassCut = ElectronPassCutDESY(currLepRelPFIso, currLepEta);
         }
         if (currLepPassCut) {
             vecIsoLeptons->push_back(patsyVec);
@@ -776,11 +915,11 @@ inline float JESUncertFactor(TH2F * histJES, float shiftDirection, float JetPt, 
     }
     return (1 + shiftDirection * uncertFactor);
 }
-inline vector<TLorentzVector> * JetInfoDESY(vector<TLorentzVector> * isoLeptons, VLV * Jets, float whichSystCase, TH2F * shiftHist) {
+inline vector<TLorentzVector> * JetInfoDESY(vector<TLorentzVector> * isoLeptons, VLV * Jets, vector<double> * JetBTagInfo, vector<float> * vecBTagGoodJets, float whichSystCase, TH2F * shiftHist) {
     vector<TLorentzVector> * outVecJets = new vector<TLorentzVector>;
-    TLorentzVector currJet, patsyJet;
+    TLorentzVector patsyJet;
     bool leptonJet;
-    float dRcut = 0.5;
+    float dRcut = 0.4;
     float JetFactor;
     Double_t currJetPt, currJetEta, currJetPhi;
     for (unsigned int iJet = 0; iJet < Jets->size(); ++iJet) {
@@ -793,23 +932,27 @@ inline vector<TLorentzVector> * JetInfoDESY(vector<TLorentzVector> * isoLeptons,
             if (deltaR(currJetEta, currJetPhi, isoLeptons->at(iLep).Eta(), isoLeptons->at(iLep).Phi()) < dRcut) leptonJet = 1;
         }
         if (leptonJet) continue;
-        if (abs(currJetEta) > 2.4) continue;
+        if (fabs(currJetEta) > 2.4) continue;
         if (currJetPt < 9.0) continue;
         if (whichSystCase != 0) {
             JetFactor = JESUncertFactor(shiftHist, whichSystCase, (float) currJetPt, (float) currJetEta);
             patsyJet *= JetFactor;
         }
+        else {
+            vecBTagGoodJets->push_back((float) JetBTagInfo->at(iJet));
+        }
         outVecJets->push_back(patsyJet);
     }
     return outVecJets;
 }
-inline vector<TLorentzVector> * JetInfo(vector<TLorentzVector> * Leptons, vector<float> * JetPx, vector<float> * JetPy, vector<float> * JetPz, vector<float> * JetE, vector<float> * JetNHF, vector<float> * JetNEF, vector<float> * JetCHF, vector<float> * JetCEF, vector<int> * JetNDaug, vector<int> * JetCharMult, float whichSystCase, TH2F * shiftHist) {
+inline vector<TLorentzVector> * JetInfo(vector<TLorentzVector> * Leptons, vector<float> * JetPx, vector<float> * JetPy, vector<float> * JetPz, vector<float> * JetE, vector<float> * JetNHF, vector<float> * JetNEF, vector<float> * JetCHF, vector<float> * JetCEF, vector<int> * JetNDaug, vector<int> * JetCharMult, vector<float> * JetBTagInfo, vector<float> * vecBTagGoodJets, float whichSystCase, TH2F * shiftHist) {
     vector<TLorentzVector> * Jets = new vector<TLorentzVector>;
-    TLorentzVector currJet, patsyJet;
+    TLorentzVector patsyJet;
     bool leptonJet;
-    float dRcut = 0.5;
+    float dRcut = 0.4;
     float JetFactor;
     Double_t currJetPt, currJetEta, currJetPhi;
+    bool currJetPassJetID;        
     for (unsigned int iJet = 0; iJet < JetPx->size(); ++iJet) {
         leptonJet = 0;
         /*
@@ -832,22 +975,22 @@ inline vector<TLorentzVector> * JetInfo(vector<TLorentzVector> * Leptons, vector
             if (deltaR(currJetEta, currJetPhi, Leptons->at(iLep).Eta(), Leptons->at(iLep).Phi()) < dRcut) leptonJet = 1;
         }
         if (leptonJet) continue;
-        if (abs(currJetEta) > 2.4) continue;
+        if (fabs(currJetEta) > 2.4) continue; // going to try putting this in later
         //        if (JetNDaug->at(iJet) > 1 && JetNHF->at(iJet) < 0.99 && JetNEF->at(iJet) < 0.99 && JetCEF->at(iJet) < 0.99 && JetCHF->at(iJet) > 0 && JetCharMult->at(iJet) > 0) {
         if (currJetPt < 9.0) continue;
-        if (JetNHF->at(iJet) < 0.99 && JetNEF->at(iJet) < 0.99 && JetCEF->at(iJet) < 0.99 && JetCHF->at(iJet) > 0 && JetCharMult->at(iJet) > 0) {
-            //            currJet.SetPxPyPzE(JetPx->at(iJet), JetPy->at(iJet), JetPz->at(iJet), JetE->at(iJet));
+        currJetPassJetID = (JetNHF->at(iJet) < 0.99 && JetNEF->at(iJet) < 0.99);
+        if (fabs(currJetEta < 2.4)) {
+            currJetPassJetID &= (JetCEF->at(iJet) < 0.99 && JetCHF->at(iJet) > 0 && JetCharMult->at(iJet) > 0);
+        }
+        if (currJetPassJetID) {
             if (whichSystCase != 0) {
                 JetFactor = JESUncertFactor(shiftHist, whichSystCase, (float) currJetPt, (float) currJetEta);
                 patsyJet *= JetFactor;
             }
-            Jets->push_back(patsyJet);
-            /*
-             for (int iLep = 0; iLep < Leptons->size(); ++iLep) {
-             cout << "deltaR for iLep " << iLep << " is " << deltaR(currJet.Eta(), currJet.Phi(), Leptons->at(iLep).Eta(), Leptons->at(iLep).Phi()) << endl;                
-             }
-             */
-            //            cout << "Jets size post " << Jets->size() << endl;
+            else {
+                vecBTagGoodJets->push_back(JetBTagInfo->at(iJet));
+            }
+            Jets->push_back(patsyJet);            
         }
         else {
             continue;
@@ -856,17 +999,24 @@ inline vector<TLorentzVector> * JetInfo(vector<TLorentzVector> * Leptons, vector
     return Jets;
 }
 
-inline vector<TLorentzVector> * JetPtCut(vector<TLorentzVector> * goodJets, vector<float> * JetBTag, int &NJets, int &NBJets, vector<int> * BJetIndices, float &HT) {
+inline vector<TLorentzVector> * JetKinematicsCut(vector<TLorentzVector> * goodJets, vector<float> * JetBTag, int &NJets, int &NBJets, vector<int> * BJetIndices, float &HT) {
     NJets = 0;
     NBJets = 0;
     HT = 0;
     vector<TLorentzVector> * vecGoodJets_wPtCut = new vector<TLorentzVector>;
-    TLorentzVector currJet, patsyJet;
-    float currJetPt;
+    float currJetPt, currJetEta;
     float BTagWP = 0.679;  //CSV Middle working point, see (remove underscore in address): h_ttps://twiki.cern.ch/twiki/bin/viewauth/CMS/BTagPerformanceOP
+    float JetPtCut = 30, JetEtaCut = 2.4;
+    if (JetBTag->size() != goodJets->size()) {
+        cout << "something bad is happening with JetBTag size and goodJets size " << endl;
+        cout << "Jet BTag size " << JetBTag->size() << endl;
+        cout << "goodJets size " << goodJets->size() << endl;
+    }
     for (unsigned int iJet = 0; iJet < goodJets->size(); ++iJet) {
         currJetPt = goodJets->at(iJet).Pt();
-        if (currJetPt < 30) continue;
+        currJetEta = goodJets->at(iJet).Eta();
+        if (currJetPt < JetPtCut) continue;
+        if (fabs(currJetEta) > JetEtaCut) continue;
         ++NJets;
         HT += currJetPt;
         if (JetBTag->at(iJet) > BTagWP) {
@@ -877,30 +1027,6 @@ inline vector<TLorentzVector> * JetPtCut(vector<TLorentzVector> * goodJets, vect
     }
     return vecGoodJets_wPtCut;
 }
-
-inline vector<TLorentzVector> * JetPtCut(vector<TLorentzVector> * goodJets, vector<double> * JetBTag, int &NJets, int &NBJets, vector<int> * BJetIndices, float &HT) {
-    NJets = 0;
-    NBJets = 0;
-    HT = 0;
-    vector<TLorentzVector> * vecGoodJets_wPtCut = new vector<TLorentzVector>;
-    TLorentzVector currJet, patsyJet;
-    float currJetPt;
-    float BTagWP = 0.679;  //CSV Middle working point, see (remove underscore in address): h_ttps://twiki.cern.ch/twiki/bin/viewauth/CMS/BTagPerformanceOP
-    for (unsigned int iJet = 0; iJet < goodJets->size(); ++iJet) {
-        currJetPt = goodJets->at(iJet).Pt();
-        if (currJetPt < 30) continue;
-        ++NJets;
-        HT += currJetPt;
-        if (JetBTag->at(iJet) > BTagWP) {
-            NBJets += 1;
-            BJetIndices->push_back(NJets - 1);
-        }
-        vecGoodJets_wPtCut->push_back(goodJets->at(iJet));        
-    }
-    return vecGoodJets_wPtCut;
-}
-
-
 inline void LeptonInfo(VLV * Leptons, vector<int> *lepPdgId, vector<double> *lepPFIso, int &lep0Index, int &lep1Index, bool &doEvent, int &eventType, int &Lep0PdgId, int &Lep1PdgId) {
     doEvent = true;
     lep0Index = 0;
@@ -913,7 +1039,7 @@ inline void LeptonInfo(VLV * Leptons, vector<int> *lepPdgId, vector<double> *lep
     }
     float muonIsoRatioCut = 0.15; float muonEtaCut = 2.4; float leadMuonPtCut = 20; float subMuonPtCut = 10;
     float elecIsoRatioCut = 0.15; float elecEtaCut = 2.5; float leadElecPtCut = 20; float subElecPtCut = 10;
-    float barrelEtaEnd = 1.442; float endcapEtaStart = 1.566;
+    float barrelEtaEnd = 1.4442; float endcapEtaStart = 1.566;
     float currLeadLepPt, currSubLepPt;
     float currLeadLepEta, currSubLepEta;
     float currLeadLepCharge, currSubLepCharge;
@@ -934,13 +1060,13 @@ inline void LeptonInfo(VLV * Leptons, vector<int> *lepPdgId, vector<double> *lep
             //            cout << "IsoCut: " << lepPFIso->at(iLep)/currLeadLepPt << endl;
             if (currLeadLepPt < leadMuonPtCut) continue;
             if (lepPFIso->at(iLep) > muonIsoRatioCut) continue;
-            if (abs(currLeadLepEta) > muonEtaCut) continue;
+            if (fabs(currLeadLepEta) > muonEtaCut) continue;
         }
         else if (abs(lepPdgId->at(iLep)) == 11) {
             if (currLeadLepPt < leadElecPtCut) continue;
             if (lepPFIso->at(iLep) > elecIsoRatioCut) continue;
-            if (abs(currLeadLepEta) > elecEtaCut) continue;
-            if (abs(currLeadLepEta) > barrelEtaEnd && abs(currLeadLepEta) < endcapEtaStart) continue;
+            if (fabs(currLeadLepEta) > elecEtaCut) continue;
+            if (fabs(currLeadLepEta) > barrelEtaEnd && fabs(currLeadLepEta) < endcapEtaStart) continue;
         }
         for (int iLep2 = iLep+1; iLep2 < vecSize; ++iLep2) {
             currSubLepPt = Leptons->at(iLep2).Pt();
@@ -952,13 +1078,13 @@ inline void LeptonInfo(VLV * Leptons, vector<int> *lepPdgId, vector<double> *lep
             if (abs(lepPdgId->at(iLep2)) == 13) {
                 if (currSubLepPt < subMuonPtCut) continue;
                 if (lepPFIso->at(iLep2) > muonIsoRatioCut) continue;
-                if (abs(currSubLepEta) > muonEtaCut) continue;
+                if (fabs(currSubLepEta) > muonEtaCut) continue;
             }
             else if (abs(lepPdgId->at(iLep2)) == 11) {
                 if (currSubLepPt < subElecPtCut) continue;
                 if (lepPFIso->at(iLep2) > elecIsoRatioCut) continue;
-                if (abs(currSubLepEta) > elecEtaCut) continue;
-                if (abs(currSubLepEta) > barrelEtaEnd && abs(currSubLepEta) < endcapEtaStart) continue;
+                if (fabs(currSubLepEta) > elecEtaCut) continue;
+                if (fabs(currSubLepEta) > barrelEtaEnd && fabs(currSubLepEta) < endcapEtaStart) continue;
             }
             if ((Leptons->at(iLep) + Leptons->at(iLep2)).M() < massCut) continue;
             productPdgId = lepPdgId->at(iLep) * lepPdgId->at(iLep2);
@@ -2403,6 +2529,8 @@ inline vector<SampleT> * SubSampVec() {
     }    
     events_LepOutZMassJet2BJet1[2].blindDataChannel = 1; // blind emu with ZVeto + jet cuts
     events_LepInZMassJet2BJet1[2].blindDataChannel = 1; // blind emu without ZVeto + jet cuts
+    events_LepInZMassJet2BJet1MET40[2].blindDataChannel = 1; // blind with MET + ZVeto + jet cuts            
+
     /*
      int     whichdiLepType; // -1: inclusive, 0: MuMu, 1: EE, 2: EMu
      int     doZVeto;   // -1: inclusive, 0: ZMass window, 1: outside ZMass window;

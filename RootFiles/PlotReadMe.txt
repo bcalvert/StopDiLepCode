@@ -14,7 +14,7 @@ ROOT 5.34/00 (branches/v5-34-00-patches@44569, Jun 05 2012, 15:31:56 on macosx64
 CINT/ROOT C/C++ Interpreter version 5.18.00, July 2, 2010
 Type ? for help. Commands must be C++ statements.
 Enclose multiple statements between { }.
-subsamp size 61
+subsamp size 60
 Channel Number: 0
 Description: All mumu events, inclusive other than being/requiring, diLepton system invariant mass inside of Z Mass window (76 GeV:106 GeV) 
 
@@ -172,30 +172,27 @@ Channel Number: 51
 Description: All three flavors of lepton events, inclusive other than being/requiring , at least 2 jet(s)
 
 Channel Number: 52
-Description: All three flavors of lepton events, inclusive other than being/requiring , at least 1 b jet(s)
-
-Channel Number: 53
 Description: All three flavors of lepton events, inclusive other than being/requiring , at least 2 b jet(s)
 
-Channel Number: 54
+Channel Number: 53
 Description: All three flavors of lepton events, inclusive other than being/requiring , at least 2 jet(s), at least 1 b jet(s)
 
-Channel Number: 55
+Channel Number: 54
 Description: All three flavors of lepton events, inclusive other than being/requiring , diLepton system invariant mass outside of Z Mass window (76 GeV:106 GeV), at least 2 jet(s), at least 1 b jet(s), at least 40 GeV of MET, note blinded channel
 
-Channel Number: 56
+Channel Number: 55
 Description: All three flavors of lepton events, inclusive other than being/requiring 
 
-Channel Number: 57
+Channel Number: 56
 Description: All three flavors of lepton events, inclusive other than being/requiring , diLepton system invariant mass inside of Z Mass window (76 GeV:106 GeV) 
 
-Channel Number: 58
+Channel Number: 57
 Description: All three flavors of lepton events, inclusive other than being/requiring , diLepton system invariant mass inside of Z Mass window (76 GeV:106 GeV) , at least 2 jet(s), at least 1 b jet(s)
 
-Channel Number: 59
+Channel Number: 58
 Description: All three flavors of lepton events, inclusive other than being/requiring , diLepton system invariant mass inside of Z Mass window (76 GeV:106 GeV) , at least 40 GeV of MET
 
-Channel Number: 60
+Channel Number: 59
 Description: All three flavors of lepton events, inclusive other than being/requiring , diLepton system invariant mass inside of Z Mass window (76 GeV:106 GeV) , at least 2 jet(s), at least 1 b jet(s), at least 40 GeV of MET
 
 

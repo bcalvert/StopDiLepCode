@@ -439,7 +439,7 @@ int main( int argc, const char* argv[] ) {
     bool  ZVeto_LepESDown   = true;
     float ZWindowLB      = 76;
     float ZWindowUB      = 106;   
-    float barrelEtaEnd = 1.442; float endcapEtaStart = 1.566;
+    float barrelEtaEnd = 1.4442; float endcapEtaStart = 1.566;
     /////Set up the tree////////
     fileTree.Add(fInName + TString(".root"));
     
@@ -503,7 +503,6 @@ int main( int argc, const char* argv[] ) {
     fileTree.SetBranchAddress( "TRunNum", &runNumber );
     fileTree.SetBranchAddress( "TEventNum", &eventNumber );
     fileTree.SetBranchAddress( "TLumiBlock", &lumiBlock );
-    
     if (!doData) {
         fileTree.SetBranchAddress( "TChannel_LepESUp", &Type_LepESUp );
         fileTree.SetBranchAddress( "TChannel_LepESDown", &Type_LepESDown );
@@ -691,7 +690,6 @@ int main( int argc, const char* argv[] ) {
         //        addSystHists(histVec_2D, systVec);
         //        addSystHists(histVec_3D, systVec);
     }
-    // cout << "test " << endl;
     for (unsigned int i = 0; i < subSampVec->size(); ++i) {
         S_Current = subSampVec->at(i);
         for (int j = 0; j < (int) histVec_1D->size(); ++j) {            
@@ -834,11 +832,7 @@ int main( int argc, const char* argv[] ) {
     TRandom rand;
     map<string, float>::iterator xIter;
     map<string, float>::iterator yIter;
-    map<string, float>::iterator zIter;
-    
-//    vector<int> * eventJetParams = new vector<int>;
-    //    int jet0Index, jet1Index;
-    // cout << "test2 " << endl;
+    map<string, float>::iterator zIter;    
     /////Iterate over events  
     cout << "--- Total Events in file: " << fileTree.GetEntries() << " events" << endl;
     if (nEvents < 0) {
@@ -941,7 +935,6 @@ int main( int argc, const char* argv[] ) {
         // SELECT THE SIGNAL MASS POINT (if signal)                                                                                                                   
         //*****************************************                                                                                                                   
         weight = 1.;
-        // cout << "test 5" << endl;
         weight = PUWeight;
         preNVtxRWweight = weight;
         ////Calculate all the event variables needed
@@ -1094,9 +1087,7 @@ int main( int argc, const char* argv[] ) {
             h_ElecRelIso->Fill(Lep1RelPFIso, weight);
             //        cout << "weight post doHack " << weight << endl;
             
-        }            
-        // cout << "test 7" << endl;
-        
+        }
         // basic condition, if running on data, only select type of events that are relevant to prevent double counting
         if (doData) {
             if (Type == 0) {
@@ -2298,7 +2289,7 @@ int main( int argc, const char* argv[] ) {
                             else {
                                 fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight : weight;
                             }
-                            histMap_2D[histKey(H_Current, S_Current)]->Fill(xIter->second, yIter->second, weight); //there could be shenanigans with this one
+                            histMap_2D[histKey(H_Current, S_Current)]->Fill(xIter->second, yIter->second, fillWeight); //there could be shenanigans with this one
                         }
                         if (doVerbosity) cout << "" << endl;                    
                     }
@@ -2359,7 +2350,7 @@ int main( int argc, const char* argv[] ) {
                             else {
                                 fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight : weight;
                             }
-                            histMap_3D[histKey(H_Current, S_Current)]->Fill(xIter->second, yIter->second, zIter->second, weight); //there could be shenanigans with this one
+                            histMap_3D[histKey(H_Current, S_Current)]->Fill(xIter->second, yIter->second, zIter->second, fillWeight); //there could be shenanigans with this one
                         }
                         if (doVerbosity) cout << "" << endl;                    
                     }

@@ -450,7 +450,7 @@ int main( int argc, char* argv[]) {
     
     ///Data-Driven systematics stuff
     //Oviedo EMu: .912598, EE: 0.658692, MuMu: .884796, FullCut: .863585
-    float TTBarFullCutSFOvi[3] = {0.738946, 0.776429, 0.863585};
+    float TTBarFullCutSFOvi[3] = {0.738946, 0.776429, 0.917387};
     float TTBarFullCutSFDESY[3] = {0.84936, 0.843207, 0.949907};
     float TTBarSF, TTBarSF_Other;
     if (whichNTuple == 0) {

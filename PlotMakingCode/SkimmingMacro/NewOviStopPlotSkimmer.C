@@ -69,14 +69,25 @@ int main( int argc, const char* argv[] ) {
     
     //////bunch of vectors
     //Muons
-    vector<float> * MuonPt, * MuonEta, * MuonPx, * MuonPy, * MuonPz, * MuonE, * MuonPFCharIso, * MuonPFNeutIso, * MuonPFPhotIso, * MuonSumPUPt, * MuonD0, * MuonVertZ; //ambiguity in which Muon Pt...rolling with PFMuonPt
-    vector<bool> * isPFMuon, * isGMPTMuons;
+    vector<float> * MuonPx, * MuonPy, * MuonPz, * MuonE, * MuonPFCharIso, * MuonPFNeutIso, * MuonPFPhotIso, * MuonSumPUPt, * MuonD0, * MuonVertZ;
+    vector<float> * PFMuonPt;
+
+    vector<bool> * isPFMuon, * isGMPTMuons, * isGlobMuon, * isTrackArbitMuon;
+    vector<int> * MuonNumMatchStations, * MuonNumLayers, * MuonNumValidPixHitsinTrack;
     //Electrons
-    vector<float> * ElecPt, * ElecEta, * ElecPx, * ElecPy, * ElecPz, * ElecE, * ElecPFCharIso, * ElecPFNeutIso, * ElecPFPhotIso; //ambiguity in which Electron Pt...rolling with PFElecPt
+    vector<float> * ElecPx, * ElecPy, * ElecPz, * ElecE, * ElecPFCharIso, * ElecPFNeutIso, * ElecPFPhotIso; 
+    vector<float> * PFElecPt;
+    vector<float> * ElecSCEta, * ElecDeltaPhiIn, * ElecDeltaEtaIn, * ElecSigIetaIeta, * ElecHtoERatio, * ElecIP, * ElecDZ, * ElecECalE, * ElecSCEOverP;
+    vector<int> * ElecNumMissHits;
+    vector<bool> * ElecisEB, * ElecisEE;
+    //ambiguity in which Muon Pt...rolling with PFMuonPt...never mind ambiguity resolved see https://twiki.cern.ch/twiki/bin/viewauth/CMS/SingleLepton2012#Muon_Selection
+    //ambiguity in which Electron Pt...rolling with PFElecPt...never mind ambiguity resolved
+
     vector<bool> * isPFElectron, *passConvVeto;
     //Jets
-    vector<float> * JetEt, *JetEta, * JetPx, * JetPy, * JetPz, * JetE, * JetNHF, * JetNEF, * JetCHF, * JetCEF, * JetBTag;
+    vector<float> * JetPx, * JetPy, * JetPz, * JetE, * JetNHF, * JetNEF, * JetCHF, * JetCEF, * JetBTag;
     vector<int> * JetNDaug, * JetCharMult;
+    vector<float> * vecBTagsGoodJets;
     
     vector<int> * MuonCharge, * ElecCharge;
     
@@ -86,55 +97,53 @@ int main( int argc, const char* argv[] ) {
     bool passTrigDoubleEl, passTrigDoubleMu, passTrigElMu;
     
     //Vertex info (both for nVtx info and also muon dZ)
-    vector<float> * VertZ;    
+    vector<float> * VertZ, * VertNDOF, * VertRho; 
+    vector<bool> * VertIsFake;
+    float firstGoodVertZ;
     
-    MuonPt = new vector<float>;
-    MuonEta = new vector<float>;
-    MuonPx = new vector<float>;
-    MuonPy = new vector<float>;
-    MuonPz = new vector<float>;
-    MuonE = new vector<float>;
+    MuonPx = new vector<float>; MuonPy = new vector<float>; 
+    MuonPz = new vector<float>; MuonE = new vector<float>;
     MuonCharge = new vector<int>;
-    MuonPFCharIso = new vector<float>;
-    MuonPFNeutIso = new vector<float>;
-    MuonPFPhotIso = new vector<float>;
-    MuonSumPUPt = new vector<float>;
-    MuonD0 = new vector<float>;
-    MuonVertZ = new vector<float>; 
+    MuonPFCharIso = new vector<float>; MuonPFNeutIso = new vector<float>; 
+    MuonPFPhotIso = new vector<float>; MuonSumPUPt = new vector<float>;
+    MuonD0 = new vector<float>; MuonVertZ = new vector<float>;
+    PFMuonPt = new vector<float>;
     
-    isPFMuon = new vector<bool>;
-    isGMPTMuons = new vector<bool>;
+    isPFMuon = new vector<bool>; isGMPTMuons = new vector<bool>; 
+    isGlobMuon = new vector<bool>; isTrackArbitMuon = new vector<bool>;
     
-    ElecPt = new vector<float>;
-    ElecEta = new vector<float>;
-    ElecPx = new vector<float>;
-    ElecPy = new vector<float>;
-    ElecPz = new vector<float>;
-    ElecE = new vector<float>;
+    MuonNumMatchStations = new vector<int>; MuonNumLayers = new vector<int>;
+    MuonNumValidPixHitsinTrack = new vector<int>;
+    
+    ElecPx = new vector<float>; ElecPy = new vector<float>;
+    ElecPz = new vector<float>; ElecE = new vector<float>;
     ElecCharge = new vector<int>;
-    ElecPFCharIso = new vector<float>;
-    ElecPFNeutIso = new vector<float>;
+    ElecPFCharIso = new vector<float>; ElecPFNeutIso = new vector<float>;
     ElecPFPhotIso = new vector<float>;
+    PFElecPt = new vector<float>;
     
-    isPFElectron = new vector<bool>;    
-    passConvVeto = new vector<bool>;
+    ElecSCEta = new vector<float>; ElecSCEOverP = new vector<float>; ElecECalE = new vector<float>;
+    ElecDeltaPhiIn = new vector<float>; ElecDeltaEtaIn = new vector<float>;
+    ElecSigIetaIeta = new vector<float>; ElecHtoERatio = new vector<float>;
+    ElecIP = new vector<float>; ElecDZ = new vector<float>;
     
-    JetEt = new vector<float>;
-    JetEta = new vector<float>;
-    JetPx = new vector<float>;
-    JetPy = new vector<float>;
-    JetPz = new vector<float>;
-    JetE = new vector<float>;
-    JetNHF = new vector<float>;
-    JetNEF = new vector<float>;
-    JetCHF = new vector<float>;
-    JetCEF = new vector<float>;
+    ElecNumMissHits = new vector<int>;
+    
+    isPFElectron = new vector<bool>; passConvVeto = new vector<bool>;
+    ElecisEB = new vector<bool>; ElecisEE = new vector<bool>;
+    
+    JetPx = new vector<float>; JetPy = new vector<float>;
+    JetPz = new vector<float>; JetE = new vector<float>;
+    JetNHF = new vector<float>; JetNEF = new vector<float>;
+    JetCHF = new vector<float>; JetCEF = new vector<float>;
     JetBTag = new vector<float>;
+
     
-    JetNDaug = new vector<int>;
-    JetCharMult = new vector<int>;
+    JetNDaug = new vector<int>; JetCharMult = new vector<int>;
     
-    VertZ = new vector<float>;
+    VertZ = new vector<float>; VertNDOF = new vector<float>;
+    VertRho = new vector<float>; 
+    VertIsFake = new vector<bool>;
     
     int   Type, nVtx, nVtxTrue;
     int   RunNum, EventNum, LumiBlock;
@@ -463,13 +472,8 @@ int main( int argc, const char* argv[] ) {
     TBranch        * b_GenWeight;
     double         GenWeight;        
     
-//    const float genStopMassMin = 295, genStopMassMax = 355, genDeltaM_stopChi0_Min = 195, genDeltaM_stopChi0_Max = 255; 
-    // add 5 GeV safety margin (deltaM = 10 GeV in the FineBin sample)  
-//    float Nevt_stop_oneMassPoint = 50000 * ( (genStopMassMax-genStopMassMin)/10. ) * ( (genDeltaM_stopChi0_Max-genDeltaM_stopChi0_Min)/10. );  
-    // 50k evts per point x Npoints
     ////input cuts/commands    
     //    const double PI = 3.14159265;
-    bool doPFElecMu      = 0;
     bool grabOutDir      = 0;      // whether or not to use the file: "outputSavePath.txt" for where to save output
     bool doData          = 0;
     bool doVerbosity     = 0;
@@ -536,7 +540,6 @@ int main( int argc, const char* argv[] ) {
         }
     }
     fOutName += fInName(fCutSlash);
-//    int counter = 0;
     if (fInName.Contains("MuEG") || fInName.Contains("DoubleMu") || fInName.Contains("DoubleEl") || fInName.Contains("run")) {
         cout << "Running on Data" << endl;
         doData = 1;
@@ -571,55 +574,72 @@ int main( int argc, const char* argv[] ) {
     //////////////////////////
     fileTree.Add(fInName + TString(".root"));
     if (whichNTupleType == 0) {
-        if (doPFElecMu) {
-            fileTree.SetBranchAddress("T_Elec_PFElecPt", &ElecPt);
-            fileTree.SetBranchAddress("T_Elec_PFElecPx", &ElecPx);
-            fileTree.SetBranchAddress("T_Elec_PFElecPy", &ElecPy);
-            fileTree.SetBranchAddress("T_Elec_PFElecPz", &ElecPz);
-            fileTree.SetBranchAddress("T_Elec_PFElecE",  &ElecE);
-            
-            fileTree.SetBranchAddress("T_Muon_PFMuonPt", &MuonPt);
-            fileTree.SetBranchAddress("T_Muon_PFMuonPx", &MuonPx);
-            fileTree.SetBranchAddress("T_Muon_PFMuonPy", &MuonPy);
-            fileTree.SetBranchAddress("T_Muon_PFMuonPz", &MuonPz);
-            fileTree.SetBranchAddress("T_Muon_PFMuonE", &MuonE);
-        }
-        else {
-            fileTree.SetBranchAddress("T_Elec_Pt", &ElecPt);
-            fileTree.SetBranchAddress("T_Elec_Px", &ElecPx);
-            fileTree.SetBranchAddress("T_Elec_Py", &ElecPy);
-            fileTree.SetBranchAddress("T_Elec_Pz", &ElecPz);
-            fileTree.SetBranchAddress("T_Elec_Energy", &ElecE);
-            
-            fileTree.SetBranchAddress("T_Muon_Pt", &MuonPt);
-            fileTree.SetBranchAddress("T_Muon_Px", &MuonPx);
-            fileTree.SetBranchAddress("T_Muon_Py", &MuonPy);
-            fileTree.SetBranchAddress("T_Muon_Pz", &MuonPz);
-            fileTree.SetBranchAddress("T_Muon_Energy", &MuonE);                    
-        }    
-        fileTree.SetBranchAddress("T_Elec_Eta", &ElecEta);
-        fileTree.SetBranchAddress("T_Elec_Charge", &ElecCharge);    
+        ////Electron Branches////
+        //Electron Kinematic Parameters
+        fileTree.SetBranchAddress("T_Elec_PFElecPt", &PFElecPt);
+        fileTree.SetBranchAddress("T_Elec_Px", &ElecPx);
+        fileTree.SetBranchAddress("T_Elec_Py", &ElecPy);
+        fileTree.SetBranchAddress("T_Elec_Pz", &ElecPz);
+        fileTree.SetBranchAddress("T_Elec_Energy", &ElecE);
+        fileTree.SetBranchAddress("T_Elec_Charge", &ElecCharge);        
+        
+        //Electron Supercluster/Shower parameters
+        fileTree.SetBranchAddress("T_Elec_SC_Eta", &ElecSCEta);
+        fileTree.SetBranchAddress("T_Elec_deltaPhiIn", &ElecDeltaPhiIn);
+        fileTree.SetBranchAddress("T_Elec_deltaEtaIn", &ElecDeltaEtaIn);
+        fileTree.SetBranchAddress("T_Elec_HtoE", &ElecHtoERatio);
+        fileTree.SetBranchAddress("T_Elec_sigmaIetaIeta", &ElecSigIetaIeta);
+        fileTree.SetBranchAddress("T_Elec_eSuperClusterOverP", &ElecSCEOverP);
+        fileTree.SetBranchAddress("T_Elec_ecalEnergy", &ElecECalE);        
+        
+        //Electron Vertex Geometry
+        fileTree.SetBranchAddress("T_Elec_IPwrtPV", &ElecIP);
+        fileTree.SetBranchAddress("T_Elec_dzwrtPV", &ElecDZ);
+        fileTree.SetBranchAddress("T_Elec_nHits", &ElecNumMissHits);
+
+        //Electron Isolation parameters
         fileTree.SetBranchAddress("T_Elec_chargedHadronIso", &ElecPFCharIso);
         fileTree.SetBranchAddress("T_Elec_neutralHadronIso", &ElecPFNeutIso);
         fileTree.SetBranchAddress("T_Elec_photonIso", &ElecPFPhotIso);
+        
+        //Electron booleans
         fileTree.SetBranchAddress("T_Elec_passConversionVeto", &passConvVeto);
         fileTree.SetBranchAddress("T_Elec_isPF", &isPFElectron);
+        fileTree.SetBranchAddress("T_Elec_isEB", &ElecisEB);
+        fileTree.SetBranchAddress("T_Elec_isEE", &ElecisEE);
+        ////Muon Branches////
+        //Muon Kinematics
+        fileTree.SetBranchAddress("T_Muon_PFMuonPt", &PFMuonPt);
+        fileTree.SetBranchAddress("T_Muon_Px", &MuonPx);
+        fileTree.SetBranchAddress("T_Muon_Py", &MuonPy);
+        fileTree.SetBranchAddress("T_Muon_Pz", &MuonPz);
+        fileTree.SetBranchAddress("T_Muon_Energy", &MuonE);
+        fileTree.SetBranchAddress("T_Muon_Charge", &MuonCharge); 
         
+        //Muon Isolation parameters
+        fileTree.SetBranchAddress("T_Muon_chargedHadronIsoR03", &MuonPFCharIso);
+        fileTree.SetBranchAddress("T_Muon_neutralHadronIsoR03", &MuonPFNeutIso);
+        fileTree.SetBranchAddress("T_Muon_photonIsoR03", &MuonPFPhotIso);
+        fileTree.SetBranchAddress("T_Muon_sumPUPtR03", &MuonSumPUPt);
         
-        fileTree.SetBranchAddress("T_Muon_Eta", &MuonEta);
-        fileTree.SetBranchAddress("T_Muon_Charge", &MuonCharge);    
-        fileTree.SetBranchAddress("T_Muon_chargedHadronIsoR04", &MuonPFCharIso);
-        fileTree.SetBranchAddress("T_Muon_neutralHadronIsoR04", &MuonPFNeutIso);
-        fileTree.SetBranchAddress("T_Muon_photonIsoR04", &MuonPFPhotIso);
-        fileTree.SetBranchAddress("T_Muon_sumPUPtR04", &MuonSumPUPt);
-        fileTree.SetBranchAddress("T_Muon_IsGMPTMuons", &isGMPTMuons);
-        fileTree.SetBranchAddress("T_Muon_isPFMuon", &isPFMuon);
+        //Muon vertex geometry 
         fileTree.SetBranchAddress("T_Muon_IPwrtAveBSInTrack", &MuonD0);
         fileTree.SetBranchAddress("T_Muon_vz", &MuonVertZ);
         
+        //Muon track/detector parameters
+        fileTree.SetBranchAddress("T_Muon_NumOfMatchedStations", &MuonNumMatchStations);
+        fileTree.SetBranchAddress("T_Muon_NValidPixelHitsInTrk", &MuonNumValidPixHitsinTrack);
+        fileTree.SetBranchAddress("T_Muon_NLayers", &MuonNumLayers);
         
-        fileTree.SetBranchAddress("T_JetAKCHS_Et", &JetEt);
-        fileTree.SetBranchAddress("T_JetAKCHS_Eta", &JetEta);  
+        //Muon booleans
+        fileTree.SetBranchAddress("T_Muon_IsGMPTMuons", &isGMPTMuons);
+        fileTree.SetBranchAddress("T_Muon_isPFMuon", &isPFMuon);
+        fileTree.SetBranchAddress("T_Muon_IsGlobalMuon", &isGlobMuon);
+        fileTree.SetBranchAddress("T_Muon_IsTrackerMuonArbitrated", &isTrackArbitMuon);
+        
+        ////Jet Branches
+//        fileTree.SetBranchAddress("T_JetAKCHS_Et", &JetEt);
+//        fileTree.SetBranchAddress("T_JetAKCHS_Eta", &JetEta);  
         fileTree.SetBranchAddress("T_JetAKCHS_Px", &JetPx);
         fileTree.SetBranchAddress("T_JetAKCHS_Py", &JetPy);
         fileTree.SetBranchAddress("T_JetAKCHS_Pz", &JetPz);
@@ -631,12 +651,32 @@ int main( int argc, const char* argv[] ) {
         fileTree.SetBranchAddress("T_JetAKCHS_Tag_CombSVtx", &JetBTag);
         fileTree.SetBranchAddress("T_JetAKCHS_nDaughters", &JetNDaug);
         fileTree.SetBranchAddress("T_JetAKCHS_ChargedMultiplicity", &JetCharMult);
-        fileTree.SetBranchAddress("T_Vertex_z", &VertZ);
         
+        //Vertex information
+        fileTree.SetBranchAddress("T_Vertex_z",      &VertZ);
+        fileTree.SetBranchAddress("T_Vertex_ndof",   &VertNDOF);
+        fileTree.SetBranchAddress("T_Vertex_rho",    &VertRho);
+        fileTree.SetBranchAddress("T_Vertex_isFake", &VertIsFake);
+        
+        //MET information
         fileTree.SetBranchAddress( "T_METPFTypeI_ET",     &MET );
         fileTree.SetBranchAddress( "T_METPFTypeI_Phi", &MET_Phi );
         fileTree.SetBranchAddress( "T_METPFTypeI_Sig",  &METSig );
+                        
+        //run information
+        fileTree.SetBranchAddress( "T_Event_RunNumber", &RunNum );
+        fileTree.SetBranchAddress( "T_Event_EventNumber", &EventNum );
+        fileTree.SetBranchAddress( "T_Event_LuminosityBlock", &LumiBlock );
         
+        //event Rho variable (used for electron Isolation)        
+        fileTree.SetBranchAddress( "T_Event_RhoIso", &eventRhoIso );
+        
+        //Trigger information
+        fileTree.SetBranchAddress( "T_passTriggerDoubleMu", &passTrigDoubleMu );
+        fileTree.SetBranchAddress( "T_passTriggerDoubleEl", &passTrigDoubleEl );
+        fileTree.SetBranchAddress( "T_passTriggerElMu", &passTrigElMu );
+        
+        //MET Filter information        
         fileTree.SetBranchAddress( "T_EventF_EcalDeadCell", &filterECalDeadCell );
         fileTree.SetBranchAddress( "T_EventF_logErrorTooManyClusters", &filterLogErrorTooManyClusters );
         fileTree.SetBranchAddress( "T_EventF_trackingFailure", &filterTrackingFailure );
@@ -723,19 +763,6 @@ int main( int argc, const char* argv[] ) {
         fileTree.SetBranchAddress( "T_Gen_StopMass", &genStopMass );
         fileTree.SetBranchAddress( "T_Gen_Chi0Mass", &genChi0Mass );
         fileTree.SetBranchAddress( "T_Gen_CharginoMass", &genCharginoMass );
-        
-        //run information
-        fileTree.SetBranchAddress( "T_Event_RunNumber", &RunNum );
-        fileTree.SetBranchAddress( "T_Event_EventNumber", &EventNum );
-        fileTree.SetBranchAddress( "T_Event_LuminosityBlock", &LumiBlock );
-        
-        //event Rho variable (used for electron Isolation)        
-        fileTree.SetBranchAddress( "T_Event_RhoIso", &eventRhoIso );
-        
-        //Trigger information
-        fileTree.SetBranchAddress( "T_passTriggerDoubleMu", &passTrigDoubleMu );
-        fileTree.SetBranchAddress( "T_passTriggerDoubleEl", &passTrigDoubleEl );
-        fileTree.SetBranchAddress( "T_passTriggerElMu", &passTrigElMu );
     }
     else if (whichNTupleType == 1) {
         fileTree.SetBranchAddress("runNumber", &RunNum, &b_runNumber);
@@ -837,11 +864,10 @@ int main( int argc, const char* argv[] ) {
         outTree->Branch("TGenCharginoMass1", &genCharginoMass1);
     }
     
+    outTree->Branch("TDoEvent",                 &doEvent);
     if (!doData) {
         outTree->Branch("TChannel_LepESUp",         &Type_LepESUp);
         outTree->Branch("TChannel_LepESDown",       &Type_LepESDown);
-        
-        outTree->Branch("TDoEvent",                 &doEvent);
         outTree->Branch("TDoEvent_LepESUp",         &doEvent_LepESUp);
         outTree->Branch("TDoEvent_LepESDown",       &doEvent_LepESDown);
         
@@ -1095,63 +1121,42 @@ int main( int argc, const char* argv[] ) {
     
     vector<TLorentzVector> * Jets, * Jets_wPtCut;   // Will contain all jets not overlapping with isolated electrons or muons
     vector<int> * BJetIndices;
-//    vector<int> * ElecIndices;
-//    vector<int> * MuonIndices;
-//    int E0I, E1I, M0I, M1I;
-//    vector<int> * pdgId;
-//    vector<TLorentzVector> * Leptons;
     vector<TLorentzVector> * vecIsoLeptons;
     vector<float>          * vecLepPFRelIso; 
     vector<int> * vecIsoLeptonPDGIDs;
-//    vector<TLorentzVector> * vecElectrons;          // Will contain all isolated electrons
-//    vector<TLorentzVector> * vecMuons;              // Will contain all isolated muons
     TLorentzVector patsyVec;
     
     vector<TLorentzVector> * Jets_JetESUp, * Jets_JetESDown, * Jets_wPtCut_JetESUp, * Jets_wPtCut_JetESDown;
     vector<int> * BJetIndices_JetESUp;
     vector<int> * BJetIndices_JetESDown;
-//    vector<int> * ElecIndices_LepESUp;
-//    vector<int> * ElecIndices_LepESDown;
-//    vector<int> * MuonIndices_LepESUp;
-//    vector<int> * MuonIndices_LepESDown;
-//    int E0I_LepESUp, E1I_LepESUp, M0I_LepESUp, M1I_LepESUp;
-//    int E0I_LepESDown, E1I_LepESDown, M0I_LepESDown, M1I_LepESDown;
-//    vector<int> * pdgId_LepESUp;
-//    vector<int> * pdgId_LepESDown;
     vector<TLorentzVector> * vecIsoLeptons_LepESUp, * vecIsoLeptons_LepESDown, * vecIsoLeptonsCentValMETPatsy_LepESUp, * vecIsoLeptonsCentValMETPatsy_LepESDown;
     vector<int> * vecIsoLeptonPDGIDs_LepESUp;
     vector<int> * vecIsoLeptonPDGIDs_LepESDown;
     vector<float>          * vecLepPFRelIso_LepESUp;
     vector<float>          * vecLepPFRelIso_LepESDown;
-//    vector<TLorentzVector> * Leptons_LepESUp;
-//    vector<TLorentzVector> * Leptons_LepESDown;
-//    vector<TLorentzVector> * vecElectrons_LepESUp;
-//    vector<TLorentzVector> * vecElectrons_LepESDown;
-//    vector<TLorentzVector> * vecMuons_LepESUp;
-//    vector<TLorentzVector> * vecMuons_LepESDown;
     
     float roundNum = 1.0;
     int roundMult = 1;
     if (doSignal) {
         roundNum = (fInName.Contains("to") || fInName.Contains("FineBin")) ? 10.0 : 1.0;
         roundMult = (fInName.Contains("to") || fInName.Contains("FineBin")) ? 10 : 1;
+        if (fInName.Contains("T2bw")) {
+            roundNum = 25.0;
+            roundMult = 25; //Check this for non FineBin T2bw samples            
+        }
     }
         /////Iterate over events  
     for (Long64_t ievt=0; ievt<fileTree.GetEntries();ievt++) {
+        if (ievt%10000 == 0) cout << ievt << endl;
         //    for (Long64_t ievt=0; ievt<100;ievt++) {
-//        Leptons = new vector<TLorentzVector>;
         vecIsoLeptons = new vector<TLorentzVector>;
         vecIsoLeptonPDGIDs = new vector<int>;
         vecLepPFRelIso = new vector<float>;
         vecLeptonInfo = new vector<int>;
-//        vecElectrons = new vector<TLorentzVector>;
-//        vecMuons = new vector<TLorentzVector>;
-//        pdgId = new vector<int>;
+        vecBTagsGoodJets = new vector<float>;
         Jets = new vector<TLorentzVector>;
         Jets_wPtCut = new vector<TLorentzVector>;
         BJetIndices = new vector<int>;
-//        ElecIndices = new vector<int>;
-//        MuonIndices = new vector<int>;
         doEvent = true;        
         if (!doData) {
             Jets_JetESUp = new vector<TLorentzVector>;
@@ -1168,20 +1173,8 @@ int main( int argc, const char* argv[] ) {
             vecLepPFRelIso_LepESDown = new vector<float>;
             vecLeptonInfo_LepESUp = new vector<int>;
             vecLeptonInfo_LepESDown = new vector<int>;
-//            Leptons_LepESUp = new vector<TLorentzVector>;
-//            Leptons_LepESDown = new vector<TLorentzVector>;
-//            vecElectrons_LepESUp = new vector<TLorentzVector>;
-//            vecElectrons_LepESDown = new vector<TLorentzVector>;
-//            vecMuons_LepESUp = new vector<TLorentzVector>;
-//            vecMuons_LepESDown = new vector<TLorentzVector>;
             BJetIndices_JetESUp = new vector<int>;
             BJetIndices_JetESDown = new vector<int>;
-//            ElecIndices_LepESUp = new vector<int>;
-//            ElecIndices_LepESDown = new vector<int>;
-//            MuonIndices_LepESUp = new vector<int>;
-//            MuonIndices_LepESDown = new vector<int>;
-//            pdgId_LepESUp = new vector<int>;
-//            pdgId_LepESDown = new vector<int>;
             doEvent_LepESUp = true;
             doEvent_LepESDown = true;
         }
@@ -1207,6 +1200,7 @@ int main( int argc, const char* argv[] ) {
             if (genCharginoMass->size() > 1) {
                 genCharginoMass0 = TMath::Nint(genCharginoMass->at(0)/roundNum) * roundMult;
                 genCharginoMass0 = TMath::Nint(genCharginoMass->at(1)/roundNum) * roundMult;
+                // Check this for T2bw samples
             }
             if (doMassCut) {
                 if (genStopMass0 >=0 && abs(genStopMassCut - genStopMass0) < 2.5) continue;
@@ -1218,11 +1212,14 @@ int main( int argc, const char* argv[] ) {
             cout << "in format EventNum:genStopMass:genChi0Mass:genCharginoMass ";
             cout << EventNum << ":" << genStopMass0 << ":" << genChi0Mass0 << ":" <<  genCharginoMass0 << endl;
         }
-
-        
+//        cout << " test " << endl;
         if (whichNTupleType == 0) {
-            weight = 1.;
-            
+            firstGoodVertZ = goodVertexSelection(VertZ, VertRho, VertNDOF,VertIsFake, nVtx);
+            if (nVtx < 1) {
+                cout << "failed vertex cut " << endl; 
+                continue;
+            }
+            weight = 1.;                        
             /// Status 3 lead particle info
             genTopSt3_0_Energy = ((int) genTopSt3En->size() > 0) ? genTopSt3En->at(0) : -1;
             genTopSt3_0_Pt = ((int) genTopSt3Pt->size() > 0) ? genTopSt3Pt->at(0) : -1;
@@ -1401,24 +1398,26 @@ int main( int argc, const char* argv[] ) {
             h_CutFlow_LepESDown->Fill(2.);
         }
         if (whichNTupleType == 0) {
-            ElectronPickOvi(ElecPx, ElecPy, ElecPz, ElecE, ElecCharge, ElecPFNeutIso, ElecPFCharIso, ElecPFPhotIso, passConvVeto, isPFElectron, eventRhoIso, vecIsoLeptons, vecIsoLeptonPDGIDs, vecLepPFRelIso);
-            MuonPickOvi(MuonPx, MuonPy, MuonPz, MuonE, MuonCharge, MuonD0, MuonVertZ, VertZ, MuonPFNeutIso, MuonPFCharIso, MuonPFPhotIso, MuonSumPUPt, isGMPTMuons, isPFMuon, vecIsoLeptons, vecIsoLeptonPDGIDs, vecLepPFRelIso);            
+//            cout << "size of vecIsoLeptons pre electron pick " << vecIsoLeptons->size() << endl;
+            ElectronPickOvi(ElecPx, ElecPy, ElecPz, ElecE, ElecCharge, PFElecPt, ElecSCEta, ElecDeltaPhiIn, ElecDeltaEtaIn, ElecSigIetaIeta, ElecHtoERatio, ElecIP, ElecDZ, ElecECalE, ElecSCEOverP, ElecNumMissHits, ElecPFNeutIso, ElecPFCharIso, ElecPFPhotIso, passConvVeto, isPFElectron, ElecisEB, ElecisEE, eventRhoIso, vecIsoLeptons, vecIsoLeptonPDGIDs, vecLepPFRelIso);
+//            cout << "size of vecIsoLeptons pre muon/post elec pick " << vecIsoLeptons->size() << endl;
+            MuonPickOvi(MuonPx, MuonPy, MuonPz, MuonE, MuonCharge, PFMuonPt, MuonD0, MuonVertZ, firstGoodVertZ, MuonPFNeutIso, MuonPFCharIso, MuonPFPhotIso, MuonSumPUPt, MuonNumLayers, MuonNumMatchStations, MuonNumValidPixHitsinTrack,  isGMPTMuons, isPFMuon, isGlobMuon, isTrackArbitMuon, vecIsoLeptons, vecIsoLeptonPDGIDs, vecLepPFRelIso);
+//            cout << "size of vecIsoLeptons post muon/electron pick " << vecIsoLeptons->size() << endl;
             if (!doData) {
-                ElectronPickOvi(ElecPx, ElecPy, ElecPz, ElecE, ElecCharge, ElecPFNeutIso, ElecPFCharIso, ElecPFPhotIso, passConvVeto, isPFElectron, eventRhoIso, 1., vecIsoLeptons_LepESUp, vecIsoLeptonPDGIDs_LepESUp, vecLepPFRelIso_LepESUp, vecIsoLeptonsCentValMETPatsy_LepESUp);
-                MuonPickOvi(MuonPx, MuonPy, MuonPz, MuonE, MuonCharge, MuonD0, MuonVertZ, VertZ, MuonPFNeutIso, MuonPFCharIso, MuonPFPhotIso, MuonSumPUPt, isGMPTMuons, isPFMuon, 1., vecIsoLeptons_LepESUp, vecIsoLeptonPDGIDs_LepESUp, vecLepPFRelIso_LepESUp, vecIsoLeptonsCentValMETPatsy_LepESUp);
+                ElectronPickOvi(ElecPx, ElecPy, ElecPz, ElecE, ElecCharge, PFElecPt, ElecSCEta, ElecDeltaPhiIn, ElecDeltaEtaIn, ElecSigIetaIeta, ElecHtoERatio, ElecIP, ElecDZ, ElecECalE, ElecSCEOverP, ElecNumMissHits, ElecPFNeutIso, ElecPFCharIso, ElecPFPhotIso, passConvVeto, isPFElectron, ElecisEB, ElecisEE, eventRhoIso, 1., vecIsoLeptons_LepESUp, vecIsoLeptonPDGIDs_LepESUp, vecLepPFRelIso_LepESUp, vecIsoLeptonsCentValMETPatsy_LepESUp);                
+                MuonPickOvi(MuonPx, MuonPy, MuonPz, MuonE, MuonCharge, PFMuonPt, MuonD0, MuonVertZ, firstGoodVertZ, MuonPFNeutIso, MuonPFCharIso, MuonPFPhotIso, MuonSumPUPt, MuonNumLayers, MuonNumMatchStations, MuonNumValidPixHitsinTrack, isGMPTMuons, isPFMuon, isGlobMuon, isTrackArbitMuon, 1., vecIsoLeptons_LepESUp, vecIsoLeptonPDGIDs_LepESUp, vecLepPFRelIso_LepESUp, vecIsoLeptonsCentValMETPatsy_LepESUp);
                 vecLeptonInfo_LepESUp = LeptonPair(vecIsoLeptons_LepESUp, vecIsoLeptonPDGIDs_LepESUp, lep0Index_LepESUp, lep1Index_LepESUp, doEvent_LepESUp, Type_LepESUp, Lep0PDGID_LepESUp, Lep1PDGID_LepESUp);            
                 MET_LepESUp = MET; MET_Phi_LepESUp = MET_Phi;
                 METSystShift(vecIsoLeptonsCentValMETPatsy_LepESUp, vecIsoLeptons_LepESUp, MET_LepESUp, MET_Phi_LepESUp, MET, MET_Phi);            
                 
-                ElectronPickOvi(ElecPx, ElecPy, ElecPz, ElecE, ElecCharge, ElecPFNeutIso, ElecPFCharIso, ElecPFPhotIso, passConvVeto, isPFElectron, eventRhoIso, -1., vecIsoLeptons_LepESDown, vecIsoLeptonPDGIDs_LepESDown, vecLepPFRelIso_LepESDown, vecIsoLeptonsCentValMETPatsy_LepESDown);
-                MuonPickOvi(MuonPx, MuonPy, MuonPz, MuonE, MuonCharge, MuonD0, MuonVertZ, VertZ, MuonPFNeutIso, MuonPFCharIso, MuonPFPhotIso, MuonSumPUPt, isGMPTMuons, isPFMuon, -1., vecIsoLeptons_LepESDown, vecIsoLeptonPDGIDs_LepESDown, vecLepPFRelIso_LepESDown, vecIsoLeptonsCentValMETPatsy_LepESDown);
+                ElectronPickOvi(ElecPx, ElecPy, ElecPz, ElecE, ElecCharge, PFElecPt, ElecSCEta, ElecDeltaPhiIn, ElecDeltaEtaIn, ElecSigIetaIeta, ElecHtoERatio, ElecIP, ElecDZ, ElecECalE, ElecSCEOverP, ElecNumMissHits, ElecPFNeutIso, ElecPFCharIso, ElecPFPhotIso, passConvVeto, isPFElectron, ElecisEB, ElecisEE, eventRhoIso, -1., vecIsoLeptons_LepESDown, vecIsoLeptonPDGIDs_LepESDown, vecLepPFRelIso_LepESDown, vecIsoLeptonsCentValMETPatsy_LepESDown);
+                MuonPickOvi(MuonPx, MuonPy, MuonPz, MuonE, MuonCharge, PFMuonPt, MuonD0, MuonVertZ, firstGoodVertZ, MuonPFNeutIso, MuonPFCharIso, MuonPFPhotIso, MuonSumPUPt, MuonNumLayers, MuonNumMatchStations, MuonNumValidPixHitsinTrack, isGMPTMuons, isPFMuon, isGlobMuon, isTrackArbitMuon, -1., vecIsoLeptons_LepESDown, vecIsoLeptonPDGIDs_LepESDown, vecLepPFRelIso_LepESDown, vecIsoLeptonsCentValMETPatsy_LepESDown);
                 vecLeptonInfo_LepESDown = LeptonPair(vecIsoLeptons_LepESDown, vecIsoLeptonPDGIDs_LepESDown, lep0Index_LepESDown, lep1Index_LepESDown, doEvent_LepESDown, Type_LepESDown, Lep0PDGID_LepESDown, Lep1PDGID_LepESDown);
                 MET_LepESDown = MET; MET_Phi_LepESDown = MET_Phi;
                 METSystShift(vecIsoLeptonsCentValMETPatsy_LepESDown, vecIsoLeptons_LepESDown, MET_LepESDown, MET_Phi_LepESDown, MET, MET_Phi);                
             }
         }
-        else {
-//            cout << "here 2.0" << endl;
+        else {;
             MET = met->Pt();
             MET_Phi = met->Phi();
             IsoLeptonsPickDESY(leptons, lepPdgId, lepPFIso, vecIsoLeptons, vecIsoLeptonPDGIDs, vecLepPFRelIso);
@@ -1438,12 +1437,10 @@ int main( int argc, const char* argv[] ) {
 //        cout << "vecIsoLeptons size " << vecIsoLeptons->size() << endl;
 //        cout << "vecIsoLeptonPDGIDs size " << vecIsoLeptonPDGIDs->size() << endl;
         vecLeptonInfo = LeptonPair(vecIsoLeptons, vecIsoLeptonPDGIDs, lep0Index, lep1Index, doEvent, Type, Lep0PDGID, Lep1PDGID);
-//        cout << "here 4.0 " << endl;
-//        if (!doEvent) continue;
+//        cout << "doEvent ? " << doEvent << endl;
+//        cout << endl;
         if (!doData) {
             if (!doEvent && !doEvent_LepESUp && !doEvent_LepESDown) {
-//                counter += 1;
-//                cout << "counter " << counter << endl;
                 continue;                
             }
         }
@@ -1578,13 +1575,12 @@ int main( int argc, const char* argv[] ) {
         }
 //        cout << "here 5.0 " << endl;
         if (whichNTupleType == 0) {
-            Jets = JetInfo(vecIsoLeptons, JetPx, JetPy, JetPz, JetE, JetNHF, JetNEF, JetCHF, JetCEF, JetNDaug, JetCharMult, 0., h_JetESUp);            
-            Jets_wPtCut = JetPtCut(Jets, JetBTag, NJets, NBtagJets, BJetIndices, HT);
+            Jets = JetInfo(vecIsoLeptons, JetPx, JetPy, JetPz, JetE, JetNHF, JetNEF, JetCHF, JetCEF, JetNDaug, JetCharMult, JetBTag, vecBTagsGoodJets,  0., h_JetESUp);            
         }
         else {
-            Jets = JetInfoDESY(vecIsoLeptons, jets, 0., h_JetESUp);
-            Jets_wPtCut = JetPtCut(Jets, jetBTagCSV, NJets, NBtagJets, BJetIndices, HT);
+            Jets = JetInfoDESY(vecIsoLeptons, jets, jetBTagCSV, vecBTagsGoodJets, 0., h_JetESUp);
         }
+        Jets_wPtCut = JetKinematicsCut(Jets, vecBTagsGoodJets, NJets, NBtagJets, BJetIndices, HT);
 //        cout << "here 6.0 " << endl;
         BtagJet0Index = (NBtagJets > 0) ? BJetIndices->at(0) : -1;
         BtagJet1Index = (NBtagJets > 1) ? BJetIndices->at(1) : -1;
@@ -1646,17 +1642,14 @@ int main( int argc, const char* argv[] ) {
                 BtagJet1E  = -99999; 
             }
         }
-        
-//        cout << "here 8.0 " << endl;
         if (!doData) {
             if (whichNTupleType == 0) {
-                Jets_JetESUp = JetInfo(vecIsoLeptons, JetPx, JetPy, JetPz, JetE, JetNHF, JetNEF, JetCHF, JetCEF, JetNDaug, JetCharMult, 1.0, h_JetESUp);
-                Jets_wPtCut_JetESUp = JetPtCut(Jets_JetESUp, JetBTag, NJets_JetESUp, NBtagJets_JetESUp, BJetIndices_JetESUp, HT_JetESUp);           
+                Jets_JetESUp = JetInfo(vecIsoLeptons, JetPx, JetPy, JetPz, JetE, JetNHF, JetNEF, JetCHF, JetCEF, JetNDaug, JetCharMult, JetBTag, vecBTagsGoodJets, 1.0, h_JetESUp);
             }
             else {
-                Jets_JetESUp = JetInfoDESY(vecIsoLeptons, jets, 1.0, h_JetESUp);
-                Jets_wPtCut_JetESUp = JetPtCut(Jets_JetESUp, jetBTagCSV, NJets_JetESUp, NBtagJets_JetESUp, BJetIndices_JetESUp, HT_JetESUp);           
+                Jets_JetESUp = JetInfoDESY(vecIsoLeptons, jets, jetBTagCSV, vecBTagsGoodJets, 1.0, h_JetESUp);
             }
+            Jets_wPtCut_JetESUp = JetKinematicsCut(Jets_JetESUp, vecBTagsGoodJets, NJets_JetESUp, NBtagJets_JetESUp, BJetIndices_JetESUp, HT_JetESUp);           
             MET_JetESUp = MET; MET_Phi_JetESUp = MET_Phi;
             METSystShift(Jets, Jets_JetESUp, MET_JetESUp, MET_Phi_JetESUp, MET, MET_Phi);
             
@@ -1721,14 +1714,12 @@ int main( int argc, const char* argv[] ) {
                 }
             }    
             if (whichNTupleType == 0) {
-                Jets_JetESDown = JetInfo(vecIsoLeptons, JetPx, JetPy, JetPz, JetE, JetNHF, JetNEF, JetCHF, JetCEF, JetNDaug, JetCharMult, -1.0, h_JetESDown);
-                Jets_wPtCut_JetESDown = JetPtCut(Jets_JetESDown, JetBTag, NJets_JetESDown, NBtagJets_JetESDown, BJetIndices_JetESDown, HT_JetESDown);
+                Jets_JetESDown = JetInfo(vecIsoLeptons, JetPx, JetPy, JetPz, JetE, JetNHF, JetNEF, JetCHF, JetCEF, JetNDaug, JetCharMult, JetBTag, vecBTagsGoodJets, -1.0, h_JetESDown);
             }
             else {
-                Jets_JetESDown = JetInfoDESY(vecIsoLeptons, jets, -1.0, h_JetESDown);
-                Jets_wPtCut_JetESDown = JetPtCut(Jets_JetESDown, jetBTagCSV, NJets_JetESDown, NBtagJets_JetESDown, BJetIndices_JetESDown, HT_JetESDown);
+                Jets_JetESDown = JetInfoDESY(vecIsoLeptons, jets, jetBTagCSV, vecBTagsGoodJets, -1.0, h_JetESDown);
             }
-
+            Jets_wPtCut_JetESDown = JetKinematicsCut(Jets_JetESDown, vecBTagsGoodJets, NJets_JetESDown, NBtagJets_JetESDown, BJetIndices_JetESDown, HT_JetESDown);
             MET_JetESDown = MET; MET_Phi_JetESDown = MET_Phi;
             METSystShift(Jets, Jets_JetESDown, MET_JetESDown, MET_Phi_JetESDown, MET, MET_Phi);
             
@@ -1794,7 +1785,6 @@ int main( int argc, const char* argv[] ) {
             }
         }
         if (whichNTupleType == 0) {
-            nVtx = VertZ->size();
             nVtxTrue = nVtx;
         }
         if (doPURW && !doData) {
@@ -1813,36 +1803,6 @@ int main( int argc, const char* argv[] ) {
                 if (!(fInName.Contains("MuEG") || fInName.Contains("emu_run2012"))) continue;
             }
         }
-        /*
-        if (whichNTupleType == 0) {
-            if (Type == 0) {
-                if (!passTrigDoubleMu) {
-                    doEvent = false;
-                    if (doData) continue;
-                }
-            }
-            else if (Type == 1) {
-                if (!passTrigDoubleEl) {
-                    doEvent = false;
-                    if (doData) continue;
-                }
-            }
-            else if (Type == 2) {
-                if (!passTrigElMu) {
-                    doEvent = false;
-                    if (doData) continue;
-                }
-            }
-            if (!doData) {
-                if (Type_LepESUp == 0 && !passTrigDoubleMu) doEvent_LepESUp = false;
-                if (Type_LepESDown == 0 && !passTrigDoubleMu) doEvent_LepESDown = false;
-                if (Type_LepESUp == 1 && !passTrigDoubleEl) doEvent_LepESUp = false;
-                if (Type_LepESDown == 1 && !passTrigDoubleEl) doEvent_LepESDown = false;
-                if (Type_LepESUp == 2 && !passTrigElMu) doEvent_LepESUp = false;
-                if (Type_LepESDown == 2 && !passTrigElMu) doEvent_LepESDown = false;
-            }
-        }
-        */
         if (doEvent) {
             h_CutFlow->Fill(3.);    
         }
@@ -1875,7 +1835,6 @@ int main( int argc, const char* argv[] ) {
                 genTopSt3_1_Eta = genAntiTop->Eta();
                 genTopSt3_1_PID = -6;                
             }
-//            cout << "here 9.0 " << endl;
         }        
         if (doSpecRun) {
             if (RunNum == whichRun) {

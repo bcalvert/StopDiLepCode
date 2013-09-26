@@ -90,9 +90,9 @@ vector<int> * sortOrder(int whichNTuple) {
         sortVec->push_back(6);
         sortVec->push_back(2);
         sortVec->push_back(5);
-        sortVec->push_back(4);
+        sortVec->push_back(3);
         sortVec->push_back(1);
-        sortVec->push_back(0);
+        sortVec->push_back(0);        
         /*
         mcCompHistCentValVec->push_back(RareComp);
         mcCompHistCentValVec->push_back(HiggsComp);
@@ -247,7 +247,7 @@ float DataDrivenTTBarScaleFactor(TH1F * dataHist, TH1F * mcHist, vector<TH1F *> 
     float dataIntegralMinNonTTBar = dataIntegral;
     float mcIntegral_v1 = mcHist->Integral();
     float mcIntegral_v2 = 0;
-    float integralTTBar;
+    float integralTTBar = 0;
     float currMCIntegral;
     TString mcName;
     for (unsigned int iMC = 0; iMC < mcCompHist1DCentValVec->size(); ++iMC) {
@@ -255,7 +255,7 @@ float DataDrivenTTBarScaleFactor(TH1F * dataHist, TH1F * mcHist, vector<TH1F *> 
         currMCIntegral = mcCompHist1DCentValVec->at(iMC)->Integral();
         cout << "mcName " << mcName << endl;
         if (mcName.Contains("TTbar") || mcName.Contains("TTBar")) {
-            integralTTBar = currMCIntegral;
+            integralTTBar += currMCIntegral;
         }
         else {
             dataIntegralMinNonTTBar -= currMCIntegral;
@@ -647,7 +647,7 @@ void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH1F *> * dataHist
             systName = systVec->at(j).name;
             cout << "systName " << systName << endl;
             cout << "mcGrabName " << mcGrabName << endl;
-            if (!mcGrabName.Contains("MT2ll") && systName.Contains("MT2ll")) continue;
+            if (!mcGrabName.Contains("MT2ll") && (systName.Contains("MT2ll") || systName.Contains("MT2UncES"))) continue;
             mcSystPlotName = mcGrabName;
             mcSystPlotName += systName;
             mcGrabName += subSampName;
@@ -750,7 +750,7 @@ void HistogramVecGrabber_Signal(vector<TFile *> * inputFilesSignal, vector<float
                 
                 
                 if (systName.Contains("genTop")) continue;
-                if (!mcGrabName.Contains("MT2ll") && systName.Contains("MT2ll")) continue;
+                if (!mcGrabName.Contains("MT2ll") && (systName.Contains("MT2ll") || systName.Contains("MT2UncES"))) continue;
                 mcSystPlotName = mcGrabName;
                 mcSystPlotName += systName;
                 mcGrabName += subSampName;
@@ -808,13 +808,18 @@ void HistogramVecGrabber_Signal(vector<TFile *> * inputFilesSignal, vector<float
             if (systName.Contains("genTop")) {
                 grabSyst = false;
             }
-            if (systName.Contains("MT2ll")) {
-                if (!allMT2llSystematic && !fileName.Contains("TTBar")) {
+            if (!mcGrabName.Contains("MT2ll")) {
+                if (systName.Contains("MT2ll")) {
+                    if (!allMT2llSystematic && !fileName.Contains("TTBar")) {
+                        grabSyst = false;
+                    }
+                    else {
+                        grabSyst = true;
+                    }        
+                }
+                if (systName.Contains("MT2UncES")) {
                     grabSyst = false;
                 }
-                else {
-                    grabSyst = true;
-                }        
             }
             if (!grabSyst) {
                 currHist = (TH1 *) histStopCentValTH1->Clone(histStopCentValTH1->GetName() + systName);
@@ -870,7 +875,7 @@ void HistogramVecGrabberSystGrab(vector<TFile *> * inputFiles, vector<TH1 *> * v
         systName = systVec->at(iSyst).name;
         cout << "systName " << systName << endl;
         cout << "mcGrabName " << mcGrabName << endl;
-        if (!mcGrabName.Contains("MT2ll") && systName.Contains("MT2ll")) continue;
+        if (!mcGrabName.Contains("MT2ll") && (systName.Contains("MT2ll") || systName.Contains("MT2UncES"))) continue;
         if (systName.Contains("genStop")) grabSyst = false;
         mcSystPlotName = mcGrabName;
         mcSystPlotName += systName;
@@ -1207,6 +1212,28 @@ void HistogramAdderMC(vector<TH1 *> * mcIndHistCentValVec, vector<TH1F *> * mcCo
         mcCompHistCentValVec->push_back(currSampHist1D);
     }
 }
+
+
+
+TH2F * HistogramAdderMCTwoDee(vector<TH1 *> * mcIndHistCentValVec) {
+    TString cloneName = mcIndHistCentValVec->at(0)->GetName() + TString("_MCComp");;
+    TH2F * outHist = (TH2F *) mcIndHistCentValVec->at(0)->Clone(cloneName);
+    for (unsigned int iMC = 1; iMC < mcIndHistCentValVec->size(); ++iMC) {
+        outHist->Add((TH2F*) mcIndHistCentValVec->at(iMC));
+    }  
+    return outHist;
+}
+
+TH2F * SystHistFinderTwoDee(vector<TH1 *> * vecSystHists, TString searchString) {
+    TString name;
+    int whichIndex;
+    for (unsigned int iSyst = 0; iSyst < vecSystHists->size(); ++iSyst) {
+        name = vecSystHists->at(iSyst)->GetName();
+        if (name.Contains(searchString)) whichIndex = iSyst;
+    }
+    return (TH2F *) vecSystHists->at(whichIndex);
+}
+
 void HistogramProjectorSyst(vector<TH1 *> * systHistVec, vector<TH1F *> * systProjHistVec, int RBNX, int numDims, int whichAxis, int axis1LB, int axis1UB, int axis2LB, int axis2UB, TString nameProject, bool doOverflow, bool doUnderflow, TString addName) {
     TString systName;
     TString patsyNamebase = "patsy";
@@ -1390,7 +1417,7 @@ void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH2F *> * dataHist
             systName = systVec->at(j).name;
             cout << "systName " << systName << endl;
             cout << "mcGrabName " << mcGrabName << endl;
-            if (!mcGrabName.Contains("MT2ll") && systName.Contains("MT2ll")) continue;
+            if (!mcGrabName.Contains("MT2ll") && (systName.Contains("MT2ll") || systName.Contains("MT2UncES"))) continue;
             mcSystPlotName = mcGrabName;
             mcSystPlotName += systName;
             mcGrabName += subSampName;
@@ -1461,19 +1488,19 @@ void SystGraphMakers(TH1F * inputBaseMCHist, vector<TH1F *> * inputBaseMCSystHis
     TString stringLepEffSF = "LepEffSF";
     TString stringLepEnSc = "LepES";
     TString stringJetEnSc = "JetES";
+    TString stringUncEnSc = "UncES";
     TString stringMT2ll = "MT2ll";  
     TString stringGenTopRW = "genTopRW";
     TString stringStopXSecUncert = "genStopXSec";
     
     TGraphAsymmErrors * errCompStatCentVal, * errSystQuadSum, * errSystQuadSum_pStat;
-    TGraphAsymmErrors * errLepEnSc, * errLepEffSF, * errJetEnSc, * errMT2ll, * errGenTopRW, * errStopXSecUncert;
-    TGraphAsymmErrors * errLepEnSc_pStat, * errLepEffSF_pStat, * errJetEnSc_pStat, * errMT2ll_pStat, * errGenTopRW_pStat, * errStopXSecUncert_pStat;
+    TGraphAsymmErrors * errLepEnSc, * errLepEffSF, * errJetEnSc, * errUncEnSc, * errMT2ll, * errGenTopRW, * errStopXSecUncert;
+    TGraphAsymmErrors * errLepEnSc_pStat, * errLepEffSF_pStat, * errJetEnSc_pStat, * errUncEnSc_pStat, * errMT2ll_pStat, * errGenTopRW_pStat, * errStopXSecUncert_pStat;
     TGraphAsymmErrors * currFracRatioGraph;
 
     cout << "plotVarName " << plotVarName << endl;
     
     errCompStatCentVal = clonePoints(inputBaseMCHist);
-
     errLepEnSc = GraphSystErrorSet_SingleSource(inputBaseMCHist, inputBaseMCSystHists, stringLepEnSc + TString("Shift"), doSymErr, 0);
     errLepEnSc_pStat = GraphSystErrorSumErrors(errCompStatCentVal, stringLepEnSc, errLepEnSc, inputBaseMCHist);
     GraphMainAttSet(errLepEnSc, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
@@ -1497,7 +1524,20 @@ void SystGraphMakers(TH1F * inputBaseMCHist, vector<TH1F *> * inputBaseMCSystHis
         currFracRatioGraph = fracGraph(inputBaseMCHist, errJetEnSc, doAbsRatio, fracRatioYAxisRange);
         fracRatioSystVec->push_back(currFracRatioGraph);
     }
-    
+    if (plotVarName.Contains("MT2ll")) {
+        errUncEnSc = GraphSystErrorSet_SingleSource(inputBaseMCHist, inputBaseMCSystHists, stringUncEnSc + TString("Shift"), doSymErr, 0);
+        errUncEnSc_pStat = GraphSystErrorSumErrors(errCompStatCentVal, stringUncEnSc, errUncEnSc, inputBaseMCHist);
+        GraphMainAttSet(errUncEnSc, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
+        GraphMainAttSet(errUncEnSc_pStat, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
+        errCompSpecSource->push_back(errUncEnSc);
+        errCompSpecSource_pStat->push_back(errUncEnSc_pStat);
+        if (!doSignal) {
+            systCanvNameVec->push_back(stringUncEnSc);
+            currFracRatioGraph = fracGraph(inputBaseMCHist, errUncEnSc, doAbsRatio, fracRatioYAxisRange);
+            fracRatioSystVec->push_back(currFracRatioGraph);
+        }
+    }
+    /*
     if (plotVarName.Contains("MT2ll")) {
         errMT2ll = GraphSystErrorSet_SingleSource(inputBaseMCHist, inputBaseMCSystHists, stringMT2ll + TString("Shift"), doSymErr, 1);
         errMT2ll_pStat = GraphSystErrorSumErrors(errCompStatCentVal, stringMT2ll, errMT2ll, inputBaseMCHist);
@@ -1514,6 +1554,7 @@ void SystGraphMakers(TH1F * inputBaseMCHist, vector<TH1F *> * inputBaseMCSystHis
     else {
         errMT2ll = NULL;
     }
+    */
     
     errLepEffSF = GraphSystErrorSet_SingleSource(inputBaseMCHist, inputBaseMCSystHists, stringLepEffSF + TString("Shift"), doSymErr, 0);
     errLepEffSF_pStat = GraphSystErrorSumErrors(errCompStatCentVal, stringLepEffSF, errLepEffSF, inputBaseMCHist);
@@ -1627,7 +1668,7 @@ void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH3F *> * dataHist
             systName = systVec->at(j).name;
             cout << "systName " << systName << endl;
             cout << "mcGrabName " << mcGrabName << endl;
-            if (!mcGrabName.Contains("MT2ll") && systName.Contains("MT2ll")) continue;
+            if (!mcGrabName.Contains("MT2ll") && (systName.Contains("MT2ll") || systName.Contains("MT2UncES"))) continue;
             mcSystPlotName = mcGrabName;
             mcSystPlotName += systName;
             mcGrabName += subSampName;
@@ -2113,10 +2154,6 @@ void SpectrumDrawSyst_AddSignal(TCanvas * InputCanvas, vector<TH1F *> * vecSigna
      */
 }
 
-
-
-
-
 void SpectrumDrawSingSampCompare(TCanvas * InputCanvas, TH1F * Hist1, TString legHist1, TH1F * Hist2, TString legHist2, TH1F * fracRatioHist, float TextXPos, float TextYStartPos, float YAxisLB, float YAxisUB, bool logYPad1, bool doMean, TString cutUsed, float inputLumi) {
     TLatex * tl = new TLatex();
     TLegend * leg;
@@ -2242,4 +2279,69 @@ void SpectrumDrawSingSampCompare(TCanvas * InputCanvas, TH1F * Hist1, TString le
     }
 }
 
+TH2F * FOMHist(TH2F * inputMCCompHist, TH2F * inputMCSigHist, int whichType) {
+    int NBinsX = inputMCCompHist->GetNbinsX();
+    int XMax = inputMCCompHist->GetXaxis()->GetBinLowEdge(NBinsX + 1);
+    int NBinsY = inputMCCompHist->GetNbinsY();
+    int YMax = inputMCCompHist->GetYaxis()->GetBinLowEdge(NBinsY + 1);
+    float MCInt, SigInt, FOMCentVal, FOMStatErr;
+    TString baseName = "h_FOM_forDiffMT2Cuts";
+    switch (whichType) {
+        case 0:
+            baseName += "_CentVal";
+            break;
+        case 1:
+            baseName += "_LepESShiftUp";
+            break;
+        case 2:
+            baseName += "_LepESShiftDown";
+            break;
+        case 3:
+            baseName += "_JetESShiftUp";
+            break;
+        case 4:
+            baseName += "_JetESShiftDown";
+            break;
+        case 5:
+            baseName += "_UncESShiftUp";
+            break;
+        case 6:
+            baseName += "_UncESShiftDown";
+            break;
+        case 7:
+            baseName += "_LepEffSFShiftUp";
+            break;
+        case 8:
+            baseName += "_LepEffSFShiftDown";
+            break;            
+        case 9:
+            baseName += "_genTopRW";
+            break;
+        case 10:
+            baseName += "_StopXSecShiftUp";
+            break;
+        case 11:
+            baseName += "_StopXSecShiftDown";
+            break;
+        default:
+            break;
+    }
+    TH2F * outHist = new TH2F(baseName, "F.O.M. = #frac{S}{#sqrt{S + B}}; MT2_{ll} Cut [GeV]; MT2_{(lb)(lb)} Cut [GeV]", NBinsX, 0., XMax, NBinsY, 0., YMax); outHist->Sumw2();
+    for (int xInd = 1; xInd < NBinsX + 1; ++xInd) {
+        for (int yInd = 1; yInd < NBinsY + 1; ++yInd) {
+            MCInt = inputMCCompHist->Integral(xInd, NBinsX + 1, yInd, NBinsY + 1);
+            SigInt = inputMCSigHist->Integral(xInd, NBinsX + 1, yInd, NBinsY + 1);
+            FOMCentVal = SigInt / TMath::Sqrt(SigInt + MCInt);
+            if (xInd == 22 && yInd == 3) {
+                cout << "MCInt " << MCInt << endl;
+                cout << "SigInt " << SigInt << endl;
+                cout << "FOMCentVal " << FOMCentVal << endl;
+            }
+            FOMStatErr = TMath::Sqrt(SigInt) * (SigInt + 2 * MCInt + SigInt * MCInt) / (2 * TMath::Power(SigInt + MCInt, 1.5));
+            outHist->SetBinContent(xInd, yInd, FOMCentVal);
+            outHist->SetBinError(xInd, yInd, FOMStatErr);
+        }
+    }
+    return outHist;
+}
 

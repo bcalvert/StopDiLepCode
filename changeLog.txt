@@ -1,4 +1,49 @@
-9/18/13 
+========9/25/13========
+Worked on synchronizing with Oviedo code results
+====StopFunctionDefinitions_v2.h====
+Fixed minor bug where ECALBarrelEta end was listed as 1.442 instead of 1.442
+
+Changed around Electron selection
+Added in cutting on requiring PFElectronPt and ElectronPt within 10 GeV
+Added in cuts on Electron DeltaPhiIn, DeltaEtaIn, SigIetaIeta, HtoE ratio
+Changed cut on electron object eta to be cutting on electron supercluster eta
+Above cuts depend upon electron being either "isEE" or "isEB"
+Added in cuts for electron impact parameter (w.r.t. PV) and deltaZ (w.r.t. PV)
+Added in cuts for electron "no. of missing hits" and electron's abs(1/E -1/p)
+
+Changed around Muon selection
+Added in cutting on requiring PFMuonPt and MuonPt within 5 GeV
+Fixed bug in Muon DZ cut, which was always checking against leading vertex -- now I have to find the leading "good" vertex in a function called goodVertexSelection
+Added in cuts on ("isGlobalMuon" or "isTrackArbitratedMuon")
+Added in cuts on Muon number of matching stations, number of valid pixel hits in the tracker, number of layers in the muon system
+Changed isolation variables to use the 0.3 cone variety
+
+Changed Jet stuff
+DeltaR cone for cutting leptons upgraded to 0.4 from 0.5
+Fixed a minor bug with getting Jet B-tags -- I create a vector of good jets and then iterate through to check whether the given jet passes our b-tag, but the issue was that I was bringing in the vector of b-tags for EVERY jet, not the jets that passed quality cuts
+Have almost finished putting in a "fix" for JES systematics, wherein I save the list of good jets passing our basic Jet ID cuts. Later I cut on pT for this collection to select our jets but for MET JES purposes I keep all jets with pT > 9 GeV. Initially I was cutting on |eta| < 2.4 (matching our jet selection) but I've put the cut later on and just need to check that it's not too extreme a difference (i.e. that it makes sense)
+
+Added in blinding for an EMu channel that was missing it (DiLepInZMass2Jets1BJetMET>=40)
+Fixed bug in the sorting of backgrounds
+
+Added in functions for making the 2D Figure of Merit (S/sqrt(S+B)) plots, stuff like SystHistFinderTwoDee and HistogramAdderMC (overloaded for TH2Fs)
+and, perhpas most import, the function FOMHist
+
+Added in UncEnSC systematics for the "error" graphs
+
+====NewOviStopPlotFillerRunOnSkim_wSyst.C====
+Fixed ECALBarrel Eta End bug (1.442 vs. 1.4442)
+====NewOviStopPlotSkimmer.C====
+Added in necessary branches/variables for all the additional ish to cut on (described above)
+Fixed MassPoint rounding number (25 instead of 10) for T2bw signal files
+
+====MT2CutYieldCalc.C====
+Started adding in ability to calculate TTBar normalization with this code (not finished yet, I believe)
+Added in F.O.M. plot making to this macro
+Added in two different ways of getting the yield, the basic yields for various channels (doYieldV2) and the full selection yields with systematics (doYieldV1); by default doYieldV1 is turned ON
+Added in different version numbers ability
+
+========9/18/13========
 HeaderFiles/StopFunctionDefinitions_v2.h
 Moved a number of functions into a different file, StopFillFunctions.h, in the same directory
 Added a function, OneDProjectionReturnVec, related to the purposes of calculating OneD pdfs (by projecting from input 2D histograms) for the MT2 Unclustered energy systematics
