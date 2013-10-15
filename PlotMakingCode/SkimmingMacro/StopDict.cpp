@@ -413,6 +413,7 @@ extern "C" void G__cpp_reset_tagtableStopDict();
 extern "C" void G__set_cpp_environmentStopDict() {
   G__add_compiledheader("TObject.h");
   G__add_compiledheader("TMemberInspector.h");
+  G__add_compiledheader("../../HeaderFiles/StopStructDefinitions.h");
   G__add_compiledheader("../../HeaderFiles/StopFunctionDefinitions.h");
   G__cpp_reset_tagtableStopDict();
 }

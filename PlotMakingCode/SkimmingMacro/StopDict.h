@@ -31,6 +31,7 @@ extern void G__set_cpp_environmentStopDict();
 
 #include "TObject.h"
 #include "TMemberInspector.h"
+#include "../../HeaderFiles/StopStructDefinitions.h"
 #include "../../HeaderFiles/StopFillFunctions.h"
 #include "../../HeaderFiles/StopFunctionDefinitions_v2.h"
 #include <algorithm>

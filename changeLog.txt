@@ -1,3 +1,77 @@
+========10/15/13========
+Big Structure update to the code, plus some physics as well
+--Added in structure called ElectronEventPointers plus analogous ones for Muons, PFJets, and GenJets
+-These structures are true C++ style structures in that they are just repositories to agglomerate all the various "vectors" containing event information for the objects (kinematics, quality cut variables) in an easily handled structure to tidy up the code
+--Added in structures for PFJets to basically make it easier to pass around the 4-vectors and associated jet information (b-tag discriminant value, parton flavor). This also facilitates sorting the Jets by pT after smearing, for example (i.e. sorting the PFJet structure so as to maintain the associated non-kinematic variables with the correct jets)
+SImilar thing was added for GenJets and Leptons (note, the need to sort Leptons and keep associated information came up in the code where I select the dilepton pair -- this was a hindrance to syncrhonization with Oviedo in the EMu channel)
+--BTagging Scale factors were added in (using BTagSFUtil.C and BTagSFUtil.h -- both should be located in HeaderFiles along with their associated additional files) -- See the Skimming code to see how they play out
+--Worked on implementing Jet Energy Smearing for the purposes of MET agreement - this is still a work in progress but I've more or less developed the smearing code
+
+Added a lot of "verbosity triggered" debug statements to facilitate synchronization with Oviedo, these are controlled by the "levelVerbosity" variable
+
+Consequently, a lot of the changes in this revision are updates to the code to utilize the new structures, implement in BTag ScaleFactors, correctly handle the Smeared Jet collections, etc.
+
+Nevertheless, will list some specific changes down below
+====HistogramSystematics2.h====
+Added in some "verbosity level" triggered debug statements (commenting out the debug statements)
+====StopFillFunctions.h====
+Updated MET Phi Corrections (including a trigger for ReReco)
+Added METSystShift function to this file
+Removed "EventType" function (spurious -- not needed because other functions handle it)
+Updated MC scale factors
+====StopFunctionDefinitions_v2.h====
+Fixed an absolute value of SCEta (was missing one -- line below)
+-    if (SCEta >= SCEtaMax || ((SCEta >= SCEtaBarrelCut ) && (SCEta <= SCEtaEndcapCut))) {
++    if (fabs(SCEta) >= SCEtaMax || ((fabs(SCEta) >= SCEtaBarrelCut ) && (fabs(SCEta) <= SCEtaEndcapCut))) {
+fixed the same situation with the deltaPhiIn, DeltaEtaIn and other electron quality cuts
+
+The functions JetResolutionHighPt, SmearJet, ResolutionHistMaker, VecJetHighPtResolutionTF1, and JetSmear are all related to the Jet Energy Smearing -- they should be fairly self-explanatory if not well commented
+
+Added in the systematics histogram booking for the BTag scale factors -- still working on this a bit (part of why I developed these structures)
+
+Changed MT2lblb blinding to 170 GeV (to make a cleaner cut -- old value was 172)
+
+Added in ReReco data as an option (including properly showing its name in output files)
+
+Added in ability to calculate METPhi corrections, for example the function VectorDist is needed for this, along with HistogramAdderDataTwoDee
+
+Added in some functions to facilitate making one and two-dimensional figure of merit plots
+Fixed a lot of minor things that were hindering stuff (like saving as .C, I had plots with histograms with spaces in the name which screws up ROOT)
+
+Made function for the 1D F.O.M. plot "FOMHist"
+
+====NewOviStopPlotFillerRunOnSkim_wSyst.C====
+Added in specific PU reweighting for signal (still have to add in specific scale factors
+Recalculated Oviedo PURW
+Associated stuff for BTag SF Systematic, want to fix this somewhat, however
+====NewOviStopPlotSkimmer.C====
+Made some files for the Jet Energy Smearing that I grab in here
+Most of the structure changes talked about at the very beginning are found in this file
+Added in ability to run on a specific run:event combo
+
+The btagging scale factor and associated systematic has different implementation/values for signal, as can be seen in its implementation here
+
+====StopDict.cpp====
+Added in StopStructDefinitions.h into the dictionary so it gets compiled properly
+====MT2CutYieldCalc.C====
+Associated stuff for making TwoDee and OneDee F.O.M. hists
+Associated stuff for allowing this code to calculate Data Driven TTBar normalization scale factor
+Updated said scale factor
+
+====StopPlotsSpectraShowNewDESY_wSyst.C====
+Added in ability to turn off the legend when plotting (for cases where it will overlap with the histograms)
+Added in ability to try and add multiple samples in together to make a composite "sample" to plot -- central value works right now but still debugging the systematics (command line option is "multiChan" followed by the multiChanSetupFileName) I've included an example file for it, but still need to write the readMe for it
+====plotHaddersStop.C====
+Added in ReReco hadding (i.e. luminosity scaling)
+
+
+====ADDITIONAL MACROS/FILES====
+Added in the macro for making the Signal PU -> SM PU reweighting distribution, "PURWHistMaker.C"
+Added in the JetResolution (low pT jets) text file
+Added in the example "Multi channel plot add" file "testInclusive.txt"
+Added in the macro to calculate METPhi corrections, "METPhiCorrCalculator.C"
+Added all the associated BTagSF files
+Added in the Data/MC Jet Resolution smear factor file, "pfJetResolutionMCtoDataCorrLUT.root"
 ========9/25/13========
 Worked on synchronizing with Oviedo code results
 ====StopFunctionDefinitions_v2.h====

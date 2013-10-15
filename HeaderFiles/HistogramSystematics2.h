@@ -20,8 +20,8 @@ void pointSystErr(Double_t centVal, Double_t shiftUp, Double_t shiftDown, Double
     whichErrCase += (shiftDown < centVal) ? -1 : 0;
     diffShiftUp = centVal - shiftUp;
     diffShiftDown = centVal - shiftDown;
-    cout << "justOneSideErr " << justOneSideErr << endl;
-    cout << "whichErrCase " << whichErrCase << endl;
+//    cout << "justOneSideErr " << justOneSideErr << endl;
+//    cout << "whichErrCase " << whichErrCase << endl;
     switch (justOneSideErr) {
         case 0:
             errSum = TMath::Sqrt(0.5*(diffShiftDown*diffShiftDown + diffShiftUp*diffShiftUp));
@@ -112,10 +112,10 @@ TGraphAsymmErrors * GraphSystErrorSet_SingleSource(TH1 * HistCentralVal, TH1 * H
         shiftUp = (Double_t) HistShiftUp->GetBinContent(i);
         shiftDown = (Double_t) HistShiftDown->GetBinContent(i);
         pointSystErr(centVal, shiftUp, shiftDown, errUp, errDown, doSymError, justOneSideErr);
-        cout << " for i = " << i << " in syst " << HistShiftDown->GetName() << " errors " << endl;
-        cout << "upErr: " << errUp << endl;
-        cout << "downErr: " << errDown << endl;
-        cout << endl;
+//        cout << " for i = " << i << " in syst " << HistShiftDown->GetName() << " errors " << endl;
+//        cout << "upErr: " << errUp << endl;
+//        cout << "downErr: " << errDown << endl;
+//        cout << endl;
         if (doSymError) {
             outGraph->SetPointEYlow(i, errDown);
             outGraph->SetPointEYhigh(i, errUp);
@@ -128,7 +128,7 @@ TGraphAsymmErrors * GraphSystErrorSet_SingleSource(TH1 * HistCentralVal, TH1 * H
     return outGraph;
 }
 
-TGraphAsymmErrors * GraphSystErrorSet_SingleSource(TH1 * HistCentralVal, vector<TH1F *> * systHistVec, TString systString, bool doSymError, int justOneSideErr) {
+TGraphAsymmErrors * GraphSystErrorSet_SingleSource(TH1 * HistCentralVal, vector<TH1F *> * systHistVec, TString systString, bool doSymError, int justOneSideErr, int doVerbosity = -1) {
     // overloaded version of the graph error set used for grabbing specific systematic
     int nBinsX = HistCentralVal->GetNbinsX();
     Double_t errUp, errDown;
@@ -142,22 +142,22 @@ TGraphAsymmErrors * GraphSystErrorSet_SingleSource(TH1 * HistCentralVal, vector<
     TH1F * HistShiftUp, * HistShiftDown;
     TString systHistName;
     //picking out correct histogram
-    cout << "systVec size " << systHistVec->size() << endl;
+//    cout << "systVec size " << systHistVec->size() << endl;
     bool foundUp = 0;
     bool foundDown = 0;
     int singleShiftIndex = -99;
     for (unsigned int k = 0; k < systHistVec->size(); ++k) {
         systHistName = systHistVec->at(k)->GetName();
-        cout << "histName " << systHistName << endl;
-        cout << "systHistName.Contains(systString) for systString " << systString << " is " <<systHistName.Contains(systString) << endl;
+//        cout << "histName " << systHistName << endl;
+//        cout << "systHistName.Contains(systString) for systString " << systString << " is " <<systHistName.Contains(systString) << endl;
         if (!systHistName.Contains(systString)) {
             continue;   
         }
         else {
             singleShiftIndex = k;
         }
-        cout << "systHistName.Contains(up) " << systHistName.Contains("Up") << endl;
-        cout << "systHistName.Contains(down) " << systHistName.Contains("Down") << endl;
+//        cout << "systHistName.Contains(up) " << systHistName.Contains("Up") << endl;
+//        cout << "systHistName.Contains(down) " << systHistName.Contains("Down") << endl;
         if (systHistName.Contains("Up")) {
             HistShiftUp = systHistVec->at(k);   
             foundUp = 1;
@@ -167,8 +167,6 @@ TGraphAsymmErrors * GraphSystErrorSet_SingleSource(TH1 * HistCentralVal, vector<
             foundDown = 1;
         }
     }
-    cout << "found up " << foundUp << endl;
-    cout << "found down " << foundDown << endl;
 //    cout << "singleshift index " << singleShiftIndex << endl;
     if (!foundUp && !foundDown) {
         if (singleShiftIndex >= 0) {
@@ -185,9 +183,7 @@ TGraphAsymmErrors * GraphSystErrorSet_SingleSource(TH1 * HistCentralVal, vector<
     else if (!foundDown) {
         HistShiftDown = (TH1F *) HistCentralVal;//->Clone(HistCentralVal->GetName() + systString + TString("Down"));
     }
-    cout << "HACK JOB " << endl;
-//    cout << "HistShiftUp " << HistShiftUp->GetName() << " has " << HistShiftUp->GetNbinsX() << endl;
-//    cout << "HistShiftDown " << HistShiftDown->GetName() << " has " << HistShiftDown->GetNbinsX() << endl;
+//    cout << "HACK JOB " << endl;
     filledSystUpHist = (HistShiftUp->Integral() > 0) ? true : false;
     filledSystDownHist = (HistShiftDown->Integral() > 0) ? true : false;
     for (int i = 0; i < nBinsX+2; ++i) { 
@@ -198,7 +194,7 @@ TGraphAsymmErrors * GraphSystErrorSet_SingleSource(TH1 * HistCentralVal, vector<
 //        if (i == nBinsX) x = (Double_t) HistCentralVal->GetBinLowEdge(i+1);
         binWidth = (Double_t) HistCentralVal->GetXaxis()->GetBinWidth(i);
         //initial point sets -- y-axis info will contain relevant uncertainties
-        if (i > 0 && i < nBinsX + 1) {
+        if (i > 0 && i < nBinsX + 1 && doVerbosity > 0) {
             cout << "HistCentralVal->GetBinContent(i) for i: " << i << " is " << HistCentralVal->GetBinContent(i) << endl;
             cout << "HistShiftUp->GetBinContent(i) for i: " << i << " is " << HistShiftUp->GetBinContent(i) << endl;
             cout << "HistShiftDown->GetBinContent(i) for i: " << i << " is " << HistShiftDown->GetBinContent(i) << endl;
@@ -216,7 +212,7 @@ TGraphAsymmErrors * GraphSystErrorSet_SingleSource(TH1 * HistCentralVal, vector<
         shiftDown = (Double_t) HistShiftDown->GetBinContent(i);
 //        cout << "within GraphSyst line 150" << endl;
         pointSystErr(centVal, shiftUp, shiftDown, errUp, errDown, doSymError, justOneSideErr);
-        if (i > 0 && i < nBinsX + 1) {
+        if (i > 0 && i < nBinsX + 1 && doVerbosity > 0) {
             cout << " for i = " << i << " in syst " << systString << " errors " << endl;
             cout << "upErr: " << errUp << endl;
             cout << "downErr: " << errDown << endl;            
@@ -230,15 +226,14 @@ TGraphAsymmErrors * GraphSystErrorSet_SingleSource(TH1 * HistCentralVal, vector<
             outGraph->SetPointEYhigh(i, 0);
             outGraph->SetPointEYlow(i, 0);
         }
-        cout << "chose to fill1? " << outGraph->GetErrorYhigh(i) << endl;        
-        cout << "chose to fill2? " << outGraph->GetErrorYlow(i) << endl;
+//        cout << "chose to fill1? " << outGraph->GetErrorYhigh(i) << endl;        
+//        cout << "chose to fill2? " << outGraph->GetErrorYlow(i) << endl;
     }
     return outGraph;
 }
 
-TGraphAsymmErrors * GraphSystErrorSumErrors(TGraphAsymmErrors * centValGraph, TString addName, vector<TGraphAsymmErrors *> * systGraphVec, bool addStatErr, TH1 * inputHist) {
+TGraphAsymmErrors * GraphSystErrorSumErrors(TGraphAsymmErrors * centValGraph, TString addName, vector<TGraphAsymmErrors *> * systGraphVec, bool addStatErr, TH1 * inputHist, int doVerbosity = -1) {
     int nPoints = centValGraph->GetN();
-//    cout << "nPoints " << nPoints << endl;
     Double_t upErrSum, downErrSum;
     Double_t upErr, downErr;
     Double_t x, y;
@@ -258,13 +253,7 @@ TGraphAsymmErrors * GraphSystErrorSumErrors(TGraphAsymmErrors * centValGraph, TS
         for (unsigned int k = 0; k < systGraphVec->size(); ++k) {
             upErr = (Double_t) systGraphVec->at(k)->GetErrorYhigh(i);
             downErr = (Double_t) systGraphVec->at(k)->GetErrorYlow(i);
-            /*
-             cout << "k " << i << endl;
-             cout << "Graph" << GraphArray[k]->GetName() << endl;
-             cout << "upErr " << upErr << endl;
-             cout << "downErr " << downErr << endl;
-             */
-            if (i == 2) {
+            if (i == 2 && doVerbosity > 0) {
                 cout << "systGraph Name " << systGraphVec->at(k)->GetName() << endl;
                 cout << "upErr " << upErr << endl;
                 cout << "downErr " << downErr << endl;
@@ -320,7 +309,6 @@ TGraphAsymmErrors * clonePoints(TH1 * inputHist, bool cloneZero = true) {
         y = (double) inputHist->GetBinContent(i);
         if (!cloneZero && y == 0) continue;
         binWidth = (Double_t) inputHist->GetXaxis()->GetBinWidth(i);
-        //        cout << "i, x, y: " << i << ", " << x << ", " << y << endl;
         outGraph->SetPoint(i, x, y);
         outGraph->SetPointEYlow(i, inputHist->GetBinError(i));
         outGraph->SetPointEYhigh(i, inputHist->GetBinError(i));
@@ -352,10 +340,7 @@ TGraphAsymmErrors * fracGraph(TH1 * centValMCHist, TGraphAsymmErrors * errGraphS
         binWidth = (Double_t) centValMCHist->GetXaxis()->GetBinWidth(i);
         
         //initial point sets -- y-axis info will contain relevant uncertainties
-//        cout << " in frac graph " << endl;
-//        cout << "x " << x << endl;
-//        cout << "y " << y << endl;
-
+        
         if (!(y > 0.)) {
             relUpErr = 0;
             relDownErr = 0;
@@ -368,9 +353,6 @@ TGraphAsymmErrors * fracGraph(TH1 * centValMCHist, TGraphAsymmErrors * errGraphS
         }
         ratioGraph->SetPointEYhigh(i, relUpErr);
         ratioGraph->SetPointEYlow(i, relDownErr);
-//        cout << "error in point i for i = " << i << " is " << ratioGraph->GetErrorYlow(i) << endl;
-//        cout << "error in point i for i = " << i << " is " << ratioGraph->GetErrorYhigh(i) << endl;
-//        cout << "binWidth / 2 " << binWidth/2 << endl;
         ratioGraph->SetPointEXlow(i, binWidth/2.);
         ratioGraph->SetPointEXhigh(i, binWidth/2.);
         

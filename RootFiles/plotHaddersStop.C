@@ -98,7 +98,8 @@ int main( int argc, const char* argv[] ) {
     int  versNumber   = 1;
     int  subLepPtCut  = 10;
     bool doHardCodeNumParFiles = 0; // fix for an issue with Oviedo nTuples -- temporary (put in 7/18/13
-    bool doExcSamp    = 0;          // For doing the exclusive DY and TTbar samples
+    bool doExcSamp    = 0;          // For doing the exclusive DY and TTbar samples    
+    bool doReReco     = 0;  
     for (int k = 0; k < argc; ++k) {
         cout << "argv[k] for k = " << k << " is: " << argv[k] << endl;
         if (strncmp (argv[k],"wNTuple", 7) == 0) {
@@ -125,6 +126,9 @@ int main( int argc, const char* argv[] ) {
         else if (strncmp (argv[k],"doSubLepCut", 11) == 0) {
             doSubLepCut = 1;
             subLepPtCut = strtol(argv[k+1], NULL, 10 );
+        }        
+        else if (strncmp (argv[k],"doReReco", 8) == 0) {
+            doReReco = 1;
         }
     }
     gROOT->ProcessLine("#include <vector>");
@@ -230,11 +234,19 @@ int main( int argc, const char* argv[] ) {
     vector<double> * currWeightVec;
     TString nEventHistName = "weightedEvents";
     TString nParFileHistName = "h_numParFiles";
+    float L_data;
     float indLumiDESY[4] = {892, 4404, 7032, 7274};
     float indLumiOvi[4] = {892, 4404, 7032, 7274};
-    float L_data = 19602.901;
+    
+    float indLumiOviReReco[4] = {876, 4404, 7016, 7360};
+//    float L_data = 19602.901;
     if (whichNTuple == 0) {
-        L_data = indLumiOvi[0] + indLumiOvi[1] + indLumiOvi[2] + indLumiOvi[3];
+        if (!doReReco) {
+            L_data = indLumiOvi[0] + indLumiOvi[1] + indLumiOvi[2] + indLumiOvi[3];
+        }
+        else {
+            L_data = indLumiOviReReco[0] + indLumiOviReReco[1] + indLumiOviReReco[2] + indLumiOviReReco[3];
+        }
     }
     else {
         L_data = indLumiDESY[0] + indLumiDESY[1] + indLumiDESY[2] + indLumiDESY[3];

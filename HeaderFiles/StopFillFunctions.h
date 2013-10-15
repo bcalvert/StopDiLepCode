@@ -29,7 +29,7 @@
 #include <sstream>
 #include <map>
 using namespace std;
-float getMT2(TLorentzVector lept1, TLorentzVector lept2, float theMET, float theMETphi){
+inline float getMT2(TLorentzVector lept1, TLorentzVector lept2, float theMET, float theMETphi){
     // Calculate MT2 variable for two leptons and missing energy, assuming zero testmass                                                                       
     double pa[3];
     double pb[3];
@@ -57,17 +57,28 @@ float getMT2(TLorentzVector lept1, TLorentzVector lept2, float theMET, float the
     delete MT2bisect;
     return MT2;
 }
-void MetPhiCorrect(bool doData, float &MetX, float &MetY, int nVtx) {
+inline void MetPhiCorrect(bool doData, float &MetX, float &MetY, int nVtx, bool doReReco) {
     int c0 = 0;
     int c1 = 1;
     if (!doData) {
         c0 = 2;
         c1 = 3;
     }
-    float CorrType1PFMETX[4] = {-0.165731, 0.393398, 0.0637551, 0.000364516};
-    float CorrType1PFMETY[4] = {-0.00360751, -0.253457, 0.430063, -0.228208};
-    MetX = MetX - CorrType1PFMETX[c0] - nVtx * CorrType1PFMETX[c1];
-    MetY = MetY - CorrType1PFMETY[c0] - nVtx * CorrType1PFMETY[c1];
+//    float CorrType1PFMETX[4] = {-0.165731, 0.393398, 0.0637551, 0.000364516};
+//    float CorrType1PFMETY[4] = {-0.00360751, -0.253457, 0.430063, -0.228208};
+    float CorrType1PFMETX[4] = {-0.067, 0.387, 0.110, -0.005};
+    float CorrType1PFMETY[4] = {-0.336, -0.247, 0.321, -0.214};
+    
+    float CorrType1PFMETX_ReReco[4] = {-0.254, 0.309, 0.110, -0.005};
+    float CorrType1PFMETY_ReReco[4] = {-0.158, -0.160, 0.321, -0.214};
+    if (doReReco) {
+        MetX = MetX - CorrType1PFMETX_ReReco[c0] - nVtx * CorrType1PFMETX_ReReco[c1];
+        MetY = MetY - CorrType1PFMETY_ReReco[c0] - nVtx * CorrType1PFMETY_ReReco[c1];
+    }
+    else {
+        MetX = MetX - CorrType1PFMETX[c0] - nVtx * CorrType1PFMETX[c1];
+        MetY = MetY - CorrType1PFMETY[c0] - nVtx * CorrType1PFMETY[c1];
+    }
 }
 inline void METSystShift(vector<TLorentzVector> * inputObjVec, vector<TLorentzVector> * shiftObjVec, float &newMET, float &newMETPhi, float origMET, float origMETPhi) {
     TVector3 vecMET;
@@ -90,6 +101,58 @@ inline void METSystShift(vector<TLorentzVector> * inputObjVec, vector<TLorentzVe
     }
     vecMET = vecMET - inputObjTotThreeVec;
     vecMET = vecMET + shiftObjTotThreeVec;
+    newMET = vecMET.Pt();
+    newMETPhi = vecMET.Phi();
+    return;
+}
+
+inline void METSystShift(vector<Lepton> * inputLepVec, vector<Lepton> * shiftLepVec, float &newMET, float &newMETPhi, float origMET, float origMETPhi) {
+    TVector3 vecMET;
+    TVector3 inputLepTotThreeVec; inputLepTotThreeVec.SetPtEtaPhi(0., 0., 0.);
+    TVector3 shiftLepTotThreeVec; shiftLepTotThreeVec.SetPtEtaPhi(0., 0., 0.);
+    TVector3 inputLepCurrThreeVec;
+    TVector3 shiftLepCurrThreeVec;
+    vecMET.SetPtEtaPhi(origMET, 0., origMETPhi);    
+    if (inputLepVec->size() != shiftLepVec->size()) {
+        cout << "inputLep size " << inputLepVec->size() << endl;
+        cout << "shiftLep size " << shiftLepVec->size() << endl;
+        cout << "issue: two input object vectors are not same size -- check it out" << endl;
+        return;
+    }
+    for (unsigned int i = 0; i < inputLepVec->size(); ++i) {
+        inputLepCurrThreeVec.SetPtEtaPhi(inputLepVec->at(i).P4.Pt(), inputLepVec->at(i).P4.Eta(), inputLepVec->at(i).P4.Phi());
+        shiftLepCurrThreeVec.SetPtEtaPhi(shiftLepVec->at(i).P4.Pt(), shiftLepVec->at(i).P4.Eta(), shiftLepVec->at(i).P4.Phi());
+        inputLepTotThreeVec = inputLepTotThreeVec + inputLepCurrThreeVec;
+        shiftLepTotThreeVec = shiftLepTotThreeVec + shiftLepCurrThreeVec;
+    }
+    vecMET = vecMET - inputLepTotThreeVec;
+    vecMET = vecMET + shiftLepTotThreeVec;
+    newMET = vecMET.Pt();
+    newMETPhi = vecMET.Phi();
+    return;
+}
+
+inline void METSystShift(vector<PFJet> * inputJetVec, vector<PFJet> * shiftJetVec, float &newMET, float &newMETPhi, float origMET, float origMETPhi) {
+    TVector3 vecMET;
+    TVector3 inputJetTotThreeVec; inputJetTotThreeVec.SetPtEtaPhi(0., 0., 0.);
+    TVector3 shiftJetTotThreeVec; shiftJetTotThreeVec.SetPtEtaPhi(0., 0., 0.);
+    TVector3 inputJetCurrThreeVec;
+    TVector3 shiftJetCurrThreeVec;
+    vecMET.SetPtEtaPhi(origMET, 0., origMETPhi);    
+    if (inputJetVec->size() != shiftJetVec->size()) {
+        cout << "inputJet size " << inputJetVec->size() << endl;
+        cout << "shiftJet size " << shiftJetVec->size() << endl;
+        cout << "issue: two input object vectors are not same size -- check it out" << endl;
+        return;
+    }
+    for (unsigned int i = 0; i < inputJetVec->size(); ++i) {
+        inputJetCurrThreeVec.SetPtEtaPhi(inputJetVec->at(i).P4.Pt(), inputJetVec->at(i).P4.Eta(), inputJetVec->at(i).P4.Phi());
+        shiftJetCurrThreeVec.SetPtEtaPhi(shiftJetVec->at(i).P4.Pt(), shiftJetVec->at(i).P4.Eta(), shiftJetVec->at(i).P4.Phi());
+        inputJetTotThreeVec = inputJetTotThreeVec + inputJetCurrThreeVec;
+        shiftJetTotThreeVec = shiftJetTotThreeVec + shiftJetCurrThreeVec;
+    }
+    vecMET = vecMET - inputJetTotThreeVec;
+    vecMET = vecMET + shiftJetTotThreeVec;
     newMET = vecMET.Pt();
     newMETPhi = vecMET.Phi();
     return;
@@ -145,35 +208,6 @@ inline float GenLevelTopPtWeight(float pT_Top, float pT_AntiTop) {
     //    return TMath::Sqrt(weightAntiTop * weightAntiTop + weightTop * weightTop);
     return TMath::Sqrt(weightAntiTop * weightTop);
 }
-inline int EventType(vector<int> *lepPdgId, int lep0Index, int lep1Index) {
-    int Lep0Type = lepPdgId->at(lep0Index);
-    int Lep1Type = lepPdgId->at(lep1Index);
-    int Type;
-    if (TMath::Abs(Lep0Type) == 11) {
-        if (TMath::Abs(Lep1Type) == 11) {
-            Type = 1;
-        }
-        else if (TMath::Abs(Lep1Type) == 13) {
-            Type = 2;
-        }
-    }
-    else if (TMath::Abs(Lep0Type) == 13) {
-        if (TMath::Abs(Lep1Type) == 11) {
-            Type = 2;
-        }
-        else if (TMath::Abs(Lep1Type) == 13) {
-            Type = 0;
-        }
-    }
-    else {
-        cout <<"" << endl;
-        cout <<"something is wrong" << endl;
-        cout <<"Lep0 ID: " << Lep0Type << endl;
-        cout <<"Lep1 ID: " << Lep1Type << endl;
-        cout <<"" << endl;
-    }
-    return Type;
-}
 inline float ScaleFactorMC(int Type, int Syst) {
     
     // Type: 0 MuMu, 1 EE 2 EMu
@@ -182,25 +216,61 @@ inline float ScaleFactorMC(int Type, int Syst) {
     //    float SFIDIso[3] = {0.993, 0.979, 0.986};    
     //return SFTrig[Type] * SFIDIso[Type];
     // Note! As of 8/10/13, trying an additional SF just for funsies, ok not really just for funsies, basically we find that the DD TTBar normalization is different for the three separate channels, which is bad news bears because it is indicative of different lepton reconstruction efficiency scale factors for data/MC for the different leptons
-    float SFTotal[3] = {0.987, 0.957, 0.935};
-    float SFSystUp[3] = {0.011, 0.015, 0.013};
-    float SFSystDown[3] = {0.011, 0.015, 0.013};
-    float MuMuAdditionalSF = 1.02169370264668;
-    float EEAddtionalSF    = 0.977225138882017;
-    float EMuAdditionalSF  = 0.999212074818846;
-    float SFAdditional[3] = {MuMuAdditionalSF, EEAddtionalSF, EMuAdditionalSF};
+    /// 
+    /*
+     float SF_trigger_mumu=0.965;// +/- 0.0102;
+     float SF_trigger_ee  =0.962;// +/- 0.0130;
+     float SF_trigger_mue =0.943;// +/- 0.0120;
+     //02-11-2012
+     float SF_IDISO_mumu=0.997;// +/- 0.00085;
+     float SF_IDISO_ee  =0.975;// +/- 0.0006;
+     float SF_IDISO_mue =0.986;// +/- 0.0007;
+     *////
+    float SFTotal[3] = {0.962105, 0.9379500, 0.9297980};
+    float SFSystUp[3] = {0.0102024, 0.0126881, 0.0185040};
+    float SFSystDown[3] = {0.0102024, 0.0126881, 0.0185040};
+    /*
+     float SFTotal[3] = {0.987, 0.957, 0.935};
+     float SFSystUp[3] = {0.011, 0.015, 0.013};
+     float SFSystDown[3] = {0.011, 0.015, 0.013};
+     float MuMuAdditionalSF = 1.02169370264668;
+     float EEAddtionalSF    = 0.977225138882017;
+     float EMuAdditionalSF  = 0.999212074818846;
+     
+     float SFAdditional[3] = {MuMuAdditionalSF, EEAddtionalSF, EMuAdditionalSF};
+     switch (Syst) {
+     case 0:
+     return SFTotal[Type] * SFAdditional[Type];
+     break;
+     case 1:
+     return (SFTotal[Type] * SFAdditional[Type]) + SFSystUp[Type];
+     break;      
+     case -1:
+     return (SFTotal[Type] * SFAdditional[Type]) - SFSystDown[Type];
+     break;  
+     default:
+     return 1;
+     break;
+     }
+     */
+    
     switch (Syst) {
         case 0:
-            return SFTotal[Type] * SFAdditional[Type];
-            break;
+            return SFTotal[Type];
+            break;            
         case 1:
-            return (SFTotal[Type] * SFAdditional[Type]) + SFSystUp[Type];
-            break;      
+            return SFTotal[Type] + SFSystUp[Type];
+            break;            
         case -1:
-            return (SFTotal[Type] * SFAdditional[Type]) - SFSystDown[Type];
-            break;  
+            return SFTotal[Type] - SFSystDown[Type];
+            break;
         default:
             return 1;
-            break;
+            break;            
     }
 }
+/*
+float FastSimScaleFactor(Lepton lep0, Lepton lep1) {
+// scale factors taken from slideshttps://indico.cern.ch/getFile.py/access?contribId=2&resId=0&materialId=slides&confId=275431
+}
+*/
