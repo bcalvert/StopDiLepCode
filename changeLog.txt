@@ -1,3 +1,71 @@
+========10/24/13========
+Another structure update to the code, not as major as 10/15/13
+This time, it was to facilitate the filling of plots, which is done in NewOviStopPlotFillerRunOnSkim_wSyst.C
+The way that macro works is that it draws a list of HistogramStructures from an external header file, books these histograms and puts them into a map (associated with a pairing of the HistogramStructure and a "SubsampleStructure"). The code runs through the events, calculates whatever hasn't been calculated yet and makes a mapping of strings to float values -- the aforementioned HistogramStructures have strings associated with them which match up with the strings used in the map<string, float>. Finally, there is a mapping of "SubsampleStructure" to booleans, where for the given event it falls into various "subsamples" and so I put "true" in for those subsamples. So, when it comes time to fill histograms, you iterate through the histograms in the event, check if their associated subsample boolean is true; if so, you grab the float associated with their string designating what variable, and then fill them
+
+The major structure updates were basically putting in functions to handle most of this automatically, in particular to facilitate dealing with systematics. The bulk of these functions can be found in StopFillFunctions.h and include,
+CorrectPlusSetMET
+CalcMT2
+EventPassTrigger
+nVtxWeight
+SetEventInformation
+SetStringKeyMap
+SetStringKeyMapSpecial
+LepInBarrel
+LepInEndcap
+DiLeptonGeometry
+SetPassCutMap
+HistogramFillOneDee
+HistogramFillOneDeeSyst
+HistogramFillTwoDee
+HistogramFillTwoDeeSyst
+HistogramFillThreeDee
+HistogramFillThreeDeeSyst
+
+I have also started working on a macro to automatically check if two separate versions of a given data file contain different histograms (both in what histograms and in the stats of histograms that are the "same" in a "name" sense) This is to facilitate commissioning further changes to the code (i.e. for basic structure changes that shouldn't change final results, we can compare old vs. new and expect to see no change)
+====StopFillFunctions.h====
+Moved the function "PileupRW" here 
+====StopFunctionDefinitions_v2====
+Moved SystT, SampleT, and HistT structure definitions to StopStructDefinitions.h
+Moved deltaR and dPhi functions to StopStructDefinitions.h
+Moved the function "PileupRW" from here (see StopFillFunctions.h)
+Moved the function DeltaMT2UncEn to StopStructDefinitions.h
+Added verbosity to MuonPickOviSyst
+
+Slightly changed how lepton jet checking works (see the new function "isLeptonJet")
+If the jet we're currently looking at has pT above a certain threshold (currently set at 20 GeV), then we only care to check isolated leptons that have pT above a certain threshold (currently set at 10 GeV), otherwise we check against all isolated leptons. This is to be as correct as possible for low pT jets (i.e. we don't want to overestimate systematics by either double counting them or assigning JES systematics to a lepton-like object, which has better energy scale certainty than that, and furthermore, shouldn't have been subject to Type1 corrections in the first place, due to the automatic checks against correction lepton-like jets)
+
+Fixed how "edge" effects are handled in JetResolutionHighPt, which grabs jet resolution from a TF1 based on what eta. Namely, if there's ambiguity (a jet right on a bin edge), you grab the TF1 from the higher of the two ambiguous eta bins
+
+Added in some saving of information for the jet smearing (whether the given jet is GenJetMatched and what the energy difference between the matched genjet and the given jet is.
+
+Changed how systematics work, specifically how they are demarcated in number,
+See the function "SystVec"
+
+Fixed a bug in "DescriptorString" (Values for different Eta bins had been flipped)
+
+====NewOviStopPlotFillerRunOnSkim_wSyst.C====
+A LOT of changes happened to this file (I believe 2400 lines or so of code were cut from it), mostly related to the structure change discussed above
+
+The ones that aren't related, are very minor minor changes, related to file names of saved output files
+
+====NewOviStopPlotSkimmer.C====
+Added in some histograms for "investigating" the jet smearing, namely the difference in energy between smeared and unsmeared jets
+
+Added in separate verbosity levels for leptons and for jets so that I can be specific in which debug info I want to see
+
+Fixed a bug for LepESShiftDown, which was pushing isolated leptons into LepESShiftUp vector, so that all events were failing LepESShiftDown
+
+Fixed a bug where doEvent_LepESUp was checking ELI_LepESDown.doEvent
+
+====StopPlotsSpectraShowNewDESY_wSyst.C====
+Added in a crucial line,
+#include "../HeaderFiles/StopStructDefinitions.h"
+====MT2CutYieldCalc.C====
+Added in a crucial line,
+#include "../HeaderFiles/StopStructDefinitions.h"
+
+
 ========10/15/13========
 Big Structure update to the code, plus some physics as well
 --Added in structure called ElectronEventPointers plus analogous ones for Muons, PFJets, and GenJets

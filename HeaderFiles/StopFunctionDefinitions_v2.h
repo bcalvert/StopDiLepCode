@@ -35,120 +35,6 @@
 #include <map>
 using namespace std;
 
-typedef struct {
-    TString name;
-    float   fVar;
-    double  dVar;
-    string  systVarKey;
-    int     whichSystType;   // 0 = universal systematic, 1 = lepton systematic, 2 = jet systematic, 3 = other systematic
-} SystT;
-
-typedef struct {
-    TString name;
-    TString xLabel;
-    int xBinN;
-    int RBNX;
-    float xMin, xMax;
-    string xVarKey;
-    bool doXSyst;
-    
-    TString yLabel;
-    int yBinN;
-    int RBNY;
-    float yMin, yMax; 
-    string yVarKey;
-    bool doYSyst;
-    
-    TString zLabel;
-    int zBinN;
-    float zMin, zMax; 
-    int RBNZ;
-    string zVarKey;
-    bool doZSyst;
-    
-    bool logY1D;
-} HistogramT;
-
-typedef struct {
-    //    SampleT() : histNameSuffix(""), whichdiLepType(-1), doZVeto(-1), cutNJets(-1), cutNBJets(-1), cutMET(0) {}
-    TString histNameSuffix;
-    TString histXaxisSuffix;
-    TString histYaxisSuffix;
-    TString histZaxisSuffix;
-    /// variables to store what kinds of
-    int     whichdiLepType; // -1: inclusive, 0: MuMu, 1: EE, 2: EMu
-    int     doZVeto;   // -1: inclusive, 0: ZMass window, 1: outside ZMass window;
-    int     cutNJets;  // -1: inclusive, # > 0: require NJets >= #
-    int     cutNBJets;  // -1: inclusive, # > 0: require NBJets >= #
-    float   cutMET; // # > 0: require MET >= #
-    bool    blindDataChannel;
-    
-} SampleT;
-
-typedef struct {
-    TString HistTXLabel;
-    TString HistTYLabel;
-    TString HistTZLabel;
-    TString SampTLabel;
-    
-    int newXBinN;
-    float newXMin, newXMax;
-    
-    int newYBinN;
-    float newYMin, newYMax;
-    
-    int newZBinN;
-    float newZMin, newZMax;    
-    
-} SpecHistBinT;
-
-typedef std::pair<HistogramT, SampleT> histKey;
-inline bool operator<(const histKey &a, const histKey &b)
-{
-    return (a.first.name < b.first.name) || (a.first.name == b.first.name && a.second.histNameSuffix < b.second.histNameSuffix);
-}
-inline bool operator<(const SampleT &a, const SampleT &b)
-{
-    return (a.histNameSuffix < b.histNameSuffix) || (a.histXaxisSuffix < b.histXaxisSuffix && a.histNameSuffix == b.histNameSuffix);
-}
-inline SampleT operator+(const SampleT &a, const SampleT &b)
-{
-    SampleT outSampleT;
-    outSampleT.histNameSuffix = a.histNameSuffix + b.histNameSuffix;
-    outSampleT.histXaxisSuffix = a.histXaxisSuffix + b.histXaxisSuffix;
-    outSampleT.histYaxisSuffix = a.histYaxisSuffix + b.histYaxisSuffix;
-    outSampleT.histZaxisSuffix = a.histZaxisSuffix + b.histZaxisSuffix;
-    return outSampleT;
-}
-
-inline float dPhi(float phi1, float phi2) {
-    float result = phi1-phi2;
-    while (result >= TMath::Pi()) result -= 2*TMath::Pi();
-    while (result < -1*TMath::Pi()) result += 2*TMath::Pi();
-    return fabs(result);
-}
-inline float deltaR(float eta1, float phi1, float eta2, float phi2) {
-    float dphi = dPhi(phi1,phi2);
-    float deta = eta1-eta2;
-    float result = dphi*dphi+deta*deta;
-    result = sqrt(result);
-    return result;
-}
-
-inline double dPhi(double phi1, double phi2) {
-    double result = phi1-phi2;
-    while (result >= TMath::Pi()) result -= 2*TMath::Pi();
-    while (result < -1*TMath::Pi()) result += 2*TMath::Pi();
-    return fabs(result);
-}
-
-inline double deltaR(double eta1, double phi1, double eta2, double phi2) {
-    double dphi = dPhi(phi1,phi2);
-    double deta = eta1-eta2;
-    double result = dphi*dphi+deta*deta;
-    result = sqrt(result);
-    return result;
-}
 
 
 /*
@@ -168,10 +54,6 @@ typedef std::vector<LV> VLV;
 
 inline void TreeBranchSet(TTree * analTree, int whichNTuple = 0) {
     
-}
-inline float PileupRW(TH1 * nVtxSFHist, int nVtx) {
-    if (nVtx > nVtxSFHist->GetNbinsX()) return 1.;
-    return (float) nVtxSFHist->GetBinContent(nVtxSFHist->FindBin(nVtx));
 }
 
 inline vector<TH1F *> * OneDProjectionReturnVec(TH1 * inputHist, int numDims, int whichAxisToProjTo, int whichAxisForDist, int axisProjLB, int axisProjUB, TString nameBase) {
@@ -242,26 +124,6 @@ inline vector<TH1F *> * OneDProjectionReturnVec(TH1 * inputHist, int numDims, in
         outHistVector->push_back(projHist);
     }
     return outHistVector;
-}
-inline float DeltaMT2UncEn(vector<TH1F *> * vecOneDeeHists, TH2F * TwoDeeHist, float inputMT2Value) {
-    //returns float which is a random number drawn from the distribution of MT2 Central Value minus MT2 Unclustered ES shifted version
-    
-    int whichOneDeeHist = TwoDeeHist->GetXaxis()->FindBin(inputMT2Value) - 1;
-    unsigned int numOneDeeHists = vecOneDeeHists->size();
-    if (whichOneDeeHist < 0) {
-        cout << inputMT2Value << endl;
-        cout << "ERROR with which one dee hist!" << endl;
-        return 0.;
-    }
-    else if (whichOneDeeHist >= (int) numOneDeeHists) {
-        whichOneDeeHist = (int) numOneDeeHists - 1;
-    }
-    if (vecOneDeeHists->at(whichOneDeeHist)->Integral() == 0) {
-        return 0;
-    }
-    else {
-        return vecOneDeeHists->at(whichOneDeeHist)->GetRandom();   
-    }
 }
 
 
@@ -592,7 +454,6 @@ inline void MuonPickOvi(MuonEventPointers inMEPs, float firstGoodVertZ, vector<L
         currMuonNumLayers = inMEPs.MuonNumLayers->at(i);
         currMuonNumValidPixHitsinTrack = inMEPs.MuonNumValidPixHitsinTrack->at(i);
         
-        
         if (levelVerbosity > 0) {
             cout << "continuing for muon " << i << endl;
             cout << "currMuonRelPFIso " << currMuonRelPFIso << endl;
@@ -630,7 +491,7 @@ inline void MuonPickOvi(MuonEventPointers inMEPs, float firstGoodVertZ, vector<L
 }
 
 //inline void MuonPickOviSyst(vector<float> * MuonPt, vector<float> * MuonPx, vector<float> * MuonPy, vector<float> * MuonPz, vector<float> * MuonEn, vector<int> * MuonCharge, vector<float> * PFMuonPt, vector<float> * MuonD0, vector<float> * MuonVertZ, float firstGoodVertZ, vector<float> * MuonPFNeutHadIso, vector<float> * MuonPFCharHadIso, vector<float> * MuonPFPhotIso, vector<float> * MuonSumPUPt, vector<int> * MuonNumLayers, vector<int> * MuonNumMatchStations, vector<int> * MuonNumValidPixHitsinTrack, vector<bool> * isGMPTMuon, vector<bool> * isPFMuon, vector<bool> * isGlobMuon, float whichSystCase, vector<Lepton> * vecIsoLeptons, vector<Lepton> * vecIsoLeptons_CentVal) {    
-inline void MuonPickOviSyst(MuonEventPointers inMEPs, float firstGoodVertZ, float whichSystCase, vector<Lepton> * vecIsoLeptons, vector<Lepton> * vecIsoLeptons_CentVal) {    
+inline void MuonPickOviSyst(MuonEventPointers inMEPs, float firstGoodVertZ, float whichSystCase, vector<Lepton> * vecIsoLeptons, int levelVerbosity, vector<Lepton> * vecIsoLeptons_CentVal) {    
     
     int currMuonNumMatchStations, currMuonNumValidPixHitsinTrack, currMuonNumLayers;
     float currMuonPt, currMuonEta;
@@ -644,6 +505,15 @@ inline void MuonPickOviSyst(MuonEventPointers inMEPs, float firstGoodVertZ, floa
         patsyVec.SetPxPyPzE(inMEPs.MuonPx->at(i), inMEPs.MuonPy->at(i), inMEPs.MuonPz->at(i), inMEPs.MuonEn->at(i));
         patsyVec2.SetPxPyPzE(inMEPs.MuonPx->at(i), inMEPs.MuonPy->at(i), inMEPs.MuonPz->at(i), inMEPs.MuonEn->at(i));
         //        if (fabs(patsyVec.Pt() - PFMuonPt->at(i)) >= 5.) continue;
+        
+        if (levelVerbosity > 0) {
+            cout << "muon " << i << " has:" << endl;
+            cout << "pT is " << patsyVec.Pt() << endl;
+            cout << "Eta is " << patsyVec.Eta() << endl;
+            cout << "Phi is " << patsyVec.Phi() << endl;
+            cout << "PF pT is " << inMEPs.PFMuonPt->at(i) << endl;
+        }
+        
         if (fabs(inMEPs.MuonPt->at(i) - inMEPs.PFMuonPt->at(i)) >= 5.) continue; // want to check before shifting energy scale around
         if (whichSystCase != 0) {
             patsyVec = LeptonScaleSystShift(patsyVec, 13, whichSystCase);
@@ -657,8 +527,29 @@ inline void MuonPickOviSyst(MuonEventPointers inMEPs, float firstGoodVertZ, floa
         currMuonNumMatchStations = inMEPs.MuonNumMatchStations->at(i);
         currMuonNumLayers = inMEPs.MuonNumLayers->at(i);
         currMuonNumValidPixHitsinTrack = inMEPs.MuonNumValidPixHitsinTrack->at(i);
+        if (levelVerbosity > 0) {
+            cout << "continuing for muon " << i << endl;
+            cout << "currMuonRelPFIso " << currMuonRelPFIso << endl;
+            cout << "currMuonDZ " << currMuonDZ << endl;
+            cout << "^^ coming from firstGoodVertZ = " << firstGoodVertZ << " and MuonVertZ->at(i) = " << inMEPs.MuonVertZ->at(i) << endl;
+            cout << "currMuonD0 " << currMuonD0 << endl;
+            cout << "currMuonNumMatchStations " << currMuonNumMatchStations << endl;
+            cout << "currMuonNumLayers " << currMuonNumLayers << endl;
+            cout << "currMuonNumValidPixHitsinTrack " << currMuonNumValidPixHitsinTrack << endl;
+            cout << "isGMPTMuon->at(i) " << inMEPs.isGMPTMuon->at(i) << endl;
+            cout << "isPFMuon->at(i) " << inMEPs.isPFMuon->at(i) << endl;
+            cout << "isGlobMuon->at(i) " << inMEPs.isGlobMuon->at(i) << endl;
+        }        
         currMuonPassCut = MuonPassCutStage1(inMEPs.isGMPTMuon->at(i), inMEPs.isPFMuon->at(i), inMEPs.isGlobMuon->at(i), currMuonRelPFIso, currMuonEta);
+        if (levelVerbosity > 0) {
+            cout << "continuing for muon " << i << endl;
+            cout << "pass stage 1? " << currMuonPassCut << endl;
+        }
         currMuonPassCut &= MuonPassCutStage2(currMuonD0, currMuonDZ, currMuonNumMatchStations, currMuonNumValidPixHitsinTrack, currMuonNumLayers);
+        if (levelVerbosity > 0) {
+            cout << "continuing for muon " << i << endl;
+            cout << "pass stage 1 & 2? " << currMuonPassCut << endl;
+        }
         if (currMuonPassCut){
             patsyLep.P4 = patsyVec;
             patsyLep.PDGID = inMEPs.MuonCharge->at(i) > 0 ? -13 : 13;
@@ -887,6 +778,18 @@ inline float JESUncertFactor(TH2F * histJES, float shiftDirection, float JetPt, 
     }
     return (1 + shiftDirection * uncertFactor);
 }
+inline bool isLeptonJet(vector<Lepton> * isoLeptons, TLorentzVector * inputJet) {
+    float dRcut = 0.4;
+    float lepPtCut;// = 10.0;
+    float jetPtCutForCutLep = 20.0;
+    for (unsigned int iLep = 0; iLep < isoLeptons->size(); ++iLep) {
+        lepPtCut = (inputJet->Pt() > jetPtCutForCutLep) ? 10.0: 0.0; // for jets > 20 GeV, check that isoLepton's pT is > 10 GeV, otherwise don't care about pT
+        if (isoLeptons->at(iLep).P4.Pt() > lepPtCut) {
+            if (deltaR(inputJet->Eta(), inputJet->Phi(), isoLeptons->at(iLep).P4.Eta(), isoLeptons->at(iLep).P4.Phi()) < dRcut) return true;
+        }
+    }
+    return false;
+}
 inline vector<PFJet> * JetInfoDESY(vector<Lepton> * isoLeptons, VLV * Jets, vector<double> * JetBTag, float whichSystCase, TH2F * shiftHist) {
     vector<PFJet> * outVecJets = new vector<PFJet>;
     TLorentzVector patsyJetLV;
@@ -901,11 +804,13 @@ inline vector<PFJet> * JetInfoDESY(vector<Lepton> * isoLeptons, VLV * Jets, vect
         currJetPt = patsyJetLV.Pt();
         currJetEta = patsyJetLV.Eta();
         currJetPhi = patsyJetLV.Phi();
+        if (isLeptonJet(isoLeptons, &patsyJetLV)) continue;
+        /*
         for (unsigned int iLep = 0; iLep < isoLeptons->size(); ++iLep) {
             if (deltaR(currJetEta, currJetPhi, isoLeptons->at(iLep).P4.Eta(), isoLeptons->at(iLep).P4.Phi()) < dRcut) leptonJet = 1;
         }
         if (leptonJet) continue;
-        if (fabs(currJetEta) > 2.4) continue;
+         */
         if (currJetPt < 9.0) continue;
         if (whichSystCase != 0) {
             JetFactor = JESUncertFactor(shiftHist, whichSystCase, (float) currJetPt, (float) currJetEta);
@@ -919,7 +824,7 @@ inline vector<PFJet> * JetInfoDESY(vector<Lepton> * isoLeptons, VLV * Jets, vect
     return outVecJets;
 }
 //inline vector<PFJet> * JetInfo(vector<Lepton> * Leptons, vector<float> * JetPx, vector<float> * JetPy, vector<float> * JetPz, vector<float> * JetE, vector<float> * JetNHF, vector<float> * JetNEF, vector<float> * JetCHF, vector<float> * JetCEF, vector<int> * JetNDaug, vector<int> * JetCharMult, vector<float> * JetBTag, vector<int> * JetPartFlav, float whichSystCase, TH2F * shiftHist) {
-inline vector<PFJet> * JetInfo(vector<Lepton> * Leptons, PFJetEventPointers inPFJEPs, float whichSystCase, TH2F * shiftHist) {
+inline vector<PFJet> * JetInfo(vector<Lepton> * isoLeptons, PFJetEventPointers inPFJEPs, float whichSystCase, TH2F * shiftHist) {
     vector<PFJet> * Jets = new vector<PFJet>;
     TLorentzVector patsyJetLV;
     PFJet currPFJet;
@@ -935,10 +840,13 @@ inline vector<PFJet> * JetInfo(vector<Lepton> * Leptons, PFJetEventPointers inPF
         currJetPt = patsyJetLV.Pt();
         currJetEta = patsyJetLV.Eta();
         currJetPhi = patsyJetLV.Phi();
-        for (unsigned int iLep = 0; iLep < Leptons->size(); ++iLep) {
-            if (deltaR(currJetEta, currJetPhi, Leptons->at(iLep).P4.Eta(), Leptons->at(iLep).P4.Phi()) < dRcut) leptonJet = 1;
+        if (isLeptonJet(isoLeptons, &patsyJetLV)) continue;
+        /*
+        for (unsigned int iLep = 0; iLep < isoLeptons->size(); ++iLep) {
+            if (deltaR(currJetEta, currJetPhi, isoLeptons->at(iLep).P4.Eta(), isoLeptons->at(iLep).P4.Phi()) < dRcut) leptonJet = 1;
         }
         if (leptonJet) continue;
+        */
         if (currJetPt < 9.0) continue;
         currJetPassJetID = (inPFJEPs.JetNHF->at(iJet) < 0.99 && inPFJEPs.JetNEF->at(iJet) < 0.99);
         if (fabs(currJetEta < 2.4)) {
@@ -962,19 +870,34 @@ inline vector<PFJet> * JetInfo(vector<Lepton> * Leptons, PFJetEventPointers inPF
 }
 inline float JetResolutionHighPt(TLorentzVector * inputJet, vector<TF1> * inputTF1Vec) {
     float currJetAbsEta = fabs(inputJet->Eta());
-    float EtaBinEnds[10] = {0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 9.9};
-    int  currJetEtaIndex = -1;
+    float EtaBinEnds[10] = {0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 9.9}; // in reality 9 TF1 vecs
+    int   currJetEtaIndex = -1;
+    bool  cornerCaseBinEdge = false;
+    float outResolution;
     for (unsigned int iEta = 0; iEta < 9; ++iEta) {
         if (currJetAbsEta > EtaBinEnds[iEta] && currJetAbsEta < EtaBinEnds[iEta + 1]) {
             currJetEtaIndex = iEta;
             break;
         }
+        else if (currJetAbsEta == EtaBinEnds[iEta] && currJetAbsEta > 0) {
+            currJetEtaIndex = iEta;
+            cornerCaseBinEdge = true;
+            cout << "corner case came up, jet eta is " << inputJet->Eta() << endl;
+            // you've somehow managed to fall right on the bin edge -- floating point precision -- so take average of two different bins -- currently rolling with straight up mean
+        }
     }
-    if (currJetEtaIndex < 0) {
+    if (currJetEtaIndex < 0) {          
         cout << "can't do this jet!!...technically jet eta is: " << inputJet->Eta() << endl; 
-        currJetEtaIndex = 8;
+        currJetEtaIndex = 8;        
     }
-    float outResolution = inputTF1Vec->at(currJetEtaIndex).Eval(inputJet->Pt());
+    outResolution = inputTF1Vec->at(currJetEtaIndex).Eval(inputJet->Pt());
+    outResolution *= inputJet->Pt(); // assuming the outResolution is a fractional resolution
+    /*
+    if (cornerCaseBinEdge) {
+        outResolution += inputTF1Vec->at(currJetEtaIndex - 1).Eval(inputJet->Pt());
+        outResolution /= 2;
+    }
+    */
     return outResolution;
 }
 inline bool GenJetMatch(TLorentzVector * inputJet, TLorentzVector * genJet, float &dRGenReco) {
@@ -998,36 +921,44 @@ inline vector<GenJet> * GenJetsNonZero(GenJetEventPointers inGJEPs) {
     }
     return outGenJetVec;
 }
-inline TLorentzVector SmearJet(TLorentzVector * inputJet, vector<GenJet> * vecGoodGenJets, TH2F * GenJetSmearHist, TH2F * RecoJetLowPtSmearHist, vector<TF1> * inputTF1Vec, float shiftSmearSyst = 0.0, int levelVerbosity = 0) {
+inline TLorentzVector SmearJet(TLorentzVector * inputJet, vector<GenJet> * vecGoodGenJets, bool &isGenMatched, float &dEnRecoGen, TH2F * GenJetSmearHist, TH2F * RecoJetLowPtSmearHist, vector<TF1> * inputTF1Vec, float smearBy = 1.0, float shiftSmearSyst = 0.0, int levelVerbosity = 0) {
     /// Function to smear the jets according to C.V.'s prescription. Look at the produce method for the SmearedJet EDProducer shown here:
     /// http://cmslxr.fnal.gov/lxr/source/PhysicsTools/PatUtils/interface/SmearedJetProducerT.h#207
     /// As of 10/10/13 I am missing the Reco vs. Corr Jet Max function, but otherwise things are in order with what he does
     /// This function basically comes about from tracing down associated configurations and EDProducers from running the runMEtUncertainties.py tool defined here:
     /// http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/PhysicsTools/PatUtils/python/tools/runType1PFMEtUncertainties.py?view=log
-    
     TRandom3 rnd_;
-    float inPt = inputJet->Pt(); float inEta = inputJet->Eta(); float inEn = inputJet->E();
+    float x = fabs(inputJet->Eta()), y = inputJet->Pt(); // set up the "x" and "y" to look for in the resolution histograms
+    float inEn = inputJet->E();
     TLorentzVector smearJet = *inputJet;    // initializing incase I don't smear jet for some reasons
     if (levelVerbosity > 0) {
+        cout << endl;
+        cout << "TRYING TO SMEAR JET " << endl;
         cout << "smear jet initial px " << smearJet.Px() << endl;
         cout << "smear jet initial py " << smearJet.Py() << endl;
         cout << "smear jet initial pz " << smearJet.Pz() << endl;
         cout << "smear jet initial E " << smearJet.E() << endl;
+        cout << "smear jet initial Pt " << smearJet.Pt() << endl;
     }
     float smearJetEnergy = inEn;            // initializing incase I don't smear jet for some reasons
     
     TLorentzVector currGenJetLV;
-    float dEnGenReco, dRGenReco;
+    float dRGenReco;
     float inputJetBaseRes;
+    float smearFactor = 1.0, smearFactorErr = 0.0;
     float pTResolThreshold = 10.0, sigmaMaxGenJetMatch = 5.0; 
     float skipRawJetPtThreshold = 10.0, skipCorrJetPtThreshold = 0.01, minSmearJetEn = 0.01;
     int bestGenMatchIndex = -1;
     float bestdRGenReco = 1.0;
-    bool isGenJetMatched = false;  
-    int binIndexGenJetMatch = GenJetSmearHist->FindBin(fabs(inEta), inPt);
-    int binIndexNoGenJetMatch = RecoJetLowPtSmearHist->FindBin(inPt, fabs(inEta));
-    float smearFactor = GenJetSmearHist->GetBinContent(binIndexGenJetMatch);
-    float smearFactorErr = GenJetSmearHist->GetBinError(binIndexGenJetMatch);
+    isGenMatched = false;
+    
+    if (x > GenJetSmearHist->GetXaxis()->GetXmin() && x < GenJetSmearHist->GetXaxis()->GetXmax() && 
+        y > GenJetSmearHist->GetYaxis()->GetXmin() && y < GenJetSmearHist->GetYaxis()->GetXmax() ) {
+        int binIndexGenJetMatch = GenJetSmearHist->FindBin(x, y);
+        smearFactor += smearBy * (GenJetSmearHist->GetBinContent(binIndexGenJetMatch) - 1);
+        smearFactorErr = GenJetSmearHist->GetBinError(binIndexGenJetMatch);   
+    }
+    int binIndexNoGenJetMatch = RecoJetLowPtSmearHist->FindBin(x, y);
     if (levelVerbosity > 0) {
         cout << " smear factor pre shift " << smearFactor << endl;
         cout << " smearFactorErr " << smearFactorErr << endl; 
@@ -1039,7 +970,7 @@ inline TLorentzVector SmearJet(TLorentzVector * inputJet, vector<GenJet> * vecGo
         cout << " smear factor post shift " << smearFactor << endl;        
         cout << "multiply factor " << smearFactor * smearFactor - 1. << endl;
     }
-    if (inPt < pTResolThreshold && inPt < 20.) {
+    if (y < pTResolThreshold && y < 20.) {
         inputJetBaseRes = RecoJetLowPtSmearHist->GetBinContent(binIndexNoGenJetMatch);
     }
     else {
@@ -1058,7 +989,7 @@ inline TLorentzVector SmearJet(TLorentzVector * inputJet, vector<GenJet> * vecGo
 //        cout << " test 2 " << currGenJetLV.Pt() <<        endl;
         if (GenJetMatch(inputJet, &currGenJetLV, dRGenReco)) {
             if (bestdRGenReco > dRGenReco) {
-                if (!isGenJetMatched) isGenJetMatched = true;
+                if (!isGenMatched) isGenMatched = true;
                 bestGenMatchIndex = iGenJet;
                 bestdRGenReco = dRGenReco;
             }
@@ -1068,23 +999,23 @@ inline TLorentzVector SmearJet(TLorentzVector * inputJet, vector<GenJet> * vecGo
         }
     }
     if (levelVerbosity > 0) {
-        cout << "isGenJetMatched? " << isGenJetMatched << endl;   
+        cout << "isGenMatched? " << isGenMatched << endl;   
     }
-    if (isGenJetMatched) {
-        dEnGenReco = inEn - vecGoodGenJets->at(bestGenMatchIndex).P4.E();
+    if (isGenMatched) {
+        dEnRecoGen = inEn - vecGoodGenJets->at(bestGenMatchIndex).P4.E();
         if (levelVerbosity > 0) {
-            cout << " dEnGenReco " << dEnGenReco << endl;
+            cout << " dEnRecoGen " << dEnRecoGen << endl;
             cout << " sigmaMaxGenJetMatch * inputJetBaseRes " << sigmaMaxGenJetMatch * inputJetBaseRes << endl;            
         }
-        if (dEnGenReco < (sigmaMaxGenJetMatch * inputJetBaseRes)) {
-            smearJetEnergy = inEn * (1. + (smearFactor - 1.) * dEnGenReco / inEn); 
+        if (fabs(dEnRecoGen) < (sigmaMaxGenJetMatch * inputJetBaseRes)) {
+            smearJetEnergy = inEn * (1. + (smearFactor - 1.) * dEnRecoGen / inEn); 
             //^^ technically this isn't matching the analogous line from the smeared jet producer (line 271) but I don't have access to raw jet info as of right now
         }
         else {
-            isGenJetMatched = false;
+            isGenMatched = false;
         }
     }
-    if (!isGenJetMatched) {
+    if (!isGenMatched) {
         // gaussian smearing when no gen jet matches
         if (smearFactor > 1. ) {
             smearJetEnergy = inEn * (1. + rnd_.Gaus(0., inputJetBaseRes)/inEn);
@@ -1092,11 +1023,11 @@ inline TLorentzVector SmearJet(TLorentzVector * inputJet, vector<GenJet> * vecGo
         }
     }
     if (smearJetEnergy < minSmearJetEn) smearJetEnergy = minSmearJetEn;
-    if (!(inPt < skipCorrJetPtThreshold )) {
+    if (!(y < skipCorrJetPtThreshold )) {
         smearJet *= (smearJetEnergy/inEn);
     }
     if (levelVerbosity > 0) {
-        if (isGenJetMatched ) {
+        if (isGenMatched ) {
             cout << " jet was Gen Jet matched! " << endl;
         }
         else {
@@ -1107,6 +1038,8 @@ inline TLorentzVector SmearJet(TLorentzVector * inputJet, vector<GenJet> * vecGo
         cout << "smear jet post py " << smearJet.Py() << endl;
         cout << "smear jet post pz " << smearJet.Pz() << endl;
         cout << "smear jet post E " << smearJet.E() << endl;
+        cout << "smear jet post Pt " << smearJet.Pt() << endl;
+        cout << endl;
     }
     return smearJet;
     // 
@@ -1140,6 +1073,16 @@ inline TLorentzVector SmearJet(TLorentzVector * inputJet, vector<GenJet> * vecGo
     // "sigma" parameter in the function NoGenJetMatchHighPtResolutionTF1 defined in this header file
 }
 inline TH2F * ResolutionHistMaker(TString inputFile) {
+    // Following Discussion in SmearJet Function this function tries to load in the resolutions defined here:
+    // http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/RecoMET/METProducers/python/METSigParams_cfi.py?revision=1.3&view=markup
+    // (look for jdpt# (where # runs from 0 to 9)
+    // the jdpt# refers to different Eta bins, as can be ascertained from 
+    // http://cmslxr.fnal.gov/lxr/source/RecoMET/METAlgorithms/src/SignAlgoResolutions.cc#121
+    // and 
+    // http://cmslxr.fnal.gov/lxr/source/RecoMET/METAlgorithms/src/SignAlgoResolutions.cc#151
+    // The function reads in a text file where these parameters have been put in, 
+    // with the first two lines contain pT eta information (number of eta/Pt bins and bin ranges)
+    
     TH2F * outHist;
     ifstream inputFileStream(inputFile);
     vector<unsigned int> pTParams, EtaParams;
@@ -1172,7 +1115,7 @@ inline TH2F * ResolutionHistMaker(TString inputFile) {
     else {
         cout << "issue with inputFile: prematurely reached end of file " << endl;
     }
-    outHist = new TH2F("h_MCJetResol", "; Jet p_{T}; Jet #eta", pTParams[0], pTParams[1], pTParams[2], EtaParams[0], EtaParams[1], EtaParams[2]);
+    outHist = new TH2F("h_MCJetResol", ";Jet #eta;Jet p_{T}", EtaParams[0], EtaParams[1], EtaParams[2], pTParams[0], pTParams[1], pTParams[2]);
     for (unsigned int iEta = 0; iEta < EtaParams[0]; ++iEta) {
         pTCounter = 0;
         if (!(inputFileStream.eof())) {
@@ -1182,7 +1125,8 @@ inline TH2F * ResolutionHistMaker(TString inputFile) {
                 stringstream fs ( field );
                 float currField = 0.0;
                 fs >> currField;
-                outHist->SetBinContent(pTCounter + 1, iEta + 1, currField);
+                if (pTCounter == 0) outHist->SetBinContent(iEta + 1, pTCounter, currField);
+                    outHist->SetBinContent(iEta + 1, pTCounter + 1, currField);
                 ++pTCounter;
             }
         }
@@ -1192,14 +1136,15 @@ inline TH2F * ResolutionHistMaker(TString inputFile) {
     }
     for (int i = 1; i < outHist->GetNbinsX() + 1; ++i) {
         for (int j = 1; j < outHist->GetNbinsY() + 1; ++j) {
-            cout << "bin content in bin (" << i << ", " << j << ") is " << outHist->GetBinContent(i, j) << endl;
+            cout << "bin (" << i << ", " << j << ") is (eta = " << outHist->GetXaxis()->GetBinLowEdge(i) << ", pT = " << outHist->GetYaxis()->GetBinLowEdge(j) << endl;
+            cout << "bin content in this bin: " << outHist->GetBinContent(i, j) << endl; 
         }        
     }
     return outHist;
 }
 
 
-inline vector<PFJet> * JetSmear(vector<PFJet> * InputJets, vector<GenJet> * vecGoodGenJets, int whichSystToDo, float whichSystCase, TH2F * shiftHistJetES, TH2F * shiftHistLowPt, TH2F * shiftHistSmearFactor, vector<TF1> * inputTF1Vec, int levelVerbosity) {
+inline vector<PFJet> * JetSmear(vector<PFJet> * InputJets, vector<GenJet> * vecGoodGenJets, float smearBy, int whichSystToDo, float whichSystCase, TH2F * shiftHistJetES, TH2F * shiftHistLowPt, TH2F * shiftHistSmearFactor, vector<TF1> * inputTF1Vec, int levelVerbosity, TH1F * DeltaEnergyHist) {
     vector<PFJet> * outSmearJets = new vector<PFJet>;
     TLorentzVector patsyJetLV, patsyJetLVSmear;
     PFJet currPFJet;
@@ -1216,7 +1161,7 @@ inline vector<PFJet> * JetSmear(vector<PFJet> * InputJets, vector<GenJet> * vecG
             cout << "Phi: " << currPFJet.P4.Phi() << endl;
             cout << "Energy: " << currPFJet.P4.E() << endl;
         }
-        patsyJetLVSmear = SmearJet(&currPFJet.P4, vecGoodGenJets, shiftHistSmearFactor, shiftHistLowPt, inputTF1Vec, smearSystShift, levelVerbosity);
+        patsyJetLVSmear = SmearJet(&currPFJet.P4, vecGoodGenJets, currPFJet.isGenJetMatched, currPFJet.dEnRecoGen, shiftHistSmearFactor, shiftHistLowPt, inputTF1Vec, smearBy, smearSystShift, levelVerbosity);
         /*
         cout << "patsyJetLVSmear px " << patsyJetLVSmear.Px() << endl;
         cout << "patsyJetLVSmear py " << patsyJetLVSmear.Py() << endl;
@@ -1225,11 +1170,11 @@ inline vector<PFJet> * JetSmear(vector<PFJet> * InputJets, vector<GenJet> * vecG
          */
         currJetPt = patsyJetLVSmear.Pt();
         currJetEta = patsyJetLVSmear.Eta();
-        
         if (whichSystToDo == 1 && currJetPt > 9.0) {
             JetFactor = JESUncertFactor(shiftHistJetES, whichSystCase, currJetPt, currJetEta);
             patsyJetLVSmear *= JetFactor;
         }
+        DeltaEnergyHist->Fill(patsyJetLVSmear.E() - currPFJet.P4.E());
         currPFJet.P4 = patsyJetLVSmear;
         outSmearJets->push_back(currPFJet);
     }
@@ -1276,7 +1221,7 @@ inline EventJetInfo JetKinematicsCut(vector<PFJet> * vecGoodPFJets) {
     EventJetInfo outEJI; outEJI.EJISetValsInput(HT, NJets, indexJet0, indexJet1, NBJets, indexBtagJet0, subIndexBtagJet0, indexBtagJet1, subIndexBtagJet1, vecGoodPFJets);
     return outEJI;
 }
-inline EventJetInfo JetKinematicsCut(vector<PFJet> * vecGoodPFJets, BTagSFUtil * inputBTagSFUtil, bool isData) {
+inline EventJetInfo JetKinematicsCut(vector<PFJet> * vecGoodPFJets, BTagSFUtil * inputBTagSFUtil, bool isData, bool setGenJetInfo = false) {
     int NJets = 0;
     int NBJets = 0;
     float HT = 0;
@@ -1315,6 +1260,7 @@ inline EventJetInfo JetKinematicsCut(vector<PFJet> * vecGoodPFJets, BTagSFUtil *
         }       
     }
     EventJetInfo outEJI; outEJI.EJISetValsInput(HT, NJets, indexJet0, indexJet1, NBJets, indexBtagJet0, subIndexBtagJet0, indexBtagJet1, subIndexBtagJet1, vecGoodPFJets);
+    if (setGenJetInfo) outEJI.EJISetGenMatchValsInput(NJets, indexJet0, indexJet1, vecGoodPFJets);
     return outEJI;
 }
 inline EventJetInfo JetKinematicsCutBTagSyst(vector<PFJet> * vecGoodPFJets, BTagSFUtil * inputBTagSFUtil, int SystVar, bool isSignal) {
@@ -1696,6 +1642,7 @@ inline vector<HistogramT> * OneDeeHistTVec() {
     H_MT2ll_DPhiZMETClose.yLabel += "NUM"; H_MT2ll_DPhiZMETClose.yLabel += " GeV";
     H_MT2ll_DPhiZMETClose.xVarKey = "MT2ll";
     H_MT2ll_DPhiZMETClose.doXSyst = true;
+    
     
     HistogramT H_MT2ll_DPhiZMETMid; H_MT2ll_DPhiZMETMid.name = "h_MT2ll_DPhiZMETMid"; 
     H_MT2ll_DPhiZMETMid.xLabel = "MT2_{ll} [GeV]"; H_MT2ll_DPhiZMETMid.xBinN = METBinN; H_MT2ll_DPhiZMETMid.xMin = METBinLB; H_MT2ll_DPhiZMETMid.xMax = METBinUB; 
@@ -3530,59 +3477,54 @@ inline vector<SampleT> * SubSampVec() {
 }
 
 inline vector<SystT> * SystVec() {
-    //    int     whichSystType;   // 0 = universal systematic, 1 = lepton systematic, 2 = jet systematic, 3 = other systematic
-    /*
-     systematics considered: MT2ll, Lepton trig/iso SF, Jet ES, Jet ER, Lepton ES, Lepton ER(??)
-     */
-    // For MT2ll, really should breakdown into components....for now doing agglomerate
-    SystT MT2llShiftUp; MT2llShiftUp.name = "_MT2llShiftUp"; MT2llShiftUp.systVarKey = "_MT2llShiftUp";
-    MT2llShiftUp.whichSystType = 3;
-    /*
-    SystT MT2llShiftDown; MT2llShiftDown.name = "_MT2llShiftDown"; MT2llShiftDown.systVarKey = "_MT2llShiftDown";
-    MT2llShiftDown.whichSystType = 3;
-     */
+    // int whichSystType is used to demarcate between different systematics, with positive values designating a "shift up" systematic and negative values designating a "shift down" systematic -- note that systematics with no "shift" to them, i.e. GenTopRW which is unidirectional, are marked with a positive shift type by default
+    // whichSystType number meanings:
+    // 1: Lepton Energy Scale
+    // 2: Jet Energy Scale
+    // 3: BTag SF Shift
+    // 4: Lepton Efficiency SF Shift
+    // 5: Unclustered Energy Scale
+    // 6: Stop XSec Shift
+    // 7: Gen TopPt RW
+    // 8: MT2ll Smear Shift
     
-    SystT genTopReweight; genTopReweight.name = "_genTopRW"; genTopReweight.systVarKey = "";
-    genTopReweight.whichSystType = 3;
-    
-    SystT genStopXSecShiftUp; genStopXSecShiftUp.name = "_genStopXSecShiftUp"; genStopXSecShiftUp.systVarKey = "";
-    genStopXSecShiftUp.whichSystType = 3;
-
-    SystT genStopXSecShiftDown; genStopXSecShiftDown.name = "_genStopXSecShiftDown"; genStopXSecShiftDown.systVarKey = "";
-    genStopXSecShiftDown.whichSystType = 3;
-    
-    SystT LepEffSFShiftUp; LepEffSFShiftUp.name = "_LepEffSFShiftUp"; LepEffSFShiftUp.systVarKey = ""; //LepEffSFShiftUp.systVarKey = "_LepEffShiftUp";
-    LepEffSFShiftUp.whichSystType = 0;
-    SystT LepEffSFShiftDown; LepEffSFShiftDown.name = "_LepEffSFShiftDown"; LepEffSFShiftDown.systVarKey = ""; // LepEffSFShiftDown.systVarKey = "_LepEffShiftDown";
-    LepEffSFShiftDown.whichSystType = 0;
     SystT LepESShiftUp; LepESShiftUp.name = "_LepESShiftUp"; LepESShiftUp.systVarKey = "_LepESShiftUp";
     LepESShiftUp.whichSystType = 1;
     SystT LepESShiftDown; LepESShiftDown.name = "_LepESShiftDown"; LepESShiftDown.systVarKey = "_LepESShiftDown";
-    LepESShiftDown.whichSystType = 1;
+    LepESShiftDown.whichSystType = -1;
     
     SystT JetESShiftUp; JetESShiftUp.name = "_JetESShiftUp"; JetESShiftUp.systVarKey = "_JetESShiftUp";
     JetESShiftUp.whichSystType = 2;
     SystT JetESShiftDown; JetESShiftDown.name = "_JetESShiftDown"; JetESShiftDown.systVarKey = "_JetESShiftDown";
-    JetESShiftDown.whichSystType = 2;
-    
-    SystT MT2UncEnShiftUp; MT2UncEnShiftUp.name = "_MT2UncESShiftUp"; MT2UncEnShiftUp.systVarKey = "_MT2UncESShiftUp";
-    MT2UncEnShiftUp.whichSystType = 3;
-    SystT MT2UncEnShiftDown; MT2UncEnShiftDown.name = "_MT2UncESShiftDown"; MT2UncEnShiftDown.systVarKey = "_MT2UncESShiftDown";
-    MT2UncEnShiftDown.whichSystType = 3;
+    JetESShiftDown.whichSystType = -2;
     
     SystT BTagSFShiftUp; BTagSFShiftUp.name = "_BTagSFShiftUp"; BTagSFShiftUp.systVarKey = "_BTagSFShiftUp";
-    BTagSFShiftUp.whichSystType = 0;
+    BTagSFShiftUp.whichSystType = 3;
     SystT BTagSFShiftDown; BTagSFShiftDown.name = "_BTagSFShiftDown"; BTagSFShiftDown.systVarKey = "_BTagSFShiftDown";
-    BTagSFShiftDown.whichSystType = 0;
+    BTagSFShiftDown.whichSystType = -3;
     
-    /*
-     SystT LepERShiftUp; LepERShiftUp.name = "_LepERShiftUp"; LepERShiftUp.systVarKey = "_LepERShiftUp";
-     SystT LepERShiftDown; LepERShiftDown.name = "_LepERShiftDown"; LepERShiftDown.systVarKey = "_LepERShiftDown";
-     SystT JetESShiftUp; JetESShiftUp.name = "_JetESShiftUp"; JetESShiftUp.systVarKey = "_JetESShiftUp";
-     SystT JetESShiftDown; JetESShiftDown.name = "_JetESShiftDown"; JetESShiftDown.systVarKey = "_JetESShiftUpDown";
-     SystT JetERShiftUp; JetERShiftUp.name = "_JetERShiftUp"; JetERShiftUp.systVarKey = "_JetERShiftUp";
-     SystT JetERShiftDown; JetERShiftDown.name = "_JetERShiftDown"; JetERShiftDown.systVarKey = "_JetERShiftDown";
-     */
+    SystT LepEffSFShiftUp; LepEffSFShiftUp.name = "_LepEffSFShiftUp"; LepEffSFShiftUp.systVarKey = "";
+    LepEffSFShiftUp.whichSystType = 4;
+    SystT LepEffSFShiftDown; LepEffSFShiftDown.name = "_LepEffSFShiftDown"; LepEffSFShiftDown.systVarKey = "";
+    LepEffSFShiftDown.whichSystType = -4;
+    
+    SystT MT2UncEnShiftUp; MT2UncEnShiftUp.name = "_MT2UncESShiftUp"; MT2UncEnShiftUp.systVarKey = "_MT2UncESShiftUp";
+    MT2UncEnShiftUp.whichSystType = 5;
+    SystT MT2UncEnShiftDown; MT2UncEnShiftDown.name = "_MT2UncESShiftDown"; MT2UncEnShiftDown.systVarKey = "_MT2UncESShiftDown";
+    MT2UncEnShiftDown.whichSystType = -5;
+    
+    SystT genStopXSecShiftUp; genStopXSecShiftUp.name = "_genStopXSecShiftUp"; genStopXSecShiftUp.systVarKey = "";
+    genStopXSecShiftUp.whichSystType = 6;
+    
+    SystT genStopXSecShiftDown; genStopXSecShiftDown.name = "_genStopXSecShiftDown"; genStopXSecShiftDown.systVarKey = "";
+    genStopXSecShiftDown.whichSystType =-6;
+    
+    SystT genTopReweight; genTopReweight.name = "_genTopRW"; genTopReweight.systVarKey = "";
+    genTopReweight.whichSystType = 7;
+    
+    SystT MT2llShiftUp; MT2llShiftUp.name = "_MT2llShiftUp"; MT2llShiftUp.systVarKey = "_MT2llShiftUp";
+    MT2llShiftUp.whichSystType = 8;
+    
     vector<SystT> * systVec = new vector<SystT>;
     systVec->push_back(MT2llShiftUp);// systVec->push_back(MT2llShiftDown);
     systVec->push_back(LepEffSFShiftUp); systVec->push_back(LepEffSFShiftDown);
@@ -3592,9 +3534,6 @@ inline vector<SystT> * SystVec() {
     systVec->push_back(MT2UncEnShiftUp), systVec->push_back(MT2UncEnShiftDown);
     systVec->push_back(genTopReweight);
     systVec->push_back(genStopXSecShiftUp); systVec->push_back(genStopXSecShiftDown);
-    //    systVec->push_back(LepERShiftUp); systVec->push_back(LepERShiftDown);
-    //    systVec->push_back(JetESShiftUp); systVec->push_back(JetESShiftDown);
-    //    systVec->push_back(JetERShiftUp); systVec->push_back(JetERShiftDown);
     return systVec;
 }
 inline TString DescriptorString(SampleT inputSubSamp) {
@@ -3943,7 +3882,7 @@ inline vector<TF1> * VecJetHighPtResolutionTF1() {
     TString function = "sqrt(((TMath::Sign(1,[0])*sq([0]/x))+(sq([1])*(x^([3]-1))))+sq([2]))";
     vector<TF1> * outTF1Vec = new vector<TF1>;
     const int numTF1s = 9;
-    float Par0[numTF1s] = {1.41584, 1.65966, 2.81978, 2.56933, 1.04792, -1.12329, -0.561649, -0.499735, -0.349206};
+    float Par0[numTF1s] = {-0.349206, -0.499735, -0.561649, -1.12329, 1.04792, 2.56933, 2.81978, 1.65966, 1.41584};
     float Par1[numTF1s] = {0.297831, 0.336391, 0.420293, 0.657891, 0.466763, 0.305802, 0.272373, 0.223683, 0.209477};
     float Par2[numTF1s] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
     float Par3[numTF1s] = {0.471121, 0.430689, 0.392398, 0.139595, 0.193137, 0.398929, 0.579396, 0.60873, 0.588872};

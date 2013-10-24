@@ -61,6 +61,12 @@ int main( int argc, const char* argv[] ) {
     TH2F * h_RecoJetLowPtSmearHist = ResolutionHistMaker(TString("JetResolution.txt"));
     vector<TF1> * JetResolutionTF1Vec = VecJetHighPtResolutionTF1();
     
+    TH1F * h_DeltaEnergySmearMinUnSmear = new TH1F("h_dEnSmearUnSmear", ";SmearJetEnergy - Unsmear Jet Energy", 160, -40, 40);
+    TH1F * h_DeltaEnergySmearMinUnSmear_JESUp = new TH1F("h_dEnSmearUnSmear_JESUp", ";SmearJetEnergy - Unsmear Jet Energy", 160, -40, 40);
+    TH1F * h_DeltaEnergySmearMinUnSmear_JESDown = new TH1F("h_dEnSmearUnSmear_JESDown", ";SmearJetEnergy - Unsmear Jet Energy", 160, -40, 40);
+    TH1F * h_DeltaEnergySmearMinUnSmear_JERUp = new TH1F("h_dEnSmearUnSmear_JERUp", ";SmearJetEnergy - Unsmear Jet Energy", 160, -40, 40);
+    TH1F * h_DeltaEnergySmearMinUnSmear_JERDown = new TH1F("h_dEnSmearUnSmear_JERDown", ";SmearJetEnergy - Unsmear Jet Energy", 160, -40, 40);
+    
     TString fileInTreeName, fileOutTreeName;
     TString fInName;
     TString fOutName;
@@ -525,7 +531,8 @@ int main( int argc, const char* argv[] ) {
     bool doSpecRunEvent  = 0;
     int  whichRun        = -1;
     int  whichEvent      = -1;
-    int  levelVerbosity  = 0;
+    int  levelLepVerbosity  = 0;
+    int  levelJetVerbosity  = 0;
     /////loop over inputs
     for (int k = 0; k < argc; ++k) {
         cout << "argv[k] for k = " << k << " is: " << argv[k] << endl;
@@ -537,7 +544,8 @@ int main( int argc, const char* argv[] ) {
         }
         else if (strncmp (argv[k],"doVerbosity", 11) == 0) {
             doVerbosity = 1;
-            levelVerbosity = strtol(argv[k+1], NULL, 10);
+            levelLepVerbosity = strtol(argv[k+1], NULL, 10);
+            levelJetVerbosity = strtol(argv[k+2], NULL, 10);
         }
         else if (strncmp (argv[k],"doPURW", 6) == 0) {
             doPURW = 1;           
@@ -903,6 +911,7 @@ int main( int argc, const char* argv[] ) {
     outTree->Branch("TNJets",           &EJI.EventNJets); 
     outTree->Branch("TNJetsBtag",       &EJI.EventNBtagJets);     
     outTree->Branch("THT",              &EJI.EventHT);
+    
     outTree->Branch("TJet0Px",          &EJI.EventJet0Px); 
     outTree->Branch("TJet0Py",          &EJI.EventJet0Py); 
     outTree->Branch("TJet0Pz",          &EJI.EventJet0Pz); 
@@ -910,7 +919,8 @@ int main( int argc, const char* argv[] ) {
     outTree->Branch("TJet1Px",          &EJI.EventJet1Px); 
     outTree->Branch("TJet1Py",          &EJI.EventJet1Py); 
     outTree->Branch("TJet1Pz",          &EJI.EventJet1Pz); 
-    outTree->Branch("TJet1E",           &EJI.EventJet1E);    
+    outTree->Branch("TJet1E",           &EJI.EventJet1E); 
+    
     outTree->Branch("TBtagJet0Px",      &EJI.EventBtagJet0Px); 
     outTree->Branch("TBtagJet0Py",      &EJI.EventBtagJet0Py); 
     outTree->Branch("TBtagJet0Pz",      &EJI.EventBtagJet0Pz); 
@@ -1021,7 +1031,7 @@ int main( int argc, const char* argv[] ) {
         
         outTree->Branch("TNJets_JetESDown",           &EJI_JetESDown.EventNJets); 
         outTree->Branch("TNJetsBtag_JetESDown",       &EJI_JetESDown.EventNBtagJets);     
-        outTree->Branch("THT_JetESDown",               &EJI_JetESDown.EventHT);
+        outTree->Branch("THT_JetESDown",              &EJI_JetESDown.EventHT);
         outTree->Branch("TJet0Px_JetESDown",          &EJI_JetESDown.EventJet0Px); 
         outTree->Branch("TJet0Py_JetESDown",          &EJI_JetESDown.EventJet0Py); 
         outTree->Branch("TJet0Pz_JetESDown",          &EJI_JetESDown.EventJet0Pz); 
@@ -1084,6 +1094,11 @@ int main( int argc, const char* argv[] ) {
         outTree->Branch("TNSmearJetsBtag",          &EJISmear.EventNBtagJets);
         outTree->Branch("THTSmear",                 &EJISmear.EventHT);
         
+        outTree->Branch("TJet0isGenMatched",        &EJISmear.EventJet0isGenMatched);
+        outTree->Branch("TJet0DeltaEnRecoGenMatch", &EJISmear.EventJet0DeltaEnRecoGen);
+        outTree->Branch("TJet1isGenMatched",        &EJISmear.EventJet1isGenMatched);
+        outTree->Branch("TJet1DeltaEnRecoGenMatch", &EJISmear.EventJet1DeltaEnRecoGen);
+        
         outTree->Branch("TSmearJet0Px",             &EJISmear.EventJet0Px); 
         outTree->Branch("TSmearJet0Py",             &EJISmear.EventJet0Py); 
         outTree->Branch("TSmearJet0Pz",             &EJISmear.EventJet0Pz); 
@@ -1105,18 +1120,18 @@ int main( int argc, const char* argv[] ) {
         outTree->Branch("TSmearBtagJet1Index",      &EJISmear.EventBtagJet1Index);
         
         ////####SMEAR JET Systematics Branches#####///////
-        outTree->Branch("TSmearMET_LepESUp",        &SmearMET_LepESUp);
-        outTree->Branch("TSmearMET_LepESDown",      &SmearMET_LepESDown);
-        outTree->Branch("TSmearMET_Phi_LepESUp",    &SmearMET_Phi_LepESUp);
-        outTree->Branch("TSmearMET_Phi_LepESDown",  &SmearMET_Phi_LepESDown);
-        outTree->Branch("TSmearMET_JetESUp",        &SmearMET_JetESUp);
-        outTree->Branch("TSmearMET_JetESDown",      &SmearMET_JetESDown);
-        outTree->Branch("TSmearMET_Phi_JetESUp",    &SmearMET_Phi_JetESUp);
-        outTree->Branch("TSmearMET_Phi_JetESDown",  &SmearMET_Phi_JetESDown);        
-        outTree->Branch("TSmearMET_JetSmearUp",        &SmearMET_JetSmearUp);
-        outTree->Branch("TSmearMET_JetSmearDown",      &SmearMET_JetSmearDown);
-        outTree->Branch("TSmearMET_Phi_JetSmearUp",    &SmearMET_Phi_JetSmearUp);
-        outTree->Branch("TSmearMET_Phi_JetSmearDown",  &SmearMET_Phi_JetSmearDown);
+        outTree->Branch("TSmearMET_LepESUp",            &SmearMET_LepESUp);
+        outTree->Branch("TSmearMET_LepESDown",          &SmearMET_LepESDown);
+        outTree->Branch("TSmearMET_Phi_LepESUp",        &SmearMET_Phi_LepESUp);
+        outTree->Branch("TSmearMET_Phi_LepESDown",      &SmearMET_Phi_LepESDown);
+        outTree->Branch("TSmearMET_JetESUp",            &SmearMET_JetESUp);
+        outTree->Branch("TSmearMET_JetESDown",          &SmearMET_JetESDown);
+        outTree->Branch("TSmearMET_Phi_JetESUp",        &SmearMET_Phi_JetESUp);
+        outTree->Branch("TSmearMET_Phi_JetESDown",      &SmearMET_Phi_JetESDown);        
+        outTree->Branch("TSmearMET_JetSmearUp",         &SmearMET_JetSmearUp);
+        outTree->Branch("TSmearMET_JetSmearDown",       &SmearMET_JetSmearDown);
+        outTree->Branch("TSmearMET_Phi_JetSmearUp",     &SmearMET_Phi_JetSmearUp);
+        outTree->Branch("TSmearMET_Phi_JetSmearDown",   &SmearMET_Phi_JetSmearDown);
         
         outTree->Branch("TNSmearJets_JetESUp",              &EJISmear_JetESUp.EventNJets); 
         outTree->Branch("TNSmearJetsBtag_JetESUp",          &EJISmear_JetESUp.EventNBtagJets);
@@ -1679,31 +1694,31 @@ int main( int argc, const char* argv[] ) {
             PFJEPs.numPFJets = PFJEPs.JetPx->size();
             //            cout << "size of vecIsoLeptons pre electron pick " << vecIsoLeptons->size() << endl;
 //            ElectronPickOvi(ElecPx, ElecPy, ElecPz, ElecE, ElecCharge, PFElecPt, ElecSCEta, ElecDeltaPhiIn, ElecDeltaEtaIn, ElecSigIetaIeta, ElecHtoERatio, ElecIP, ElecDZ, ElecECalE, ElecSCEOverP, ElecNumMissHits, ElecPFNeutHadIso, ElecPFCharHadIso, ElecPFPhotIso, passConvVeto, isPFElectron, ElecisEB, ElecisEE, eventRhoIso, vecIsoLeptons, levelVerbosity);
-            ElectronPickOvi(EEPs, eventRhoIso, vecIsoLeptons, levelVerbosity);
+            ElectronPickOvi(EEPs, eventRhoIso, vecIsoLeptons, levelLepVerbosity);
             //            cout << "size of vecIsoLeptons pre muon/post elec pick " << vecIsoLeptons->size() << endl;
 //            MuonPickOvi(MuonPt, MuonPx, MuonPy, MuonPz, MuonE, MuonCharge, PFMuonPt, MuonD0, MuonVertZ, firstGoodVertZ, MuonPFNeutHadIso, MuonPFCharHadIso, MuonPFPhotIso, MuonSumPUPt, MuonNumLayers, MuonNumMatchStations, MuonNumValidPixHitsinTrack,  isGMPTMuon, isPFMuon, isGlobMuon, vecIsoLeptons, levelVerbosity);
-            MuonPickOvi(MEPs, firstGoodVertZ, vecIsoLeptons, levelVerbosity);
+            MuonPickOvi(MEPs, firstGoodVertZ, vecIsoLeptons, levelLepVerbosity);
             sort(vecIsoLeptons->begin(), vecIsoLeptons->end(), greater<Lepton>());
-            ELI = LeptonPair(vecIsoLeptons, levelVerbosity);
+            ELI = LeptonPair(vecIsoLeptons, levelLepVerbosity);
             doEvent = ELI.doEvent;
             //            cout << "size of vecIsoLeptons post muon/electron pick " << vecIsoLeptons->size() << endl;
             if (!doData) {
 //                ElectronPickOviSyst(ElecPx, ElecPy, ElecPz, ElecE, ElecCharge, PFElecPt, ElecSCEta, ElecDeltaPhiIn, ElecDeltaEtaIn, ElecSigIetaIeta, ElecHtoERatio, ElecIP, ElecDZ, ElecECalE, ElecSCEOverP, ElecNumMissHits, ElecPFNeutHadIso, ElecPFCharHadIso, ElecPFPhotIso, passConvVeto, isPFElectron, ElecisEB, ElecisEE, eventRhoIso, 1., vecIsoLeptons_LepESUp, levelVerbosity, vecIsoLeptonsCentValMETPatsy_LepESUp);                
-                ElectronPickOviSyst(EEPs, eventRhoIso, 1., vecIsoLeptons_LepESUp, levelVerbosity, vecIsoLeptonsCentValMETPatsy_LepESUp);                
+                ElectronPickOviSyst(EEPs, eventRhoIso, 1., vecIsoLeptons_LepESUp, levelLepVerbosity, vecIsoLeptonsCentValMETPatsy_LepESUp);                
 //                MuonPickOviSyst(MuonPt, MuonPx, MuonPy, MuonPz, MuonE, MuonCharge, PFMuonPt, MuonD0, MuonVertZ, firstGoodVertZ, MuonPFNeutHadIso, MuonPFCharHadIso, MuonPFPhotIso, MuonSumPUPt, MuonNumLayers, MuonNumMatchStations, MuonNumValidPixHitsinTrack, isGMPTMuon, isPFMuon, isGlobMuon, 1., vecIsoLeptons_LepESUp, vecIsoLeptonsCentValMETPatsy_LepESUp);
-                MuonPickOviSyst(MEPs, firstGoodVertZ, 1., vecIsoLeptons_LepESUp, vecIsoLeptonsCentValMETPatsy_LepESUp);
+                MuonPickOviSyst(MEPs, firstGoodVertZ, 1., vecIsoLeptons_LepESUp, levelLepVerbosity, vecIsoLeptonsCentValMETPatsy_LepESUp);
                 sort(vecIsoLeptons_LepESUp->begin(), vecIsoLeptons_LepESUp->end(), greater<Lepton>());
-                ELI_LepESUp = LeptonPair(vecIsoLeptons_LepESUp, levelVerbosity);
+                ELI_LepESUp = LeptonPair(vecIsoLeptons_LepESUp, levelLepVerbosity);
                 MET_LepESUp = MET; MET_Phi_LepESUp = MET_Phi;
                 METSystShift(vecIsoLeptonsCentValMETPatsy_LepESUp, vecIsoLeptons_LepESUp, MET_LepESUp, MET_Phi_LepESUp, MET, MET_Phi);
                 doEvent_LepESUp = ELI_LepESUp.doEvent;
                 
 //                ElectronPickOviSyst(ElecPx, ElecPy, ElecPz, ElecE, ElecCharge, PFElecPt, ElecSCEta, ElecDeltaPhiIn, ElecDeltaEtaIn, ElecSigIetaIeta, ElecHtoERatio, ElecIP, ElecDZ, ElecECalE, ElecSCEOverP, ElecNumMissHits, ElecPFNeutHadIso, ElecPFCharHadIso, ElecPFPhotIso, passConvVeto, isPFElectron, ElecisEB, ElecisEE, eventRhoIso, -1., vecIsoLeptons_LepESDown, levelVerbosity, vecIsoLeptonsCentValMETPatsy_LepESDown);
-                ElectronPickOviSyst(EEPs, eventRhoIso, -1., vecIsoLeptons_LepESUp, levelVerbosity, vecIsoLeptonsCentValMETPatsy_LepESUp);                
+                ElectronPickOviSyst(EEPs, eventRhoIso, -1., vecIsoLeptons_LepESDown, levelLepVerbosity, vecIsoLeptonsCentValMETPatsy_LepESDown);                
 //                MuonPickOviSyst(MuonPt, MuonPx, MuonPy, MuonPz, MuonE, MuonCharge, PFMuonPt, MuonD0, MuonVertZ, firstGoodVertZ, MuonPFNeutHadIso, MuonPFCharHadIso, MuonPFPhotIso, MuonSumPUPt, MuonNumLayers, MuonNumMatchStations, MuonNumValidPixHitsinTrack, isGMPTMuon, isPFMuon, isGlobMuon, -1., vecIsoLeptons_LepESDown, vecIsoLeptonsCentValMETPatsy_LepESDown);
-                MuonPickOviSyst(MEPs, firstGoodVertZ, -1., vecIsoLeptons_LepESUp, vecIsoLeptonsCentValMETPatsy_LepESUp);
+                MuonPickOviSyst(MEPs, firstGoodVertZ, -1., vecIsoLeptons_LepESDown, levelLepVerbosity, vecIsoLeptonsCentValMETPatsy_LepESDown);
                 sort(vecIsoLeptons_LepESDown->begin(), vecIsoLeptons_LepESDown->end(), greater<Lepton>());
-                ELI_LepESDown = LeptonPair(vecIsoLeptons_LepESDown, levelVerbosity);
+                ELI_LepESDown = LeptonPair(vecIsoLeptons_LepESDown, levelLepVerbosity);
                 MET_LepESDown = MET; MET_Phi_LepESDown = MET_Phi;
                 METSystShift(vecIsoLeptonsCentValMETPatsy_LepESDown, vecIsoLeptons_LepESDown, MET_LepESDown, MET_Phi_LepESDown, MET, MET_Phi); 
                 doEvent_LepESDown = ELI_LepESDown.doEvent;
@@ -1714,20 +1729,20 @@ int main( int argc, const char* argv[] ) {
             MET_Phi = met->Phi();
             IsoLeptonsPickDESY(leptons, lepPdgId, lepPFIso, vecIsoLeptons);
             sort(vecIsoLeptons->begin(), vecIsoLeptons->end(), greater<Lepton>());
-            ELI = LeptonPair(vecIsoLeptons, levelVerbosity);
+            ELI = LeptonPair(vecIsoLeptons, levelLepVerbosity);
             doEvent = ELI.doEvent;
             if (!doData) {
                 //                cout << "here 3.0" << endl;
                 IsoLeptonsPickDESY(leptons, lepPdgId, lepPFIso, 1., vecIsoLeptons_LepESUp, vecIsoLeptonsCentValMETPatsy_LepESUp);
                 sort(vecIsoLeptons_LepESUp->begin(), vecIsoLeptons_LepESUp->end(), greater<Lepton>());
-                ELI_LepESUp = LeptonPair(vecIsoLeptons_LepESUp, levelVerbosity);
+                ELI_LepESUp = LeptonPair(vecIsoLeptons_LepESUp, levelLepVerbosity);
                 MET_LepESUp = MET; MET_Phi_LepESUp = MET_Phi;
                 METSystShift(vecIsoLeptonsCentValMETPatsy_LepESUp, vecIsoLeptons_LepESUp, MET_LepESUp, MET_Phi_LepESUp, MET, MET_Phi);
-                doEvent_LepESUp = ELI_LepESDown.doEvent;
+                doEvent_LepESUp = ELI_LepESUp.doEvent;
                 
                 IsoLeptonsPickDESY(leptons, lepPdgId, lepPFIso, -1., vecIsoLeptons_LepESDown, vecIsoLeptonsCentValMETPatsy_LepESDown);
                 sort(vecIsoLeptons_LepESDown->begin(), vecIsoLeptons_LepESDown->end(), greater<Lepton>());
-                ELI_LepESDown = LeptonPair(vecIsoLeptons_LepESDown, levelVerbosity);
+                ELI_LepESDown = LeptonPair(vecIsoLeptons_LepESDown, levelLepVerbosity);
                 MET_LepESDown = MET; MET_Phi_LepESDown = MET_Phi;
                 METSystShift(vecIsoLeptonsCentValMETPatsy_LepESDown, vecIsoLeptons_LepESDown, MET_LepESDown, MET_Phi_LepESDown, MET, MET_Phi);
                 doEvent_LepESDown = ELI_LepESDown.doEvent;
@@ -1756,11 +1771,11 @@ int main( int argc, const char* argv[] ) {
             if (whichNTupleType == 0) {
                 GJEPs.numGenJets = GJEPs.genJetPx->size();
                 vecGoodGenJets = GenJetsNonZero(GJEPs);
-                SmearJets = JetSmear(Jets, vecGoodGenJets, 0, 0.0, h_JetESUp, h_RecoJetLowPtSmearHist, h_GenJetSmearHist, JetResolutionTF1Vec, levelVerbosity);
-                SmearJets_JetESUp = JetSmear(Jets, vecGoodGenJets, 1, 1.0, h_JetESUp, h_RecoJetLowPtSmearHist, h_GenJetSmearHist, JetResolutionTF1Vec, levelVerbosity);
-                SmearJets_JetESDown = JetSmear(Jets, vecGoodGenJets, 1, -1.0, h_JetESDown, h_RecoJetLowPtSmearHist, h_GenJetSmearHist, JetResolutionTF1Vec, levelVerbosity);
-                SmearJets_JetSmearUp = JetSmear(Jets, vecGoodGenJets, 2, 1.0, h_JetESUp, h_RecoJetLowPtSmearHist, h_GenJetSmearHist, JetResolutionTF1Vec, levelVerbosity);
-                SmearJets_JetSmearDown = JetSmear(Jets, vecGoodGenJets, 2, -1.0, h_JetESDown, h_RecoJetLowPtSmearHist, h_GenJetSmearHist, JetResolutionTF1Vec, levelVerbosity);
+                SmearJets = JetSmear(Jets, vecGoodGenJets, 1.0, 0, 0.0, h_JetESUp, h_RecoJetLowPtSmearHist, h_GenJetSmearHist, JetResolutionTF1Vec, levelJetVerbosity, h_DeltaEnergySmearMinUnSmear);
+                SmearJets_JetESUp = JetSmear(Jets, vecGoodGenJets, 1.0, 1, 1.0, h_JetESUp, h_RecoJetLowPtSmearHist, h_GenJetSmearHist, JetResolutionTF1Vec, levelJetVerbosity, h_DeltaEnergySmearMinUnSmear_JESUp);
+                SmearJets_JetESDown = JetSmear(Jets, vecGoodGenJets, 1.0, 1, -1.0, h_JetESDown, h_RecoJetLowPtSmearHist, h_GenJetSmearHist, JetResolutionTF1Vec, levelJetVerbosity, h_DeltaEnergySmearMinUnSmear_JESDown);
+                SmearJets_JetSmearUp = JetSmear(Jets, vecGoodGenJets, 1.0, 2, 1.0, h_JetESUp, h_RecoJetLowPtSmearHist, h_GenJetSmearHist, JetResolutionTF1Vec, levelJetVerbosity, h_DeltaEnergySmearMinUnSmear_JERUp);
+                SmearJets_JetSmearDown = JetSmear(Jets, vecGoodGenJets, 1.0, 2, -1.0, h_JetESDown, h_RecoJetLowPtSmearHist, h_GenJetSmearHist, JetResolutionTF1Vec, levelJetVerbosity, h_DeltaEnergySmearMinUnSmear_JERDown);                
                 
                 sort(SmearJets->begin(), SmearJets->end(), greater<PFJet>());
                 sort(SmearJets_JetESUp->begin(), SmearJets_JetESUp->end(), greater<PFJet>());
@@ -1768,11 +1783,13 @@ int main( int argc, const char* argv[] ) {
                 sort(SmearJets_JetSmearUp->begin(), SmearJets_JetSmearUp->end(), greater<PFJet>());
                 sort(SmearJets_JetSmearDown->begin(), SmearJets_JetSmearDown->end(), greater<PFJet>());
 
-                EJISmear = JetKinematicsCut(SmearJets, BTagSFUtilToUse, doData);
+                EJISmear = JetKinematicsCut(SmearJets, BTagSFUtilToUse, doData, true);
                 EJISmear_JetESUp = JetKinematicsCut(SmearJets_JetESUp, BTagSFUtilToUse, doData);
                 EJISmear_JetESDown = JetKinematicsCut(SmearJets_JetESDown, BTagSFUtilToUse, doData);
                 EJISmear_BTagSFUp = JetKinematicsCutBTagSyst(SmearJets, BTagSFUtilToUse, 1, doSignal);
                 EJISmear_BTagSFDown = JetKinematicsCutBTagSyst(SmearJets, BTagSFUtilToUse, -1, doSignal);
+                EJISmear_JetSmearUp = JetKinematicsCut(SmearJets_JetSmearUp, BTagSFUtilToUse, doData);
+                EJISmear_JetSmearDown = JetKinematicsCut(SmearJets_JetSmearDown, BTagSFUtilToUse, doData);
                 
                 SmearMET = MET; SmearMET_Phi = MET_Phi;
                 SmearMET_JetESUp = MET; SmearMET_Phi_JetESUp = MET_Phi;
@@ -1795,7 +1812,7 @@ int main( int argc, const char* argv[] ) {
                 EJI_JetESUp = JetKinematicsCut(Jets_JetESUp, BTagSFUtilToUse, doData);
                 
 //                Jets_JetESDown = JetInfo(vecIsoLeptons, JetPx, JetPy, JetPz, JetE, JetNHF, JetNEF, JetCHF, JetCEF, JetNDaug, JetCharMult, JetBTag, JetPartFlav, -1.0, h_JetESDown);
-                Jets_JetESUp = JetInfo(vecIsoLeptons, PFJEPs, -1.0, h_JetESUp);
+                Jets_JetESDown = JetInfo(vecIsoLeptons, PFJEPs, -1.0, h_JetESUp);
                 sort(Jets_JetESDown->begin(), Jets_JetESDown->end(), greater<PFJet>());
                 EJI_JetESDown = JetKinematicsCut(Jets_JetESDown, BTagSFUtilToUse, doData);
                 
@@ -1811,7 +1828,6 @@ int main( int argc, const char* argv[] ) {
             }
             MET_JetESUp = MET; MET_Phi_JetESUp = MET_Phi;
             METSystShift(Jets, Jets_JetESUp, MET_JetESUp, MET_Phi_JetESUp, MET, MET_Phi);
-            
             MET_JetESDown = MET; MET_Phi_JetESDown = MET_Phi;
             METSystShift(Jets, Jets_JetESDown, MET_JetESDown, MET_Phi_JetESDown, MET, MET_Phi);
         }
@@ -1896,6 +1912,11 @@ int main( int argc, const char* argv[] ) {
     }
     cout << "All events done" << endl;
     outputFile->cd();
+    h_DeltaEnergySmearMinUnSmear->Write();
+    h_DeltaEnergySmearMinUnSmear_JESUp->Write();
+    h_DeltaEnergySmearMinUnSmear_JESDown->Write();
+    h_DeltaEnergySmearMinUnSmear_JERUp->Write();
+    h_DeltaEnergySmearMinUnSmear_JERDown->Write();
     cout << "cd-ing to output directory" << endl;
     outputFile->Write();
     if (whichNTupleType == 1) {

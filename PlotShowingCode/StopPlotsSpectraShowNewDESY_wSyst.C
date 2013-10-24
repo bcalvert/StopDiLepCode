@@ -3,6 +3,7 @@
 //#include "../HeaderFiles/HistogramStyleFunctions.h"
 //#include "../HeaderFiles/HistogramDataMCPlottingVer2.h"
 #include "../HeaderFiles/HistogramSystematics2.h"
+#include "../HeaderFiles/StopStructDefinitions.h"
 #include "../HeaderFiles/StopPlotSetup.h"
 #include "../HeaderFiles/StopFunctionDefinitions_v2.h"
 #include "TH1F.h"

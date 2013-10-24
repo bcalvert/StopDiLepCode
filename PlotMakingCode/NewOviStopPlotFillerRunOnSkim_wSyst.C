@@ -20,9 +20,11 @@
 #include <iostream>
 //#include <exception>                                                                                                      
 #include <sys/stat.h>
+#include <map>
 
 #include "TCut.h"
 //#include "StopDict_ver2.h"
+#include "../HeaderFiles/StopStructDefinitions.h"
 #include "../HeaderFiles/StopFillFunctions.h"
 #include "../HeaderFiles/StopFunctionDefinitions_v2.h"
 
@@ -43,16 +45,14 @@ typedef struct {
  typedef pair<HistogramT_1D, SampleT> histKey_1D;
  typedef pair<HistogramT_2D, SampleT> histKey_2D;
  */
-//typedef pair<HistogramT, SampleT> histKey;
+
 typedef std::pair<HistogramT, SampleT> histKey;
 typedef std::map<histKey, TH1 *>      HMap_1D;
 typedef std::map<histKey, TH2 *>      HMap_2D;
 typedef std::map<histKey, TH3 *>      HMap_3D;
 typedef std::map<SampleT, bool>       passCutMap;
 
-
 StopXSec getCrossSectionStop(float);
-float    getMT2(TLorentzVector, TLorentzVector, float, float);
 
 using namespace std;
 //different nVtx regions for the plots
@@ -88,74 +88,68 @@ int main( int argc, const char* argv[] ) {
     TString fileTreeName;    
     TString fInName;
     TString fOutName;    
-    TH1F * h_eventCount, * h_CutFlow, * h_ElecCharIso, * h_ElecNeutIso, * h_ElecPhotIso, * h_ElecRelIso;
-    h_ElecRelIso = new TH1F("h_ElecRelIso", "; Electron Relative Iso.; N_{evts} / bin", 32, 0., 0.16);
+    TH1F * h_eventCount, * h_CutFlow;    
+    /////Event Variables/////////////////////
+    bool  keepEvent;
+
+    BasicEventInfo       BEI;
+    EventLepInfo         ELI; ELI.ELIDefaultVarVals();
+    EventJetInfo         EJI; EJI.EJIDefaultVarVals();
+    EventMETInfo         EMI; EMI.EMIDefaultVarVals();
+    EventDiStructureInfo EDSI; EDSI.EDSIDefaultVarVals();
+    EventGenParticleInfo EGPI; EGPI.EGPIDefaultVarVals();
     
-    /////Event Variables/////////////////////    
-    int   Event, Type, nVtx, nVtxTrue;
-    bool  passTrigDoubleMu, passTrigDoubleEl, passTrigElMu;
-    bool  doEvent;
-    float PUWeight;
-    float weight, preNVtxRWweight;
-    float fillWeight;
-    float MET,METPhi,METSig, METPhi_preCorr;
-    float METX, METY, METX_preCorr, METY_preCorr;
-    float MT2ll, MT2lb; //, MT2lbPair1, MT2lbPair2;
-    int caseMT2lb;
-    vector<TLorentzVector> vecLepMT2lb(2), vecJetMT2lb(2);
-    vector<TLorentzVector> vecBLepsMT2lb(2);
-    float DeltaPhiMT2lb_JetsUsed, DeltaPhiMT2lb_BLepsUsed;
-    float METdivMeff;//, METdivMeff_PassMT2llCut80, METdivMeff_PassMT2llCut90, METdivMeff_PassMT2llCut100, METdivMeff_PassMT2llCut110, METdivMeff_PassMT2llCut120;
-    float MT2llCut = 80;
-    float MT2lbCut = 170;
-    //    float MT2llIndCut[5] = {80., 90., 100., 110., 120.};
+    BasicEventInfo       BEI_LepESUp, BEI_LepESDown;
+    BasicEventInfo       BEI_GenTopRW;
+    BasicEventInfo       BEI_StopXSecUp, BEI_StopXSecDown;
+    BasicEventInfo       BEI_LepEffSFUp, BEI_LepEffSFDown;
     
-    float Lep0Px,Lep0Py,Lep0Pz,Lep0E,Lep1Px,Lep1Py,Lep1Pz,Lep1E;
-    int   Lep0PdgId, Lep1PdgId;
-    float Lep0RelPFIso, Lep1RelPFIso;
+    EventLepInfo         ELI_LepESUp; ELI_LepESUp.ELIDefaultVarVals();
+    EventLepInfo         ELI_LepESDown; ELI_LepESDown.ELIDefaultVarVals();
     
-    float HT;
-    float Jet0Px,Jet0Py,Jet0Pz,Jet0E,Jet1Px,Jet1Py,Jet1Pz,Jet1E;
-    float BtagJet0Px,BtagJet0Py,BtagJet0Pz,BtagJet0E,BtagJet1Px,BtagJet1Py,BtagJet1Pz,BtagJet1E;
-    int   BtagJet0Index, BtagJet1Index;
+    EventJetInfo         EJI_JetESUp; EJI_JetESUp.EJIDefaultVarVals();
+    EventJetInfo         EJI_JetESDown; EJI_JetESDown.EJIDefaultVarVals();
+    EventJetInfo         EJI_BTagSFUp; EJI_BTagSFUp.EJIDefaultVarVals();
+    EventJetInfo         EJI_BTagSFDown; EJI_BTagSFDown.EJIDefaultVarVals();
     
+    EventMETInfo         EMI_LepESUp; EMI_LepESUp.EMIDefaultVarVals();
+    EventMETInfo         EMI_LepESDown; EMI_LepESDown.EMIDefaultVarVals();
+    EventMETInfo         EMI_JetESUp; EMI_JetESUp.EMIDefaultVarVals();
+    EventMETInfo         EMI_JetESDown; EMI_JetESDown.EMIDefaultVarVals();
+    EventMETInfo         EMI_BTagSFUp; EMI_BTagSFUp.EMIDefaultVarVals();
+    EventMETInfo         EMI_BTagSFDown; EMI_BTagSFDown.EMIDefaultVarVals();
+    
+    EventDiStructureInfo EDSI_LepESUp; EDSI_LepESUp.EDSIDefaultVarVals();
+    EventDiStructureInfo EDSI_LepESDown; EDSI_LepESDown.EDSIDefaultVarVals();
+    EventDiStructureInfo EDSI_JetESUp; EDSI_JetESUp.EDSIDefaultVarVals();
+    EventDiStructureInfo EDSI_JetESDown; EDSI_JetESDown.EDSIDefaultVarVals();
+    EventDiStructureInfo EDSI_BTagSFUp; EDSI_BTagSFUp.EDSIDefaultVarVals();
+    EventDiStructureInfo EDSI_BTagSFDown; EDSI_BTagSFDown.EDSIDefaultVarVals();
+    
+    EventSpecialMT2Info  ESMT2I;
     
     int TGenStopMass0,TGenStopMass1,TGenChi0Mass0,TGenChi0Mass1, TGenCharginoMass0, TGenCharginoMass1;
     int   grabStopMass, grabChi0Mass, grabCharginoMass;
     int   massDiffThresh = 5;
+    /*
     float stopWeight    = 0.;
     float stopWeightErr = 0.;
     float stopWeightPlusErr = 0.;
     float stopWeightMinusErr = 0.;
+    */
     
     
     const double PI = 3.14159265;
     
-    int NJets, NBtagJets;
+    TLorentzVector genMETVec, genTop0Vec, genTop1Vec;
+    TLorentzVector genStop0Vec, genStop1Vec;
+    TLorentzVector genChiZero0Vec, genChiZero1Vec;
+    TLorentzVector genChargino0Vec, genChargino1Vec;
     
-    TLorentzVector Lep0Vec, Lep1Vec, DiLepVec;
-    TLorentzVector Jet0Vec, Jet1Vec, DiJetVec, BtagJet0Vec, BtagJet1Vec, DiBJetVec;
-    TLorentzVector Lep0Jet0Vec, Lep0Jet1Vec, Lep1Jet0Vec, Lep1Jet1Vec;
-//    TLorentzVector BLep0Vec, BLep1Vec;
-    float diLepInvMass, diLepPt, diLepEta, diLepPhi;
-    float diJetInvMass, diJetPt, diJetEta, diJetPhi;
-    float diBJetInvMass, diBJetPt, diBJetEta, diBJetPhi;
-    
-//    LV * Lep0Vec_DESY, * Lep1Vec_DESY;
-//    LV * Jet0Vec_DESY, * Jet1Vec_DESY, * BJet0Vec_DESY, * BJet1Vec_DESY;
-    
-    /// Generator Level Information
-//    LV * genTopVec_DESY, * genAntiTopVec_DESY;
-    
-    bool  hasTopInfo = 0;
     float genTop0Pt, genTop0En, genTop0Eta, genTop0Phi;
     float genTop1Pt, genTop1En, genTop1Eta, genTop1Phi;
     int genTop0PdgId, genTop1PdgId; //genTop0FirstMom, genTop1FirstMom;
-    float genTopPt; //, genTopEn, genTopEta, genTopPhi;
-    float genAntiTopPt; //, genAntiTopEn, genAntiTopEta, genAntiTopPhi;
     float genMET_Pt, genMET_Phi;
-    genTopPt = -1;
-    genAntiTopPt = -1;
     
     TH1F * h_genTopPt = new TH1F("h_genTopPt", ";gen-level Top p_{T} [GeV];Number of Events / NUM GeV", 500, 0, 1000); h_genTopPt->Sumw2();
     TH1F * h_genTopPtRW = new TH1F("h_genTopPtRW", ";gen-level Top p_{T} [GeV];Number of Events / NUM GeV", 500, 0, 1000); h_genTopPtRW->Sumw2();
@@ -163,134 +157,13 @@ int main( int argc, const char* argv[] ) {
     TH1F * h_genAntiTopPtRW = new TH1F("h_genAntiTopPtRW", ";gen-level Anti-Top p_{T} [GeV];Number of Events / NUM GeV", 500, 0, 1000); h_genAntiTopPtRW->Sumw2();
     
     /********************************************************************************************************/
-    // Systematics Stuff
-    int   runNumber, lumiBlock, eventNumber;
     TString eventCountName;
-    
-    int   Type_LepESUp, Type_LepESDown;
-    bool  doEvent_LepESUp, doEvent_LepESDown;
-    float weight_LepESUp, weight_LepESDown;
-    float weight_LepEffSFUp, weight_LepEffSFDown;
-    //    float weight_LepEffSFUp_LepESUp, weight_LepEffSFDown_LepESUp;
-    //    float weight_LepEffSFUp_LepESDown, weight_LepEffSFDown_LepESDown;
-    float preNVtxRWweight_LepESUp, preNVtxRWweight_LepESDown;
-    float preNVtxRWweight_LepEffSFUp, preNVtxRWweight_LepEffSFDown;
-    //    float preNVtxRWweight_LepEffSFUp_LepESUp, preNVtxRWweight_LepEffSFDown_LepESUp;
-    //    float preNVtxRWweight_LepEffSFUp_LepESDown, preNVtxRWweight_LepEffSFDown_LepESDown;
-    float weight_GenTopReweight, preNVtxRWweight_GenTopReweight;
-    float weightSwitch;
-    float weight_genStopXSecUp, weight_genStopXSecDown;
-    float preNVtxRWweight_genStopXSecUp, preNVtxRWweight_genStopXSecDown;
-    
-    
-    float MT2ll_ShiftUp; //, MT2ll_ShiftDown; // TTBar MT2ll smearing
-    float MT2ll_UncESUp, MT2ll_UncESDown;
-    float MT2ll_LepESUp, MT2ll_LepESDown;
-    float MT2ll_JetESUp, MT2ll_JetESDown;
-    float MET_LepESUp, MET_LepESDown, MET_JetESUp, MET_JetESDown;//, MET_JetERUp, MET_JetERDown;
-    float METPhi_LepESUp, METPhi_LepESDown, METPhi_JetESUp, METPhi_JetESDown;//, METPhi_JetERUp, METPhi_JetERDown;
-    float METPhi_preCorr_LepESUp, METPhi_preCorr_LepESDown, METPhi_preCorr_JetESUp, METPhi_preCorr_JetESDown;//, METPhi_preCorr_JetERUp, METPhi_preCorr_JetERDown;
-    float METX_LepESUp, METY_LepESUp, METX_LepESDown, METY_LepESDown, METX_JetESUp, METY_JetESUp, METX_JetESDown, METY_JetESDown;//, METX_JetERUp, METY_JetERUp, METX_JetERDown, METY_JetERDown;
-    float METX_preCorr_LepESUp, METY_preCorr_LepESUp, METX_preCorr_LepESDown, METY_preCorr_LepESDown, METX_preCorr_JetESUp, METY_preCorr_JetESUp, METX_preCorr_JetESDown, METY_preCorr_JetESDown;//, METX_preCorr_JetERUp, METY_preCorr_JetERUp, METX_preCorr_JetERDown, METY_preCorr_JetERDown;
-    
-    vector<TLorentzVector> vecLepMT2lb_LepESUp(2), vecLepMT2lb_LepESDown(2);
-    vector<TLorentzVector> vecJetMT2lb_JetESUp(2), vecJetMT2lb_JetESDown(2);
-    vector<TLorentzVector> vecBLepsMT2lb_LepESUp(2), vecBLepsMT2lb_LepESDown(2);
-    vector<TLorentzVector> vecBLepsMT2lb_JetESUp(2), vecBLepsMT2lb_JetESDown(2);
-    
-    vector<TLorentzVector> vecJetMT2lb_BTagSFUp(2), vecJetMT2lb_BTagSFDown(2);
-    vector<TLorentzVector> vecBLepsMT2lb_BTagSFUp(2), vecBLepsMT2lb_BTagSFDown(2);
-    int caseMT2lb_JetESUp, caseMT2lb_JetESDown;
-    int caseMT2lb_BTagSFUp, caseMT2lb_BTagSFDown;
-//    float MT2lbPair1_LepESUp, MT2lbPair2_LepESUp, MT2lbPair1_LepESDown, MT2lbPair2_LepESDown;
-//    float MT2lbPair1_JetESUp, MT2lbPair2_JetESUp, MT2lbPair1_JetESDown, MT2lbPair2_JetESDown;
-    float MT2lb_LepESUp, MT2lb_LepESDown, MT2lb_JetESUp, MT2lb_JetESDown, MT2lb_UncESUp, MT2lb_UncESDown, MT2lb_BTagSFUp, MT2lb_BTagSFDown;//, MT2lb_JetERUp, MT2lb_JetERDown;
-    float DeltaPhiMT2lb_BLepsUsed_LepESUp, DeltaPhiMT2lb_BLepsUsed_LepESDown;
-    float DeltaPhiMT2lb_BLepsUsed_JetESUp, DeltaPhiMT2lb_BLepsUsed_JetESDown;
-    float DeltaPhiMT2lb_BLepsUsed_UncESUp, DeltaPhiMT2lb_BLepsUsed_UncESDown;
-    float DeltaPhiMT2lb_BLepsUsed_BTagSFUp, DeltaPhiMT2lb_BLepsUsed_BTagSFDown;
-    
-    float DeltaPhiMT2lb_JetsUsed_JetESUp, DeltaPhiMT2lb_JetsUsed_JetESDown;
-    float DeltaPhiMT2lb_JetsUsed_BTagSFUp, DeltaPhiMT2lb_JetsUsed_BTagSFDown;
-//    TLorentzVector BLep0Vec_LepESUp, BLep1Vec_LepESDown, BLep0Vec_JetESUp, BLep1Vec_JetESDown;
-//    TLorentzVector BLep0Vec_BTagSFUp, BLep1Vec_BTagSFDown;
     TFile * MT2llSmearFile = new TFile("MT2llSmear.root");
-    TH1F * MT2llMeanSmear = (TH1F *) MT2llSmearFile->Get("MT2llSmear");
-    float MT2llSmearFactor;
-    int MT2llSmearFactorBin;
-//    float MT2llSystConst = 1.5;
-//    float MT2llSystSlope = 0.0;
-    
-    float METdivMeff_LepESUp, METdivMeff_LepESDown;
-    //    float METdivMeff_PassMT2llCut80_LepESUp, METdivMeff_PassMT2llCut90_LepESUp, METdivMeff_PassMT2llCut100_LepESUp, METdivMeff_PassMT2llCut110_LepESUp, METdivMeff_PassMT2llCut120_LepESUp;
-    //    float METdivMeff_PassMT2llCut80_LepESDown, METdivMeff_PassMT2llCut90_LepESDown, METdivMeff_PassMT2llCut100_LepESDown, METdivMeff_PassMT2llCut110_LepESDown, METdivMeff_PassMT2llCut120_LepESDown;
-    
-    float METdivMeff_JetESUp, METdivMeff_JetESDown;
-    //    float METdivMeff_PassMT2llCut80_JetESUp, METdivMeff_PassMT2llCut90_JetESUp, METdivMeff_PassMT2llCut100_JetESUp, METdivMeff_PassMT2llCut110_JetESUp, METdivMeff_PassMT2llCut120_JetESUp;
-    //    float METdivMeff_PassMT2llCut80_JetESDown, METdivMeff_PassMT2llCut90_JetESDown, METdivMeff_PassMT2llCut100_JetESDown, METdivMeff_PassMT2llCut110_JetESDown, METdivMeff_PassMT2llCut120_JetESDown;
-    
-    float Lep0Px_LepESUp, Lep0Py_LepESUp, Lep0Pz_LepESUp, Lep0E_LepESUp, Lep1Px_LepESUp, Lep1Py_LepESUp, Lep1Pz_LepESUp, Lep1E_LepESUp;
-    float Lep0Px_LepESDown, Lep0Py_LepESDown, Lep0Pz_LepESDown, Lep0E_LepESDown, Lep1Px_LepESDown, Lep1Py_LepESDown, Lep1Pz_LepESDown, Lep1E_LepESDown;
-    int   Lep0PdgId_LepESUp, Lep1PdgId_LepESUp;
-    int   Lep0PdgId_LepESDown, Lep1PdgId_LepESDown;
-    float Lep0RelPFIso_LepESUp, Lep1RelPFIso_LepESUp;
-    float Lep0RelPFIso_LepESDown, Lep1RelPFIso_LepESDown;
-    
-    
-    int NJets_JetESUp, NJets_JetESDown;
-    int NBtagJets_JetESUp, NBtagJets_JetESDown;
-    float HT_JetESUp;
-    float HT_JetESDown;
-    float Jet0Px_JetESUp, Jet0Py_JetESUp, Jet0Pz_JetESUp, Jet0E_JetESUp, Jet1Px_JetESUp, Jet1Py_JetESUp, Jet1Pz_JetESUp, Jet1E_JetESUp;
-    float Jet0Px_JetESDown, Jet0Py_JetESDown, Jet0Pz_JetESDown, Jet0E_JetESDown, Jet1Px_JetESDown, Jet1Py_JetESDown, Jet1Pz_JetESDown, Jet1E_JetESDown;
-    float BtagJet0Px_JetESUp, BtagJet0Py_JetESUp, BtagJet0Pz_JetESUp, BtagJet0E_JetESUp, BtagJet1Px_JetESUp, BtagJet1Py_JetESUp, BtagJet1Pz_JetESUp, BtagJet1E_JetESUp;
-    float BtagJet0Px_JetESDown, BtagJet0Py_JetESDown, BtagJet0Pz_JetESDown, BtagJet0E_JetESDown, BtagJet1Px_JetESDown, BtagJet1Py_JetESDown, BtagJet1Pz_JetESDown, BtagJet1E_JetESDown;
-    int   BtagJet0Index_JetESUp,  BtagJet1Index_JetESUp;
-    int   BtagJet0Index_JetESDown,  BtagJet1Index_JetESDown;
-    
-    float BtagJet0Px_BTagSFUp, BtagJet0Py_BTagSFUp, BtagJet0Pz_BTagSFUp, BtagJet0E_BTagSFUp, BtagJet1Px_BTagSFUp, BtagJet1Py_BTagSFUp, BtagJet1Pz_BTagSFUp, BtagJet1E_BTagSFUp;
-    float BtagJet0Px_BTagSFDown, BtagJet0Py_BTagSFDown, BtagJet0Pz_BTagSFDown, BtagJet0E_BTagSFDown, BtagJet1Px_BTagSFDown, BtagJet1Py_BTagSFDown, BtagJet1Pz_BTagSFDown, BtagJet1E_BTagSFDown;
-    int   BtagJet0Index_BTagSFUp,  BtagJet1Index_BTagSFUp;
-    int   BtagJet0Index_BTagSFDown,  BtagJet1Index_BTagSFDown;    
-    int NBtagJets_BTagSFUp, NBtagJets_BTagSFDown;
-    
-    TLorentzVector Lep0Vec_LepESUp, Lep0Vec_LepESDown, Lep0Vec_LepERUp, Lep0Vec_LepERDown;
-    TLorentzVector Lep1Vec_LepESUp, Lep1Vec_LepESDown, Lep1Vec_LepERUp, Lep1Vec_LepERDown;
-    TLorentzVector DiLepVec_LepESUp, DiLepVec_LepESDown;//, DiLepVec_LepERUp, DiLepVec_LepERDown;
-    float diLepInvMass_LepESUp, diLepInvMass_LepESDown;//, diLepInvMass_LepERUp, diLepInvMass_LepERDown;
-    float diLepPt_LepESUp, diLepPt_LepESDown;//, diLepPt_LepERUp, diLepPt_LepERDown;
-    float diLepEta_LepESUp, diLepEta_LepESDown;//, diLepEta_LepERUp, diLepEta_LepERDown;
-    float diLepPhi_LepESUp, diLepPhi_LepESDown;//, diLepPhi_LepERUp, diLepPhi_LepERDown;
-    
-    TLorentzVector Jet0Vec_JetESUp, Jet0Vec_JetESDown;//, Jet0Vec_JetERUp, Jet0Vec_JetERDown;
-    TLorentzVector Jet1Vec_JetESUp, Jet1Vec_JetESDown;//, Jet1Vec_JetERUp, Jet1Vec_JetERDown;
-    TLorentzVector DiJetVec_JetESUp, DiJetVec_JetESDown;//, DiJetVec_JetERUp, DiJetVec_JetERDown;
-    float diJetInvMass_JetESUp, diJetInvMass_JetESDown;//, diJetInvMass_JetERUp, diJetInvMass_JetERDown;
-    float diJetPt_JetESUp, diJetPt_JetESDown;
-    float diJetEta_JetESUp, diJetEta_JetESDown;
-    float diJetPhi_JetESUp, diJetPhi_JetESDown;
-    
-    TLorentzVector BtagJet0Vec_JetESUp, BtagJet0Vec_JetESDown;//, BtagJet0Vec_JetERUp, BtagJet0Vec_JetERDown;
-    TLorentzVector BtagJet1Vec_JetESUp, BtagJet1Vec_JetESDown;//, BtagJet1Vec_JetERUp, BtagJet1Vec_JetERDown;
-    TLorentzVector DiBJetVec_JetESUp, DiBJetVec_JetESDown;//, DiBJetVec_JetERUp, DiBJetVec_JetERDown;
-    float diBJetInvMass_JetESUp, diBJetInvMass_JetESDown;//, diBJetInvMass_JetERUp, diBJetInvMass_JetERDown;
-    float diBJetPt_JetESUp, diBJetPt_JetESDown;
-    float diBJetEta_JetESUp, diBJetEta_JetESDown;
-    float diBJetPhi_JetESUp, diBJetPhi_JetESDown;
-    
-    TLorentzVector BtagJet0Vec_BTagSFUp, BtagJet0Vec_BTagSFDown;//, BtagJet0Vec_JetERUp, BtagJet0Vec_JetERDown;
-    TLorentzVector BtagJet1Vec_BTagSFUp, BtagJet1Vec_BTagSFDown;//, BtagJet1Vec_JetERUp, BtagJet1Vec_JetERDown;
-    TLorentzVector DiBJetVec_BTagSFUp, DiBJetVec_BTagSFDown;//, DiBJetVec_JetERUp, DiBJetVec_JetERDown;
-    float diBJetInvMass_BTagSFUp, diBJetInvMass_BTagSFDown;//, diBJetInvMass_JetERUp, diBJetInvMass_JetERDown;
-    float diBJetPt_BTagSFUp, diBJetPt_BTagSFDown;
-    float diBJetEta_BTagSFUp, diBJetEta_BTagSFDown;
-    float diBJetPhi_BTagSFUp, diBJetPhi_BTagSFDown;
-    
+    TH1F * MT2llMeanSmear = (TH1F *) MT2llSmearFile->Get("MT2llSmear");        
     /********************************************************************************************************/
     
     
-//    float lumi = 19300; //5296.3; // ipb                                                                                     
-    const float genStopMassMin = 295, genStopMassMax = 355, genDeltaM_stopChi0_Min = 195, genDeltaM_stopChi0_Max = 255; 
+//    float lumi = 19300; //5296.3; // ipb                                                                                 
     // add 5 GeV safety margin (deltaM = 10 GeV in the FineBin sample)  
 //    float Nevt_stop_oneMassPoint = 50000 * ( (genStopMassMax-genStopMassMin)/10. ) * ( (genDeltaM_stopChi0_Max-genDeltaM_stopChi0_Min)/10. );  
     // 50k evts per point x Npoints
@@ -298,26 +171,28 @@ int main( int argc, const char* argv[] ) {
     ////input cuts/commands    
     
     bool grabOutDir      = 0;      // whether or not to use the file: "outputSavePath.txt" for where to save output
-    bool doPhiCorr       = 1;      // whether to do the MetPhi asymmetry correction -- 6/25/13 as of right now parameters need to be updated
-    bool doData          = 0;      // Whether you're running on data or not
+    BEI.doPhiCorr       = 1;      // whether to do the MetPhi asymmetry correction -- 6/25/13 as of right now parameters need to be updated
+    BEI.doData          = 0;      // Whether you're running on data or not
     bool doVerbosity     = 0;      // prints a lot of debug info if turned on
     int  whichNTupleType = 0;      // 0 IFCA Oviedo; 1 DESY -- 6/25/13 as of right now, doesn't work with Oviedo
-    bool doPURW          = 0;      // run pile up reweighting
-    bool doHackPURW      = 0;      // called a "hack" because it was bin by bin reweighting to get the nVtx distribution in the "inclusive" channel to exactly match between data and MC
-    bool doPURWOviToDESY = 0;      // exactly like doHackPURW but for Oviedo and DESY to enable comparisons across nTuples
+    BEI.doPURW          = 0;      // run pile up reweighting
+    BEI.doHackPURW      = 0;      // called a "hack" because it was bin by bin reweighting to get the nVtx distribution in the "inclusive" channel to exactly match between data and MC
+    BEI.doPURWOviToDESY = 0;      // exactly like BEI.doHackPURW but for Oviedo and DESY to enable comparisons across nTuples
     bool doBookSyst      = 0;      // used for deciding whether or not to book systematics
     bool doMETSmear      = false;  // early attempt to mimic jet smearing using gaussians -- didn't work, leave off
     double METSF         = 0.0;
     
-    bool blindData       = 1;      // "Until further notice, leave ON -- cuts MT2ll > 80 is data in full object/event selection
+    BEI.blindData       = 1;      // "Until further notice, leave ON -- cuts MT2ll > 80 is data in full object/event selection
     int  nEvents         = -1;     // limits total number of events one is running on
     int subLepPtCut      = 10;    // Sets the pT cut used for subLepPtCut
     
     bool doParallel      = 0;      // Whether or not to run parallel jobs for a given input file. If done, you have to do an additional hadding step
+    bool isLimStats      = 0;
     int  startPointNum   = 1;
     int  numBreakPoints  = 0;
-    bool isSignal        = 0;      // Whether or not one is running on signal -- if this is turned on the next two arguments have to be the stop mass to grab and the chi0 mass to grab respectively
-    bool doReReco        = 0;
+    BEI.isSignal         = 0;
+    //bool isSignal  = 0;      // Whether or not one is running on signal -- if this is turned on the next two arguments have to be the stop mass to grab and the chi0 mass to grab respectively --- NOTE Now contained in the BasicEventInfo structure
+    BEI.doReReco        = 0;
     int  startPoint, endPoint;
     TString outputSavePathString = "outputSavePath";
     ////input cuts/commands    
@@ -328,7 +203,7 @@ int main( int argc, const char* argv[] ) {
             fInName = TString(argv[k+1]);   
         }
         else if (strncmp (argv[k],"noPhiCorr",9) == 0) {
-            doPhiCorr = 0;   
+            BEI.doPhiCorr = 0;   
         }
         else if (strncmp (argv[k],"METSmear",9) == 0) {
             doMETSmear = true;
@@ -341,13 +216,13 @@ int main( int argc, const char* argv[] ) {
             doVerbosity = 1;   
         }
         else if (strncmp (argv[k],"doPURW",6) == 0) {
-            doPURW = 1;           
+            BEI.doPURW = 1;           
         }
         else if (strncmp (argv[k],"doHackPURW",10) == 0) {
-            doHackPURW = 1;
+            BEI.doHackPURW = 1;
         }
         else if (strncmp (argv[k],"doPURWOviToDESY",15) == 0) {
-            doPURWOviToDESY = 1;   
+            BEI.doPURWOviToDESY = 1;   
         }
         else if (strncmp (argv[k],"doBookSyst", 10) == 0) {
             doBookSyst = 1;
@@ -359,18 +234,19 @@ int main( int argc, const char* argv[] ) {
             outputSavePathString = TString(argv[k+1]);
         }
         else if (strncmp (argv[k],"isSig", 5) == 0) {
-            isSignal = 1;
+            BEI.isSignal = 1;
             grabStopMass = strtol(argv[k+1], NULL, 10);
             grabChi0Mass = strtol(argv[k+2], NULL, 10);
             grabCharginoMass = strtol(argv[k+3], NULL, 10);
             cout << "Looking for StopMass: " << grabStopMass << ", Chi0Mass: " << grabChi0Mass << ", and CharginoMass: " << grabCharginoMass << endl;
         }
         else if (strncmp (argv[k],"ReleaseTheKraken", 16) == 0) {
-            blindData = 0;
+            BEI.blindData = 0;
             cout << "RELEASING THE KRAKEN!!! " << endl;
             cout << "http://www.youtube.com/watch?v=gb2zIR2rvRQ " << endl;
         }
         else if (strncmp (argv[k],"limStats",8) == 0) {
+            isLimStats = 1;
             nEvents = strtol(argv[k+1], NULL, 10);   
         }        
         else if (strncmp (argv[k],"subLepPt",8) == 0) {
@@ -389,7 +265,7 @@ int main( int argc, const char* argv[] ) {
     ifstream * outDirFile;
     TRegexp fCutSlash("[^/]+$");
     fOutName = "";    
-    TString outputPathName = (isSignal) ? "signalOutputSavePath" : outputSavePathString;
+    TString outputPathName = (BEI.isSignal) ? "signalOutputSavePath" : outputSavePathString;
     if (grabOutDir) {
         outDirFile = new ifstream(outputPathName + TString(".txt"));
         if (!(outDirFile->eof())) {
@@ -401,16 +277,16 @@ int main( int argc, const char* argv[] ) {
     fOutName += fInName(fCutSlash);
     if (fInName.Contains("MuEG") || fInName.Contains("DoubleMu") || fInName.Contains("DoubleEl") || fInName.Contains("run2012")) {
         cout << "Running on Data" << endl;
-        doData = 1;
+        BEI.doData = 1;
     }
-    if (fInName.Contains("ReReco")) doReReco = 1;
-    if (doData && blindData) {
+    if (fInName.Contains("ReReco")) BEI.doReReco = 1;
+    if (BEI.doData && BEI.blindData) {
         fOutName += "MT2Leq80";   
     }
-    else if (doData && !blindData) {
+    else if (BEI.doData && !BEI.blindData) {
         fOutName += "_NOTBLIND";
     }
-    if (doData) doMETSmear = 0;
+    if (BEI.doData) doMETSmear = 0;
     if (doMETSmear) {
         fOutName += "METSmear";
         fOutName += METSF * 100.0;
@@ -421,11 +297,11 @@ int main( int argc, const char* argv[] ) {
     else {
         fOutName += "_DESY";
     }
-    if (doData && doBookSyst) doBookSyst = 0;
-    if (doPURW && !doData) fOutName += "_PURW";
-    if (doPURWOviToDESY && !doData) fOutName += "OviToDESY";
+    if (BEI.doData && doBookSyst) doBookSyst = 0;
+    if (BEI.doPURW && !BEI.doData) fOutName += "_PURW";
+    if (BEI.doPURWOviToDESY && !BEI.doData) fOutName += "OviToDESY";
     if (doBookSyst) fOutName += "_wSyst";
-    if (isSignal) {
+    if (BEI.isSignal) {
         fOutName += "_SignalStop";
         fOutName += grabStopMass;
         fOutName += "_Chi0";
@@ -438,6 +314,10 @@ int main( int argc, const char* argv[] ) {
     if (abs(subLepPtCut - 10.) > 1E-3) {
         fOutName += "_subLepPtCut";
         fOutName += subLepPtCut;
+    }
+    if (isLimStats) {
+        fOutName += "_isLimStats_";
+        fOutName += nEvents;
     }
     if (doParallel) {
         fOutName += "_Parallel_";
@@ -461,198 +341,202 @@ int main( int argc, const char* argv[] ) {
     TChain fileTree(fileTreeName);
     TFile inputFile(fInName + TString(".root"));
     h_CutFlow = (TH1F *) inputFile.Get("h_CutFlow");
-    bool  ZVeto           = true;
-    bool  ZVeto_LepESUp   = true;
-    bool  ZVeto_LepESDown   = true;
     float ZWindowLB      = 76;
     float ZWindowUB      = 106;   
-    float barrelEtaEnd = 1.4442; float endcapEtaStart = 1.566;
     /////Set up the tree////////
     fileTree.Add(fInName + TString(".root"));
     
     if (whichNTupleType == 0) {
-        fileTree.SetBranchAddress( "TPassDoubleMu",   &passTrigDoubleMu );
-        fileTree.SetBranchAddress( "TPassDoubleEl",   &passTrigDoubleEl );
-        fileTree.SetBranchAddress( "TPassElMu",       &passTrigElMu );
+        fileTree.SetBranchAddress( "TPassDoubleMu",     &BEI.passTrigDoubleMu );
+        fileTree.SetBranchAddress( "TPassDoubleEl",     &BEI.passTrigDoubleEl );
+        fileTree.SetBranchAddress( "TPassElMu",         &BEI.passTrigElMu );
     }    
-    fileTree.SetBranchAddress( "TWeight",   &PUWeight );
-    fileTree.SetBranchAddress( "TChannel",  &Type );
-    fileTree.SetBranchAddress( "TNPV",      &nVtx );
-    fileTree.SetBranchAddress( "TNPV_True", &nVtxTrue );
-    fileTree.SetBranchAddress( "TDoEvent",  &doEvent);
+    fileTree.SetBranchAddress( "TWeight",               &BEI.weight );
+    fileTree.SetBranchAddress( "TNPV",                  &BEI.nVtx );
+    fileTree.SetBranchAddress( "TNPV_True",             &BEI.nVtxTrue );
+    fileTree.SetBranchAddress( "TRunNum",               &BEI.runNumber );
+    fileTree.SetBranchAddress( "TEventNum",             &BEI.eventNumber );
+    fileTree.SetBranchAddress( "TLumiBlock",            &BEI.lumiBlock );
     
-    fileTree.SetBranchAddress( "TMET",     &MET );
-    fileTree.SetBranchAddress( "TMET_Phi", &METPhi );
-    fileTree.SetBranchAddress( "TMETSig",  &METSig );
+    fileTree.SetBranchAddress( "TMET",     &EMI.EventMET_preCorr);
+    fileTree.SetBranchAddress( "TMET_Phi", &EMI.EventMETPhi_preCorr);
+    fileTree.SetBranchAddress( "TMETSig",  &EMI.EventMETSig_preCorr);
     
-    fileTree.SetBranchAddress( "TLep0Px", &Lep0Px );
-    fileTree.SetBranchAddress( "TLep0Py", &Lep0Py );
-    fileTree.SetBranchAddress( "TLep0Pz", &Lep0Pz );
-    fileTree.SetBranchAddress( "TLep0E",  &Lep0E );
-    fileTree.SetBranchAddress( "TLep0PdgId", &Lep0PdgId );
-    fileTree.SetBranchAddress( "TLep0RelPFIso",&Lep0RelPFIso);
+    fileTree.SetBranchAddress( "TDoEvent",      &ELI.doEvent);    
+    fileTree.SetBranchAddress( "TChannel",      &ELI.EventDiLepType);
+    fileTree.SetBranchAddress( "TDiLepMass",    &ELI.EventDiLepMass);
     
-    fileTree.SetBranchAddress( "TLep1Px", &Lep1Px );
-    fileTree.SetBranchAddress( "TLep1Py", &Lep1Py );
-    fileTree.SetBranchAddress( "TLep1Pz", &Lep1Pz );
-    fileTree.SetBranchAddress( "TLep1E",  &Lep1E );
-    fileTree.SetBranchAddress( "TLep1PdgId", &Lep1PdgId );
-    fileTree.SetBranchAddress( "TLep1RelPFIso",&Lep1RelPFIso);
+    fileTree.SetBranchAddress( "TLep0Px",       &ELI.EventLep0Px);
+    fileTree.SetBranchAddress( "TLep0Py",       &ELI.EventLep0Py);
+    fileTree.SetBranchAddress( "TLep0Pz",       &ELI.EventLep0Pz);
+    fileTree.SetBranchAddress( "TLep0E",        &ELI.EventLep0E);
+    fileTree.SetBranchAddress( "TLep0PdgId",    &ELI.EventLep0PDGID);
+    fileTree.SetBranchAddress( "TLep0RelPFIso", &ELI.EventLep0RelPFIso);
     
-    fileTree.SetBranchAddress( "TNJets",    &NJets );
-    //        fileTree.SetBranchAddress( "THT",       &HT );
-    fileTree.SetBranchAddress( "TNJetsBtag",&NBtagJets );
+    fileTree.SetBranchAddress( "TLep1Px",       &ELI.EventLep1Px);
+    fileTree.SetBranchAddress( "TLep1Py",       &ELI.EventLep1Py);
+    fileTree.SetBranchAddress( "TLep1Pz",       &ELI.EventLep1Pz);
+    fileTree.SetBranchAddress( "TLep1E",        &ELI.EventLep1E);
+    fileTree.SetBranchAddress( "TLep1PdgId",    &ELI.EventLep1PDGID);
+    fileTree.SetBranchAddress( "TLep1RelPFIso", &ELI.EventLep1RelPFIso);
     
-    fileTree.SetBranchAddress( "HT", &HT );
     
-    fileTree.SetBranchAddress( "TJet0Px", &Jet0Px );
-    fileTree.SetBranchAddress( "TJet0Py", &Jet0Py );
-    fileTree.SetBranchAddress( "TJet0Pz", &Jet0Pz );
-    fileTree.SetBranchAddress( "TJet0E", &Jet0E );
+    fileTree.SetBranchAddress("TNJets",           &EJI.EventNJets); 
+    fileTree.SetBranchAddress("TNJetsBtag",       &EJI.EventNBtagJets);     
+    fileTree.SetBranchAddress("THT",              &EJI.EventHT);
     
-    fileTree.SetBranchAddress( "TJet1Px", &Jet1Px );
-    fileTree.SetBranchAddress( "TJet1Py", &Jet1Py );
-    fileTree.SetBranchAddress( "TJet1Pz", &Jet1Pz );
-    fileTree.SetBranchAddress( "TJet1E", &Jet1E );                                                                         
+    fileTree.SetBranchAddress("TJet0Px",          &EJI.EventJet0Px); 
+    fileTree.SetBranchAddress("TJet0Py",          &EJI.EventJet0Py); 
+    fileTree.SetBranchAddress("TJet0Pz",          &EJI.EventJet0Pz); 
+    fileTree.SetBranchAddress("TJet0E",           &EJI.EventJet0E);
     
-    fileTree.SetBranchAddress( "TBtagJet0Px", &BtagJet0Px );
-    fileTree.SetBranchAddress( "TBtagJet0Py", &BtagJet0Py );
-    fileTree.SetBranchAddress( "TBtagJet0Pz", &BtagJet0Pz );
-    fileTree.SetBranchAddress( "TBtagJet0E", &BtagJet0E ); 
-    fileTree.SetBranchAddress( "TBtagJet0Index", &BtagJet0Index );
+    fileTree.SetBranchAddress("TJet1Px",          &EJI.EventJet1Px); 
+    fileTree.SetBranchAddress("TJet1Py",          &EJI.EventJet1Py); 
+    fileTree.SetBranchAddress("TJet1Pz",          &EJI.EventJet1Pz); 
+    fileTree.SetBranchAddress("TJet1E",           &EJI.EventJet1E);  
     
-    fileTree.SetBranchAddress( "TBtagJet1Px", &BtagJet1Px );
-    fileTree.SetBranchAddress( "TBtagJet1Py", &BtagJet1Py );
-    fileTree.SetBranchAddress( "TBtagJet1Pz", &BtagJet1Pz );
-    fileTree.SetBranchAddress( "TBtagJet1E", &BtagJet1E );
-    fileTree.SetBranchAddress( "TBtagJet1Index", &BtagJet1Index );
+    fileTree.SetBranchAddress("TBtagJet0Px",      &EJI.EventBtagJet0Px); 
+    fileTree.SetBranchAddress("TBtagJet0Py",      &EJI.EventBtagJet0Py); 
+    fileTree.SetBranchAddress("TBtagJet0Pz",      &EJI.EventBtagJet0Pz); 
+    fileTree.SetBranchAddress("TBtagJet0E",       &EJI.EventBtagJet0E);
+    fileTree.SetBranchAddress("TBtagJet0Index",   &EJI.EventBtagJet0Index);
     
-    fileTree.SetBranchAddress( "TRunNum", &runNumber );
-    fileTree.SetBranchAddress( "TEventNum", &eventNumber );
-    fileTree.SetBranchAddress( "TLumiBlock", &lumiBlock );
-    if (!doData) {
-        fileTree.SetBranchAddress( "TChannel_LepESUp", &Type_LepESUp );
-        fileTree.SetBranchAddress( "TChannel_LepESDown", &Type_LepESDown );
-        fileTree.SetBranchAddress( "TDoEvent_LepESUp", &doEvent_LepESUp );
-        fileTree.SetBranchAddress( "TDoEvent_LepESDown", &doEvent_LepESDown );
+    fileTree.SetBranchAddress("TBtagJet1Px",      &EJI.EventBtagJet1Px); 
+    fileTree.SetBranchAddress("TBtagJet1Py",      &EJI.EventBtagJet1Py); 
+    fileTree.SetBranchAddress("TBtagJet1Pz",      &EJI.EventBtagJet1Pz); 
+    fileTree.SetBranchAddress("TBtagJet1E",       &EJI.EventBtagJet1E);
+    fileTree.SetBranchAddress("TBtagJet1Index",   &EJI.EventBtagJet1Index);
+    
+    if (!BEI.doData) {
         
-        fileTree.SetBranchAddress( "TMET_LepESUp",     &MET_LepESUp );
-        fileTree.SetBranchAddress( "TMET_LepESDown",     &MET_LepESDown );
-        fileTree.SetBranchAddress( "TMET_Phi_LepESUp", &METPhi_LepESUp );
-        fileTree.SetBranchAddress( "TMET_Phi_LepESDown", &METPhi_LepESDown );
-        fileTree.SetBranchAddress( "TMET_JetESUp",     &MET_JetESUp );
-        fileTree.SetBranchAddress( "TMET_JetESDown",     &MET_JetESDown );
-        fileTree.SetBranchAddress( "TMET_Phi_JetESUp", &METPhi_JetESUp );
-        fileTree.SetBranchAddress( "TMET_Phi_JetESDown", &METPhi_JetESDown );
+        fileTree.SetBranchAddress("TDoEvent_LepESUp",       &ELI_LepESUp.doEvent);
+        fileTree.SetBranchAddress("TChannel_LepESUp",       &ELI_LepESUp.EventDiLepType);
+        fileTree.SetBranchAddress("TDiLepMass_LepESUp",     &ELI_LepESUp.EventDiLepMass);
         
-        fileTree.SetBranchAddress( "TLep0Px_LepESUp", &Lep0Px_LepESUp );
-        fileTree.SetBranchAddress( "TLep0Px_LepESDown", &Lep0Px_LepESDown );
-        fileTree.SetBranchAddress( "TLep0Py_LepESUp", &Lep0Py_LepESUp );
-        fileTree.SetBranchAddress( "TLep0Py_LepESDown", &Lep0Py_LepESDown );
-        fileTree.SetBranchAddress( "TLep0Pz_LepESUp", &Lep0Pz_LepESUp );
-        fileTree.SetBranchAddress( "TLep0Pz_LepESDown", &Lep0Pz_LepESDown );
-        fileTree.SetBranchAddress( "TLep0E_LepESUp",  &Lep0E_LepESUp );
-        fileTree.SetBranchAddress( "TLep0E_LepESDown",  &Lep0E_LepESDown );
-        fileTree.SetBranchAddress( "TLep0PdgId_LepESUp", &Lep0PdgId_LepESUp );
-        fileTree.SetBranchAddress( "TLep0PdgId_LepESDown", &Lep0PdgId_LepESDown );
-        fileTree.SetBranchAddress( "TLep0RelPFIso_LepESUp",&Lep0RelPFIso_LepESUp );
-        fileTree.SetBranchAddress( "TLep0RelPFIso_LepESDown",&Lep0RelPFIso_LepESDown );
+        fileTree.SetBranchAddress("TLep0Px_LepESUp",        &ELI_LepESUp.EventLep0Px); 
+        fileTree.SetBranchAddress("TLep0Py_LepESUp",        &ELI_LepESUp.EventLep0Py); 
+        fileTree.SetBranchAddress("TLep0Pz_LepESUp",        &ELI_LepESUp.EventLep0Pz); 
+        fileTree.SetBranchAddress("TLep0E_LepESUp",         &ELI_LepESUp.EventLep0E);
+        fileTree.SetBranchAddress("TLep0PdgId_LepESUp",       &ELI_LepESUp.EventLep0PDGID);
+        fileTree.SetBranchAddress("TLep0RelPFIso_LepESUp",    &ELI_LepESUp.EventLep0RelPFIso);
         
-        fileTree.SetBranchAddress( "TLep1Px_LepESUp", &Lep1Px_LepESUp );
-        fileTree.SetBranchAddress( "TLep1Px_LepESDown", &Lep1Px_LepESDown );
-        fileTree.SetBranchAddress( "TLep1Py_LepESUp", &Lep1Py_LepESUp );
-        fileTree.SetBranchAddress( "TLep1Py_LepESDown", &Lep1Py_LepESDown );
-        fileTree.SetBranchAddress( "TLep1Pz_LepESUp", &Lep1Pz_LepESUp );
-        fileTree.SetBranchAddress( "TLep1Pz_LepESDown", &Lep1Pz_LepESDown );
-        fileTree.SetBranchAddress( "TLep1E_LepESUp",  &Lep1E_LepESUp );
-        fileTree.SetBranchAddress( "TLep1E_LepESDown",  &Lep1E_LepESDown );
-        fileTree.SetBranchAddress( "TLep1PdgId_LepESUp", &Lep1PdgId_LepESUp );
-        fileTree.SetBranchAddress( "TLep1PdgId_LepESDown", &Lep1PdgId_LepESDown );
-        fileTree.SetBranchAddress( "TLep1RelPFIso_LepESUp",&Lep1RelPFIso_LepESUp );
-        fileTree.SetBranchAddress( "TLep1RelPFIso_LepESDown",&Lep1RelPFIso_LepESDown );
+        fileTree.SetBranchAddress("TLep1Px_LepESUp",          &ELI_LepESUp.EventLep1Px); 
+        fileTree.SetBranchAddress("TLep1Py_LepESUp",          &ELI_LepESUp.EventLep1Py); 
+        fileTree.SetBranchAddress("TLep1Pz_LepESUp",          &ELI_LepESUp.EventLep1Pz); 
+        fileTree.SetBranchAddress("TLep1E_LepESUp",           &ELI_LepESUp.EventLep1E);
+        fileTree.SetBranchAddress("TLep1PdgId_LepESUp",       &ELI_LepESUp.EventLep1PDGID);
+        fileTree.SetBranchAddress("TLep1RelPFIso_LepESUp",    &ELI_LepESUp.EventLep1RelPFIso);        
         
-        fileTree.SetBranchAddress( "TNJets_JetESUp",    &NJets_JetESUp );
-        fileTree.SetBranchAddress( "TNJets_JetESDown",    &NJets_JetESDown );
-        fileTree.SetBranchAddress( "TNJetsBtag_JetESUp",&NBtagJets_JetESUp );
-        fileTree.SetBranchAddress( "TNJetsBtag_JetESDown",&NBtagJets_JetESDown );
-        fileTree.SetBranchAddress( "HT_JetESUp", &HT_JetESUp );
-        fileTree.SetBranchAddress( "HT_JetESDown", &HT_JetESDown );
+        fileTree.SetBranchAddress("TDoEvent_LepESDown",       &ELI_LepESDown.doEvent);
+        fileTree.SetBranchAddress("TChannel_LepESDown",       &ELI_LepESDown.EventDiLepType);        
+        fileTree.SetBranchAddress("TDiLepMass_LepESDown",     &ELI_LepESDown.EventDiLepMass);
         
-        fileTree.SetBranchAddress( "TJet0Px_JetESUp", &Jet0Px_JetESUp );
-        fileTree.SetBranchAddress( "TJet0Px_JetESDown", &Jet0Px_JetESDown );
-        fileTree.SetBranchAddress( "TJet0Py_JetESUp", &Jet0Py_JetESUp );
-        fileTree.SetBranchAddress( "TJet0Py_JetESDown", &Jet0Py_JetESDown );
-        fileTree.SetBranchAddress( "TJet0Pz_JetESUp", &Jet0Pz_JetESUp );
-        fileTree.SetBranchAddress( "TJet0Pz_JetESDown", &Jet0Pz_JetESDown );
-        fileTree.SetBranchAddress( "TJet0E_JetESUp", &Jet0E_JetESUp );
-        fileTree.SetBranchAddress( "TJet0E_JetESDown", &Jet0E_JetESDown );
+        fileTree.SetBranchAddress("TLep0Px_LepESDown",        &ELI_LepESDown.EventLep0Px); 
+        fileTree.SetBranchAddress("TLep0Py_LepESDown",        &ELI_LepESDown.EventLep0Py); 
+        fileTree.SetBranchAddress("TLep0Pz_LepESDown",        &ELI_LepESDown.EventLep0Pz); 
+        fileTree.SetBranchAddress("TLep0E_LepESDown",         &ELI_LepESDown.EventLep0E);
+        fileTree.SetBranchAddress("TLep0PdgId_LepESDown",     &ELI_LepESDown.EventLep0PDGID);
+        fileTree.SetBranchAddress("TLep0RelPFIso_LepESDown",  &ELI_LepESDown.EventLep0RelPFIso);
         
-        fileTree.SetBranchAddress( "TJet1Px_JetESUp", &Jet1Px_JetESUp );
-        fileTree.SetBranchAddress( "TJet1Px_JetESDown", &Jet1Px_JetESDown );
-        fileTree.SetBranchAddress( "TJet1Py_JetESUp", &Jet1Py_JetESUp );
-        fileTree.SetBranchAddress( "TJet1Py_JetESDown", &Jet1Py_JetESDown );
-        fileTree.SetBranchAddress( "TJet1Pz_JetESUp", &Jet1Pz_JetESUp );
-        fileTree.SetBranchAddress( "TJet1Pz_JetESDown", &Jet1Pz_JetESDown );
-        fileTree.SetBranchAddress( "TJet1E_JetESUp", &Jet1E_JetESUp );
-        fileTree.SetBranchAddress( "TJet1E_JetESDown", &Jet1E_JetESDown );
+        fileTree.SetBranchAddress("TLep1Px_LepESDown",        &ELI_LepESDown.EventLep1Px); 
+        fileTree.SetBranchAddress("TLep1Py_LepESDown",        &ELI_LepESDown.EventLep1Py); 
+        fileTree.SetBranchAddress("TLep1Pz_LepESDown",        &ELI_LepESDown.EventLep1Pz); 
+        fileTree.SetBranchAddress("TLep1E_LepESDown",         &ELI_LepESDown.EventLep1E);
+        fileTree.SetBranchAddress("TLep1PdgId_LepESDown",     &ELI_LepESDown.EventLep1PDGID);
+        fileTree.SetBranchAddress("TLep1RelPFIso_LepESDown",  &ELI_LepESDown.EventLep1RelPFIso);
         
-        fileTree.SetBranchAddress( "TBtagJet0Px_JetESUp", &BtagJet0Px_JetESUp );
-        fileTree.SetBranchAddress( "TBtagJet0Px_JetESDown", &BtagJet0Px_JetESDown );
-        fileTree.SetBranchAddress( "TBtagJet0Py_JetESUp", &BtagJet0Py_JetESUp );
-        fileTree.SetBranchAddress( "TBtagJet0Py_JetESDown", &BtagJet0Py_JetESDown );
-        fileTree.SetBranchAddress( "TBtagJet0Pz_JetESUp", &BtagJet0Pz_JetESUp );
-        fileTree.SetBranchAddress( "TBtagJet0Pz_JetESDown", &BtagJet0Pz_JetESDown );
-        fileTree.SetBranchAddress( "TBtagJet0E_JetESUp", &BtagJet0E_JetESUp ); 
-        fileTree.SetBranchAddress( "TBtagJet0E_JetESDown", &BtagJet0E_JetESDown ); 
-        fileTree.SetBranchAddress( "TBtagJet0Index_JetESUp", &BtagJet0Index_JetESUp );
-        fileTree.SetBranchAddress( "TBtagJet0Index_JetESDown", &BtagJet0Index_JetESDown );
+        fileTree.SetBranchAddress("TNJets_JetESUp",           &EJI_JetESUp.EventNJets); 
+        fileTree.SetBranchAddress("TNJetsBtag_JetESUp",       &EJI_JetESUp.EventNBtagJets);     
+        fileTree.SetBranchAddress("THT_JetESUp",              &EJI_JetESUp.EventHT);
         
-        fileTree.SetBranchAddress( "TBtagJet1Px_JetESUp", &BtagJet1Px_JetESUp );
-        fileTree.SetBranchAddress( "TBtagJet1Px_JetESDown", &BtagJet1Px_JetESDown );
-        fileTree.SetBranchAddress( "TBtagJet1Py_JetESUp", &BtagJet1Py_JetESUp );
-        fileTree.SetBranchAddress( "TBtagJet1Py_JetESDown", &BtagJet1Py_JetESDown );
-        fileTree.SetBranchAddress( "TBtagJet1Pz_JetESUp", &BtagJet1Pz_JetESUp );
-        fileTree.SetBranchAddress( "TBtagJet1Pz_JetESDown", &BtagJet1Pz_JetESDown );
-        fileTree.SetBranchAddress( "TBtagJet1E_JetESUp", &BtagJet1E_JetESUp );
-        fileTree.SetBranchAddress( "TBtagJet1E_JetESDown", &BtagJet1E_JetESDown );
-        fileTree.SetBranchAddress( "TBtagJet1Index_JetESUp", &BtagJet1Index_JetESUp );
-        fileTree.SetBranchAddress( "TBtagJet1Index_JetESDown", &BtagJet1Index_JetESDown );
+        fileTree.SetBranchAddress("TJet0Px_JetESUp",          &EJI_JetESUp.EventJet0Px); 
+        fileTree.SetBranchAddress("TJet0Py_JetESUp",          &EJI_JetESUp.EventJet0Py); 
+        fileTree.SetBranchAddress("TJet0Pz_JetESUp",          &EJI_JetESUp.EventJet0Pz); 
+        fileTree.SetBranchAddress("TJet0E_JetESUp",           &EJI_JetESUp.EventJet0E);
+        fileTree.SetBranchAddress("TJet1Px_JetESUp",          &EJI_JetESUp.EventJet1Px); 
+        fileTree.SetBranchAddress("TJet1Py_JetESUp",          &EJI_JetESUp.EventJet1Py); 
+        fileTree.SetBranchAddress("TJet1Pz_JetESUp",          &EJI_JetESUp.EventJet1Pz); 
+        fileTree.SetBranchAddress("TJet1E_JetESUp",           &EJI_JetESUp.EventJet1E);
         
-        fileTree.SetBranchAddress( "TNJetsBtag_BTagSFUp",&NBtagJets_BTagSFUp );
-        fileTree.SetBranchAddress( "TNJetsBtag_BTagSFDown",&NBtagJets_BTagSFDown );
+        fileTree.SetBranchAddress("TBtagJet0Px_JetESUp",      &EJI_JetESUp.EventBtagJet0Px); 
+        fileTree.SetBranchAddress("TBtagJet0Py_JetESUp",      &EJI_JetESUp.EventBtagJet0Py); 
+        fileTree.SetBranchAddress("TBtagJet0Pz_JetESUp",      &EJI_JetESUp.EventBtagJet0Pz); 
+        fileTree.SetBranchAddress("TBtagJet0E_JetESUp",       &EJI_JetESUp.EventBtagJet0E);
+        fileTree.SetBranchAddress("TBtagJet0Index_JetESUp",   &EJI_JetESUp.EventBtagJet0Index);    
+        fileTree.SetBranchAddress("TBtagJet1Px_JetESUp",      &EJI_JetESUp.EventBtagJet1Px); 
+        fileTree.SetBranchAddress("TBtagJet1Py_JetESUp",      &EJI_JetESUp.EventBtagJet1Py); 
+        fileTree.SetBranchAddress("TBtagJet1Pz_JetESUp",      &EJI_JetESUp.EventBtagJet1Pz); 
+        fileTree.SetBranchAddress("TBtagJet1E_JetESUp",       &EJI_JetESUp.EventBtagJet1E);
+        fileTree.SetBranchAddress("TBtagJet1Index_JetESUp",   &EJI_JetESUp.EventBtagJet1Index);        
         
-        fileTree.SetBranchAddress( "TBtagJet0Px_BTagSFUp", &BtagJet0Px_BTagSFUp );
-        fileTree.SetBranchAddress( "TBtagJet0Px_BTagSFDown", &BtagJet0Px_BTagSFDown );
-        fileTree.SetBranchAddress( "TBtagJet0Py_BTagSFUp", &BtagJet0Py_BTagSFUp );
-        fileTree.SetBranchAddress( "TBtagJet0Py_BTagSFDown", &BtagJet0Py_BTagSFDown );
-        fileTree.SetBranchAddress( "TBtagJet0Pz_BTagSFUp", &BtagJet0Pz_BTagSFUp );
-        fileTree.SetBranchAddress( "TBtagJet0Pz_BTagSFDown", &BtagJet0Pz_BTagSFDown );
-        fileTree.SetBranchAddress( "TBtagJet0E_BTagSFUp", &BtagJet0E_BTagSFUp ); 
-        fileTree.SetBranchAddress( "TBtagJet0E_BTagSFDown", &BtagJet0E_BTagSFDown ); 
-        fileTree.SetBranchAddress( "TBtagJet0Index_BTagSFUp", &BtagJet0Index_BTagSFUp );
-        fileTree.SetBranchAddress( "TBtagJet0Index_BTagSFDown", &BtagJet0Index_BTagSFDown );
+        fileTree.SetBranchAddress("TNJets_JetESDown",           &EJI_JetESDown.EventNJets); 
+        fileTree.SetBranchAddress("TNJetsBtag_JetESDown",       &EJI_JetESDown.EventNBtagJets);     
+        fileTree.SetBranchAddress("THT_JetESDown",              &EJI_JetESDown.EventHT);
         
-        fileTree.SetBranchAddress( "TBtagJet1Px_BTagSFUp", &BtagJet1Px_BTagSFUp );
-        fileTree.SetBranchAddress( "TBtagJet1Px_BTagSFDown", &BtagJet1Px_BTagSFDown );
-        fileTree.SetBranchAddress( "TBtagJet1Py_BTagSFUp", &BtagJet1Py_BTagSFUp );
-        fileTree.SetBranchAddress( "TBtagJet1Py_BTagSFDown", &BtagJet1Py_BTagSFDown );
-        fileTree.SetBranchAddress( "TBtagJet1Pz_BTagSFUp", &BtagJet1Pz_BTagSFUp );
-        fileTree.SetBranchAddress( "TBtagJet1Pz_BTagSFDown", &BtagJet1Pz_BTagSFDown );
-        fileTree.SetBranchAddress( "TBtagJet1E_BTagSFUp", &BtagJet1E_BTagSFUp );
-        fileTree.SetBranchAddress( "TBtagJet1E_BTagSFDown", &BtagJet1E_BTagSFDown );
-        fileTree.SetBranchAddress( "TBtagJet1Index_BTagSFUp", &BtagJet1Index_BTagSFUp );
-        fileTree.SetBranchAddress( "TBtagJet1Index_BTagSFDown", &BtagJet1Index_BTagSFDown );
+        fileTree.SetBranchAddress("TJet0Px_JetESDown",          &EJI_JetESDown.EventJet0Px); 
+        fileTree.SetBranchAddress("TJet0Py_JetESDown",          &EJI_JetESDown.EventJet0Py); 
+        fileTree.SetBranchAddress("TJet0Pz_JetESDown",          &EJI_JetESDown.EventJet0Pz); 
+        fileTree.SetBranchAddress("TJet0E_JetESDown",           &EJI_JetESDown.EventJet0E);
+        fileTree.SetBranchAddress("TJet1Px_JetESDown",          &EJI_JetESDown.EventJet1Px); 
+        fileTree.SetBranchAddress("TJet1Py_JetESDown",          &EJI_JetESDown.EventJet1Py); 
+        fileTree.SetBranchAddress("TJet1Pz_JetESDown",          &EJI_JetESDown.EventJet1Pz); 
+        fileTree.SetBranchAddress("TJet1E_JetESDown",           &EJI_JetESDown.EventJet1E);
+        
+        fileTree.SetBranchAddress("TBtagJet0Px_JetESDown",      &EJI_JetESDown.EventBtagJet0Px); 
+        fileTree.SetBranchAddress("TBtagJet0Py_JetESDown",      &EJI_JetESDown.EventBtagJet0Py); 
+        fileTree.SetBranchAddress("TBtagJet0Pz_JetESDown",      &EJI_JetESDown.EventBtagJet0Pz); 
+        fileTree.SetBranchAddress("TBtagJet0E_JetESDown",       &EJI_JetESDown.EventBtagJet0E);
+        fileTree.SetBranchAddress("TBtagJet0Index_JetESDown",   &EJI_JetESDown.EventBtagJet0Index);    
+        fileTree.SetBranchAddress("TBtagJet1Px_JetESDown",      &EJI_JetESDown.EventBtagJet1Px); 
+        fileTree.SetBranchAddress("TBtagJet1Py_JetESDown",      &EJI_JetESDown.EventBtagJet1Py); 
+        fileTree.SetBranchAddress("TBtagJet1Pz_JetESDown",      &EJI_JetESDown.EventBtagJet1Pz); 
+        fileTree.SetBranchAddress("TBtagJet1E_JetESDown",       &EJI_JetESDown.EventBtagJet1E);
+        fileTree.SetBranchAddress("TBtagJet1Index_JetESDown",   &EJI_JetESDown.EventBtagJet1Index);
+        
+        
+        fileTree.SetBranchAddress("TNJetsBtag_BTagSFUp",       &EJI_BTagSFUp.EventNBtagJets);
+        
+        fileTree.SetBranchAddress("TBtagJet0Px_BTagSFUp",      &EJI_BTagSFUp.EventBtagJet0Px); 
+        fileTree.SetBranchAddress("TBtagJet0Py_BTagSFUp",      &EJI_BTagSFUp.EventBtagJet0Py); 
+        fileTree.SetBranchAddress("TBtagJet0Pz_BTagSFUp",      &EJI_BTagSFUp.EventBtagJet0Pz); 
+        fileTree.SetBranchAddress("TBtagJet0E_BTagSFUp",       &EJI_BTagSFUp.EventBtagJet0E);
+        fileTree.SetBranchAddress("TBtagJet0Index_BTagSFUp",   &EJI_BTagSFUp.EventBtagJet0Index);    
+        fileTree.SetBranchAddress("TBtagJet1Px_BTagSFUp",      &EJI_BTagSFUp.EventBtagJet1Px); 
+        fileTree.SetBranchAddress("TBtagJet1Py_BTagSFUp",      &EJI_BTagSFUp.EventBtagJet1Py); 
+        fileTree.SetBranchAddress("TBtagJet1Pz_BTagSFUp",      &EJI_BTagSFUp.EventBtagJet1Pz); 
+        fileTree.SetBranchAddress("TBtagJet1E_BTagSFUp",       &EJI_BTagSFUp.EventBtagJet1E);
+        fileTree.SetBranchAddress("TBtagJet1Index_BTagSFUp",   &EJI_BTagSFUp.EventBtagJet1Index);
+        
+        fileTree.SetBranchAddress("TNJetsBtag_BTagSFDown",       &EJI_BTagSFDown.EventNBtagJets);
+        
+        fileTree.SetBranchAddress("TBtagJet0Px_BTagSFDown",      &EJI_BTagSFDown.EventBtagJet0Px); 
+        fileTree.SetBranchAddress("TBtagJet0Py_BTagSFDown",      &EJI_BTagSFDown.EventBtagJet0Py); 
+        fileTree.SetBranchAddress("TBtagJet0Pz_BTagSFDown",      &EJI_BTagSFDown.EventBtagJet0Pz); 
+        fileTree.SetBranchAddress("TBtagJet0E_BTagSFDown",       &EJI_BTagSFDown.EventBtagJet0E);
+        fileTree.SetBranchAddress("TBtagJet0Index_BTagSFDown",   &EJI_BTagSFDown.EventBtagJet0Index);    
+        fileTree.SetBranchAddress("TBtagJet1Px_BTagSFDown",      &EJI_BTagSFDown.EventBtagJet1Px); 
+        fileTree.SetBranchAddress("TBtagJet1Py_BTagSFDown",      &EJI_BTagSFDown.EventBtagJet1Py); 
+        fileTree.SetBranchAddress("TBtagJet1Pz_BTagSFDown",      &EJI_BTagSFDown.EventBtagJet1Pz); 
+        fileTree.SetBranchAddress("TBtagJet1E_BTagSFDown",       &EJI_BTagSFDown.EventBtagJet1E);
+        fileTree.SetBranchAddress("TBtagJet1Index_BTagSFDown",   &EJI_BTagSFDown.EventBtagJet1Index);        
+        
+        
+        fileTree.SetBranchAddress("TMET_LepESUp",             &EMI_LepESUp.EventMET_preCorr);
+        fileTree.SetBranchAddress("TMET_LepESDown",           &EMI_LepESDown.EventMET_preCorr);
+        fileTree.SetBranchAddress("TMET_JetESUp",             &EMI_JetESUp.EventMET_preCorr);
+        fileTree.SetBranchAddress("TMET_JetESDown",           &EMI_JetESDown.EventMET_preCorr);
+        fileTree.SetBranchAddress("TMET_Phi_LepESUp",         &EMI_LepESUp.EventMETPhi_preCorr);
+        fileTree.SetBranchAddress("TMET_Phi_LepESDown",       &EMI_LepESDown.EventMETPhi_preCorr);
+        fileTree.SetBranchAddress("TMET_Phi_LepESUp",         &EMI_JetESUp.EventMETPhi_preCorr);
+        fileTree.SetBranchAddress("TMET_Phi_LepESDown",       &EMI_JetESDown.EventMETPhi_preCorr);
     }        
     if (fileTree.GetBranch("TGenMET")) {
+        BEI.hasMETInfo = true;
         fileTree.SetBranchAddress("TGenMET", &genMET_Pt );
         fileTree.SetBranchAddress("TGenMETPhi", &genMET_Phi );
     }
-    else {
-        genMET_Pt = -99.;
-        genMET_Phi = -99.;
-    }
     if (fileTree.GetBranch("TGenTopSt3_0_Pt")) {
-        hasTopInfo = 1;
+        BEI.hasTopInfo = true;
         fileTree.SetBranchAddress("TGenTopSt3_0_Energy", &genTop0En);
         fileTree.SetBranchAddress("TGenTopSt3_0_Pt",     &genTop0Pt);
         fileTree.SetBranchAddress("TGenTopSt3_0_Phi",    &genTop0Phi);
@@ -664,29 +548,14 @@ int main( int argc, const char* argv[] ) {
         fileTree.SetBranchAddress("TGenTopSt3_1_Eta",    &genTop1Eta);
         fileTree.SetBranchAddress("TGenTopSt3_1_PDGID",  &genTop1PdgId);
     }
-    else {
-        genTop0Pt = -99.;
-        genTop1Pt = -99.;
-        genTop0PdgId = -99;
-        genTop1PdgId = -99;
-    }
     if (fileTree.GetBranch("TGenStopMass0")){
-        fileTree.SetBranchAddress( "TGenStopMass0", &TGenStopMass0 );
-        fileTree.SetBranchAddress( "TGenStopMass1", &TGenStopMass1 );
-        fileTree.SetBranchAddress( "TGenChi0Mass0", &TGenChi0Mass0 );
-        fileTree.SetBranchAddress( "TGenChi0Mass1", &TGenChi0Mass1 );            
+        BEI.hasStopInfo = true;
+        fileTree.SetBranchAddress( "TGenStopMass0",     &TGenStopMass0 );
+        fileTree.SetBranchAddress( "TGenStopMass1",     &TGenStopMass1 );
+        fileTree.SetBranchAddress( "TGenChi0Mass0",     &TGenChi0Mass0 );
+        fileTree.SetBranchAddress( "TGenChi0Mass1",     &TGenChi0Mass1 );            
         fileTree.SetBranchAddress( "TGenCharginoMass0", &TGenCharginoMass0 );
         fileTree.SetBranchAddress( "TGenCharginoMass1", &TGenCharginoMass1 );
-    }
-    else{
-        TGenStopMass0 = -99;
-        TGenStopMass1 = -99;
-        TGenChi0Mass0 = -99;
-        TGenChi0Mass1 = -99;
-        TGenCharginoMass0 = -99;
-        TGenCharginoMass1 = -99;
-    }
-    if (fileTree.GetBranch("TGenStopMass0")){
         float stopMassToUseForXSec;
         if (!fInName.Contains("FineBin")) {
             float roundedStopMass = floor((TGenStopMass0+12.5)/25.)*25.; 
@@ -699,27 +568,32 @@ int main( int argc, const char* argv[] ) {
         cout << "TEMP FIX !!! " << endl;
         stopMassToUseForXSec = grabStopMass;
         StopXSec theStopXSec = getCrossSectionStop(stopMassToUseForXSec);
-        stopWeight = theStopXSec.stopProdXsec;            
-        stopWeightErr = theStopXSec.stopProdXsecUncert * stopWeight;
-        stopWeightPlusErr = stopWeight + stopWeightErr;
-        stopWeightMinusErr = stopWeight - stopWeightErr;            
-        cout << "stopWeight " << stopWeight << endl;
-        cout << "stopWeightErr " << stopWeightErr << endl;
-        cout << "stopWeightErr " << stopWeightPlusErr << endl;
-        cout << "stopWeightErr " << stopWeightMinusErr << endl;
+        EGPI.StopWeight = theStopXSec.stopProdXsec;
+        EGPI.StopWeightErr = theStopXSec.stopProdXsecUncert * EGPI.StopWeight;
+        EGPI.StopWeightPlusErr = EGPI.StopWeight + EGPI.StopWeightErr;
+        EGPI.StopWeightMinusErr = EGPI.StopWeight - EGPI.StopWeightErr;
+        cout << "stopWeight " << EGPI.StopWeight << endl;
+        cout << "stopWeightErr " << EGPI.StopWeightErr << endl;
+        cout << "stopWeightErr " << EGPI.StopWeightPlusErr << endl;
+        cout << "stopWeightErr " << EGPI.StopWeightMinusErr << endl;
     }
     ////Book histograms and histogram names
     outputFile->cd();
     vector<HistogramT> * histVec_1D = OneDeeHistTVec();
     vector<HistogramT> * histVec_2D = TwoDeeHistTVec();
     vector<HistogramT> * histVec_3D = ThreeDeeHistTVec();
+    vector<HistogramT> * histVec_1D_Smear, * histVec_1D_Smear_Syst;
+    /*
+    if (!BEI.doData) {
+        histVec_1D_Smear = OneDeeHistTVecSmearJets();
+        histVec_1D_Smear_Syst = new vector<HistogramT>;
+    }
+    */
     vector<SampleT> * subSampVec    = SubSampVec();    ///Define things necessary for booking histograms
     vector<SystT> * systVec         = SystVec();
     vector<HistogramT> * histVec_1D_Syst = new vector<HistogramT>;
     vector<HistogramT> * histVec_2D_Syst = new vector<HistogramT>;
     vector<HistogramT> * histVec_3D_Syst = new vector<HistogramT>;
-    //    vector<HistogramT> * histVec_2D_Syst;
-    //    vector<HistogramT> * histVec_3D_Syst;
     HistogramT H_Current; 
     TH1F * h_1DCurr; TH2F * h_2DCurr; TH3F * h_3DCurr;
     HMap_1D histMap_1D; HMap_2D histMap_2D; HMap_3D histMap_3D; passCutMap subSampBool;
@@ -734,12 +608,13 @@ int main( int argc, const char* argv[] ) {
     float yBinMin, yBinMax;
     float zBinMin, zBinMax;
     if (doBookSyst) {
-        histVec_1D_Syst = AddSystHists(histVec_1D, systVec, fInName, isSignal);
+        histVec_1D_Syst = AddSystHists(histVec_1D, systVec, fInName, BEI.isSignal);
         
-         histVec_2D_Syst = AddSystHists(histVec_2D, systVec, fInName, isSignal);
+        histVec_2D_Syst = AddSystHists(histVec_2D, systVec, fInName, BEI.isSignal);        
         /*
-         histVec_3D_Syst = AddSystHists(histVec_3D, systVec, fInName, isSignal);
+         histVec_3D_Syst = AddSystHists(histVec_3D, systVec, fInName, BEI.isSignal);
          */
+//        histVec_1D_Smear_Syst = AddSystHists(histVec_1D_Smear, systVec, fInName, BEI.isSignal);
         //        addSystHists(histVec_2D, systVec);
         //        addSystHists(histVec_3D, systVec);
     }
@@ -919,9 +794,6 @@ int main( int argc, const char* argv[] ) {
         eventCountName = "weightedEvents";
     }
     h_eventCount = (TH1F *) inputFile.Get(eventCountName);
-    h_ElecCharIso = (TH1F *) inputFile.Get("h_ElecCharIso");
-    h_ElecNeutIso = (TH1F *) inputFile.Get("h_ElecNeutIso");
-    h_ElecPhotIso = (TH1F *) inputFile.Get("h_ElecPhotIso");
     for (Long64_t ievt = startPoint; ievt < nEvents;ievt++) {
         //    for (Long64_t ievt=0; ievt<1000;ievt++)
         if (startPoint > 0 ) {
@@ -932,1562 +804,324 @@ int main( int argc, const char* argv[] ) {
             cout << "ievt at end point (note, not running on this event!):" << ievt << endl;
             break;
         }
-        diBJetPhi = 0; diBJetPt = 0; diBJetEta = 0; diBJetInvMass = 0;
-        diJetPhi = 0; diJetPt = 0; diJetEta = 0; diJetInvMass = 0;                
-        MT2lb = 0;
-        
-        if (!doData) {
-            diBJetPt_JetESUp = 0; diBJetPt_JetESDown = 0; diBJetPt_BTagSFUp = 0; diBJetPt_BTagSFDown = 0;
-            diBJetPhi_JetESUp = 0; diBJetPhi_JetESDown = 0; diBJetPhi_BTagSFUp = 0; diBJetPhi_BTagSFDown = 0;
-            diBJetEta_JetESUp = 0; diBJetEta_JetESDown = 0; diBJetEta_BTagSFUp = 0; diBJetEta_BTagSFDown = 0;
-            diBJetInvMass_JetESUp = 0; diBJetInvMass_JetESDown = 0; diBJetInvMass_BTagSFUp = 0; diBJetInvMass_BTagSFDown = 0;
-            diJetPt_JetESUp = 0; diJetPt_JetESDown = 0;
-            diJetPhi_JetESUp = 0; diJetPhi_JetESDown = 0;
-            diJetEta_JetESUp = 0; diJetEta_JetESDown = 0;
-            diJetInvMass_JetESUp = 0; diJetInvMass_JetESDown = 0;
-        }
-        //        doEvent = true;
         map<string, float> stringKeyToVar;
-        fileTree.GetEntry(ievt);
         
+        ELI.ELIDefaultVarVals();
+        EJI.EJIDefaultVarVals();
+        EMI.EMIDefaultVarVals();
+        EDSI.EDSIDefaultVarVals();
+
+        if (!BEI.doData) {
+            EGPI.EGPIDefaultVarVals();
+            ELI_LepESUp.ELIDefaultVarVals();
+            ELI_LepESDown.ELIDefaultVarVals();
+            
+            EJI_JetESUp.EJIDefaultVarVals();
+            EJI_JetESDown.EJIDefaultVarVals();
+            EJI_BTagSFUp.EJIDefaultVarVals();
+            EJI_BTagSFDown.EJIDefaultVarVals();
+            
+            EMI_LepESUp.EMIDefaultVarVals();
+            EMI_LepESDown.EMIDefaultVarVals();
+            EMI_JetESUp.EMIDefaultVarVals();
+            EMI_JetESDown.EMIDefaultVarVals();
+            EMI_BTagSFUp.EMIDefaultVarVals();
+            EMI_BTagSFDown.EMIDefaultVarVals();
+            
+            EDSI_LepESUp.EDSIDefaultVarVals();
+            EDSI_LepESDown.EDSIDefaultVarVals();
+            EDSI_JetESUp.EDSIDefaultVarVals();
+            EDSI_JetESDown.EDSIDefaultVarVals();
+            EDSI_BTagSFUp.EDSIDefaultVarVals();
+            EDSI_BTagSFDown.EDSIDefaultVarVals();
+        }
+        
+        
+        fileTree.GetEntry(ievt);
+//        cout << "test 1 " << endl;
         if (whichNTupleType == 0) {
-            if (doData) {
-                if (Type == 0 && !passTrigDoubleMu) continue;
-                else if (Type == 1 && !passTrigDoubleEl) continue;
-                else if (Type == 2 && !passTrigElMu) continue;
+            ELI.doEvent = EventPassTrigger(&BEI, &ELI);
+            if (!BEI.doData) {
+                ELI_LepESUp.doEvent = EventPassTrigger(&BEI, &ELI_LepESUp);
+                ELI_LepESDown.doEvent = EventPassTrigger(&BEI, &ELI_LepESDown);
+                keepEvent = (ELI.doEvent || ELI_LepESUp.doEvent || ELI_LepESDown.doEvent);
             }
             else {
-                if (!passTrigDoubleMu) {
-                    if (Type == 0) doEvent = false;
-                    if (Type_LepESUp == 0) doEvent_LepESUp = false;
-                    if (Type_LepESDown == 0) doEvent_LepESDown = false;
-                }
-                if (!passTrigDoubleEl) {
-                    if (Type == 1) doEvent = false;
-                    if (Type_LepESUp == 1) doEvent_LepESUp = false;
-                    if (Type_LepESDown == 1) doEvent_LepESDown = false;
-                }
-                if (!passTrigElMu) {
-                    if (Type == 2) doEvent = false;
-                    if (Type_LepESUp == 2) doEvent_LepESUp = false;
-                    if (Type_LepESDown == 2) doEvent_LepESDown = false;
-                }
+                keepEvent = ELI.doEvent;
             }
         }
-        /*
-         cout << "TGenStopMass0 " << TGenStopMass0 << endl;
-         cout << "TGenStopMass1 " << TGenStopMass1 << endl;
-         cout << "TGenChi0Mass0 " << TGenChi0Mass0 << endl;
-         cout << "TGenChi0Mass1 " << TGenChi0Mass1 << endl;
-         cout << "TGenCharginoMass0 " << TGenCharginoMass0 << endl;
-         cout << "TGenCharginoMass1 " << TGenCharginoMass1 << endl;
-         */        
-        if (doData) doEvent = true;
-        if (isSignal) {
-            if (abs(TGenStopMass0 - grabStopMass) > massDiffThresh) continue;
-            if (abs(TGenStopMass1 - grabStopMass) > massDiffThresh) continue;
-            if (abs(TGenChi0Mass0 - grabChi0Mass) > massDiffThresh) continue;
-            if (abs(TGenChi0Mass1 - grabChi0Mass) > massDiffThresh) continue;
-            if (abs(TGenCharginoMass0 - grabCharginoMass) > massDiffThresh) continue;
-            if (abs(TGenCharginoMass1 - grabCharginoMass) > massDiffThresh) continue;
+        else {
+            keepEvent = true;
         }
-        //        cout << "Lep0 Px " << Lep0Px << endl;
-        ZVeto = true;
-        ZVeto_LepESUp = true;
-        ZVeto_LepESDown = true;
-        //*****************************************                                                                                                                   
-        // SELECT THE SIGNAL MASS POINT (if signal)                                                                                                                   
-        //*****************************************                                                                                                                   
-        weight = 1.;
-        weight = PUWeight;
-        preNVtxRWweight = weight;
-        ////Calculate all the event variables needed
-        Lep0Vec.SetPxPyPzE(Lep0Px,Lep0Py,Lep0Pz,Lep0E);
-        Lep1Vec.SetPxPyPzE(Lep1Px,Lep1Py,Lep1Pz,Lep1E);
-        if (Lep1Vec.Pt() < subLepPtCut) {
-            doEvent = false;
-        }
-        if (NJets > 0) {
-            Jet0Vec.SetPxPyPzE(Jet0Px,Jet0Py,Jet0Pz,Jet0E);
-            if (NJets > 1) {
-                Jet1Vec.SetPxPyPzE(Jet1Px,Jet1Py,Jet1Pz,Jet1E);
-                DiJetVec = Jet0Vec + Jet1Vec;
-                diJetInvMass = DiJetVec.M();
-                diJetPt = DiJetVec.Pt();
-                diJetEta = DiJetVec.Eta();
-                diJetPhi = DiJetVec.Phi();
+        if (!keepEvent) continue;
+//        cout << "test 2 " << endl;
+        if (!BEI.doData) {
+            EGPI.weight_GenTopReweight = 1.; // set it to 1 for default -- will switch later if "hasTopInfo"
+            if (BEI.isSignal) {
+                if (!BEI.hasStopInfo) continue;
+                if (fabs(TGenStopMass0 - grabStopMass) > massDiffThresh) continue;
+                if (fabs(TGenStopMass1 - grabStopMass) > massDiffThresh) continue;
+                if (fabs(TGenChi0Mass0 - grabChi0Mass) > massDiffThresh) continue;
+                if (fabs(TGenChi0Mass1 - grabChi0Mass) > massDiffThresh) continue;
+                if (fabs(TGenCharginoMass0 - grabCharginoMass) > massDiffThresh) continue;
+                if (fabs(TGenCharginoMass1 - grabCharginoMass) > massDiffThresh) continue;
             }
-            if (NBtagJets > 0) {
-                BtagJet0Vec.SetPxPyPzE(BtagJet0Px,BtagJet0Py,BtagJet0Pz,BtagJet0E);
-                if (NBtagJets > 1) {
-                    BtagJet1Vec.SetPxPyPzE(BtagJet1Px,BtagJet1Py,BtagJet1Pz,BtagJet1E);
-                    DiBJetVec = BtagJet0Vec + BtagJet1Vec;
-                    diBJetInvMass = DiBJetVec.M();
-                    diBJetPt = DiBJetVec.Pt();
-                    diBJetEta = DiBJetVec.Eta();
-                    diBJetPhi = DiBJetVec.Phi();
-                }
+            if (BEI.hasMETInfo) {
+                genMETVec.SetPtEtaPhiM(genMET_Pt, 0., genMET_Phi, 0.);
+                EGPI.genMET.P4 = genMETVec;
+                EGPI.genMET.PDGID = 0;
+                EGPI.genMET.PDGStatus = 0;
+                EGPI.genMET.Mass = 0.;
             }
-        }
-        if (!doData) {
-                                                
-            Lep0Vec_LepESUp.SetPxPyPzE(Lep0Px_LepESUp, Lep0Py_LepESUp, Lep0Pz_LepESUp, Lep0E_LepESUp);
-            Lep0Vec_LepESDown.SetPxPyPzE(Lep0Px_LepESDown, Lep0Py_LepESDown, Lep0Pz_LepESDown, Lep0E_LepESDown);
-            Lep1Vec_LepESUp.SetPxPyPzE(Lep1Px_LepESUp, Lep1Py_LepESUp, Lep1Pz_LepESUp, Lep1E_LepESUp);
-            Lep1Vec_LepESDown.SetPxPyPzE(Lep1Px_LepESDown, Lep1Py_LepESDown, Lep1Pz_LepESDown, Lep1E_LepESDown);
-            if (Lep1Vec_LepESUp.Pt() < subLepPtCut) doEvent_LepESUp = false;
-            if (Lep1Vec_LepESDown.Pt() < subLepPtCut) doEvent_LepESDown = false;                
-            //                cout << "doEvent? " << doEvent << endl;
-            //                cout << "doEvent_LepESUp? " << doEvent_LepESUp << endl;
-            //                cout << "doEvent_LepESDown? " << doEvent_LepESDown << endl;
-            if (NJets_JetESUp > 0) {
-                Jet0Vec_JetESUp.SetPxPyPzE(Jet0Px_JetESUp, Jet0Py_JetESUp, Jet0Pz_JetESUp, Jet0E_JetESUp);
-                if (NJets_JetESUp > 1) {
-                    Jet1Vec_JetESUp.SetPxPyPzE(Jet1Px_JetESUp, Jet1Py_JetESUp, Jet1Pz_JetESUp, Jet1E_JetESUp);
-                    DiJetVec_JetESUp = Jet0Vec_JetESUp + Jet1Vec_JetESUp;
-                    diJetInvMass_JetESUp = DiJetVec_JetESUp.M();
-                    diJetPt_JetESUp = DiJetVec_JetESUp.Pt();
-                    diJetEta_JetESUp = DiJetVec_JetESUp.Eta();
-                    diJetPhi_JetESUp = DiJetVec_JetESUp.Phi();
-                }
-                if (NBtagJets_JetESUp > 0) {
-                    BtagJet0Vec_JetESUp.SetPxPyPzE(BtagJet0Px_JetESUp, BtagJet0Py_JetESUp, BtagJet0Pz_JetESUp, BtagJet0E_JetESUp);
-                    if (NBtagJets_JetESUp > 1) {
-                        BtagJet1Vec_JetESUp.SetPxPyPzE(BtagJet1Px_JetESUp, BtagJet1Py_JetESUp, BtagJet1Pz_JetESUp, BtagJet1E_JetESUp);
-                        DiBJetVec_JetESUp = BtagJet0Vec_JetESUp + BtagJet1Vec_JetESUp;
-                        diBJetInvMass_JetESUp = DiBJetVec_JetESUp.M();
-                        diBJetPt_JetESUp = DiBJetVec_JetESUp.Pt();
-                        diBJetEta_JetESUp = DiBJetVec_JetESUp.Eta();
-                        diBJetPhi_JetESUp = DiBJetVec_JetESUp.Phi();
-                    }
-                }
-            }
-            if (NJets_JetESDown > 0) {
-                Jet0Vec_JetESDown.SetPxPyPzE(Jet0Px_JetESDown, Jet0Py_JetESDown, Jet0Pz_JetESDown, Jet0E_JetESDown);
-                if (NJets_JetESDown > 1) {
-                    Jet1Vec_JetESDown.SetPxPyPzE(Jet1Px_JetESDown, Jet1Py_JetESDown, Jet1Pz_JetESDown, Jet1E_JetESDown);
-                    DiJetVec_JetESDown = Jet0Vec_JetESDown + Jet1Vec_JetESDown;
-                    diJetInvMass_JetESDown = DiJetVec_JetESDown.M();
-                    //                cout << "diJetInvMass " << diJetInvMass << endl;
-                    diJetPt_JetESDown = DiJetVec_JetESDown.Pt();
-                    diJetEta_JetESDown = DiJetVec_JetESDown.Eta();
-                    diJetPhi_JetESDown = DiJetVec_JetESDown.Phi();
-                }
-                if (NBtagJets_JetESDown > 0) {
-                    BtagJet0Vec_JetESDown.SetPxPyPzE(BtagJet0Px_JetESDown, BtagJet0Py_JetESDown, BtagJet0Pz_JetESDown, BtagJet0E_JetESDown);
-                    if (NBtagJets_JetESDown > 1) {
-                        BtagJet1Vec_JetESDown.SetPxPyPzE(BtagJet1Px_JetESDown, BtagJet1Py_JetESDown, BtagJet1Pz_JetESDown, BtagJet1E_JetESDown);
-                        DiBJetVec_JetESDown = BtagJet0Vec_JetESDown + BtagJet1Vec_JetESDown;
-                        diBJetInvMass_JetESDown = DiBJetVec_JetESDown.M();
-                        diBJetPt_JetESDown = DiBJetVec_JetESDown.Pt();
-                        diBJetEta_JetESDown = DiBJetVec_JetESDown.Eta();
-                        diBJetPhi_JetESDown = DiBJetVec_JetESDown.Phi();
-                    }
-                }
-            }         
-            if (NBtagJets_BTagSFUp > 0) {
-                BtagJet0Vec_BTagSFUp.SetPxPyPzE(BtagJet0Px_BTagSFUp, BtagJet0Py_BTagSFUp, BtagJet0Pz_BTagSFUp, BtagJet0E_BTagSFUp);
-                if (NBtagJets > 1) {
-                    BtagJet1Vec_BTagSFUp.SetPxPyPzE(BtagJet1Px_BTagSFUp, BtagJet1Py_BTagSFUp, BtagJet1Pz_BTagSFUp, BtagJet1E_BTagSFUp);
-                    DiBJetVec_BTagSFUp = BtagJet0Vec_BTagSFUp + BtagJet1Vec_BTagSFUp;
-                    diBJetInvMass_BTagSFUp = DiBJetVec_BTagSFUp.M();
-                    diBJetPt_BTagSFUp = DiBJetVec_BTagSFUp.Pt();
-                    diBJetEta_BTagSFUp = DiBJetVec_BTagSFUp.Eta();
-                    diBJetPhi_BTagSFUp = DiBJetVec_BTagSFUp.Phi();
-                }
-            }            
-            if (NBtagJets_BTagSFDown > 0) {
-                BtagJet0Vec_BTagSFDown.SetPxPyPzE(BtagJet0Px_BTagSFDown, BtagJet0Py_BTagSFDown, BtagJet0Pz_BTagSFDown, BtagJet0E_BTagSFDown);
-                if (NBtagJets_BTagSFDown > 1) {
-                    BtagJet1Vec_BTagSFDown.SetPxPyPzE(BtagJet1Px_BTagSFDown, BtagJet1Py_BTagSFDown, BtagJet1Pz_BTagSFDown, BtagJet1E_BTagSFDown);
-                    DiBJetVec_BTagSFDown = BtagJet0Vec_BTagSFDown + BtagJet1Vec_BTagSFDown;
-                    diBJetInvMass_BTagSFDown = DiBJetVec_BTagSFDown.M();
-                    diBJetPt_BTagSFDown = DiBJetVec_BTagSFDown.Pt();
-                    diBJetEta_BTagSFDown = DiBJetVec_BTagSFDown.Eta();
-                    diBJetPhi_BTagSFDown = DiBJetVec_BTagSFDown.Phi();
-                }
-            }
-            //        cout << "nVtx " << nVtx << endl;
-            //        cout << "Lep0Pt " << Lep0Vec.Pt() << endl;
-            nVtxTrue = nVtx;
-            if (doPURWOviToDESY && !doData)  weight *= PileupRW(nVtxSFHistOviToDESY, nVtx);
-            //        cout << "weight pre doHack " << weight << endl;
-            if (doHackPURW && !doData) {
-                if (isSignal) {
-                    weight = PileupRW(nVtxSFHist_v2, nVtx);
-                    weight *= PileupRW(h_S7toS10RWHist, nVtx);
-                }
-                else {
-                    weight = PileupRW(nVtxSFHist, nVtx);      
-                }
-            }
-            if (!doData) {
-                if (doVerbosity) {
-                    cout << "Type " << Type << endl;
-                    cout << "weight pre scale " << weight << endl;
-                }
-                if (Type_LepESUp == -2) Type_LepESUp = 2;
-                if (Type_LepESDown == -2) Type_LepESDown = 2;
-                //                cout << "weight pre scale factor MC " << weight << endl;
-                //                cout << "weight scalefactor for Type = " << Type << " is " << ScaleFactorMC(Type) << endl;
-                //                cout << "ScaleFactorMC_0 for Type " << Type << " is " << ScaleFactorMC(Type, 0) << endl;
-                //                cout << "ScaleFactorMC_+ for Type " << Type << " is " << ScaleFactorMC(Type, +1) << endl;
-                //                cout << "ScaleFactorMC_- for Type " << Type << " is " << ScaleFactorMC(Type, -1) << endl;
-                //                cout << " weight " << weight << endl;
-//                weight_LepESUp = weight;
-//                weight_LepESDown = weight;
-//                preNVtxRWweight_LepESUp = preNVtxRWweight;
-//                preNVtxRWweight_LepESDown = preNVtxRWweight;
-                weight *= ScaleFactorMC(Type, 0);
-                /*
-                weight_LepESUp *= ScaleFactorMC(Type_LepESUp, 0);
-                weight_LepESDown *= ScaleFactorMC(Type_LepESDown, 0);
-                */
-                preNVtxRWweight *= ScaleFactorMC(Type, 0);
-                /*
-                preNVtxRWweight_LepESUp *= ScaleFactorMC(Type_LepESUp, 0);
-                preNVtxRWweight_LepESDown *= ScaleFactorMC(Type_LepESDown, 0);
-                */
-                //                cout << "weight post scale factor MC " << weight << endl;
-                
-            }
-            
-            if (hasTopInfo && (fInName.Contains("TT") || fInName.Contains("ttbar"))) {
+            if (BEI.hasTopInfo) {
+                genTop0Vec.SetPtEtaPhiE(genTop0Pt, genTop0Eta, genTop0Phi, genTop0En);
+                EGPI.genTop0.P4 = genTop0Vec;
+                EGPI.genTop0.PDGID = genTop0PdgId;
+                EGPI.genTop0.PDGStatus = 3;
+                EGPI.genTop0.Mass = genTop0Vec.M();                
+                genTop1Vec.SetPtEtaPhiE(genTop1Pt, genTop1Eta, genTop1Phi, genTop1En);
+                EGPI.genTop1.P4 = genTop1Vec;
+                EGPI.genTop1.PDGID = genTop1PdgId;
+                EGPI.genTop1.PDGStatus = 3;
+                EGPI.genTop1.Mass = genTop1Vec.M();                
                 if (genTop0PdgId * genTop1PdgId > 0) {
                     cout << "something is funky with the genTop PDGIDs" << endl;
                     continue;
                 }
                 else {
                     if (genTop0PdgId > 0) {
-                        genTopPt = genTop0Pt;
-                        genAntiTopPt = genTop1Pt;
+                        EGPI.genTopPt = genTop0Pt;
+                        EGPI.genAntiTopPt = genTop1Pt;
                     }
                     else {
-                        genTopPt = genTop1Pt;
-                        genAntiTopPt = genTop0Pt;   
+                        EGPI.genTopPt = genTop1Pt;
+                        EGPI.genAntiTopPt = genTop0Pt;   
                     }                
                 }
-                weight_GenTopReweight = GenLevelTopPtWeight(genTopPt, genAntiTopPt);
-                h_genTopPt->Fill(genTopPt, 1.);
-                h_genTopPtRW->Fill(genTopPt, weight_GenTopReweight);
-                h_genAntiTopPt->Fill(genAntiTopPt, 1.);
-                h_genAntiTopPtRW->Fill(genAntiTopPt, weight_GenTopReweight);
+                EGPI.weight_GenTopReweight = GenLevelTopPtWeight(EGPI.genTopPt, EGPI.genAntiTopPt);
+                h_genTopPt->Fill(EGPI.genTopPt, 1.);
+                h_genTopPtRW->Fill(EGPI.genTopPt, EGPI.weight_GenTopReweight);
+                h_genAntiTopPt->Fill(EGPI.genAntiTopPt, 1.);
+                h_genAntiTopPtRW->Fill(EGPI.genAntiTopPt, EGPI.weight_GenTopReweight);
             }
-            else {
-                weight_GenTopReweight = 1.;
+            if (BEI.hasStopInfo) {
+                EGPI.genStop0.Mass = TGenStopMass0;
+                EGPI.genStop1.Mass = TGenStopMass1;
+                EGPI.genChiZero0.Mass = TGenChi0Mass0;
+                EGPI.genChiZero1.Mass = TGenChi0Mass1;
+                EGPI.genChargino0.Mass = TGenCharginoMass0;
+                EGPI.genChargino1.Mass = TGenCharginoMass1;                
             }
-            preNVtxRWweight_GenTopReweight = weight_GenTopReweight;
-            h_ElecRelIso->Fill(Lep0RelPFIso, weight);
-            h_ElecRelIso->Fill(Lep1RelPFIso, weight);
-            //        cout << "weight post doHack " << weight << endl;
+        }
+        ///****************************************
+        // Call the code to set up the event information
+        ///****************************************
+        
+        BEI.preNVtxRWWeight = BEI.weight;
+        if (!BEI.doData) {
+            BEI.weight = nVtxWeight(&BEI, nVtxSFHistOviToDESY, nVtxSFHist_v2, h_S7toS10RWHist, nVtxSFHist);
+            BEI_GenTopRW.SetVars(&BEI); // i.e. no GenTopReweighting systematic.
+//            cout << "EGPI.weight_GenTopReweight " << EGPI.weight_GenTopReweight << endl;
+            BEI.weight *= EGPI.weight_GenTopReweight;
+            BEI.preNVtxRWWeight *= EGPI.weight_GenTopReweight;
+            BEI_LepESUp.SetVars(&BEI);
+            BEI_LepESDown.SetVars(&BEI);
+            BEI_StopXSecUp.SetVars(&BEI);
+            BEI_StopXSecDown.SetVars(&BEI);
+            BEI_LepEffSFUp.SetVars(&BEI);
+            BEI_LepEffSFDown.SetVars(&BEI);
+        }
+        SetEventInformation(&BEI, &ELI, &EJI, EMI, EDSI);
+
+        ///****************************************
+        // Call the code to set up the event information
+        ///****************************************        
+        if (ELI.Lep1.P4.Pt() < subLepPtCut) {
+            ELI.doEvent = false;
+        }
+        if (ELI.EventDiLepType == -2) ELI.EventDiLepType = 2;
+        if (BEI.doData) {
+            if (!ELI.doEvent) continue;
+//            cout << "test 3 " << endl;
+        }
+        else {            
+            if (doVerbosity) {
+                cout << "Type " << ELI.EventDiLepType << endl;
+                cout << "weight pre scale " << BEI.weight << endl;
+            }
+            SetEventInformation(&BEI, &ELI_LepESUp,   &EJI,            EMI_LepESUp,    EDSI_LepESUp);
+            SetEventInformation(&BEI, &ELI_LepESDown, &EJI,            EMI_LepESDown,  EDSI_LepESDown);
+            SetEventInformation(&BEI, &ELI,           &EJI_JetESUp,    EMI_JetESUp,    EDSI_JetESUp);
+            SetEventInformation(&BEI, &ELI,           &EJI_JetESDown,  EMI_JetESDown,  EDSI_JetESDown);
+            EJI_BTagSFUp = EJI;
+            EJI_BTagSFDown = EJI;
+            SetEventInformation(&BEI, &ELI,           &EJI_BTagSFUp,   EMI_BTagSFUp,   EDSI_BTagSFUp);
+            SetEventInformation(&BEI, &ELI,           &EJI_BTagSFDown, EMI_BTagSFDown, EDSI_BTagSFDown);
+            if (ELI_LepESUp.Lep1.P4.Pt() < subLepPtCut) {
+                ELI_LepESUp.doEvent = false;
+            }
+            if (ELI_LepESDown.Lep1.P4.Pt() < subLepPtCut) {
+                ELI_LepESDown.doEvent = false;
+            }
+            if (ELI_LepESUp.EventDiLepType == -2) ELI_LepESUp.EventDiLepType = 2;
+            if (ELI_LepESDown.EventDiLepType == -2) ELI_LepESDown.EventDiLepType = 2;
+            if (!ELI.doEvent && !ELI_LepESUp.doEvent && !ELI_LepESDown.doEvent) continue;
+//            cout << " for ievt " << ievt << endl;
+//            cout << "Type " << ELI.EventDiLepType << endl;
+//            cout << "weight pre scale " << BEI.weight << endl;
+            BEI.weight *= ScaleFactorMC(ELI.EventDiLepType, 0);
+            BEI.preNVtxRWWeight *= ScaleFactorMC(ELI.EventDiLepType, 0);
+//            cout << "Type " << ELI.EventDiLepType << endl;
+//            cout << "weight post scale " << BEI.weight << endl;
             
+            
+            BEI_GenTopRW.weight *= ScaleFactorMC(ELI.EventDiLepType, 0);
+            BEI_GenTopRW.preNVtxRWWeight *= ScaleFactorMC(ELI.EventDiLepType, 0);
+            
+            BEI_LepESUp.weight *= ScaleFactorMC(ELI_LepESUp.EventDiLepType, 0);
+            BEI_LepESUp.preNVtxRWWeight *= ScaleFactorMC(ELI_LepESUp.EventDiLepType, 0);
+            BEI_LepESDown.weight *= ScaleFactorMC(ELI_LepESDown.EventDiLepType, 0);
+            BEI_LepESDown.preNVtxRWWeight *= ScaleFactorMC(ELI_LepESDown.EventDiLepType, 0);
+            
+            BEI_LepEffSFUp.weight *= ScaleFactorMC(ELI.EventDiLepType, 1);
+            BEI_LepEffSFUp.preNVtxRWWeight *= ScaleFactorMC(ELI.EventDiLepType, 1);            
+            BEI_LepEffSFDown.weight *= ScaleFactorMC(ELI.EventDiLepType, -1);
+            BEI_LepEffSFDown.preNVtxRWWeight *= ScaleFactorMC(ELI.EventDiLepType, -1);
+            
+            BEI_StopXSecUp.weight *= ScaleFactorMC(ELI.EventDiLepType, 0);
+            BEI_StopXSecUp.preNVtxRWWeight *= ScaleFactorMC(ELI.EventDiLepType, 0);
+            BEI_StopXSecDown.weight *= ScaleFactorMC(ELI.EventDiLepType, 0);
+            BEI_StopXSecDown.preNVtxRWWeight *= ScaleFactorMC(ELI.EventDiLepType, 0);
+
+            if (BEI.isSignal) {
+                BEI.weight *= EGPI.StopWeight;
+                BEI.preNVtxRWWeight *= EGPI.StopWeight;
+                
+                BEI_LepEffSFUp.weight *= EGPI.StopWeight;
+                BEI_LepEffSFUp.preNVtxRWWeight *= EGPI.StopWeight;
+                BEI_LepEffSFDown.weight *= EGPI.StopWeight;
+                BEI_LepEffSFDown.preNVtxRWWeight *= EGPI.StopWeight;
+                
+                BEI_StopXSecUp.weight *= EGPI.StopWeightPlusErr;
+                BEI_StopXSecUp.preNVtxRWWeight *= EGPI.StopWeightPlusErr;                
+                BEI_StopXSecDown.weight *= EGPI.StopWeightMinusErr;
+                BEI_StopXSecDown.preNVtxRWWeight *= EGPI.StopWeightMinusErr;
+                
+                BEI_LepESUp.weight *= EGPI.StopWeight;
+                BEI_LepESUp.preNVtxRWWeight *= EGPI.StopWeight;
+                BEI_LepESDown.weight *= EGPI.StopWeight;
+                BEI_LepESDown.preNVtxRWWeight *= EGPI.StopWeight;
+                
+                BEI_GenTopRW.weight *= EGPI.StopWeight;
+                BEI_GenTopRW.preNVtxRWWeight *= EGPI.StopWeight;
+            }         
         }
         // basic condition, if running on data, only select type of events that are relevant to prevent double counting
-        if (doData) {
-            if (Type == 0) {
+        if (BEI.doData) {
+            if (ELI.EventDiLepType == 0) {
                 if (!(fInName.Contains("DoubleMu") || fInName.Contains("mumu_run2012"))) continue;
             }
-            else if (Type == 1) {
+            else if (ELI.EventDiLepType == 1) {
                 if (!(fInName.Contains("DoubleEl") || fInName.Contains("ee_run2012"))) continue;
             }
-            else if (Type == 2) {
+            else if (ELI.EventDiLepType == 2) {
                 if (!(fInName.Contains("MuEG") || fInName.Contains("emu_run2012"))) continue;
             }
-        }    
-        //^^^^ Maybe check the above
-        DiLepVec = Lep0Vec + Lep1Vec;
-        diLepInvMass = DiLepVec.M();
-        if (diLepInvMass > ZWindowLB && diLepInvMass < ZWindowUB) ZVeto = false; //Mass is in the ZVeto region
-        diLepPt = DiLepVec.Pt();
-        diLepEta = DiLepVec.Eta();
-        diLepPhi = DiLepVec.Phi();
-        METPhi_preCorr = METPhi;
-        METX_preCorr = MET*TMath::Cos(METPhi_preCorr);
-        METY_preCorr = MET*TMath::Sin(METPhi_preCorr);
-        METX = METX_preCorr;
-        METY = METY_preCorr;
-        if (doPhiCorr) MetPhiCorrect(doData, METX, METY, nVtx, doReReco);        
-        if (doMETSmear) {
-            METX *= rand.Gaus(1, METSF * METX);   
-            METY *= rand.Gaus(1, METSF * METY);   
         }
-        METPhi = TMath::ATan2(METY, METX);
-        MET = TMath::Sqrt(METX * METX + METY * METY);
-        MT2ll=getMT2(Lep0Vec, Lep1Vec, MET, METPhi);
-        switch (NJets) {
-            case 0:
-                METdivMeff = MET / (MET + Lep0Vec.Pt() + Lep1Vec.Pt());
-                break;                
-            case 1:
-                METdivMeff = MET / (MET + Lep0Vec.Pt() + Lep1Vec.Pt() + Jet0Vec.Pt());
-                break;
-            default:
-                METdivMeff = MET / (MET + Lep0Vec.Pt() + Lep1Vec.Pt() + Jet0Vec.Pt() + Jet1Vec.Pt());
-                break;
-        }
+//        cout << "test 4 " << endl;
+        ESMT2I.SetVars(&EMI, &EJI, MT2llMeanSmear, MT2llUncEnUpDelta2D, MT2llUncEnDownDelta2D, MT2lbUncEnUpDelta2D, MT2lbUncEnDownDelta2D, vecOneDeeMT2llUncEnUp, vecOneDeeMT2llUncEnDown, vecOneDeeMT2lbUncEnUp, vecOneDeeMT2lbUncEnDown);
         
         /******************************************************/
-        //        MT2lb=getMT2(Lep0Vec, BtagJet0Vec, MET, METPhi);  
-        //        cout << "NJets " << NJets << endl;
-        if (NJets > 1) {
-            vecLepMT2lb[0] = Lep0Vec;
-            vecLepMT2lb[1] = Lep1Vec;
-            if (NBtagJets > 1) {
-                vecJetMT2lb[0] = BtagJet0Vec;
-                vecJetMT2lb[1] = BtagJet1Vec;
-                caseMT2lb = 0;
-                DeltaPhiMT2lb_JetsUsed = dPhi(BtagJet0Vec.Phi(), BtagJet1Vec.Phi());
-            }
-            else if (NBtagJets == 1) {
-                vecJetMT2lb[0] = BtagJet0Vec;
-                if (BtagJet0Index == 0) {
-                    vecJetMT2lb[1] = Jet1Vec;
-                    caseMT2lb = 1;
-                    DeltaPhiMT2lb_JetsUsed = dPhi(BtagJet0Vec.Phi(), Jet1Vec.Phi());
-                }
-                else {
-                    vecJetMT2lb[1] = Jet0Vec;
-                    caseMT2lb = 2;
-                    DeltaPhiMT2lb_JetsUsed = dPhi(BtagJet0Vec.Phi(), Jet0Vec.Phi());
-                }
-            }
-            else {
-                vecJetMT2lb[0] = Jet0Vec;
-                vecJetMT2lb[1] = Jet1Vec;
-                caseMT2lb = 3;
-                DeltaPhiMT2lb_JetsUsed = dPhi(Jet0Vec.Phi(), Jet1Vec.Phi());
-            }
-            MT2lb = MT2lbCalculator(vecLepMT2lb, vecJetMT2lb, MET, METPhi, vecBLepsMT2lb);
-            DeltaPhiMT2lb_BLepsUsed = dPhi(vecBLepsMT2lb[0].Phi(), vecBLepsMT2lb[1].Phi());
-        }
-        else {
-            MT2lb = -99.;
-            DeltaPhiMT2lb_JetsUsed = -99.;
-            DeltaPhiMT2lb_BLepsUsed = -99.;
-        }
-        
-        
-        /******************************************************/
-        //Systematics//
-        if (!doData) {
-            DiLepVec_LepESUp = Lep0Vec_LepESUp + Lep1Vec_LepESUp;
-            diLepInvMass_LepESUp = DiLepVec_LepESUp.M();
-            if (diLepInvMass_LepESUp > ZWindowLB && diLepInvMass_LepESUp < ZWindowUB) ZVeto_LepESUp = false; //Mass is in the ZVeto region
-            diLepPt_LepESUp = DiLepVec_LepESUp.Pt();
-            diLepEta_LepESUp = DiLepVec_LepESUp.Eta();
-            diLepPhi_LepESUp = DiLepVec_LepESUp.Phi();
-            DiLepVec_LepESDown = Lep0Vec_LepESDown + Lep1Vec_LepESDown;
-            diLepInvMass_LepESDown = DiLepVec_LepESDown.M();
-            if (diLepInvMass_LepESDown > ZWindowLB && diLepInvMass_LepESDown < ZWindowUB) ZVeto_LepESDown = false; //Mass is in the ZVeto region
-            diLepPt_LepESDown = DiLepVec_LepESDown.Pt();
-            diLepEta_LepESDown = DiLepVec_LepESDown.Eta();
-            diLepPhi_LepESDown = DiLepVec_LepESDown.Phi();
-            
-            switch (NJets) {
-                case 0:
-                    METdivMeff_LepESUp = MET_LepESUp / (MET_LepESUp + Lep0Vec_LepESUp.Pt() + Lep1Vec_LepESUp.Pt());
-                    METdivMeff_LepESDown = MET_LepESDown / (MET_LepESDown + Lep0Vec_LepESDown.Pt() + Lep1Vec_LepESDown.Pt());
-                    break;                
-                case 1:
-                    METdivMeff_LepESUp = MET_LepESUp / (MET_LepESUp + Lep0Vec_LepESUp.Pt() + Lep1Vec_LepESUp.Pt() + Jet0Vec.Pt());
-                    METdivMeff_LepESDown = MET_LepESDown / (MET_LepESDown + Lep0Vec_LepESDown.Pt() + Lep1Vec_LepESDown.Pt() + Jet0Vec.Pt());
-                    break;
-                default:
-                    METdivMeff_LepESUp = MET_LepESUp / (MET_LepESUp + Lep0Vec_LepESUp.Pt() + Lep1Vec_LepESUp.Pt() + Jet0Vec.Pt() + Jet1Vec.Pt());
-                    METdivMeff_LepESDown = MET_LepESDown / (MET_LepESDown + Lep0Vec_LepESDown.Pt() + Lep1Vec_LepESDown.Pt() + Jet0Vec.Pt() + Jet1Vec.Pt());
-                    break;
-            }
-            switch (NJets_JetESUp) {
-                case 0:
-                    METdivMeff_JetESUp = MET_JetESUp / (MET_JetESUp + Lep0Vec.Pt() + Lep1Vec.Pt());
-                    break;                
-                case 1:
-                    METdivMeff_JetESUp = MET_JetESUp / (MET_JetESUp + Lep0Vec.Pt() + Lep1Vec.Pt() + Jet0Vec_JetESUp.Pt());
-                    break;
-                default:
-                    METdivMeff_JetESUp = MET_JetESUp / (MET_JetESUp + Lep0Vec.Pt() + Lep1Vec.Pt() + Jet0Vec_JetESUp.Pt() + Jet1Vec_JetESUp.Pt());
-                    break;
-            }
-            switch (NJets_JetESDown) {
-                case 0:
-                    METdivMeff_JetESDown = MET_JetESDown / (MET_JetESDown + Lep0Vec.Pt() + Lep1Vec.Pt());
-                    break;                
-                case 1:
-                    METdivMeff_JetESDown = MET_JetESDown / (MET_JetESDown + Lep0Vec.Pt() + Lep1Vec.Pt() + Jet0Vec_JetESDown.Pt());
-                    break;
-                default:
-                    METdivMeff_JetESDown = MET_JetESDown / (MET_JetESDown + Lep0Vec.Pt() + Lep1Vec.Pt() + Jet0Vec_JetESDown.Pt() + Jet1Vec_JetESDown.Pt());
-                    break;
-            }
-            //correct the systematic shifted METs
-            METPhi_preCorr_LepESUp = METPhi_LepESUp;
-            METX_preCorr_LepESUp = MET_LepESUp*TMath::Cos(METPhi_preCorr_LepESUp);
-            METY_preCorr_LepESUp = MET_LepESUp*TMath::Sin(METPhi_preCorr_LepESUp);
-            METX_LepESUp = METX_preCorr_LepESUp;
-            METY_LepESUp = METY_preCorr_LepESUp;
-            if (doPhiCorr) MetPhiCorrect(doData, METX_LepESUp, METY_LepESUp, nVtx, doReReco);        
-            if (doMETSmear) {
-                METX_LepESUp *= rand.Gaus(1, METSF * METX_LepESUp);   
-                METY_LepESUp *= rand.Gaus(1, METSF * METY_LepESUp);   
-            }
-            METPhi_LepESUp = TMath::ATan2(METY_LepESUp, METX_LepESUp);
-            MET_LepESUp = TMath::Sqrt(METX_LepESUp * METX_LepESUp + METY_LepESUp * METY_LepESUp);
-            
-            METPhi_preCorr_LepESDown = METPhi_LepESDown;
-            METX_preCorr_LepESDown = MET_LepESDown*TMath::Cos(METPhi_preCorr_LepESDown);
-            METY_preCorr_LepESDown = MET_LepESDown*TMath::Sin(METPhi_preCorr_LepESDown);
-            METX_LepESDown = METX_preCorr_LepESDown;
-            METY_LepESDown = METY_preCorr_LepESDown;
-            if (doPhiCorr) MetPhiCorrect(doData, METX_LepESDown, METY_LepESDown, nVtx, doReReco);        
-            if (doMETSmear) {
-                METX_LepESDown *= rand.Gaus(1, METSF * METX_LepESDown);   
-                METY_LepESDown *= rand.Gaus(1, METSF * METY_LepESDown);   
-            }
-            METPhi_LepESDown = TMath::ATan2(METY_LepESDown, METX_LepESDown);
-            MET_LepESDown = TMath::Sqrt(METX_LepESDown * METX_LepESDown + METY_LepESDown * METY_LepESDown);
-            
-            METPhi_preCorr_JetESUp = METPhi_JetESUp;
-            METX_preCorr_JetESUp = MET_JetESUp*TMath::Cos(METPhi_preCorr_JetESUp);
-            METY_preCorr_JetESUp = MET_JetESUp*TMath::Sin(METPhi_preCorr_JetESUp);
-            METX_JetESUp = METX_preCorr_JetESUp;
-            METY_JetESUp = METY_preCorr_JetESUp;
-            if (doPhiCorr) MetPhiCorrect(doData, METX_JetESUp, METY_JetESUp, nVtx, doReReco);        
-            if (doMETSmear) {
-                METX_JetESUp *= rand.Gaus(1, METSF * METX_JetESUp);   
-                METY_JetESUp *= rand.Gaus(1, METSF * METY_JetESUp);   
-            }
-            METPhi_JetESUp = TMath::ATan2(METY_JetESUp, METX_JetESUp);
-            MET_JetESUp = TMath::Sqrt(METX_JetESUp * METX_JetESUp + METY_JetESUp * METY_JetESUp);
-            
-            METPhi_preCorr_JetESDown = METPhi_JetESDown;
-            METX_preCorr_JetESDown = MET_JetESDown*TMath::Cos(METPhi_preCorr_JetESDown);
-            METY_preCorr_JetESDown = MET_JetESDown*TMath::Sin(METPhi_preCorr_JetESDown);
-            METX_JetESDown = METX_preCorr_JetESDown;
-            METY_JetESDown = METY_preCorr_JetESDown;
-            if (doPhiCorr) MetPhiCorrect(doData, METX_JetESDown, METY_JetESDown, nVtx, doReReco);        
-            if (doMETSmear) {
-                METX_JetESDown *= rand.Gaus(1, METSF * METX_JetESDown);   
-                METY_JetESDown *= rand.Gaus(1, METSF * METY_JetESDown);   
-            }
-            METPhi_JetESDown = TMath::ATan2(METY_JetESDown, METX_JetESDown);
-            MET_JetESDown = TMath::Sqrt(METX_JetESDown * METX_JetESDown + METY_JetESDown * METY_JetESDown);
-            MT2llSmearFactorBin = MT2llMeanSmear->FindBin(MT2ll);
-            if (MT2llSmearFactorBin > 20) MT2llSmearFactorBin = 21;
-            MT2llSmearFactor = MT2llMeanSmear->GetBinContent(MT2llSmearFactorBin);
-            //        cout << "MT2ll " << MT2ll << endl;
-            //        cout << "MT2ll Smear " << MT2llSmearFactor << endl;
-            MT2ll_ShiftUp = MT2ll + rand.Gaus(0, MT2llSmearFactor);
-            if (MT2ll_ShiftUp < 0) MT2ll_ShiftUp = 0;
-            MT2ll_LepESUp = getMT2(Lep0Vec_LepESUp, Lep1Vec_LepESUp, MET_LepESUp, METPhi_LepESUp);
-            MT2ll_LepESDown = getMT2(Lep0Vec_LepESDown, Lep1Vec_LepESDown, MET_LepESDown, METPhi_LepESDown);
-            MT2ll_JetESUp = getMT2(Lep0Vec, Lep1Vec, MET_JetESUp, METPhi_JetESUp);
-            MT2ll_JetESDown = getMT2(Lep0Vec, Lep1Vec, MET_JetESDown, METPhi_JetESDown);
-            MT2ll_UncESUp = MT2ll - DeltaMT2UncEn(vecOneDeeMT2llUncEnUp, MT2llUncEnUpDelta2D, MT2ll);
-            MT2ll_UncESDown = MT2ll - DeltaMT2UncEn(vecOneDeeMT2llUncEnDown, MT2llUncEnDownDelta2D, MT2ll);
-            if (MT2ll_UncESUp < 0) MT2ll_UncESUp = 0;
-            if (MT2ll_UncESDown < 0) MT2ll_UncESDown = 0;
-            
-            if (NJets > 1) {
-                vecLepMT2lb_LepESUp[0] = Lep0Vec_LepESUp;
-                vecLepMT2lb_LepESUp[1] = Lep1Vec_LepESUp;
-                MT2lb_LepESUp = MT2lbCalculator(vecLepMT2lb_LepESUp, vecJetMT2lb, MET_LepESUp, METPhi_LepESUp, vecBLepsMT2lb_LepESUp);
-                DeltaPhiMT2lb_BLepsUsed_LepESUp = dPhi(vecBLepsMT2lb_LepESUp[0].Phi(), vecBLepsMT2lb_LepESUp[1].Phi());
-                vecLepMT2lb_LepESDown[0] = Lep0Vec_LepESDown;
-                vecLepMT2lb_LepESDown[1] = Lep1Vec_LepESDown;
-                MT2lb_LepESDown = MT2lbCalculator(vecLepMT2lb_LepESDown, vecJetMT2lb, MET_LepESDown, METPhi_LepESDown, vecBLepsMT2lb_LepESDown);
-                DeltaPhiMT2lb_BLepsUsed_LepESDown = dPhi(vecBLepsMT2lb_LepESDown[0].Phi(), vecBLepsMT2lb_LepESDown[1].Phi());  
-                
-                MT2lb_UncESUp = MT2lb - DeltaMT2UncEn(vecOneDeeMT2lbUncEnUp, MT2lbUncEnUpDelta2D, MT2lb);                
-                MT2lb_UncESDown = MT2lb - DeltaMT2UncEn(vecOneDeeMT2lbUncEnDown, MT2lbUncEnDownDelta2D, MT2lb);
-                if (MT2lb_UncESUp < 0) MT2lb_UncESUp = 0;
-                if (MT2lb_UncESDown < 0) MT2lb_UncESDown = 0;
-                if (NBtagJets_BTagSFUp > 1) {
-                    vecJetMT2lb_BTagSFUp[0] = BtagJet0Vec_BTagSFUp;
-                    vecJetMT2lb_BTagSFUp[1] = BtagJet1Vec_BTagSFUp;
-                    caseMT2lb_BTagSFUp = 0;
-                    DeltaPhiMT2lb_JetsUsed_BTagSFUp = dPhi(BtagJet0Vec_BTagSFUp.Phi(), BtagJet1Vec_BTagSFUp.Phi());
-                }
-                else if (NBtagJets_BTagSFUp == 1) {
-                    vecJetMT2lb_BTagSFUp[0] = BtagJet0Vec_BTagSFUp;
-                    if (BtagJet0Index_BTagSFUp == 0) {
-                        vecJetMT2lb_BTagSFUp[1] = Jet1Vec;
-                        caseMT2lb_BTagSFUp = 1;
-                        DeltaPhiMT2lb_JetsUsed_BTagSFUp = dPhi(BtagJet0Vec_BTagSFUp.Phi(), Jet1Vec.Phi());
-                    }
-                    else {
-                        vecJetMT2lb_BTagSFUp[1] = Jet0Vec;
-                        caseMT2lb_BTagSFUp = 2;
-                        DeltaPhiMT2lb_JetsUsed_BTagSFUp = dPhi(BtagJet0Vec_BTagSFUp.Phi(), Jet0Vec.Phi());
-                    }
-                }
-                else {
-                    vecJetMT2lb_BTagSFUp[0] = Jet0Vec;
-                    vecJetMT2lb_BTagSFUp[1] = Jet1Vec;
-                    caseMT2lb_BTagSFUp = 3;
-                    DeltaPhiMT2lb_JetsUsed_BTagSFUp = dPhi(Jet0Vec.Phi(), Jet1Vec.Phi());
-                }
-                MT2lb_BTagSFUp = MT2lbCalculator(vecLepMT2lb, vecJetMT2lb_BTagSFUp, MET, METPhi, vecBLepsMT2lb_BTagSFUp);
-                DeltaPhiMT2lb_BLepsUsed_BTagSFUp = dPhi(vecBLepsMT2lb_BTagSFUp[0].Phi(), vecBLepsMT2lb_BTagSFUp[1].Phi());
-                
-                if (NBtagJets_BTagSFDown > 1) {
-                    vecJetMT2lb_BTagSFDown[0] = BtagJet0Vec_BTagSFDown;
-                    vecJetMT2lb_BTagSFDown[1] = BtagJet1Vec_BTagSFDown;
-                    caseMT2lb_BTagSFDown = 0;
-                    DeltaPhiMT2lb_JetsUsed_BTagSFDown = dPhi(BtagJet0Vec_BTagSFDown.Phi(), BtagJet1Vec_BTagSFDown.Phi());
-                }
-                else if (NBtagJets_BTagSFDown == 1) {
-                    vecJetMT2lb_BTagSFDown[0] = BtagJet0Vec_BTagSFDown;
-                    if (BtagJet0Index_BTagSFDown == 0) {
-                        vecJetMT2lb_BTagSFDown[1] = Jet1Vec;
-                        caseMT2lb_BTagSFDown = 1;
-                        DeltaPhiMT2lb_JetsUsed_BTagSFDown = dPhi(BtagJet0Vec_BTagSFDown.Phi(), Jet1Vec.Phi());
-                    }
-                    else {
-                        vecJetMT2lb_BTagSFDown[1] = Jet0Vec;
-                        caseMT2lb_BTagSFDown = 2;
-                        DeltaPhiMT2lb_JetsUsed_BTagSFDown = dPhi(BtagJet0Vec_BTagSFDown.Phi(), Jet0Vec.Phi());
-                    }
-                }
-                else {
-                    vecJetMT2lb_BTagSFDown[0] = Jet0Vec;
-                    vecJetMT2lb_BTagSFDown[1] = Jet1Vec;
-                    caseMT2lb_BTagSFDown = 3;
-                    DeltaPhiMT2lb_JetsUsed_BTagSFDown = dPhi(Jet0Vec.Phi(), Jet1Vec.Phi());
-                }
-                MT2lb_BTagSFDown = MT2lbCalculator(vecLepMT2lb, vecJetMT2lb_BTagSFDown, MET, METPhi, vecBLepsMT2lb_BTagSFDown);
-                DeltaPhiMT2lb_BLepsUsed_BTagSFDown = dPhi(vecBLepsMT2lb_BTagSFDown[0].Phi(), vecBLepsMT2lb_BTagSFDown[1].Phi());
-                
-            }
-            else {
-                MT2lb_LepESUp = -99.;
-                MT2lb_LepESDown = -99.;
-                DeltaPhiMT2lb_BLepsUsed_LepESUp = -99.;
-                DeltaPhiMT2lb_BLepsUsed_LepESDown = -99.;
-                MT2lb_UncESUp = -99.;
-                MT2lb_UncESDown = -99.;                
-                DeltaPhiMT2lb_BLepsUsed_UncESUp = -99.;
-                DeltaPhiMT2lb_BLepsUsed_UncESDown = -99.;
-                MT2lb_BTagSFUp = -99.;
-                MT2lb_BTagSFDown = -99.;                
-                DeltaPhiMT2lb_BLepsUsed_BTagSFUp = -99.;
-                DeltaPhiMT2lb_BLepsUsed_BTagSFDown = -99.;
-            }
-            if (NJets_JetESUp > 1) {
-                if (NBtagJets_JetESUp > 1) {
-                    vecJetMT2lb_JetESUp[0] = BtagJet0Vec_JetESUp;
-                    vecJetMT2lb_JetESUp[1] = BtagJet1Vec_JetESUp;
-                    caseMT2lb_JetESUp = 0;
-                    DeltaPhiMT2lb_JetsUsed_JetESUp = dPhi(BtagJet0Vec_JetESUp.Phi(), BtagJet1Vec_JetESUp.Phi());
-                }
-                else if (NBtagJets_JetESUp == 1) {                    
-                    vecJetMT2lb_JetESUp[0] = BtagJet0Vec_JetESUp;
-                    if (BtagJet0Index_JetESUp == 0) {
-                        vecJetMT2lb_JetESUp[1] = Jet1Vec_JetESUp;
-                        caseMT2lb_JetESUp = 1;
-                        DeltaPhiMT2lb_JetsUsed_JetESUp = dPhi(BtagJet0Vec_JetESUp.Phi(), Jet1Vec_JetESUp.Phi());                        
-                    }
-                    else {
-                        vecJetMT2lb_JetESUp[1] = Jet0Vec_JetESUp;
-                        caseMT2lb_JetESUp = 2;
-                        DeltaPhiMT2lb_JetsUsed_JetESUp = dPhi(BtagJet0Vec_JetESUp.Phi(), Jet0Vec_JetESUp.Phi()); 
-                    }
-                }
-                else {
-                    vecJetMT2lb_JetESUp[0] = Jet0Vec_JetESUp;
-                    vecJetMT2lb_JetESUp[1] = Jet1Vec_JetESUp;
-                    caseMT2lb_JetESUp = 3;
-                    DeltaPhiMT2lb_JetsUsed_JetESUp = dPhi(Jet0Vec_JetESUp.Phi(), Jet1Vec_JetESUp.Phi());
-                }
-                MT2lb_JetESUp = MT2lbCalculator(vecLepMT2lb, vecJetMT2lb_JetESUp, MET_JetESUp, METPhi_JetESUp, vecBLepsMT2lb_JetESUp);
-                DeltaPhiMT2lb_BLepsUsed_JetESUp = dPhi(vecBLepsMT2lb_JetESUp[0].Phi(), vecBLepsMT2lb_JetESUp[1].Phi());
-            }
-            else {
-                MT2lb_JetESUp = -99.;
-                DeltaPhiMT2lb_JetsUsed_JetESUp = -99.;
-                DeltaPhiMT2lb_BLepsUsed_JetESUp = -99.;
-            }
-            if (NJets_JetESDown > 1) {
-                if (NBtagJets_JetESDown > 1) {
-                    vecJetMT2lb_JetESDown[0] = BtagJet0Vec_JetESDown;
-                    vecJetMT2lb_JetESDown[1] = BtagJet1Vec_JetESDown;
-                    caseMT2lb_JetESDown = 0;
-                    DeltaPhiMT2lb_JetsUsed_JetESDown = dPhi(BtagJet0Vec_JetESDown.Phi(), BtagJet1Vec_JetESDown.Phi());
-                }
-                else if (NBtagJets_JetESDown == 1) {                    
-                    vecJetMT2lb_JetESDown[0] = BtagJet0Vec_JetESDown;
-                    if (BtagJet0Index_JetESDown == 0) {
-                        vecJetMT2lb_JetESDown[1] = Jet1Vec_JetESDown;
-                        caseMT2lb_JetESDown = 1;
-                        DeltaPhiMT2lb_JetsUsed_JetESDown = dPhi(BtagJet0Vec_JetESDown.Phi(), Jet1Vec_JetESDown.Phi());                        
-                    }
-                    else {
-                        vecJetMT2lb_JetESDown[1] = Jet0Vec_JetESDown;
-                        caseMT2lb_JetESDown = 2;
-                        DeltaPhiMT2lb_JetsUsed_JetESDown = dPhi(BtagJet0Vec_JetESDown.Phi(), Jet0Vec_JetESDown.Phi()); 
-                    }
-                }
-                else {
-                    vecJetMT2lb_JetESDown[0] = Jet0Vec_JetESDown;
-                    vecJetMT2lb_JetESDown[1] = Jet1Vec_JetESDown;
-                    caseMT2lb_JetESDown = 3;
-                    DeltaPhiMT2lb_JetsUsed_JetESDown = dPhi(Jet0Vec_JetESDown.Phi(), Jet1Vec_JetESDown.Phi());
-                }
-                MT2lb_JetESDown = MT2lbCalculator(vecLepMT2lb, vecJetMT2lb_JetESDown, MET_JetESDown, METPhi_JetESDown, vecBLepsMT2lb_JetESDown);
-                DeltaPhiMT2lb_BLepsUsed_JetESDown = dPhi(vecBLepsMT2lb_JetESDown[0].Phi(), vecBLepsMT2lb_JetESDown[1].Phi());
-            }
-            else {
-                MT2lb_JetESDown = -99.;
-                DeltaPhiMT2lb_JetsUsed_JetESDown = -99.;
-                DeltaPhiMT2lb_BLepsUsed_JetESDown = -99.;
-            }            
-        }        
-        //        cout << "Mt2 " << MT2ll << endl;
-        //        cout << "weight " << weight << endl;
         ///Set up the mapping of string keys to the appropriate event variables
         /*
          list of keys needed taken from command:
          cat StopFunctionDefinitions.h | grep VarKey
          _______________________________
-         H_diLepPt.xVarKey = "diLepPt";
-         H_diLepInvMass.xVarKey = "diLepInvMass";
-         H_diLepEta.xVarKey = "diLepEta";
-         H_diLepPhi.xVarKey = "diLepPhi";
-         H_MT2ll.xVarKey = "MT2ll";
-         H_MT2lb.xVarKey = "MT2lb";
-         H_MET.xVarKey = "MET";
-         H_METPhi.xVarKey = "METPhi";
-         H_METPhi_noCorr.xVarKey = "METPhi_noPhiCorr";
-         H_NJets.xVarKey = "NJets";
-         H_NJetswBTag.xVarKey = "NBJets";
-         H_diJetPt.xVarKey = "diJetPt";
-         H_diJetInvMass.xVarKey = "diJetInvMass";
-         H_diJetEta.xVarKey = "diJetEta";
-         H_diJetPhi.xVarKey = "diJetPhi";
-         H_diBJetPt.xVarKey = "diBJetPt";
-         H_diBJetInvMass.xVarKey = "diBJetInvMass";
-         H_diBJetEta.xVarKey = "diBJetEta";
-         H_diBJetPhi.xVarKey = "diBJetPhi";
-         H_DeltaPhiLep0Lep1.xVarKey = "DPhiLep0Lep1";
-         H_DeltaPhiLep0Jet0.xVarKey = "DPhiLep0Jet0";
-         H_DeltaPhiLep0Jet1.xVarKey = "DPhiLep0Jet1";
-         H_DeltaPhiLep0BJet0.xVarKey = "DPhiLep0BJet0";
-         H_DeltaPhiLep0BJet1.xVarKey = "DPhiLep0BJet1";
-         H_DeltaPhiJet0BJet0.xVarKey = "DPhiJet0BJet0";
-         H_DeltaPhiJet1BJet1.xVarKey = "DPhiJet1BJet1";
-         H_DeltaPhiJet1BJet0.xVarKey = "DPhiJet1BJet0";
-         H_nVtx.xVarKey = "nVtx";
-         H_METX_vs_nVtx.xVarKey = "nVtx";
-         H_METX_vs_nVtx.yVarKey = "METX";
-         H_METX_vs_nVtx.xVarKey = "nVtx";
-         H_METX_vs_nVtx.yVarKey = "METY";
-         H_METX_vs_nVtx.xVarKey = "nVtx";
-         H_METX_vs_nVtx.yVarKey = "METX_noPhiCorr";
-         H_METX_vs_nVtx.xVarKey = "nVtx";
-         H_METX_vs_nVtx.yVarKey = "METY_noPhiCorr";
          -----------------------------
          */
-        stringKeyToVar["leadLepPt"] = Lep0Vec.Pt();
-        stringKeyToVar["leadLepEta"] = Lep0Vec.Eta();
-        stringKeyToVar["subLepPt"] = Lep1Vec.Pt();
-        stringKeyToVar["subLepEta"] = Lep1Vec.Eta();
-        stringKeyToVar["lep0RelPFIso"] = Lep0RelPFIso;
-        stringKeyToVar["lep1RelPFIso"] = Lep1RelPFIso;
-        stringKeyToVar["CutFlowEntry"] = 4;
-        stringKeyToVar["diLepPt"] = diLepPt;
-        stringKeyToVar["diLepInvMass"] = diLepInvMass;
-        stringKeyToVar["diLepEta"] = diLepEta;
-        stringKeyToVar["diLepPhi"] = diLepPhi;
-        stringKeyToVar["MT2ll"] = MT2ll;
-        //        cout << "MT2ll " << MT2ll << endl;
-        //        cout << "PassMT2llCut80 " << (MT2ll > 80.) << endl;
-        stringKeyToVar["PassMT2llCut80"] = (MT2ll > 80.);
-        stringKeyToVar["PassMT2llCut90"] = (MT2ll > 90.);
-        stringKeyToVar["PassMT2llCut100"] = (MT2ll > 100.);
-        stringKeyToVar["PassMT2llCut110"] = (MT2ll > 110.);
-        stringKeyToVar["PassMT2llCut120"] = (MT2ll > 120.);
-        stringKeyToVar["MT2lb"] = MT2lb;
-        stringKeyToVar["MET"] = MET;
-        stringKeyToVar["METPhi"] = METPhi;
-        stringKeyToVar["METPhi_noPhiCorr"] = METPhi_preCorr;
-        stringKeyToVar["NJets"] = NJets;
-        stringKeyToVar["NBJets"] = NBtagJets;
-        stringKeyToVar["DPhiLep0Lep1"] = dPhi(Lep0Vec.Phi(), Lep1Vec.Phi());
-        stringKeyToVar["DPhiLep0MET"] = dPhi((float) Lep0Vec.Phi(), METPhi);
-        stringKeyToVar["DPhiLep1MET"] = dPhi((float) Lep0Vec.Phi(), METPhi);
-        stringKeyToVar["DPhiLep0MET_PreCorr"] = dPhi((float) Lep0Vec.Phi(), METPhi_preCorr);
-        stringKeyToVar["DPhiLep1MET_PreCorr"] = dPhi((float) Lep0Vec.Phi(), METPhi_preCorr);
-        stringKeyToVar["DPhiZMET"] = dPhi(diLepPhi, METPhi);
-        stringKeyToVar["DPhiZMET_PreCorr"] = dPhi(diLepPhi, METPhi_preCorr);
-        stringKeyToVar["nVtx"] = (float) nVtx;
-        stringKeyToVar["nVtxTrue"] = (float) nVtxTrue;
-        stringKeyToVar["METX"] = METX;
-        stringKeyToVar["METY"] = METY;
-        stringKeyToVar["METX_noPhiCorr"] = METX_preCorr;
-        stringKeyToVar["METY_noPhiCorr"] = METY_preCorr;
-        stringKeyToVar["METdivMeff"] = METdivMeff;
-        stringKeyToVar["METdivMeff_PassMT2llCut80"] = MT2ll > 80 ? METdivMeff : -99;
-        stringKeyToVar["METdivMeff_PassMT2llCut90"] = MT2ll > 90 ? METdivMeff : -99;
-        stringKeyToVar["METdivMeff_PassMT2llCut190"] = MT2ll > 100 ? METdivMeff : -99;
-        stringKeyToVar["METdivMeff_PassMT2llCut110"] = MT2ll > 110 ? METdivMeff : -99;
-        stringKeyToVar["METdivMeff_PassMT2llCut120"] = MT2ll > 120 ? METdivMeff : -99;
-        stringKeyToVar["HT"] = HT;                    
-        ///Conditional setting of maps for jet info -- depends upon number of jets in event
-        if (NJets > 0) {
-            stringKeyToVar["leadJetPt"] = Jet0Vec.Pt();
-            stringKeyToVar["leadJetEta"] = Jet0Vec.Eta();
-            stringKeyToVar["DPhiLep0Jet0"] = dPhi(Lep0Vec.Phi(), Jet0Vec.Phi());
-            if (NJets > 1) {
-                stringKeyToVar["subJetPt"] = Jet1Vec.Pt();
-                stringKeyToVar["subJetEta"] = Jet1Vec.Eta();                
-                stringKeyToVar["diJetPt"] = diJetPt;
-                stringKeyToVar["diJetInvMass"] = diJetInvMass;
-                stringKeyToVar["diJetEta"] = diJetEta;
-                stringKeyToVar["diJetPhi"] = diJetPhi;
-                stringKeyToVar["DPhiLep0Jet1"] = dPhi(Lep0Vec.Phi(), Jet1Vec.Phi());
-                stringKeyToVar["ELepEJet"] = Lep0Vec.E() + Lep1Vec.E() - Jet0Vec.E() - Jet1Vec.E();
-                stringKeyToVar["DPhiLepB0LepB1"] = dPhi(vecBLepsMT2lb[0].Phi(), vecBLepsMT2lb[1].Phi());
-            }
-            if (NBtagJets > 0) {
-                stringKeyToVar["leadBJetPt"] = BtagJet0Vec.Pt();
-                stringKeyToVar["leadBJetEta"] = BtagJet0Vec.Eta();
-                stringKeyToVar["leadBJetEn"] = BtagJet0Vec.E();
-                //                cout << "leadBJet En " << BtagJet0Vec.E() << endl;
-                stringKeyToVar["DPhiLep0BJet0"] = dPhi(Lep0Vec.Phi(), BtagJet0Vec.Phi());
-                stringKeyToVar["DPhiJet0BJet0"] = dPhi(Jet0Vec.Phi(), BtagJet0Vec.Phi());                
-                if (NBtagJets > 1) {
-                    stringKeyToVar["subBJetPt"] = BtagJet1Vec.Pt();
-                    stringKeyToVar["subBJetEta"] = BtagJet1Vec.Eta(); 
-                    stringKeyToVar["subBJetEn"] = BtagJet1Vec.E();
-                    stringKeyToVar["diBJetPt"] = diBJetPt;
-                    stringKeyToVar["diBJetInvMass"] = diBJetInvMass;
-                    stringKeyToVar["diBJetEta"] = diBJetEta;
-                    stringKeyToVar["diBJetPhi"] = diBJetPhi;                    
-                    stringKeyToVar["DPhiLep0BJet1"] = dPhi(Lep0Vec.Phi(), BtagJet1Vec.Phi());
-                    stringKeyToVar["DPhiJet1BJet0"] = dPhi(Jet1Vec.Phi(), BtagJet0Vec.Phi());
-                    stringKeyToVar["DPhiJet1BJet1"] = dPhi(Jet1Vec.Phi(), BtagJet1Vec.Phi());
-                }
-            }   
-        }
+        stringKeyToVar["CutFlowEntry"] = 4;        
+        stringKeyToVar["nVtx"]      = (float) BEI.nVtx;
+        stringKeyToVar["nVtxTrue"]  = (float) BEI.nVtxTrue;
+        
+        SetStringKeyMap(stringKeyToVar, &ELI, &EJI, &EMI, &EDSI, systVec);
+        
         if (doBookSyst) {
-            stringKeyToVar["leadLepPt_LepESShiftUp"] = Lep0Vec_LepESUp.Pt();
-            stringKeyToVar["leadLepPt_LepESShiftDown"] = Lep0Vec_LepESDown.Pt();
-            stringKeyToVar["subLepPt_LepESShiftUp"] = Lep1Vec_LepESUp.Pt();
-            stringKeyToVar["subLepPt_LepESShiftDown"] = Lep1Vec_LepESDown.Pt();
-            stringKeyToVar["diLepPt_LepESShiftUp"] = diLepPt_LepESUp;
-            stringKeyToVar["diLepPt_LepESShiftDown"] = diLepPt_LepESDown;
-            stringKeyToVar["diLepInvMass_LepESShiftUp"] = diLepInvMass_LepESUp;         
-            stringKeyToVar["diLepInvMass_LepESShiftDown"] = diLepInvMass_LepESDown;   
-            stringKeyToVar["diLepEta_LepESShiftUp"] = diLepEta_LepESUp;
-            stringKeyToVar["diLepEta_LepESShiftDown"] = diLepEta_LepESDown;
-            stringKeyToVar["diLepPhi_LepESShiftUp"] = diLepPhi_LepESUp;
-            stringKeyToVar["diLepPhi_LepESShiftDown"] = diLepPhi_LepESDown;
-            stringKeyToVar["HT_JetESShiftUp"] = HT_JetESUp;
-            stringKeyToVar["HT_JetESShiftDown"] = HT_JetESDown;
-            
-            
-            
-            stringKeyToVar["leadLepPt_BTagSFShiftUp"] = Lep0Vec.Pt();
-            stringKeyToVar["leadLepPt_BTagSFShiftDown"] = Lep0Vec.Pt();
-            stringKeyToVar["subLepPt_BTagSFShiftUp"] = Lep1Vec.Pt();
-            stringKeyToVar["subLepPt_BTagSFShiftDown"] = Lep1Vec.Pt();
-            stringKeyToVar["diLepPt_BTagSFShiftUp"] = diLepPt;
-            stringKeyToVar["diLepPt_BTagSFShiftDown"] = diLepPt;
-            stringKeyToVar["diLepInvMass_BTagSFShiftUp"] = diLepInvMass;         
-            stringKeyToVar["diLepInvMass_BTagSFShiftDown"] = diLepInvMass;   
-            stringKeyToVar["diLepEta_BTagSFShiftUp"] = diLepEta;
-            stringKeyToVar["diLepEta_BTagSFShiftDown"] = diLepEta;
-            stringKeyToVar["diLepPhi_BTagSFShiftUp"] = diLepPhi;
-            stringKeyToVar["diLepPhi_BTagSFShiftDown"] = diLepPhi;
-            stringKeyToVar["HT_BTagSFShiftUp"] = HT;
-            stringKeyToVar["HT_BTagSFShiftDown"] = HT;
-            /*
-            stringKeyToVar["leadLepPt_JetESShiftUp"] = Lep0Vec.Pt();
-            stringKeyToVar["leadLepPt_JetESShiftDown"] = Lep0Vec.Pt();
-            stringKeyToVar["subLepPt_JetESShiftUp"] = Lep1Vec.Pt();
-            stringKeyToVar["subLepPt_JetESShiftDown"] = Lep1Vec.Pt();
-            stringKeyToVar["diLepPt_JetESShiftUp"] = diLepPt;
-            stringKeyToVar["diLepPt_JetESShiftDown"] = diLepPt;
-            stringKeyToVar["diLepInvMass_JetESShiftUp"] = diLepInvMass;         
-            stringKeyToVar["diLepInvMass_JetESShiftDown"] = diLepInvMass;   
-            stringKeyToVar["diLepEta_JetESShiftUp"] = diLepEta;
-            stringKeyToVar["diLepEta_JetESShiftDown"] = diLepEta;
-            stringKeyToVar["diLepPhi_JetESShiftUp"] = diLepPhi;
-            stringKeyToVar["diLepPhi_JetESShiftDown"] = diLepPhi;
-            
-            stringKeyToVar["NJets_LepESShiftUp"] = NJets;
-            stringKeyToVar["NJets_LepESShiftDown"] = NJets;
-            stringKeyToVar["NBJets_LepESShiftUp"] = NBtagJets;
-            stringKeyToVar["NBJets_LepESShiftDown"] = NBtagJets;
-             */
-            stringKeyToVar["NJets_JetESShiftUp"] = NJets_JetESUp;
-            stringKeyToVar["NJets_JetESShiftDown"] = NJets_JetESDown;
-            stringKeyToVar["NBJets_JetESShiftUp"] = NBtagJets_JetESUp;
-            stringKeyToVar["NBJets_JetESShiftDown"] = NBtagJets_JetESDown;
-            
-            stringKeyToVar["NJets_BTagSFShiftUp"] = NJets;
-            stringKeyToVar["NJets_BTagSFShiftDown"] = NJets;
-            stringKeyToVar["NBJets_BTagSFShiftUp"] = NBtagJets_BTagSFUp;
-            stringKeyToVar["NBJets_BTagSFShiftDown"] = NBtagJets_BTagSFDown;
-            
-            if (NJets > 0) {
-                stringKeyToVar["DPhiLep0Jet0_LepESShiftUp"] = dPhi(Lep0Vec_LepESUp.Phi(), Jet0Vec.Phi());
-                stringKeyToVar["DPhiLep0Jet0_LepESShiftDown"] = dPhi(Lep0Vec_LepESDown.Phi(), Jet0Vec.Phi());
-                stringKeyToVar["DPhiLep0Jet1_LepESShiftUp"] = dPhi(Lep0Vec_LepESUp.Phi(), Jet1Vec.Phi());
-                stringKeyToVar["DPhiLep0Jet1_LepESShiftDown"] = dPhi(Lep0Vec_LepESDown.Phi(), Jet1Vec.Phi());
-                stringKeyToVar["DPhiLepB0LepB1_LepESShiftUp"] = DeltaPhiMT2lb_BLepsUsed_LepESUp;
-                stringKeyToVar["DPhiLepB0LepB1_LepESShiftDown"] = DeltaPhiMT2lb_BLepsUsed_LepESDown;
-                stringKeyToVar["ELepEJet_LepESShiftUp"] = Lep0Vec_LepESUp.E() + Lep1Vec_LepESUp.E() - Jet0Vec.E() - Jet1Vec.E();
-                stringKeyToVar["ELepEJet_LepESShiftUp"] = Lep0Vec_LepESDown.E() + Lep1Vec_LepESDown.E() - Jet0Vec.E() - Jet1Vec.E();
-                if (NBtagJets > 0) {
-                    stringKeyToVar["DPhiLep0BJet0_LepESShiftUp"] = dPhi(Lep0Vec_LepESUp.Phi(), BtagJet0Vec.Phi());
-                    stringKeyToVar["DPhiLep0BJet0_LepESShiftDown"] = dPhi(Lep0Vec_LepESDown.Phi(), BtagJet0Vec.Phi());
-                    if (NBtagJets > 1) {
-                        stringKeyToVar["DPhiLep0BJet1_LepESShiftUp"] = dPhi(Lep0Vec_LepESUp.Phi(), BtagJet1Vec.Phi());
-                        stringKeyToVar["DPhiLep0BJet1_LepESShiftDown"] = dPhi(Lep0Vec_LepESDown.Phi(), BtagJet1Vec.Phi());
-                    }
-                }
-            }
-            if (NJets_JetESUp > 0) {
-                stringKeyToVar["leadJetPt_JetESShiftUp"] = Jet0Vec_JetESUp.Pt();
-                stringKeyToVar["leadJetEta_JetESShiftUp"] = Jet0Vec_JetESUp.Eta();
-                stringKeyToVar["DPhiLep0Jet0_JetESShiftUp"] = dPhi(Lep0Vec.Phi(), Jet0Vec_JetESUp.Phi());
-                if (NJets_JetESUp > 1) {
-                    stringKeyToVar["subJetPt_JetESShiftUp"] = Jet1Vec_JetESUp.Pt();
-                    stringKeyToVar["subJetEta_JetESShiftUp"] = Jet1Vec_JetESUp.Eta();                
-                    stringKeyToVar["diJetPt_JetESShiftUp"] = diJetPt_JetESUp;
-                    stringKeyToVar["diJetInvMass_JetESShiftUp"] = diJetInvMass_JetESUp;
-                    stringKeyToVar["diJetEta_JetESShiftUp"] = diJetEta_JetESUp;
-                    stringKeyToVar["diJetPhi_JetESShiftUp"] = diJetPhi_JetESUp;
-                    stringKeyToVar["DPhiLep0Jet1_JetESShiftUp"] = dPhi(Lep0Vec.Phi(), Jet1Vec_JetESUp.Phi());
-                    stringKeyToVar["ELepEJet_JetESShiftUp"] = Lep0Vec.E() + Lep1Vec.E() - Jet0Vec_JetESUp.E() - Jet1Vec_JetESUp.E();
-                    stringKeyToVar["DPhiLepB0LepB1_JetESShiftUp"] = DeltaPhiMT2lb_BLepsUsed_JetESUp;
-                }
-                if (NBtagJets_JetESUp > 0) {
-                    stringKeyToVar["leadBJetPt_JetESShiftUp"] = BtagJet0Vec_JetESUp.Pt();
-                    stringKeyToVar["leadBJetEta_JetESShiftUp"] = BtagJet0Vec_JetESUp.Eta();
-                    stringKeyToVar["leadBJetEn_JetESShiftUp"] = BtagJet0Vec_JetESUp.E();
-                    //                cout << "leadBJet En " << BtagJet0Vec.E() << endl;
-                    stringKeyToVar["DPhiLep0BJet0_JetESShiftUp"] = dPhi(Lep0Vec.Phi(), BtagJet0Vec_JetESUp.Phi());
-                    stringKeyToVar["DPhiJet0BJet0_JetESShiftUp"] = dPhi(Jet0Vec.Phi(), BtagJet0Vec_JetESUp.Phi());                
-                    if (NBtagJets_JetESUp > 1) {
-                        stringKeyToVar["subBJetPt_JetESShiftUp"] = BtagJet1Vec_JetESUp.Pt();
-                        stringKeyToVar["subBJetEta_JetESShiftUp"] = BtagJet1Vec_JetESUp.Eta(); 
-                        stringKeyToVar["subBJetEn_JetESShiftUp"] = BtagJet1Vec_JetESUp.E();
-                        stringKeyToVar["diBJetPt_JetESShiftUp"] = diBJetPt_JetESUp;
-                        stringKeyToVar["diBJetInvMass_JetESShiftUp"] = diBJetInvMass_JetESUp;
-                        stringKeyToVar["diBJetEta_JetESShiftUp"] = diBJetEta_JetESUp;
-                        stringKeyToVar["diBJetPhi_JetESShiftUp"] = diBJetPhi_JetESUp;
-                        stringKeyToVar["DPhiLep0BJet1_JetESShiftUp"] = dPhi(Lep0Vec.Phi(), BtagJet1Vec_JetESUp.Phi());
-                        stringKeyToVar["DPhiJet1BJet0_JetESShiftUp"] = dPhi(Jet1Vec_JetESUp.Phi(), BtagJet0Vec_JetESUp.Phi());
-                        stringKeyToVar["DPhiJet1BJet1_JetESShiftUp"] = dPhi(Jet1Vec_JetESUp.Phi(), BtagJet1Vec_JetESUp.Phi());
-                    }
-                }   
-            }
-            if (NJets_JetESDown > 0) {
-                stringKeyToVar["leadJetPt_JetESShiftDown"] = Jet0Vec_JetESDown.Pt();
-                stringKeyToVar["leadJetEta_JetESShiftDown"] = Jet0Vec_JetESDown.Eta();
-                stringKeyToVar["DPhiLep0Jet0_JetESShiftDown"] = dPhi(Lep0Vec.Phi(), Jet0Vec_JetESDown.Phi());
-                if (NJets_JetESDown > 1) {
-                    stringKeyToVar["subJetPt_JetESShiftDown"] = Jet1Vec_JetESDown.Pt();
-                    stringKeyToVar["subJetEta_JetESShiftDown"] = Jet1Vec_JetESDown.Eta();                
-                    stringKeyToVar["diJetPt_JetESShiftDown"] = diJetPt_JetESDown;
-                    stringKeyToVar["diJetInvMass_JetESShiftDown"] = diJetInvMass_JetESDown;
-                    stringKeyToVar["diJetEta_JetESShiftDown"] = diJetEta_JetESDown;
-                    stringKeyToVar["diJetPhi_JetESShiftDown"] = diJetPhi_JetESDown;
-                    stringKeyToVar["DPhiLep0Jet1_JetESShiftDown"] = dPhi(Lep0Vec.Phi(), Jet1Vec_JetESDown.Phi());
-                    stringKeyToVar["ELepEJet_JetESShiftDown"] = Lep0Vec.E() + Lep1Vec.E() - Jet0Vec_JetESDown.E() - Jet1Vec_JetESDown.E();
-                    stringKeyToVar["DPhiLepB0LepB1_JetESShiftDown"] = DeltaPhiMT2lb_BLepsUsed_JetESDown;
-                }
-                if (NBtagJets_JetESDown > 0) {
-                    stringKeyToVar["leadBJetPt_JetESShiftDown"] = BtagJet0Vec_JetESDown.Pt();
-                    stringKeyToVar["leadBJetEta_JetESShiftDown"] = BtagJet0Vec_JetESDown.Eta();
-                    stringKeyToVar["leadBJetEn_JetESShiftDown"] = BtagJet0Vec_JetESDown.E();
-                    //                cout << "leadBJet En " << BtagJet0Vec.E() << endl;
-                    stringKeyToVar["DPhiLep0BJet0_JetESShiftDown"] = dPhi(Lep0Vec.Phi(), BtagJet0Vec_JetESDown.Phi());
-                    stringKeyToVar["DPhiJet0BJet0_JetESShiftDown"] = dPhi(Jet0Vec.Phi(), BtagJet0Vec_JetESDown.Phi());                
-                    if (NBtagJets_JetESDown > 1) {
-                        stringKeyToVar["subBJetPt_JetESShiftDown"] = BtagJet1Vec_JetESDown.Pt();
-                        stringKeyToVar["subBJetEta_JetESShiftDown"] = BtagJet1Vec_JetESDown.Eta(); 
-                        stringKeyToVar["subBJetEn_JetESShiftDown"] = BtagJet1Vec_JetESDown.E();
-                        stringKeyToVar["diBJetPt_JetESShiftDown"] = diBJetPt_JetESDown;
-                        stringKeyToVar["diBJetInvMass_JetESShiftDown"] = diBJetInvMass_JetESDown;
-                        stringKeyToVar["diBJetEta_JetESShiftDown"] = diBJetEta_JetESDown;
-                        stringKeyToVar["diBJetPhi_JetESShiftDown"] = diBJetPhi_JetESDown;
-                        stringKeyToVar["DPhiLep0BJet1_JetESShiftDown"] = dPhi(Lep0Vec.Phi(), BtagJet1Vec_JetESDown.Phi());
-                        stringKeyToVar["DPhiJet1BJet0_JetESShiftDown"] = dPhi(Jet1Vec_JetESDown.Phi(), BtagJet0Vec_JetESDown.Phi());
-                        stringKeyToVar["DPhiJet1BJet1_JetESShiftDown"] = dPhi(Jet1Vec_JetESDown.Phi(), BtagJet1Vec_JetESDown.Phi());
-                    }
-                }   
-            }
-            if (NBtagJets_BTagSFUp > 0) {
-                stringKeyToVar["leadBJetPt_BTagSFShiftUp"] = BtagJet0Vec_BTagSFUp.Pt();
-                stringKeyToVar["leadBJetEta_BTagSFShiftUp"] = BtagJet0Vec_BTagSFUp.Eta();
-                stringKeyToVar["leadBJetEn_BTagSFShiftUp"] = BtagJet0Vec_BTagSFUp.E();
-                //                cout << "leadBJet En " << BtagJet0Vec.E() << endl;
-                stringKeyToVar["DPhiLep0BJet0_BTagSFShiftUp"] = dPhi(Lep0Vec.Phi(), BtagJet0Vec_BTagSFUp.Phi());
-                stringKeyToVar["DPhiJet0BJet0_BTagSFShiftUp"] = dPhi(Jet0Vec.Phi(), BtagJet0Vec_BTagSFUp.Phi());                
-                if (NBtagJets_BTagSFUp > 1) {
-                    stringKeyToVar["subBJetPt_BTagSFShiftUp"] = BtagJet1Vec_BTagSFUp.Pt();
-                    stringKeyToVar["subBJetEta_BTagSFShiftUp"] = BtagJet1Vec_BTagSFUp.Eta(); 
-                    stringKeyToVar["subBJetEn_BTagSFShiftUp"] = BtagJet1Vec_BTagSFUp.E();
-                    stringKeyToVar["diBJetPt_BTagSFShiftUp"] = diBJetPt_BTagSFUp;
-                    stringKeyToVar["diBJetInvMass_BTagSFShiftUp"] = diBJetInvMass_BTagSFUp;
-                    stringKeyToVar["diBJetEta_BTagSFShiftUp"] = diBJetEta_BTagSFUp;
-                    stringKeyToVar["diBJetPhi_BTagSFShiftUp"] = diBJetPhi_BTagSFUp;
-                    stringKeyToVar["DPhiLep0BJet1_BTagSFShiftUp"] = dPhi(Lep0Vec.Phi(), BtagJet1Vec_BTagSFUp.Phi());
-                    stringKeyToVar["DPhiJet1BJet0_BTagSFShiftUp"] = dPhi(Jet1Vec.Phi(), BtagJet0Vec_BTagSFUp.Phi());
-                    stringKeyToVar["DPhiJet1BJet1_BTagSFShiftUp"] = dPhi(Jet1Vec.Phi(), BtagJet1Vec_BTagSFUp.Phi());
-                }
-            }
-            if (NBtagJets_BTagSFDown > 0) {
-                stringKeyToVar["leadBJetPt_BTagSFShiftDown"] = BtagJet0Vec_BTagSFDown.Pt();
-                stringKeyToVar["leadBJetEta_BTagSFShiftDown"] = BtagJet0Vec_BTagSFDown.Eta();
-                stringKeyToVar["leadBJetEn_BTagSFShiftDown"] = BtagJet0Vec_BTagSFDown.E();
-                //                cout << "leadBJet En " << BtagJet0Vec.E() << endl;
-                stringKeyToVar["DPhiLep0BJet0_BTagSFShiftDown"] = dPhi(Lep0Vec.Phi(), BtagJet0Vec_BTagSFDown.Phi());
-                stringKeyToVar["DPhiJet0BJet0_BTagSFShiftDown"] = dPhi(Jet0Vec.Phi(), BtagJet0Vec_BTagSFDown.Phi());                
-                if (NBtagJets_BTagSFDown > 1) {
-                    stringKeyToVar["subBJetPt_BTagSFShiftDown"] = BtagJet1Vec_BTagSFDown.Pt();
-                    stringKeyToVar["subBJetEta_BTagSFShiftDown"] = BtagJet1Vec_BTagSFDown.Eta(); 
-                    stringKeyToVar["subBJetEn_BTagSFShiftDown"] = BtagJet1Vec_BTagSFDown.E();
-                    stringKeyToVar["diBJetPt_BTagSFShiftDown"] = diBJetPt_BTagSFDown;
-                    stringKeyToVar["diBJetInvMass_BTagSFShiftDown"] = diBJetInvMass_BTagSFDown;
-                    stringKeyToVar["diBJetEta_BTagSFShiftDown"] = diBJetEta_BTagSFDown;
-                    stringKeyToVar["diBJetPhi_BTagSFShiftDown"] = diBJetPhi_BTagSFDown;
-                    stringKeyToVar["DPhiLep0BJet1_BTagSFShiftDown"] = dPhi(Lep0Vec.Phi(), BtagJet1Vec_BTagSFDown.Phi());
-                    stringKeyToVar["DPhiJet1BJet0_BTagSFShiftDown"] = dPhi(Jet1Vec.Phi(), BtagJet0Vec_BTagSFDown.Phi());
-                    stringKeyToVar["DPhiJet1BJet1_BTagSFShiftDown"] = dPhi(Jet1Vec.Phi(), BtagJet1Vec_BTagSFDown.Phi());
-                }
-            }
-            if (NJets > 1) {
-                stringKeyToVar["ELepEJet_LepESShiftUp"] = Lep0Vec_LepESUp.E() + Lep1Vec_LepESUp.E() - Jet0Vec.E() - Jet1Vec.E();
-                stringKeyToVar["ELepEJet_LepESShiftDown"] = Lep0Vec_LepESDown.E() + Lep1Vec_LepESDown.E() - Jet0Vec.E() - Jet1Vec.E();
-                stringKeyToVar["DPhiLepB0LepB1_LepESShiftUp"] = DeltaPhiMT2lb_BLepsUsed_LepESUp;
-                stringKeyToVar["DPhiLepB0LepB1_LepESShiftDown"] = DeltaPhiMT2lb_BLepsUsed_LepESDown;
-                
-                stringKeyToVar["ELepEJet_BTagSFShiftUp"] = Lep0Vec.E() + Lep1Vec.E() - Jet0Vec.E() - Jet1Vec.E();
-                stringKeyToVar["ELepEJet_BTagSFShiftDown"] = Lep0Vec.E() + Lep1Vec.E() - Jet0Vec.E() - Jet1Vec.E();
-                stringKeyToVar["DPhiLepB0LepB1_BTagSFShiftUp"] = DeltaPhiMT2lb_BLepsUsed_BTagSFUp;
-                stringKeyToVar["DPhiLepB0LepB1_BTagSFShiftDown"] = DeltaPhiMT2lb_BLepsUsed_BTagSFDown;
-            }
-            if (NJets_JetESUp > 1) {
-                stringKeyToVar["ELepEJet_JetESShiftUp"] = Lep0Vec.E() + Lep1Vec.E() - Jet0Vec_JetESUp.E() - Jet1Vec_JetESUp.E();
-            }
-            if (NJets_JetESDown > 1) {
-                stringKeyToVar["ELepEJet_JetESShiftUp"] = Lep0Vec.E() + Lep1Vec.E() - Jet0Vec_JetESDown.E() - Jet1Vec_JetESDown.E();
-            }
-            stringKeyToVar["METdivMeff_LepESShiftUp"] = METdivMeff_LepESUp;
-            stringKeyToVar["METdivMeff_PassMT2llCut80_LepESShiftUp"] = MT2ll_LepESUp > 80 ? METdivMeff_LepESUp : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut90_LepESShiftUp"] = MT2ll_LepESUp > 90 ? METdivMeff_LepESUp : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut190_LepESShiftUp"] = MT2ll_LepESUp > 100 ? METdivMeff_LepESUp : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut110_LepESShiftUp"] = MT2ll_LepESUp > 110 ? METdivMeff_LepESUp : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut120_LepESShiftUp"] = MT2ll_LepESUp > 120 ? METdivMeff_LepESUp : -99;                        
-            stringKeyToVar["METdivMeff_LepESShiftDown"] = METdivMeff_LepESDown;
-            stringKeyToVar["METdivMeff_PassMT2llCut80_LepESShiftDown"] = MT2ll_LepESDown > 80 ? METdivMeff_LepESDown : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut90_LepESShiftDown"] = MT2ll_LepESDown > 90 ? METdivMeff_LepESDown : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut190_LepESShiftDown"] = MT2ll_LepESDown > 100 ? METdivMeff_LepESDown : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut110_LepESShiftDown"] = MT2ll_LepESDown > 110 ? METdivMeff_LepESDown : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut120_LepESShiftDown"] = MT2ll_LepESDown > 120 ? METdivMeff_LepESDown : -99;
-            
-            stringKeyToVar["METdivMeff_JetESShiftUp"] = METdivMeff_JetESUp;
-            stringKeyToVar["METdivMeff_PassMT2llCut80_JetESShiftUp"] = MT2ll_JetESUp > 80 ? METdivMeff_JetESUp : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut90_JetESShiftUp"] = MT2ll_JetESUp > 90 ? METdivMeff_JetESUp : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut190_JetESShiftUp"] = MT2ll_JetESUp > 100 ? METdivMeff_JetESUp : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut110_JetESShiftUp"] = MT2ll_JetESUp > 110 ? METdivMeff_JetESUp : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut120_JetESShiftUp"] = MT2ll_JetESUp > 120 ? METdivMeff_JetESUp : -99;                        
-            stringKeyToVar["METdivMeff_JetESShiftDown"] = METdivMeff_JetESDown;
-            stringKeyToVar["METdivMeff_PassMT2llCut80_JetESShiftDown"] = MT2ll_JetESDown > 80 ? METdivMeff_JetESDown : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut90_JetESShiftDown"] = MT2ll_JetESDown > 90 ? METdivMeff_JetESDown : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut190_JetESShiftDown"] = MT2ll_JetESDown > 100 ? METdivMeff_JetESDown : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut110_JetESShiftDown"] = MT2ll_JetESDown > 110 ? METdivMeff_JetESDown : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut120_JetESShiftDown"] = MT2ll_JetESDown > 120 ? METdivMeff_JetESDown : -99;
-            
-            stringKeyToVar["METdivMeff_PassMT2llCut80_MT2UncESShiftUp"] = MT2ll_UncESUp > 80 ? METdivMeff : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut90_MT2UncESShiftUp"] = MT2ll_UncESUp > 90 ? METdivMeff : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut190_MT2UncESShiftUp"] = MT2ll_UncESUp > 100 ? METdivMeff : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut110_MT2UncESShiftUp"] = MT2ll_UncESUp > 110 ? METdivMeff : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut120_MT2UncESShiftUp"] = MT2ll_UncESUp > 120 ? METdivMeff : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut80_MT2UncESShiftDown"] = MT2ll_UncESDown > 80 ? METdivMeff : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut90_MT2UncESShiftDown"] = MT2ll_UncESDown > 90 ? METdivMeff : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut190_MT2UncESShiftDown"] = MT2ll_UncESDown > 100 ? METdivMeff : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut110_MT2UncESShiftDown"] = MT2ll_UncESDown > 110 ? METdivMeff : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut120_MT2UncESShiftDown"] = MT2ll_UncESDown > 120 ? METdivMeff : -99;
-            
-            stringKeyToVar["METdivMeff_PassMT2llCut80_BTagSFShiftUp"] = MT2ll > 80 ? METdivMeff : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut90_BTagSFShiftUp"] = MT2ll > 90 ? METdivMeff : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut190_BTagSFShiftUp"] = MT2ll > 100 ? METdivMeff : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut110_BTagSFShiftUp"] = MT2ll > 110 ? METdivMeff : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut120_BTagSFShiftUp"] = MT2ll > 120 ? METdivMeff : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut80_BTagSFShiftDown"] = MT2ll > 80 ? METdivMeff : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut90_BTagSFShiftDown"] = MT2ll > 90 ? METdivMeff : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut190_BTagSFShiftDown"] = MT2ll > 100 ? METdivMeff : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut110_BTagSFShiftDown"] = MT2ll > 110 ? METdivMeff : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut120_BTagSFShiftDown"] = MT2ll > 120 ? METdivMeff : -99;
-            
-            
-            stringKeyToVar["METdivMeff_PassMT2llCut80_MT2llShiftUp"] = MT2ll_ShiftUp > 80 ? METdivMeff : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut90_MT2llShiftUp"] = MT2ll_ShiftUp > 90 ? METdivMeff : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut100_MT2llShiftUp"] = MT2ll_ShiftUp > 100 ? METdivMeff : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut110_MT2llShiftUp"] = MT2ll_ShiftUp > 110 ? METdivMeff : -99;
-            stringKeyToVar["METdivMeff_PassMT2llCut120_MT2llShiftUp"] = MT2ll_ShiftUp > 120 ? METdivMeff : -99;
-            
-            stringKeyToVar["MT2ll_MT2llShiftUp"] = MT2ll_ShiftUp;
-            stringKeyToVar["PassMT2llCut80_MT2llShiftUp"] = (MT2ll_ShiftUp > 80.);
-            stringKeyToVar["PassMT2llCut90_MT2llShiftUp"] = (MT2ll_ShiftUp > 90.);
-            stringKeyToVar["PassMT2llCut100_MT2llShiftUp"] = (MT2ll_ShiftUp > 100.);
-            stringKeyToVar["PassMT2llCut110_MT2llShiftUp"] = (MT2ll_ShiftUp > 110.);
-            stringKeyToVar["PassMT2llCut120_MT2llShiftUp"] = (MT2ll_ShiftUp > 120.);
-            
-            stringKeyToVar["MT2ll_LepESShiftUp"] = MT2ll_LepESUp;
-            stringKeyToVar["PassMT2llCut80_LepESShiftUp"] = (MT2ll_LepESUp > 80.);
-            stringKeyToVar["PassMT2llCut90_LepESShiftUp"] = (MT2ll_LepESUp > 90.);
-            stringKeyToVar["PassMT2llCut100_LepESShiftUp"] = (MT2ll_LepESUp > 100.);
-            stringKeyToVar["PassMT2llCut110_LepESShiftUp"] = (MT2ll_LepESUp > 110.);
-            stringKeyToVar["PassMT2llCut120_LepESShiftUp"] = (MT2ll_LepESUp > 120.);
-            
-            stringKeyToVar["MT2ll_LepESShiftDown"] = MT2ll_LepESDown;
-            stringKeyToVar["PassMT2llCut80_LepESShiftDown"] = (MT2ll_LepESDown > 80.);
-            stringKeyToVar["PassMT2llCut90_LepESShiftDown"] = (MT2ll_LepESDown > 90.);
-            stringKeyToVar["PassMT2llCut100_LepESShiftDown"] = (MT2ll_LepESDown > 100.);
-            stringKeyToVar["PassMT2llCut110_LepESShiftDown"] = (MT2ll_LepESDown > 110.);
-            stringKeyToVar["PassMT2llCut120_LepESShiftDown"] = (MT2ll_LepESDown > 120.);
-            
-            stringKeyToVar["MT2ll_JetESShiftUp"] = MT2ll_JetESUp;
-            stringKeyToVar["PassMT2llCut80_JetESShiftUp"] = (MT2ll_JetESUp > 80.);
-            stringKeyToVar["PassMT2llCut90_JetESShiftUp"] = (MT2ll_JetESUp > 90.);
-            stringKeyToVar["PassMT2llCut100_JetESShiftUp"] = (MT2ll_JetESUp > 100.);
-            stringKeyToVar["PassMT2llCut110_JetESShiftUp"] = (MT2ll_JetESUp > 110.);
-            stringKeyToVar["PassMT2llCut120_JetESShiftUp"] = (MT2ll_JetESUp > 120.);
-            
-            stringKeyToVar["MT2ll_JetESShiftDown"] = MT2ll_JetESDown;
-            stringKeyToVar["PassMT2llCut80_JetESShiftDown"] = (MT2ll_JetESDown > 80.);
-            stringKeyToVar["PassMT2llCut90_JetESShiftDown"] = (MT2ll_JetESDown > 90.);
-            stringKeyToVar["PassMT2llCut100_JetESShiftDown"] = (MT2ll_JetESDown > 100.);
-            stringKeyToVar["PassMT2llCut110_JetESShiftDown"] = (MT2ll_JetESDown > 110.);
-            stringKeyToVar["PassMT2llCut120_JetESShiftDown"] = (MT2ll_JetESDown > 120.);
-            
-            stringKeyToVar["MT2ll_MT2UncESShiftUp"] = MT2ll_UncESUp;
-            stringKeyToVar["PassMT2llCut80_MT2UncESShiftUp"] = (MT2ll_UncESUp > 80.);
-            stringKeyToVar["PassMT2llCut90_MT2UncESShiftUp"] = (MT2ll_UncESUp > 90.);
-            stringKeyToVar["PassMT2llCut100_MT2UncESShiftUp"] = (MT2ll_UncESUp > 100.);
-            stringKeyToVar["PassMT2llCut110_MT2UncESShiftUp"] = (MT2ll_UncESUp > 110.);
-            stringKeyToVar["PassMT2llCut120_MT2UncESShiftUp"] = (MT2ll_UncESUp > 120.);
-            
-            stringKeyToVar["MT2ll_MT2UncESShiftDown"] = MT2ll_UncESDown;
-            stringKeyToVar["PassMT2llCut80_MT2UncESShiftDown"] = (MT2ll_UncESDown > 80.);
-            stringKeyToVar["PassMT2llCut90_MT2UncESShiftDown"] = (MT2ll_UncESDown > 90.);
-            stringKeyToVar["PassMT2llCut100_MT2UncESShiftDown"] = (MT2ll_UncESDown > 100.);
-            stringKeyToVar["PassMT2llCut110_MT2UncESShiftDown"] = (MT2ll_UncESDown > 110.);
-            stringKeyToVar["PassMT2llCut120_MT2UncESShiftDown"] = (MT2ll_UncESDown > 120.);
-            
-            stringKeyToVar["MT2ll_BTagSFShiftUp"] = MT2ll;
-            stringKeyToVar["PassMT2llCut80_BTagSFShiftUp"] = (MT2ll > 80.);
-            stringKeyToVar["PassMT2llCut90_BTagSFShiftUp"] = (MT2ll > 90.);
-            stringKeyToVar["PassMT2llCut100_BTagSFShiftUp"] = (MT2ll > 100.);
-            stringKeyToVar["PassMT2llCut110_BTagSFShiftUp"] = (MT2ll > 110.);
-            stringKeyToVar["PassMT2llCut120_BTagSFShiftUp"] = (MT2ll > 120.);
-            
-            stringKeyToVar["MT2ll_BTagSFShiftDown"] = MT2ll;
-            stringKeyToVar["PassMT2llCut80_BTagSFShiftDown"] = (MT2ll > 80.);
-            stringKeyToVar["PassMT2llCut90_BTagSFShiftDown"] = (MT2ll > 90.);
-            stringKeyToVar["PassMT2llCut100_BTagSFShiftDown"] = (MT2ll > 100.);
-            stringKeyToVar["PassMT2llCut110_BTagSFShiftDown"] = (MT2ll > 110.);
-            stringKeyToVar["PassMT2llCut120_BTagSFShiftDown"] = (MT2ll > 120.);
-            
-            stringKeyToVar["MT2lb_LepESShiftUp"] = MT2lb_LepESUp;
-            stringKeyToVar["MT2lb_LepESShiftDown"] = MT2lb_LepESDown;
-            stringKeyToVar["MT2lb_JetESShiftUp"] = MT2lb_JetESUp;
-            stringKeyToVar["MT2lb_JetESShiftDown"] = MT2lb_JetESDown;
-            stringKeyToVar["MT2lb_MT2UncESShiftUp"] = MT2lb_UncESUp;
-            stringKeyToVar["MT2lb_MT2UncESShiftDown"] = MT2lb_UncESDown;
-            
-            stringKeyToVar["MET_LepESShiftUp"] = MET_LepESUp;
-            stringKeyToVar["MET_LepESShiftDown"] = MET_LepESDown;
-            stringKeyToVar["METPhi_LepESShiftUp"] = METPhi_LepESUp;
-            stringKeyToVar["METPhi_LepESShiftDown"] = METPhi_LepESDown;
-            
-            stringKeyToVar["MET_JetESShiftUp"] = MET_JetESUp;
-            stringKeyToVar["MET_JetESShiftDown"] = MET_JetESDown;
-            stringKeyToVar["METPhi_JetESShiftUp"] = METPhi_JetESUp;
-            stringKeyToVar["METPhi_JetESShiftDown"] = METPhi_JetESDown;            
-            
-            stringKeyToVar["MT2lb_BTagSFShiftUp"] = MT2lb_BTagSFUp;
-            stringKeyToVar["MT2lb_BTagSFShiftDown"] = MT2lb_BTagSFDown;
-            
-            stringKeyToVar["MET_BTagSFShiftUp"] = MET;
-            stringKeyToVar["MET_BTagSFShiftDown"] = MET;
-            stringKeyToVar["METPhi_BTagSFShiftUp"] = METPhi;
-            stringKeyToVar["METPhi_BTagSFShiftDown"] = METPhi;
+            SetStringKeyMap(stringKeyToVar, &ELI_LepESUp,    &EJI,           &EMI_LepESUp,   &EDSI_LepESUp,   systVec,  1);
+            SetStringKeyMap(stringKeyToVar, &ELI_LepESDown,  &EJI,           &EMI_LepESDown, &EDSI_LepESDown, systVec, -1);            
+            SetStringKeyMap(stringKeyToVar, &ELI,            &EJI_JetESUp,   &EMI_JetESUp,   &EDSI_JetESUp,   systVec,  2);
+            SetStringKeyMap(stringKeyToVar, &ELI,            &EJI_JetESDown, &EMI_JetESDown, &EDSI_JetESDown, systVec, -2);            
+            SetStringKeyMap(stringKeyToVar, &ELI,            &EJI_BTagSFUp,  &EMI_BTagSFUp,  &EDSI_BTagSFUp,  systVec,  3);
+            SetStringKeyMap(stringKeyToVar, &ELI,            &EJI_BTagSFUp,  &EMI_BTagSFUp,  &EDSI_BTagSFUp,  systVec, -3);
+            SetStringKeyMapSpecial(stringKeyToVar, &EMI, &ESMT2I, systVec, 5);
+            SetStringKeyMapSpecial(stringKeyToVar, &EMI, &ESMT2I, systVec, -5);
+            SetStringKeyMapSpecial(stringKeyToVar, &EMI, &ESMT2I, systVec, 8);
         }
+
         /*#######################
          MAKE SELECTION CUTS
          #####################*/
-        for (unsigned int iCentVal = 0; iCentVal < subSampVec->size(); ++iCentVal) {
-            S_Current = subSampVec->at(iCentVal);
-            subSampBool[S_Current] = false;
-            if (!doEvent) continue;
-            if (!(S_Current.whichdiLepType < 0 || Type == S_Current.whichdiLepType)) continue;
-            if (!(NJets >= S_Current.cutNJets)) continue;
-            if (!(NBtagJets >= S_Current.cutNBJets)) continue;
-            if (!(Type == 2 && S_Current.histNameSuffix.Contains("FullCut"))) {
-                if (MET < S_Current.cutMET) continue;
-                if (!(S_Current.doZVeto < 0 || ZVeto == S_Current.doZVeto)) continue;
-            }
-            if (S_Current.histNameSuffix.Contains("BothinBarrel")) {
-                if (!(TMath::Abs(Lep0Vec.Eta()) < barrelEtaEnd && TMath::Abs(Lep1Vec.Eta()) < barrelEtaEnd)) continue;
-            }
-            if (S_Current.histNameSuffix.Contains("OneinBarrel")) {            
-                if (!(TMath::Abs(Lep0Vec.Eta()) > barrelEtaEnd || TMath::Abs(Lep1Vec.Eta()) > barrelEtaEnd)) continue;
-                if (!(TMath::Abs(Lep0Vec.Eta()) < barrelEtaEnd || TMath::Abs(Lep1Vec.Eta()) < barrelEtaEnd)) continue;                                        
-            }   
-            if (S_Current.histNameSuffix.Contains("BothinEndcap")) {
-                if (!(TMath::Abs(Lep0Vec.Eta()) > endcapEtaStart && TMath::Abs(Lep1Vec.Eta()) > endcapEtaStart)) continue;
-            }
-            if (S_Current.histNameSuffix.Contains("0BJets")) {
-                if (NBtagJets > 0) {
-                    if (!(S_Current.histNameSuffix.Contains("inZMass") && !ZVeto)) continue;
-                }
-            }
-            if (S_Current.histNameSuffix.Contains("_0Jets") && NJets != 0) continue;
-            if (S_Current.histNameSuffix.Contains("_1Jet") && NJets != 1) continue;
-            if (S_Current.histNameSuffix.Contains("FullCutBlind")) {
-                if (MT2ll > 80) continue;
-            }
-            subSampBool[S_Current] = true;
-            if (doVerbosity) {
-                if (S_Current.histNameSuffix == "_NJetsGeq2") {
-                    cout << "" << endl;
-                    if (subSampBool[S_Current] == true) cout << "true!" << endl;
-                    if (subSampBool[S_Current] == false) cout << "false!" << endl;
-                    cout << NJets << endl;
-                    cout << "" << endl;
-                }
-            }
-        }
-        
-        for (unsigned int iLepESUp = 0; iLepESUp < subSampVec->size(); ++iLepESUp) {
-            S_Current = subSampVec->at(iLepESUp);
-            subSampBool_LepESUp[S_Current] = false;
-            if (!doEvent_LepESUp) continue;
-            if (!(S_Current.whichdiLepType < 0 || Type_LepESUp == S_Current.whichdiLepType)) continue;
-            if (!(NJets >= S_Current.cutNJets)) continue;
-            if (!(NBtagJets >= S_Current.cutNBJets)) continue;
-            if (!(Type_LepESUp == 2 && S_Current.histNameSuffix.Contains("FullCut"))) {
-                if (MET_LepESUp < S_Current.cutMET) continue;
-                if (!(S_Current.doZVeto < 0 || ZVeto_LepESUp == S_Current.doZVeto)) continue;
-            }
-            if (S_Current.histNameSuffix.Contains("BothinBarrel")) {
-                if (!(TMath::Abs(Lep0Vec_LepESUp.Eta()) < barrelEtaEnd && TMath::Abs(Lep1Vec_LepESUp.Eta()) < barrelEtaEnd)) continue;
-            }
-            if (S_Current.histNameSuffix.Contains("OneinBarrel")) {            
-                if (!(TMath::Abs(Lep0Vec_LepESUp.Eta()) > barrelEtaEnd || TMath::Abs(Lep1Vec_LepESUp.Eta()) > barrelEtaEnd)) continue;
-                if (!(TMath::Abs(Lep0Vec_LepESUp.Eta()) < barrelEtaEnd || TMath::Abs(Lep1Vec_LepESUp.Eta()) < barrelEtaEnd)) continue;                                        
-            }   
-            if (S_Current.histNameSuffix.Contains("BothinEndcap")) {
-                if (!(TMath::Abs(Lep0Vec_LepESUp.Eta()) > endcapEtaStart && TMath::Abs(Lep1Vec_LepESUp.Eta()) > endcapEtaStart)) continue;
-            }
-            if (S_Current.histNameSuffix.Contains("0BJets")) {
-                if (NBtagJets > 0) {
-                    if (!(S_Current.histNameSuffix.Contains("inZMass") && !ZVeto_LepESUp)) continue;
-                }
-            }
-            if (S_Current.histNameSuffix.Contains("_0Jets") && NJets != 0) continue;
-            if (S_Current.histNameSuffix.Contains("_1Jet") && NJets != 1) continue;
-            if (S_Current.histNameSuffix.Contains("FullCutBlind")) {
-                if (MT2ll > 80) continue;
-            }
-            subSampBool_LepESUp[S_Current] = true;
-        }
-        
-        for (unsigned int iLepESDown = 0; iLepESDown < subSampVec->size(); ++iLepESDown) {
-            S_Current = subSampVec->at(iLepESDown);
-            subSampBool_LepESDown[S_Current] = false;
-            if (!doEvent_LepESDown) continue;
-            if (!(S_Current.whichdiLepType < 0 || Type_LepESDown == S_Current.whichdiLepType)) continue;
-            if (!(NJets >= S_Current.cutNJets)) continue;
-            if (!(NBtagJets >= S_Current.cutNBJets)) continue;
-            if (!(Type_LepESDown == 2 && S_Current.histNameSuffix.Contains("FullCut"))) {
-                if (MET_LepESDown < S_Current.cutMET) continue;
-                if (!(S_Current.doZVeto < 0 || ZVeto_LepESDown == S_Current.doZVeto)) continue;
-            }
-            if (S_Current.histNameSuffix.Contains("BothinBarrel")) {
-                if (!(TMath::Abs(Lep0Vec_LepESDown.Eta()) < barrelEtaEnd && TMath::Abs(Lep1Vec_LepESDown.Eta()) < barrelEtaEnd)) continue;
-            }
-            if (S_Current.histNameSuffix.Contains("OneinBarrel")) {            
-                if (!(TMath::Abs(Lep0Vec_LepESDown.Eta()) > barrelEtaEnd || TMath::Abs(Lep1Vec_LepESDown.Eta()) > barrelEtaEnd)) continue;
-                if (!(TMath::Abs(Lep0Vec_LepESDown.Eta()) < barrelEtaEnd || TMath::Abs(Lep1Vec_LepESDown.Eta()) < barrelEtaEnd)) continue;                                        
-            }   
-            if (S_Current.histNameSuffix.Contains("BothinEndcap")) {
-                if (!(TMath::Abs(Lep0Vec_LepESDown.Eta()) > endcapEtaStart && TMath::Abs(Lep1Vec_LepESDown.Eta()) > endcapEtaStart)) continue;
-            }
-            if (S_Current.histNameSuffix.Contains("0BJets")) {
-                if (NBtagJets > 0) {
-                    if (!(S_Current.histNameSuffix.Contains("inZMass") && !ZVeto_LepESDown)) continue;
-                }
-            }
-            if (S_Current.histNameSuffix.Contains("_0Jets") && NJets != 0) continue;
-            if (S_Current.histNameSuffix.Contains("_1Jet") && NJets != 1) continue;
-            if (S_Current.histNameSuffix.Contains("FullCutBlind")) {
-                if (MT2ll > 80) continue;
-            }
-            subSampBool_LepESDown[S_Current] = true;
-        }                
-        for (unsigned int iJetESUp = 0; iJetESUp < subSampVec->size(); ++iJetESUp) {
-            S_Current = subSampVec->at(iJetESUp);
-            subSampBool_JetESUp[S_Current] = false;
-            if (!doEvent) continue;
-            if (!(S_Current.whichdiLepType < 0 || Type == S_Current.whichdiLepType)) continue;
-            if (!(NJets_JetESUp >= S_Current.cutNJets)) continue;
-            if (!(NBtagJets_JetESUp >= S_Current.cutNBJets)) continue;
-            if (!(Type == 2 && S_Current.histNameSuffix.Contains("FullCut"))) {
-                if (MET_JetESUp < S_Current.cutMET) continue;
-                if (!(S_Current.doZVeto < 0 || ZVeto == S_Current.doZVeto)) continue;
-            }
-            if (S_Current.histNameSuffix.Contains("BothinBarrel")) {
-                if (!(TMath::Abs(Lep0Vec.Eta()) < barrelEtaEnd && TMath::Abs(Lep1Vec.Eta()) < barrelEtaEnd)) continue;
-            }
-            if (S_Current.histNameSuffix.Contains("OneinBarrel")) {            
-                if (!(TMath::Abs(Lep0Vec.Eta()) > barrelEtaEnd || TMath::Abs(Lep1Vec.Eta()) > barrelEtaEnd)) continue;
-                if (!(TMath::Abs(Lep0Vec.Eta()) < barrelEtaEnd || TMath::Abs(Lep1Vec.Eta()) < barrelEtaEnd)) continue;                                        
-            }   
-            if (S_Current.histNameSuffix.Contains("BothinEndcap")) {
-                if (!(TMath::Abs(Lep0Vec.Eta()) > endcapEtaStart && TMath::Abs(Lep1Vec.Eta()) > endcapEtaStart)) continue;
-            }
-            if (S_Current.histNameSuffix.Contains("0BJets")) {
-                if (NBtagJets_JetESUp > 0) {
-                    if (!(S_Current.histNameSuffix.Contains("inZMass") && !ZVeto)) continue;
-                }
-            }
-            if (S_Current.histNameSuffix.Contains("_0Jets") && NJets_JetESUp != 0) continue;
-            if (S_Current.histNameSuffix.Contains("_1Jet") && NJets_JetESUp != 1) continue;
-            if (S_Current.histNameSuffix.Contains("FullCutBlind")) {
-                if (MT2ll > 80) continue;
-            }
-            subSampBool_JetESUp[S_Current] = true;
-        }        
-        for (unsigned int iJetESDown = 0; iJetESDown < subSampVec->size(); ++iJetESDown) {
-            S_Current = subSampVec->at(iJetESDown);
-            subSampBool_JetESDown[S_Current] = false;
-            if (!doEvent) continue;
-            if (!(S_Current.whichdiLepType < 0 || Type == S_Current.whichdiLepType)) continue;
-            if (!(NJets_JetESDown >= S_Current.cutNJets)) continue;
-            if (!(NBtagJets_JetESDown >= S_Current.cutNBJets)) continue;
-            if (!(Type == 2 && S_Current.histNameSuffix.Contains("FullCut"))) {
-                if (MET_JetESDown < S_Current.cutMET) continue;
-                if (!(S_Current.doZVeto < 0 || ZVeto == S_Current.doZVeto)) continue;
-            }
-            if (S_Current.histNameSuffix.Contains("BothinBarrel")) {
-                if (!(TMath::Abs(Lep0Vec.Eta()) < barrelEtaEnd && TMath::Abs(Lep1Vec.Eta()) < barrelEtaEnd)) continue;
-            }
-            if (S_Current.histNameSuffix.Contains("OneinBarrel")) {            
-                if (!(TMath::Abs(Lep0Vec.Eta()) > barrelEtaEnd || TMath::Abs(Lep1Vec.Eta()) > barrelEtaEnd)) continue;
-                if (!(TMath::Abs(Lep0Vec.Eta()) < barrelEtaEnd || TMath::Abs(Lep1Vec.Eta()) < barrelEtaEnd)) continue;                                        
-            }   
-            if (S_Current.histNameSuffix.Contains("BothinEndcap")) {
-                if (!(TMath::Abs(Lep0Vec.Eta()) > endcapEtaStart && TMath::Abs(Lep1Vec.Eta()) > endcapEtaStart)) continue;
-            }
-            if (S_Current.histNameSuffix.Contains("0BJets")) {
-                if (NBtagJets_JetESDown > 0) {
-                    if (!(S_Current.histNameSuffix.Contains("inZMass") && !ZVeto)) continue;
-                }
-            }
-            if (S_Current.histNameSuffix.Contains("_0Jets") && NJets_JetESDown != 0) continue;
-            if (S_Current.histNameSuffix.Contains("_1Jet") && NJets_JetESDown != 1) continue;
-            if (S_Current.histNameSuffix.Contains("FullCutBlind")) {
-                if (MT2ll > 80) continue;
-            }
-            subSampBool_JetESDown[S_Current] = true;
-        }
-        
-        
-        
-        for (unsigned int iBTagSFUp = 0; iBTagSFUp < subSampVec->size(); ++iBTagSFUp) {
-            S_Current = subSampVec->at(iBTagSFUp);
-            subSampBool_BTagSFUp[S_Current] = false;
-            if (!doEvent) continue;
-            if (!(S_Current.whichdiLepType < 0 || Type == S_Current.whichdiLepType)) continue;
-            if (!(NJets >= S_Current.cutNJets)) continue;
-            if (!(NBtagJets_BTagSFUp >= S_Current.cutNBJets)) continue;
-            if (!(Type == 2 && S_Current.histNameSuffix.Contains("FullCut"))) {
-                if (MET < S_Current.cutMET) continue;
-                if (!(S_Current.doZVeto < 0 || ZVeto == S_Current.doZVeto)) continue;
-            }
-            if (S_Current.histNameSuffix.Contains("BothinBarrel")) {
-                if (!(TMath::Abs(Lep0Vec.Eta()) < barrelEtaEnd && TMath::Abs(Lep1Vec.Eta()) < barrelEtaEnd)) continue;
-            }
-            if (S_Current.histNameSuffix.Contains("OneinBarrel")) {            
-                if (!(TMath::Abs(Lep0Vec.Eta()) > barrelEtaEnd || TMath::Abs(Lep1Vec.Eta()) > barrelEtaEnd)) continue;
-                if (!(TMath::Abs(Lep0Vec.Eta()) < barrelEtaEnd || TMath::Abs(Lep1Vec.Eta()) < barrelEtaEnd)) continue;                                        
-            }   
-            if (S_Current.histNameSuffix.Contains("BothinEndcap")) {
-                if (!(TMath::Abs(Lep0Vec.Eta()) > endcapEtaStart && TMath::Abs(Lep1Vec.Eta()) > endcapEtaStart)) continue;
-            }
-            if (S_Current.histNameSuffix.Contains("0BJets")) {
-                if (NBtagJets_BTagSFUp > 0) {
-                    if (!(S_Current.histNameSuffix.Contains("inZMass") && !ZVeto)) continue;
-                }
-            }
-            if (S_Current.histNameSuffix.Contains("_0Jets") && NJets != 0) continue;
-            if (S_Current.histNameSuffix.Contains("_1Jet") && NJets != 1) continue;
-            if (S_Current.histNameSuffix.Contains("FullCutBlind")) {
-                if (MT2ll > 80) continue;
-            }
-            subSampBool_BTagSFUp[S_Current] = true;
-        }        
-        for (unsigned int iBTagSFDown = 0; iBTagSFDown < subSampVec->size(); ++iBTagSFDown) {
-            S_Current = subSampVec->at(iBTagSFDown);
-            subSampBool_BTagSFDown[S_Current] = false;
-            if (!doEvent) continue;
-            if (!(S_Current.whichdiLepType < 0 || Type == S_Current.whichdiLepType)) continue;
-            if (!(NJets >= S_Current.cutNJets)) continue;
-            if (!(NBtagJets_BTagSFDown >= S_Current.cutNBJets)) continue;
-            if (!(Type == 2 && S_Current.histNameSuffix.Contains("FullCut"))) {
-                if (MET < S_Current.cutMET) continue;
-                if (!(S_Current.doZVeto < 0 || ZVeto == S_Current.doZVeto)) continue;
-            }
-            if (S_Current.histNameSuffix.Contains("BothinBarrel")) {
-                if (!(TMath::Abs(Lep0Vec.Eta()) < barrelEtaEnd && TMath::Abs(Lep1Vec.Eta()) < barrelEtaEnd)) continue;
-            }
-            if (S_Current.histNameSuffix.Contains("OneinBarrel")) {            
-                if (!(TMath::Abs(Lep0Vec.Eta()) > barrelEtaEnd || TMath::Abs(Lep1Vec.Eta()) > barrelEtaEnd)) continue;
-                if (!(TMath::Abs(Lep0Vec.Eta()) < barrelEtaEnd || TMath::Abs(Lep1Vec.Eta()) < barrelEtaEnd)) continue;                                        
-            }   
-            if (S_Current.histNameSuffix.Contains("BothinEndcap")) {
-                if (!(TMath::Abs(Lep0Vec.Eta()) > endcapEtaStart && TMath::Abs(Lep1Vec.Eta()) > endcapEtaStart)) continue;
-            }
-            if (S_Current.histNameSuffix.Contains("0BJets")) {
-                if (NBtagJets_BTagSFDown > 0) {
-                    if (!(S_Current.histNameSuffix.Contains("inZMass") && !ZVeto)) continue;
-                }
-            }
-            if (S_Current.histNameSuffix.Contains("_0Jets") && NJets != 0) continue;
-            if (S_Current.histNameSuffix.Contains("_1Jet") && NJets != 1) continue;
-            if (S_Current.histNameSuffix.Contains("FullCutBlind")) {
-                if (MT2ll > 80) continue;
-            }
-            subSampBool_BTagSFDown[S_Current] = true;
-        }
-        
-        
-        /*#######################
-         FILL PLOTS
-         #####################*/   
-        
-        /// Set genTop weights to be appropriate values
-        preNVtxRWweight_GenTopReweight *= preNVtxRWweight;
-        weight_GenTopReweight *= weight;
-        //        cout << "weight " << weight << endl;
-        //        cout << "weight_GenTopReweight  " << weight_GenTopReweight << endl;
-        weightSwitch = weight;
-        weight = weight_GenTopReweight;
-        weight_GenTopReweight = weightSwitch;
-        //        cout << "weight post switch " << weight << endl;
-        //        cout << "weight_GenTopReweight post switch " << weight_GenTopReweight << endl;
-        weightSwitch = preNVtxRWweight;
-        preNVtxRWweight = preNVtxRWweight_GenTopReweight;
-        preNVtxRWweight_GenTopReweight = weightSwitch;
-        
-        if (!doData) {
-            weight_LepEffSFUp = weight;
-            weight_LepESUp = weight;
-            //            weight_LepEffSFUp_LepESUp = weight_LepESUp;
-            //            weight_LepEffSFUp_LepESDown = weight_LepESDown;
-            weight_LepEffSFDown = weight;
-            weight_LepESDown = weight;
-            //            weight_LepEffSFDown_LepESUp = weight_LepESUp;
-            //            weight_LepEffSFDown_LepESDown = weight_LepESDown;
-            preNVtxRWweight_LepEffSFUp = preNVtxRWweight;
-            preNVtxRWweight_LepESUp = preNVtxRWweight;
-            //            preNVtxRWweight_LepEffSFUp_LepESUp = preNVtxRWweight_LepESUp;
-            //            preNVtxRWweight_LepEffSFUp_LepESDown = preNVtxRWweight_LepESDown;
-            preNVtxRWweight_LepEffSFDown = preNVtxRWweight;
-            preNVtxRWweight_LepESDown = preNVtxRWweight;
-            //            preNVtxRWweight_LepEffSFDown_LepESUp = preNVtxRWweight_LepESUp;
-            //            preNVtxRWweight_LepEffSFDown_LepESDown = preNVtxRWweight_LepESDown;
+        SetPassCutMap(subSampBool, subSampVec, &ELI, &EJI, &EMI);
+        /*
+        for (unsigned int iSamp = 0; iSamp < subSampVec->size(); ++iSamp) {
             
-            weight_LepEffSFUp /= ScaleFactorMC(Type, 0);
-            weight_LepEffSFDown /= ScaleFactorMC(Type, 0);
-            weight_LepEffSFUp *= ScaleFactorMC(Type, 1);
-            weight_LepEffSFDown *= ScaleFactorMC(Type, -1);
-            if (!doEvent_LepESUp) {
-                weight_LepESUp = 0;            
-                preNVtxRWweight_LepESUp = 0;
-            }
-            else {
-                weight_LepESUp /= ScaleFactorMC(Type, 0);    
-                weight_LepESUp *= ScaleFactorMC(Type_LepESUp, 0);
-                preNVtxRWweight_LepESUp /= ScaleFactorMC(Type, 0);
-                preNVtxRWweight_LepESUp *= ScaleFactorMC(Type_LepESUp, 0);
-            }
-            
-            if (!doEvent_LepESDown) {
-                weight_LepESDown = 0;
-                preNVtxRWweight_LepESDown = 0;
-            }
-            else {
-                weight_LepESDown /= ScaleFactorMC(Type, 0);    
-                weight_LepESDown *= ScaleFactorMC(Type_LepESDown, 0);
-                preNVtxRWweight_LepESDown /= ScaleFactorMC(Type, 0);
-                preNVtxRWweight_LepESDown *= ScaleFactorMC(Type_LepESDown, 0);    
-            }
-            //            weight_LepEffSFUp_LepESUp /= ScaleFactorMC(Type_LepESUp, 0);
-            //            weight_LepEffSFUp_LepESUp *= ScaleFactorMC(Type_LepESUp, 1);
-            //            weight_LepEffSFUp_LepESDown /= ScaleFactorMC(Type_LepESDown, 0);
-            //            weight_LepEffSFDown_LepESUp /= ScaleFactorMC(Type_LepESUp, 0);
-            //            weight_LepEffSFDown_LepESDown /= ScaleFactorMC(Type_LepESDown, 0);
-            //stopped with this halfway
-            
-            if (doVerbosity) cout << "weight post scale " << weight << endl;
-            preNVtxRWweight_LepEffSFUp /= ScaleFactorMC(Type, 0);
-            preNVtxRWweight_LepEffSFDown /= ScaleFactorMC(Type, 0);
-            preNVtxRWweight_LepEffSFUp *= ScaleFactorMC(Type, 1);
-            preNVtxRWweight_LepEffSFDown *= ScaleFactorMC(Type, -1);
+            cout << "inputCut Map is " << subSampBool[subSampVec->at(iSamp)] << " for S_Current = " << subSampVec->at(iSamp).histNameSuffix << endl;
         }
-        
-        
-        
-        /// Set StopWeights to be appropriate values
-        if (isSignal) {
-            weight_genStopXSecUp = weight;
-            weight_genStopXSecDown = weight;
-            weight *= stopWeight;
-            weight_LepEffSFUp *= stopWeight;
-            weight_LepEffSFDown *= stopWeight;
-            weight_LepESUp *= stopWeight;
-            weight_LepESDown *= stopWeight;
-            weight_genStopXSecUp *= stopWeightPlusErr;
-            weight_genStopXSecDown *= stopWeightMinusErr;
-            /*
-             cout << "weight " << weight << endl;
-             cout << "weightup " << weight_genStopXSecUp << endl;
-             cout << "weightdown " << weight_genStopXSecDown << endl;
-             */
-            preNVtxRWweight_genStopXSecUp = preNVtxRWweight;
-            preNVtxRWweight_genStopXSecDown = preNVtxRWweight;
-            preNVtxRWweight *= stopWeight;
-            preNVtxRWweight_LepEffSFUp *= stopWeight;
-            preNVtxRWweight_LepEffSFDown *= stopWeight;
-            preNVtxRWweight_LepESUp *= stopWeight;
-            preNVtxRWweight_LepESDown *= stopWeight;
-            preNVtxRWweight_genStopXSecUp *= stopWeightPlusErr;
-            preNVtxRWweight_genStopXSecDown *= stopWeightMinusErr;
+        */
+        if (doBookSyst) {
+            SetPassCutMap(subSampBool_LepESUp,    subSampVec, &ELI_LepESUp,   &EJI,            &EMI_LepESUp);
+            SetPassCutMap(subSampBool_LepESDown,  subSampVec, &ELI_LepESDown, &EJI,            &EMI_LepESDown);            
+            SetPassCutMap(subSampBool_JetESUp,    subSampVec, &ELI,           &EJI_JetESUp,    &EMI_JetESUp);
+            SetPassCutMap(subSampBool_JetESDown,  subSampVec, &ELI,           &EJI_JetESDown,  &EMI_JetESDown);            
+            SetPassCutMap(subSampBool_BTagSFUp,   subSampVec, &ELI,           &EJI_BTagSFUp,   &EMI_BTagSFUp);
+            SetPassCutMap(subSampBool_BTagSFDown, subSampVec, &ELI,           &EJI_BTagSFDown, &EMI_BTagSFDown);
         }
-        //require MT2 < 80 for data (for now, I'm allowing it for MC)           
+        HistogramFillOneDee(&subSampBool, &stringKeyToVar, subSampVec, histVec_1D, &histMap_1D, &BEI, &ELI, &EJI, &EMI, &EDSI, doVerbosity);
+        HistogramFillTwoDee(&subSampBool, &stringKeyToVar, subSampVec, histVec_2D, &histMap_2D, &BEI, &ELI, &EJI, &EMI, &EDSI, doVerbosity);
+        HistogramFillThreeDee(&subSampBool, &stringKeyToVar, subSampVec, histVec_3D, &histMap_3D, &BEI, &ELI, &EJI, &EMI, &EDSI, doVerbosity);
+        if (!BEI.doData) {
+            HistogramFillOneDeeSyst(&subSampBool_LepESUp, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI_LepESUp, &ELI_LepESUp, &EJI, &EMI_LepESUp, &EDSI_LepESUp, "LepESShiftUp", doVerbosity);
+            HistogramFillTwoDeeSyst(&subSampBool_LepESUp, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI_LepESUp, &ELI_LepESUp, &EJI, &EMI_LepESUp, &EDSI_LepESUp, "LepESShiftUp", doVerbosity);
+            HistogramFillThreeDeeSyst(&subSampBool_LepESUp, &stringKeyToVar, subSampVec, histVec_3D_Syst, &histMap_3D, &BEI_LepESUp, &ELI_LepESUp, &EJI, &EMI_LepESUp, &EDSI_LepESUp, "LepESShiftUp", doVerbosity);            
+            HistogramFillOneDeeSyst(&subSampBool_LepESDown, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI_LepESDown, &ELI_LepESDown, &EJI, &EMI_LepESDown, &EDSI_LepESDown, "LepESShiftDown", doVerbosity);
+            HistogramFillTwoDeeSyst(&subSampBool_LepESDown, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI_LepESDown, &ELI_LepESDown, &EJI, &EMI_LepESDown, &EDSI_LepESDown, "LepESShiftDown", doVerbosity);
+            HistogramFillThreeDeeSyst(&subSampBool_LepESDown, &stringKeyToVar, subSampVec, histVec_3D_Syst, &histMap_3D, &BEI_LepESDown, &ELI_LepESDown, &EJI, &EMI_LepESDown, &EDSI_LepESDown, "LepESShiftDown", doVerbosity);
+            
+            HistogramFillOneDeeSyst(&subSampBool_JetESUp, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI, &ELI, &EJI_JetESUp, &EMI_JetESUp, &EDSI_JetESUp, "JetESShiftUp", doVerbosity);
+            HistogramFillTwoDeeSyst(&subSampBool_LepESDown, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI, &ELI, &EJI_JetESUp, &EMI_JetESUp, &EDSI_JetESUp, "JetESShiftUp", doVerbosity);
+            HistogramFillThreeDeeSyst(&subSampBool_JetESUp, &stringKeyToVar, subSampVec, histVec_3D_Syst, &histMap_3D, &BEI, &ELI, &EJI_JetESUp, &EMI_JetESUp, &EDSI_JetESUp, "JetESShiftUp", doVerbosity);            
+            HistogramFillOneDeeSyst(&subSampBool_JetESDown, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI, &ELI, &EJI_JetESDown, &EMI_JetESDown, &EDSI_JetESDown, "JetESShiftDown", doVerbosity);
+            HistogramFillTwoDeeSyst(&subSampBool_LepESDown, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI, &ELI, &EJI_JetESDown, &EMI_JetESDown, &EDSI_JetESDown, "JetESShiftDown", doVerbosity);
+            HistogramFillThreeDeeSyst(&subSampBool_JetESDown, &stringKeyToVar, subSampVec, histVec_3D_Syst, &histMap_3D, &BEI, &ELI, &EJI_JetESDown, &EMI_JetESDown, &EDSI_JetESDown, "JetESShiftDown", doVerbosity);
+            
+            HistogramFillOneDeeSyst(&subSampBool_BTagSFUp, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI, &ELI, &EJI_BTagSFUp, &EMI_BTagSFUp, &EDSI_BTagSFUp, "BTagSFShiftUp", doVerbosity);
+            HistogramFillTwoDeeSyst(&subSampBool_BTagSFUp, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI, &ELI, &EJI_BTagSFUp, &EMI_BTagSFUp, &EDSI_BTagSFUp, "BTagSFShiftUp", doVerbosity);
+            HistogramFillThreeDeeSyst(&subSampBool_BTagSFUp, &stringKeyToVar, subSampVec, histVec_3D_Syst, &histMap_3D, &BEI, &ELI, &EJI_BTagSFUp, &EMI_BTagSFUp, &EDSI_BTagSFUp, "BTagSFShiftUp", doVerbosity);
+            HistogramFillOneDeeSyst(&subSampBool_BTagSFDown, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI, &ELI, &EJI_BTagSFDown, &EMI_BTagSFDown, &EDSI_BTagSFDown, "BTagSFShiftDown", doVerbosity);
+            HistogramFillTwoDeeSyst(&subSampBool_BTagSFDown, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI, &ELI, &EJI_BTagSFDown, &EMI_BTagSFDown, &EDSI_BTagSFDown, "BTagSFShiftDown", doVerbosity);
+            HistogramFillThreeDeeSyst(&subSampBool_BTagSFDown, &stringKeyToVar, subSampVec, histVec_3D_Syst, &histMap_3D, &BEI, &ELI, &EJI_BTagSFDown, &EMI_BTagSFDown, &EDSI_BTagSFDown, "BTagSFShiftDown", doVerbosity);
+            
+            HistogramFillOneDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI_LepEffSFUp, &ELI, &EJI, &EMI, &EDSI, "LepEffSFShiftUp", doVerbosity);
+            HistogramFillTwoDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI_LepEffSFUp, &ELI, &EJI, &EMI, &EDSI, "LepEffSFShiftUp", doVerbosity);
+            HistogramFillThreeDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_3D_Syst, &histMap_3D, &BEI_LepEffSFUp, &ELI, &EJI, &EMI, &EDSI, "LepEffSFShiftUp", doVerbosity);            
+            HistogramFillOneDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI_LepEffSFDown, &ELI, &EJI, &EMI, &EDSI, "LepEffSFShiftDown", doVerbosity);
+            HistogramFillTwoDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI_LepEffSFDown, &ELI, &EJI, &EMI, &EDSI, "LepEffSFShiftDown", doVerbosity);
+            HistogramFillThreeDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_3D_Syst, &histMap_3D, &BEI_LepEffSFDown, &ELI, &EJI, &EMI, &EDSI, "LepEffSFShiftDown", doVerbosity);
+            
+            HistogramFillOneDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI_GenTopRW, &ELI, &EJI, &EMI, &EDSI, "genTopRW", doVerbosity);
+            HistogramFillTwoDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI_GenTopRW, &ELI, &EJI, &EMI, &EDSI, "genTopRW", doVerbosity);
+            HistogramFillThreeDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_3D_Syst, &histMap_3D, &BEI_GenTopRW, &ELI, &EJI, &EMI, &EDSI, "genTopRW", doVerbosity);           
+            
+            HistogramFillOneDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI_StopXSecUp, &ELI, &EJI, &EMI, &EDSI, "genStopXSecShiftUp", doVerbosity);
+            HistogramFillTwoDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI_StopXSecUp, &ELI, &EJI, &EMI, &EDSI, "genStopXSecShiftUp", doVerbosity);
+            HistogramFillThreeDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_3D_Syst, &histMap_3D, &BEI_StopXSecUp, &ELI, &EJI, &EMI, &EDSI, "genStopXSecShiftUp", doVerbosity);
+            HistogramFillOneDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI_StopXSecDown, &ELI, &EJI, &EMI, &EDSI, "genStopXSecShiftDown", doVerbosity);
+            HistogramFillTwoDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI_StopXSecDown, &ELI, &EJI, &EMI, &EDSI, "genStopXSecShiftDown", doVerbosity);
+            HistogramFillThreeDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_3D_Syst, &histMap_3D, &BEI_StopXSecDown, &ELI, &EJI, &EMI, &EDSI, "genStopXSecShiftDown", doVerbosity);                                    
+        }
+        /*
         for (unsigned int i = 0; i < subSampVec->size(); ++i) {
             S_Current = subSampVec->at(i);
-            if (subSampBool[S_Current] == true) {
-                for (unsigned int j = 0; j < histVec_1D->size(); ++j) {
-                    H_Current = histVec_1D->at(j);
-                    xIter = stringKeyToVar.find(H_Current.xVarKey);
-                    if (doVerbosity) {
-                        cout << "" << endl;
-                        cout << "ievt " << ievt << endl;
-                        cout << "i " << i << endl;
-                        cout << "j " << j << endl;
-                        cout << "S_Current.histNamesuffix " << S_Current.histNameSuffix << endl;
-                        cout << "H_Current.xVarKey " << H_Current.xVarKey << endl;
-                    }
-                    if (xIter != stringKeyToVar.end()) {
-                        if (doVerbosity) {
-                            cout << "xIter first " << xIter->first << endl;
-                            cout << "xIter second " << xIter->second << endl;
-                        }
-                        ///Some necessary continue checks
-                        //                        if (TString(H_Current.xVarKey).Contains("MT2lb") && NJets < 2) continue;
-                        if (S_Current.blindDataChannel && TString(H_Current.xVarKey).Contains("MT2ll")) {
-                            if (blindData && doData && MT2ll > MT2llCut) continue;
-                        }
-                        if (S_Current.blindDataChannel && TString(H_Current.xVarKey).Contains("MT2lb")) {
-                            if (blindData && doData && MT2lb > MT2lbCut) continue;
-                        }
-                        if (TString(H_Current.name).Contains("MT2ll_DPhiZMETClose")) {
-                            if (dPhi(diLepPhi, METPhi) > 1./3. * PI) continue;
-                        }
-                        else if (TString(H_Current.name).Contains("MT2ll_DPhiZMETMid")) {
-                            if (dPhi(diLepPhi, METPhi) < 1./3. * PI || dPhi(diLepPhi, METPhi) > 2./3. * PI) continue;                         
-                        }                        
-                        else if (TString(H_Current.name).Contains("MT2ll_DPhiZMETFar")) {
-                            if (dPhi(diLepPhi, METPhi) < 2./3. * PI) continue;
-                        }                        
-                        if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Close")) {
-                            if (dPhi(Lep0Vec.Phi(), Lep1Vec.Phi()) > 1./3. * PI) continue;
-                        }
-                        else if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Mid")) {
-                            if (dPhi(Lep0Vec.Phi(), Lep1Vec.Phi()) < 1./3. * PI || dPhi(Lep0Vec.Phi(), Lep1Vec.Phi()) > 2./3. * PI) continue;                         
-                        }                        
-                        else if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Far")) {
-                            if (dPhi(Lep0Vec.Phi(), Lep1Vec.Phi()) < 2./3. * PI) continue;
-                        }
-                        
-                        if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Close")) {
-                            if (DeltaPhiMT2lb_JetsUsed > 1./3. * PI) continue;
-                        }
-                        else if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Mid")) {
-                            if (DeltaPhiMT2lb_JetsUsed < 1./3. * PI || DeltaPhiMT2lb_JetsUsed > 2./3. * PI) continue;                         
-                        }                        
-                        else if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Far")) {
-                            if (DeltaPhiMT2lb_JetsUsed < 2./3. * PI) continue;
-                        }
-                        
-                        
-                        if (TString(H_Current.name).Contains("MT2lb_DPhiBLep0BLep1Close")) {
-                            if (DeltaPhiMT2lb_BLepsUsed > 1./3. * PI) continue;
-                        }
-                        else if (TString(H_Current.name).Contains("MT2lb_DPhiBLep0BLep1Mid")) {
-                            if (DeltaPhiMT2lb_BLepsUsed < 1./3. * PI || DeltaPhiMT2lb_BLepsUsed > 2./3. * PI) continue;                         
-                        }                        
-                        else if (TString(H_Current.name).Contains("MT2lb_DPhiBLep0BLep1Far")) {
-                            if (DeltaPhiMT2lb_BLepsUsed < 2./3. * PI) continue;
-                        }
-                        fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight : weight;
-                        if (H_Current.name.Contains("h_ChannelCutFlow")) fillWeight = 1.;
-                        histMap_1D[histKey(H_Current, S_Current)]->Fill(xIter->second, fillWeight);
-                    }
-                    if (doVerbosity) cout << "" << endl;
-                }            
-                for (unsigned int k = 0; k < histVec_2D->size(); ++k) {
-                    H_Current = histVec_2D->at(k);
-                    xIter = stringKeyToVar.find(H_Current.xVarKey);
-                    yIter = stringKeyToVar.find(H_Current.yVarKey);
-                    if (xIter != stringKeyToVar.end() && yIter != stringKeyToVar.end()) { 
-                        //                        if (TString(H_Current.xVarKey).Contains("MT2lb") && NJets < 2) continue;
-                        if (S_Current.blindDataChannel && (TString(H_Current.xVarKey).Contains("MT2ll") || TString(H_Current.yVarKey).Contains("MT2ll"))) {
-                            if (blindData && doData && MT2ll > MT2llCut) continue;
-                        }
-                        if (S_Current.blindDataChannel && (TString(H_Current.xVarKey).Contains("MT2lb") || TString(H_Current.yVarKey).Contains("MT2lb"))) {
-                            if (blindData && doData && MT2lb > MT2lbCut) continue;
-                        }                    
-                        histMap_2D[histKey(H_Current, S_Current)]->Fill(xIter->second, yIter->second, weight); //there could be shenanigans with this one
-                    }
-                }
-                
-                for (unsigned int m = 0; m < histVec_3D->size(); ++m) {
-                    H_Current = histVec_3D->at(m);
-                    xIter = stringKeyToVar.find(H_Current.xVarKey);
-                    yIter = stringKeyToVar.find(H_Current.yVarKey); 
-                    zIter = stringKeyToVar.find(H_Current.zVarKey);
-                    if (xIter != stringKeyToVar.end() && yIter != stringKeyToVar.end() && zIter != stringKeyToVar.end()) {
-                        //                        if (TString(H_Current.xVarKey).Contains("MT2lb") && NJets < 2) continue;
-                        if (S_Current.blindDataChannel && (TString(H_Current.xVarKey).Contains("MT2ll") || TString(H_Current.yVarKey).Contains("MT2ll") || TString(H_Current.zVarKey).Contains("MT2ll"))) {
-                            if (blindData && doData && MT2ll > MT2llCut) continue;
-                        }
-                        if (S_Current.blindDataChannel && (TString(H_Current.xVarKey).Contains("MT2lb") || TString(H_Current.yVarKey).Contains("MT2lb") || TString(H_Current.zVarKey).Contains("MT2lb"))) {
-                            if (blindData && doData && MT2lb > MT2lbCut) continue;
-                        }
-                        if (H_Current.name.Contains("h_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx")) {
-                            if (H_Current.name.Contains("21to30")) {
-                                if ((nVtx > 30 || nVtx < 21)) continue;
-                            }
-                            else if (H_Current.name.Contains("11to20")) {
-                                if ((nVtx > 20 || nVtx < 11)) continue;
-                            }
-                            else if (H_Current.name.Contains("1to10")) {
-                                if ((nVtx > 10 || nVtx < 1)) continue;
-                            }
-                        }
-                        histMap_3D[histKey(H_Current, S_Current)]->Fill(xIter->second, yIter->second, zIter->second, weight); //there could be shenanigans with this one   
-                    }
-                }
+            if (subSampBool[S_Current] == true) {                            
                 if (!doData) {
                     for (unsigned int js = 0; js < histVec_1D_Syst->size(); ++js) {
                         H_Current = histVec_1D_Syst->at(js);
@@ -2519,13 +1153,13 @@ int main( int argc, const char* argv[] ) {
                                 if (dPhi(diLepPhi, METPhi) < 2./3. * PI) continue;
                             }
                             if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Close")) {
-                                if (dPhi(Lep0Vec.Phi(), Lep1Vec.Phi()) > 1./3. * PI) continue;
+                                if (dPhi(ELI.Lep0.P4.Phi(), ELI.Lep1.P4.Phi()) > 1./3. * PI) continue;
                             }
                             else if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Mid")) {
-                                if (dPhi(Lep0Vec.Phi(), Lep1Vec.Phi()) < 1./3. * PI || dPhi(Lep0Vec.Phi(), Lep1Vec.Phi()) > 2./3. * PI) continue;                         
+                                if (dPhi(ELI.Lep0.P4.Phi(), ELI.Lep1.P4.Phi()) < 1./3. * PI || dPhi(ELI.Lep0.P4.Phi(), ELI.Lep1.P4.Phi()) > 2./3. * PI) continue;                         
                             }                        
                             else if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Far")) {
-                                if (dPhi(Lep0Vec.Phi(), Lep1Vec.Phi()) < 2./3. * PI) continue;
+                                if (dPhi(ELI.Lep0.P4.Phi(), ELI.Lep1.P4.Phi()) < 2./3. * PI) continue;
                             }
                             if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Close")) {
                                 if (DeltaPhiMT2lb_JetsUsed > 1./3. * PI) continue;
@@ -2590,9 +1224,6 @@ int main( int argc, const char* argv[] ) {
                                 cout << "yIter first " <<  yIter->first << endl;
                                 cout << "yIter second " << yIter->second << endl;
                             }
-                            ///Some necessary continue checks
-                            //                            if (TString(H_Current.xVarKey).Contains("MT2lb") && NJets < 2) continue;
-                            ///condition for which stuff to run on
                             if (H_Current.name.Contains("LepEffSFShiftUp")) {
                                 fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_LepEffSFUp : weight_LepEffSFUp;
                             }
@@ -2678,837 +1309,8 @@ int main( int argc, const char* argv[] ) {
                     }
                 }
             }
-            if (!doData) {                
-                if (subSampBool_LepESUp[S_Current] == true) {
-                    for (unsigned int js = 0; js < histVec_1D_Syst->size(); ++js) {
-                        H_Current = histVec_1D_Syst->at(js);
-                        xIter = stringKeyToVar.find(H_Current.xVarKey);
-                        if (doVerbosity) {
-                            cout << "" << endl;
-                            cout << "ievt " << ievt << endl;
-                            cout << "i " << i << endl;
-                            cout << "js " << js << endl;
-                            cout << "S_Current.histNamesuffix " << S_Current.histNameSuffix << endl;
-                            cout << "H_Current.name " << H_Current.name << endl;
-                            cout << "H_Current.xVarKey " << H_Current.xVarKey << endl;
-                        }
-                        if (!H_Current.name.Contains("LepESShiftUp")) continue;
-                        if (xIter != stringKeyToVar.end()) {
-                            if (doVerbosity) {
-                                cout << "xIter first " << xIter->first << endl;
-                                cout << "xIter second " << xIter->second << endl;
-                            }
-                            ///Some necessary continue checks
-                            //                            if (TString(H_Current.xVarKey).Contains("MT2lb") && NJets < 2) continue;
-                            if (TString(H_Current.name).Contains("MT2ll_DPhiZMETClose")) {
-                                if (dPhi(diLepPhi_LepESUp, METPhi_LepESUp) > 1./3. * PI) continue;
-                            }
-                            else if (TString(H_Current.name).Contains("MT2ll_DPhiZMETMid")) {
-                                if (dPhi(diLepPhi_LepESUp, METPhi_LepESUp) < 1./3. * PI || dPhi(diLepPhi_LepESUp, METPhi_LepESUp) > 2./3. * PI) continue;
-                            }                        
-                            else if (TString(H_Current.name).Contains("MT2ll_DPhiZMETFar")) {
-                                if (dPhi(diLepPhi_LepESUp, METPhi_LepESUp) < 2./3. * PI) continue;
-                            }
-                            if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Close")) {
-                                if (dPhi(Lep0Vec_LepESUp.Phi(), Lep1Vec_LepESUp.Phi()) > 1./3. * PI) continue;
-                            }
-                            else if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Mid")) {
-                                if (dPhi(Lep0Vec_LepESUp.Phi(), Lep1Vec_LepESUp.Phi()) < 1./3. * PI || dPhi(Lep0Vec_LepESUp.Phi(), Lep1Vec_LepESUp.Phi()) > 2./3. * PI) continue;                         
-                            }                        
-                            else if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Far")) {
-                                if (dPhi(Lep0Vec_LepESUp.Phi(), Lep1Vec_LepESUp.Phi()) < 2./3. * PI) continue;
-                            }                        
-                            if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Close")) {
-                                if (DeltaPhiMT2lb_JetsUsed > 1./3. * PI) continue;
-                            }
-                            else if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Mid")) {
-                                if (DeltaPhiMT2lb_JetsUsed < 1./3. * PI || DeltaPhiMT2lb_JetsUsed > 2./3. * PI) continue;                         
-                            }                        
-                            else if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Far")) {
-                                if (DeltaPhiMT2lb_JetsUsed < 2./3. * PI) continue;
-                            }                        
-                            if (TString(H_Current.name).Contains("MT2lb_DPhiBLep0BLep1Close")) {
-                                if (DeltaPhiMT2lb_BLepsUsed_LepESUp > 1./3. * PI) continue;
-                            }
-                            else if (TString(H_Current.name).Contains("MT2lb_DPhiBLep0BLep1Mid")) {
-                                if (DeltaPhiMT2lb_BLepsUsed_LepESUp < 1./3. * PI || DeltaPhiMT2lb_BLepsUsed_LepESUp > 2./3. * PI) continue;                         
-                            }                        
-                            else if (TString(H_Current.name).Contains("MT2lb_DPhiBLep0BLep1Far")) {
-                                if (DeltaPhiMT2lb_BLepsUsed_LepESUp < 2./3. * PI) continue;
-                            }
-                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_LepESUp : weight_LepESUp;
-                            histMap_1D[histKey(H_Current, S_Current)]->Fill(xIter->second, fillWeight);
-                        }
-                        if (doVerbosity) cout << "" << endl;                    
-                    }
-                    for (unsigned int ks = 0; ks < histVec_2D_Syst->size(); ++ks) {                  
-                        H_Current = histVec_2D_Syst->at(ks);
-                        if (!H_Current.name.Contains("LepESShiftUp")) continue;
-                        xIter = stringKeyToVar.find(H_Current.xVarKey);
-                        yIter = stringKeyToVar.find(H_Current.yVarKey);
-                        if (doVerbosity) {
-                            cout << "" << endl;
-                            cout << "ievt " << ievt << endl;
-                            cout << "i " << i << endl;
-                            cout << "ks " << ks << endl;
-                            cout << "S_Current.histNamesuffix " << S_Current.histNameSuffix << endl;
-                            cout << "H_Current.name " << H_Current.name << endl;
-                            cout << "H_Current.xVarKey " << H_Current.xVarKey << endl;
-                            cout << "H_Current.yVarKey " << H_Current.yVarKey << endl;
-                        }
-                        if (xIter != stringKeyToVar.end() && yIter != stringKeyToVar.end()) {
-                            if (doVerbosity) {
-                                cout << "xIter first " <<  xIter->first << endl;
-                                cout << "xIter second " << xIter->second << endl;
-                                cout << "yIter first " <<  yIter->first << endl;
-                                cout << "yIter second " << yIter->second << endl;
-                            }
-                            ///Some necessary continue checks
-                            //                            if (TString(H_Current.xVarKey).Contains("MT2lb") && NJets < 2) continue;
-                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_LepESUp : weight_LepESUp;
-                            histMap_2D[histKey(H_Current, S_Current)]->Fill(xIter->second, yIter->second, fillWeight); //there could be shenanigans with this one
-                        }
-                        if (doVerbosity) cout << "" << endl;                    
-                    }
-                    for (unsigned int ls = 0; ls < histVec_3D_Syst->size(); ++ls) {                  
-                        H_Current = histVec_3D_Syst->at(ls);
-                        if (!H_Current.name.Contains("LepESShiftUp")) continue;
-                        xIter = stringKeyToVar.find(H_Current.xVarKey);
-                        yIter = stringKeyToVar.find(H_Current.yVarKey);
-                        zIter = stringKeyToVar.find(H_Current.zVarKey);
-                        if (doVerbosity) {
-                            cout << "" << endl;
-                            cout << "ievt " << ievt << endl;
-                            cout << "i " << i << endl;
-                            cout << "ls " << ls << endl;
-                            cout << "S_Current.histNamesuffix " << S_Current.histNameSuffix << endl;
-                            cout << "H_Current.name " << H_Current.name << endl;
-                            cout << "H_Current.xVarKey " << H_Current.xVarKey << endl;
-                            cout << "H_Current.yVarKey " << H_Current.yVarKey << endl;
-                            cout << "H_Current.zVarKey " << H_Current.zVarKey << endl;
-                        }
-                        if (xIter != stringKeyToVar.end() && yIter != stringKeyToVar.end() && zIter != stringKeyToVar.end()) {
-                            if (doVerbosity) {
-                                cout << "xIter first " <<  xIter->first << endl;
-                                cout << "xIter second " << xIter->second << endl;
-                                cout << "yIter first " <<  yIter->first << endl;
-                                cout << "yIter second " << yIter->second << endl;                            
-                                cout << "zIter first " <<  zIter->first << endl;
-                                cout << "zIter second " << zIter->second << endl;
-                            }
-                            ///Some necessary continue checks
-                            //                            if (TString(H_Current.xVarKey).Contains("MT2lb") && NJets < 2) continue;
-                            if (H_Current.name.Contains("h_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx")) {
-                                if (H_Current.name.Contains("21to30")) {
-                                    if ((nVtx > 30 || nVtx < 21)) continue;
-                                }
-                                else if (H_Current.name.Contains("11to20")) {
-                                    if ((nVtx > 20 || nVtx < 11)) continue;
-                                }
-                                else if (H_Current.name.Contains("1to10")) {
-                                    if ((nVtx > 10 || nVtx < 1)) continue;
-                                }
-                            }
-                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_LepESUp : weight_LepESUp;
-                            histMap_3D[histKey(H_Current, S_Current)]->Fill(xIter->second, yIter->second, zIter->second, fillWeight); //there could be shenanigans with this one
-                        }
-                        if (doVerbosity) cout << "" << endl;                    
-                    }
-                } 
-                if (subSampBool_LepESDown[S_Current] == true) {
-                    for (unsigned int js = 0; js < histVec_1D_Syst->size(); ++js) {
-                        H_Current = histVec_1D_Syst->at(js);
-                        xIter = stringKeyToVar.find(H_Current.xVarKey);
-                        if (doVerbosity) {
-                            cout << "" << endl;
-                            cout << "ievt " << ievt << endl;
-                            cout << "i " << i << endl;
-                            cout << "js " << js << endl;
-                            cout << "S_Current.histNamesuffix " << S_Current.histNameSuffix << endl;
-                            cout << "H_Current.name " << H_Current.name << endl;
-                            cout << "H_Current.xVarKey " << H_Current.xVarKey << endl;
-                            cout << "histname contains LepESShiftDown? " << H_Current.name.Contains("LepESShiftDown") << endl;
-                        }
-                        if (!H_Current.name.Contains("LepESShiftDown")) continue;
-                        if (xIter != stringKeyToVar.end()) {
-                            if (doVerbosity) {
-                                cout << "xIter first " << xIter->first << endl;
-                                cout << "xIter second " << xIter->second << endl;
-                            }
-                            ///Some necessary continue checks
-                            //                            if (TString(H_Current.xVarKey).Contains("MT2lb") && NJets < 2) continue;
-                            if (TString(H_Current.name).Contains("MT2ll_DPhiZMETClose")) {
-                                if (dPhi(diLepPhi_LepESDown, METPhi_LepESDown) > 1./3. * PI) continue;
-                            }
-                            else if (TString(H_Current.name).Contains("MT2ll_DPhiZMETMid")) {
-                                if (dPhi(diLepPhi_LepESDown, METPhi_LepESDown) < 1./3. * PI || dPhi(diLepPhi_LepESDown, METPhi_LepESDown) > 2./3. * PI) continue;
-                            }                        
-                            else if (TString(H_Current.name).Contains("MT2ll_DPhiZMETFar")) {
-                                if (dPhi(diLepPhi_LepESDown, METPhi_LepESDown) < 2./3. * PI) continue;
-                            }
-                            if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Close")) {
-                                if (dPhi(Lep0Vec_LepESDown.Phi(), Lep1Vec_LepESDown.Phi()) > 1./3. * PI) continue;
-                            }
-                            else if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Mid")) {
-                                if (dPhi(Lep0Vec_LepESDown.Phi(), Lep1Vec_LepESDown.Phi()) < 1./3. * PI || dPhi(Lep0Vec_LepESDown.Phi(), Lep1Vec_LepESDown.Phi()) > 2./3. * PI) continue;                         
-                            }                        
-                            else if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Far")) {
-                                if (dPhi(Lep0Vec_LepESDown.Phi(), Lep1Vec_LepESDown.Phi()) < 2./3. * PI) continue;
-                            }                        
-                            if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Close")) {
-                                if (DeltaPhiMT2lb_JetsUsed > 1./3. * PI) continue;
-                            }
-                            else if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Mid")) {
-                                if (DeltaPhiMT2lb_JetsUsed < 1./3. * PI || DeltaPhiMT2lb_JetsUsed > 2./3. * PI) continue;                         
-                            }                        
-                            else if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Far")) {
-                                if (DeltaPhiMT2lb_JetsUsed < 2./3. * PI) continue;
-                            }                        
-                            if (TString(H_Current.name).Contains("MT2lb_DPhiBLep0BLep1Close")) {
-                                if (DeltaPhiMT2lb_BLepsUsed_LepESDown > 1./3. * PI) continue;
-                            }
-                            else if (TString(H_Current.name).Contains("MT2lb_DPhiBLep0BLep1Mid")) {
-                                if (DeltaPhiMT2lb_BLepsUsed_LepESDown < 1./3. * PI || DeltaPhiMT2lb_BLepsUsed_LepESDown > 2./3. * PI) continue;                         
-                            }                        
-                            else if (TString(H_Current.name).Contains("MT2lb_DPhiBLep0BLep1Far")) {
-                                if (DeltaPhiMT2lb_BLepsUsed_LepESDown < 2./3. * PI) continue;
-                            }
-                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_LepESDown : weight_LepESDown;
-                            histMap_1D[histKey(H_Current, S_Current)]->Fill(xIter->second, fillWeight);
-                        }
-                        if (doVerbosity) cout << "" << endl;                    
-                    }
-                    for (unsigned int ks = 0; ks < histVec_2D_Syst->size(); ++ks) {                  
-                        H_Current = histVec_2D_Syst->at(ks);
-                        if (!H_Current.name.Contains("LepESShiftDown")) continue;
-                        xIter = stringKeyToVar.find(H_Current.xVarKey);
-                        yIter = stringKeyToVar.find(H_Current.yVarKey);
-                        if (doVerbosity) {
-                            cout << "" << endl;
-                            cout << "ievt " << ievt << endl;
-                            cout << "i " << i << endl;
-                            cout << "ks " << ks << endl;
-                            cout << "S_Current.histNamesuffix " << S_Current.histNameSuffix << endl;
-                            cout << "H_Current.name " << H_Current.name << endl;
-                            cout << "H_Current.xVarKey " << H_Current.xVarKey << endl;
-                            cout << "H_Current.yVarKey " << H_Current.yVarKey << endl;
-                        }
-                        if (xIter != stringKeyToVar.end() && yIter != stringKeyToVar.end()) {
-                            if (doVerbosity) {
-                                cout << "xIter first " <<  xIter->first << endl;
-                                cout << "xIter second " << xIter->second << endl;
-                                cout << "yIter first " <<  yIter->first << endl;
-                                cout << "yIter second " << yIter->second << endl;
-                            }
-                            ///Some necessary continue checks
-                            //                            if (TString(H_Current.xVarKey).Contains("MT2lb") && NJets < 2) continue;
-                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_LepESDown : weight_LepESDown;
-                            histMap_2D[histKey(H_Current, S_Current)]->Fill(xIter->second, yIter->second, fillWeight); //there could be shenanigans with this one
-                        }
-                        if (doVerbosity) cout << "" << endl;                    
-                    }
-                    for (unsigned int ls = 0; ls < histVec_3D_Syst->size(); ++ls) {                  
-                        H_Current = histVec_3D_Syst->at(ls);
-                        if (!H_Current.name.Contains("LepESShiftDown")) continue;
-                        xIter = stringKeyToVar.find(H_Current.xVarKey);
-                        yIter = stringKeyToVar.find(H_Current.yVarKey);
-                        zIter = stringKeyToVar.find(H_Current.zVarKey);
-                        if (doVerbosity) {
-                            cout << "" << endl;
-                            cout << "ievt " << ievt << endl;
-                            cout << "i " << i << endl;
-                            cout << "ls " << ls << endl;
-                            cout << "S_Current.histNamesuffix " << S_Current.histNameSuffix << endl;
-                            cout << "H_Current.name " << H_Current.name << endl;
-                            cout << "H_Current.xVarKey " << H_Current.xVarKey << endl;
-                            cout << "H_Current.yVarKey " << H_Current.yVarKey << endl;
-                            cout << "H_Current.zVarKey " << H_Current.zVarKey << endl;
-                        }
-                        if (xIter != stringKeyToVar.end() && yIter != stringKeyToVar.end() && zIter != stringKeyToVar.end()) {
-                            if (doVerbosity) {
-                                cout << "xIter first " <<  xIter->first << endl;
-                                cout << "xIter second " << xIter->second << endl;
-                                cout << "yIter first " <<  yIter->first << endl;
-                                cout << "yIter second " << yIter->second << endl;                            
-                                cout << "zIter first " <<  zIter->first << endl;
-                                cout << "zIter second " << zIter->second << endl;
-                            }
-                            ///Some necessary continue checks
-                            //                            if (TString(H_Current.xVarKey).Contains("MT2lb") && NJets < 2) continue;
-                            if (H_Current.name.Contains("h_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx")) {
-                                if (H_Current.name.Contains("21to30")) {
-                                    if ((nVtx > 30 || nVtx < 21)) continue;
-                                }
-                                else if (H_Current.name.Contains("11to20")) {
-                                    if ((nVtx > 20 || nVtx < 11)) continue;
-                                }
-                                else if (H_Current.name.Contains("1to10")) {
-                                    if ((nVtx > 10 || nVtx < 1)) continue;
-                                }
-                            }
-                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_LepESDown : weight_LepESDown;
-                            histMap_3D[histKey(H_Current, S_Current)]->Fill(xIter->second, yIter->second, zIter->second, fillWeight); //there could be shenanigans with this one
-                        }
-                        if (doVerbosity) cout << "" << endl;                    
-                    }
-                }
-                
-                if (subSampBool_JetESUp[S_Current] == true) {
-                    for (unsigned int js = 0; js < histVec_1D_Syst->size(); ++js) {
-                        H_Current = histVec_1D_Syst->at(js);
-                        xIter = stringKeyToVar.find(H_Current.xVarKey);
-                        if (!H_Current.name.Contains("JetESShiftUp")) continue;
-                        if (doVerbosity) {
-                            cout << "" << endl;
-                            cout << "ievt " << ievt << endl;
-                            cout << "i " << i << endl;
-                            cout << "js " << js << endl;
-                            cout << "S_Current.histNamesuffix " << S_Current.histNameSuffix << endl;
-                            cout << "H_Current.name " << H_Current.name << endl;
-                            cout << "H_Current.xVarKey " << H_Current.xVarKey << endl;
-                        }
-                        if (xIter != stringKeyToVar.end()) {
-                            if (doVerbosity) {
-                                cout << "xIter first " << xIter->first << endl;
-                                cout << "xIter second " << xIter->second << endl;
-                            }
-                            ///Some necessary continue checks
-                            //                            if (TString(H_Current.xVarKey).Contains("MT2lb") && NJets < 2) continue;
-                            if (TString(H_Current.name).Contains("MT2ll_DPhiZMETClose")) {
-                                if (dPhi(diLepPhi, METPhi_JetESUp) > 1./3. * PI) continue;
-                            }
-                            else if (TString(H_Current.name).Contains("MT2ll_DPhiZMETMid")) {
-                                if (dPhi(diLepPhi, METPhi_JetESUp) < 1./3. * PI || dPhi(diLepPhi, METPhi_JetESUp) > 2./3. * PI) continue;
-                            }                        
-                            else if (TString(H_Current.name).Contains("MT2ll_DPhiZMETFar")) {
-                                if (dPhi(diLepPhi, METPhi_JetESUp) < 2./3. * PI) continue;
-                            }
-                            if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Close")) {
-                                if (dPhi(Lep0Vec.Phi(), Lep1Vec.Phi()) > 1./3. * PI) continue;
-                            }
-                            else if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Mid")) {
-                                if (dPhi(Lep0Vec.Phi(), Lep1Vec.Phi()) < 1./3. * PI || dPhi(Lep0Vec.Phi(), Lep1Vec.Phi()) > 2./3. * PI) continue;                         
-                            }                        
-                            else if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Far")) {
-                                if (dPhi(Lep0Vec.Phi(), Lep1Vec.Phi()) < 2./3. * PI) continue;
-                            }                        
-                            if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Close")) {
-                                if (DeltaPhiMT2lb_JetsUsed_JetESUp > 1./3. * PI) continue;
-                            }
-                            else if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Mid")) {
-                                if (DeltaPhiMT2lb_JetsUsed_JetESUp < 1./3. * PI || DeltaPhiMT2lb_JetsUsed_JetESUp > 2./3. * PI) continue;                         
-                            }                        
-                            else if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Far")) {
-                                if (DeltaPhiMT2lb_JetsUsed_JetESUp < 2./3. * PI) continue;
-                            }                        
-                            if (TString(H_Current.name).Contains("MT2lb_DPhiBLep0BLep1Close")) {
-                                if (DeltaPhiMT2lb_BLepsUsed_JetESUp > 1./3. * PI) continue;
-                            }
-                            else if (TString(H_Current.name).Contains("MT2lb_DPhiBLep0BLep1Mid")) {
-                                if (DeltaPhiMT2lb_BLepsUsed_JetESUp < 1./3. * PI || DeltaPhiMT2lb_BLepsUsed_JetESUp > 2./3. * PI) continue;                         
-                            }                        
-                            else if (TString(H_Current.name).Contains("MT2lb_DPhiBLep0BLep1Far")) {
-                                if (DeltaPhiMT2lb_BLepsUsed_JetESUp < 2./3. * PI) continue;
-                            }
-                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight : weight;
-                            histMap_1D[histKey(H_Current, S_Current)]->Fill(xIter->second, fillWeight);
-                        }
-                        if (doVerbosity) cout << "" << endl;                    
-                    }
-                    for (unsigned int ks = 0; ks < histVec_2D_Syst->size(); ++ks) {                  
-                        H_Current = histVec_2D_Syst->at(ks);
-                        if (!H_Current.name.Contains("JetESShiftUp")) continue;
-                        xIter = stringKeyToVar.find(H_Current.xVarKey);
-                        yIter = stringKeyToVar.find(H_Current.yVarKey);
-                        if (doVerbosity) {
-                            cout << "" << endl;
-                            cout << "ievt " << ievt << endl;
-                            cout << "i " << i << endl;
-                            cout << "ks " << ks << endl;
-                            cout << "S_Current.histNamesuffix " << S_Current.histNameSuffix << endl;
-                            cout << "H_Current.name " << H_Current.name << endl;
-                            cout << "H_Current.xVarKey " << H_Current.xVarKey << endl;
-                            cout << "H_Current.yVarKey " << H_Current.yVarKey << endl;
-                        }
-                        if (xIter != stringKeyToVar.end() && yIter != stringKeyToVar.end()) {
-                            if (doVerbosity) {
-                                cout << "xIter first " <<  xIter->first << endl;
-                                cout << "xIter second " << xIter->second << endl;
-                                cout << "yIter first " <<  yIter->first << endl;
-                                cout << "yIter second " << yIter->second << endl;
-                            }
-                            ///Some necessary continue checks
-                            //                            if (TString(H_Current.xVarKey).Contains("MT2lb") && NJets < 2) continue;
-                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight : weight;
-                            histMap_2D[histKey(H_Current, S_Current)]->Fill(xIter->second, yIter->second, fillWeight); //there could be shenanigans with this one
-                        }
-                        if (doVerbosity) cout << "" << endl;                    
-                    }
-                    for (unsigned int ls = 0; ls < histVec_3D_Syst->size(); ++ls) {                  
-                        H_Current = histVec_3D_Syst->at(ls);
-                        if (!H_Current.name.Contains("JetESShiftUp")) continue;
-                        xIter = stringKeyToVar.find(H_Current.xVarKey);
-                        yIter = stringKeyToVar.find(H_Current.yVarKey);
-                        zIter = stringKeyToVar.find(H_Current.zVarKey);
-                        if (doVerbosity) {
-                            cout << "" << endl;
-                            cout << "ievt " << ievt << endl;
-                            cout << "i " << i << endl;
-                            cout << "ls " << ls << endl;
-                            cout << "S_Current.histNamesuffix " << S_Current.histNameSuffix << endl;
-                            cout << "H_Current.name " << H_Current.name << endl;
-                            cout << "H_Current.xVarKey " << H_Current.xVarKey << endl;
-                            cout << "H_Current.yVarKey " << H_Current.yVarKey << endl;
-                            cout << "H_Current.zVarKey " << H_Current.zVarKey << endl;
-                        }
-                        if (xIter != stringKeyToVar.end() && yIter != stringKeyToVar.end() && zIter != stringKeyToVar.end()) {
-                            if (doVerbosity) {
-                                cout << "xIter first " <<  xIter->first << endl;
-                                cout << "xIter second " << xIter->second << endl;
-                                cout << "yIter first " <<  yIter->first << endl;
-                                cout << "yIter second " << yIter->second << endl;                            
-                                cout << "zIter first " <<  zIter->first << endl;
-                                cout << "zIter second " << zIter->second << endl;
-                            }
-                            ///Some necessary continue checks
-                            //                            if (TString(H_Current.xVarKey).Contains("MT2lb") && NJets < 2) continue;
-                            if (H_Current.name.Contains("h_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx")) {
-                                if (H_Current.name.Contains("21to30")) {
-                                    if ((nVtx > 30 || nVtx < 21)) continue;
-                                }
-                                else if (H_Current.name.Contains("11to20")) {
-                                    if ((nVtx > 20 || nVtx < 11)) continue;
-                                }
-                                else if (H_Current.name.Contains("1to10")) {
-                                    if ((nVtx > 10 || nVtx < 1)) continue;
-                                }
-                            }
-                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight : weight;
-                            histMap_3D[histKey(H_Current, S_Current)]->Fill(xIter->second, yIter->second, zIter->second, fillWeight); //there could be shenanigans with this one
-                        }
-                        if (doVerbosity) cout << "" << endl;                    
-                    }
-                }
-                
-                
-                if (subSampBool_JetESDown[S_Current] == true) {
-                    for (unsigned int js = 0; js < histVec_1D_Syst->size(); ++js) {
-                        H_Current = histVec_1D_Syst->at(js);
-                        xIter = stringKeyToVar.find(H_Current.xVarKey);
-                        if (!H_Current.name.Contains("JetESShiftDown")) continue;
-                        if (doVerbosity) {
-                            cout << "" << endl;
-                            cout << "ievt " << ievt << endl;
-                            cout << "i " << i << endl;
-                            cout << "js " << js << endl;
-                            cout << "S_Current.histNamesuffix " << S_Current.histNameSuffix << endl;
-                            cout << "H_Current.name " << H_Current.name << endl;
-                            cout << "H_Current.xVarKey " << H_Current.xVarKey << endl;
-                        }
-                        if (xIter != stringKeyToVar.end()) {
-                            if (doVerbosity) {
-                                cout << "xIter first " << xIter->first << endl;
-                                cout << "xIter second " << xIter->second << endl;
-                            }
-                            ///Some necessary continue checks
-                            //                            if (TString(H_Current.xVarKey).Contains("MT2lb") && NJets < 2) continue;
-                            if (TString(H_Current.name).Contains("MT2ll_DPhiZMETClose")) {
-                                if (dPhi(diLepPhi, METPhi_JetESDown) > 1./3. * PI) continue;
-                            }
-                            else if (TString(H_Current.name).Contains("MT2ll_DPhiZMETMid")) {
-                                if (dPhi(diLepPhi, METPhi_JetESDown) < 1./3. * PI || dPhi(diLepPhi, METPhi_JetESDown) > 2./3. * PI) continue;
-                            }                        
-                            else if (TString(H_Current.name).Contains("MT2ll_DPhiZMETFar")) {
-                                if (dPhi(diLepPhi, METPhi_JetESDown) < 2./3. * PI) continue;
-                            }
-                            if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Close")) {
-                                if (dPhi(Lep0Vec.Phi(), Lep1Vec.Phi()) > 1./3. * PI) continue;
-                            }
-                            else if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Mid")) {
-                                if (dPhi(Lep0Vec.Phi(), Lep1Vec.Phi()) < 1./3. * PI || dPhi(Lep0Vec.Phi(), Lep1Vec.Phi()) > 2./3. * PI) continue;                         
-                            }                        
-                            else if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Far")) {
-                                if (dPhi(Lep0Vec.Phi(), Lep1Vec.Phi()) < 2./3. * PI) continue;
-                            }                        
-                            if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Close")) {
-                                if (DeltaPhiMT2lb_JetsUsed_JetESDown > 1./3. * PI) continue;
-                            }
-                            else if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Mid")) {
-                                if (DeltaPhiMT2lb_JetsUsed_JetESDown < 1./3. * PI || DeltaPhiMT2lb_JetsUsed_JetESDown > 2./3. * PI) continue;                         
-                            }                        
-                            else if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Far")) {
-                                if (DeltaPhiMT2lb_JetsUsed_JetESDown < 2./3. * PI) continue;
-                            }                        
-                            if (TString(H_Current.name).Contains("MT2lb_DPhiBLep0BLep1Close")) {
-                                if (DeltaPhiMT2lb_BLepsUsed_JetESDown > 1./3. * PI) continue;
-                            }
-                            else if (TString(H_Current.name).Contains("MT2lb_DPhiBLep0BLep1Mid")) {
-                                if (DeltaPhiMT2lb_BLepsUsed_JetESDown < 1./3. * PI || DeltaPhiMT2lb_BLepsUsed_JetESDown > 2./3. * PI) continue;                         
-                            }                        
-                            else if (TString(H_Current.name).Contains("MT2lb_DPhiBLep0BLep1Far")) {
-                                if (DeltaPhiMT2lb_BLepsUsed_JetESDown < 2./3. * PI) continue;
-                            }
-                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight : weight;
-                            histMap_1D[histKey(H_Current, S_Current)]->Fill(xIter->second, fillWeight);
-                        }
-                        if (doVerbosity) cout << "" << endl;                    
-                    }
-                    for (unsigned int ks = 0; ks < histVec_2D_Syst->size(); ++ks) {                  
-                        H_Current = histVec_2D_Syst->at(ks);
-                        if (!H_Current.name.Contains("JetESShiftDown")) continue;
-                        xIter = stringKeyToVar.find(H_Current.xVarKey);
-                        yIter = stringKeyToVar.find(H_Current.yVarKey);
-                        if (doVerbosity) {
-                            cout << "" << endl;
-                            cout << "ievt " << ievt << endl;
-                            cout << "i " << i << endl;
-                            cout << "ks " << ks << endl;
-                            cout << "S_Current.histNamesuffix " << S_Current.histNameSuffix << endl;
-                            cout << "H_Current.name " << H_Current.name << endl;
-                            cout << "H_Current.xVarKey " << H_Current.xVarKey << endl;
-                            cout << "H_Current.yVarKey " << H_Current.yVarKey << endl;
-                        }
-                        if (xIter != stringKeyToVar.end() && yIter != stringKeyToVar.end()) {
-                            if (doVerbosity) {
-                                cout << "xIter first " <<  xIter->first << endl;
-                                cout << "xIter second " << xIter->second << endl;
-                                cout << "yIter first " <<  yIter->first << endl;
-                                cout << "yIter second " << yIter->second << endl;
-                            }
-                            ///Some necessary continue checks
-                            //                            if (TString(H_Current.xVarKey).Contains("MT2lb") && NJets < 2) continue;
-                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight : weight;
-                            histMap_2D[histKey(H_Current, S_Current)]->Fill(xIter->second, yIter->second, fillWeight); //there could be shenanigans with this one
-                        }
-                        if (doVerbosity) cout << "" << endl;                    
-                    }
-                    for (unsigned int ls = 0; ls < histVec_3D_Syst->size(); ++ls) {                  
-                        H_Current = histVec_3D_Syst->at(ls);
-                        if (!H_Current.name.Contains("JetESShiftDown")) continue;
-                        xIter = stringKeyToVar.find(H_Current.xVarKey);
-                        yIter = stringKeyToVar.find(H_Current.yVarKey);
-                        zIter = stringKeyToVar.find(H_Current.zVarKey);
-                        if (doVerbosity) {
-                            cout << "" << endl;
-                            cout << "ievt " << ievt << endl;
-                            cout << "i " << i << endl;
-                            cout << "ls " << ls << endl;
-                            cout << "S_Current.histNamesuffix " << S_Current.histNameSuffix << endl;
-                            cout << "H_Current.name " << H_Current.name << endl;
-                            cout << "H_Current.xVarKey " << H_Current.xVarKey << endl;
-                            cout << "H_Current.yVarKey " << H_Current.yVarKey << endl;
-                            cout << "H_Current.zVarKey " << H_Current.zVarKey << endl;
-                        }
-                        if (xIter != stringKeyToVar.end() && yIter != stringKeyToVar.end() && zIter != stringKeyToVar.end()) {
-                            if (doVerbosity) {
-                                cout << "xIter first " <<  xIter->first << endl;
-                                cout << "xIter second " << xIter->second << endl;
-                                cout << "yIter first " <<  yIter->first << endl;
-                                cout << "yIter second " << yIter->second << endl;                            
-                                cout << "zIter first " <<  zIter->first << endl;
-                                cout << "zIter second " << zIter->second << endl;
-                            }
-                            ///Some necessary continue checks
-                            //                            if (TString(H_Current.xVarKey).Contains("MT2lb") && NJets < 2) continue;
-                            if (H_Current.name.Contains("h_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx")) {
-                                if (H_Current.name.Contains("21to30")) {
-                                    if ((nVtx > 30 || nVtx < 21)) continue;
-                                }
-                                else if (H_Current.name.Contains("11to20")) {
-                                    if ((nVtx > 20 || nVtx < 11)) continue;
-                                }
-                                else if (H_Current.name.Contains("1to10")) {
-                                    if ((nVtx > 10 || nVtx < 1)) continue;
-                                }
-                            }
-                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight : weight;
-                            histMap_3D[histKey(H_Current, S_Current)]->Fill(xIter->second, yIter->second, zIter->second, fillWeight); //there could be shenanigans with this one
-                        }
-                        if (doVerbosity) cout << "" << endl;                    
-                    }
-                }
-                
-                
-                if (subSampBool_BTagSFUp[S_Current] == true) {
-                    for (unsigned int js = 0; js < histVec_1D_Syst->size(); ++js) {
-                        H_Current = histVec_1D_Syst->at(js);
-                        xIter = stringKeyToVar.find(H_Current.xVarKey);
-                        if (!H_Current.name.Contains("BTagSFShiftUp")) continue;
-                        if (doVerbosity) {
-                            cout << "" << endl;
-                            cout << "ievt " << ievt << endl;
-                            cout << "i " << i << endl;
-                            cout << "js " << js << endl;
-                            cout << "S_Current.histNamesuffix " << S_Current.histNameSuffix << endl;
-                            cout << "H_Current.name " << H_Current.name << endl;
-                            cout << "H_Current.xVarKey " << H_Current.xVarKey << endl;
-                        }
-                        if (xIter != stringKeyToVar.end()) {
-                            if (doVerbosity) {
-                                cout << "xIter first " << xIter->first << endl;
-                                cout << "xIter second " << xIter->second << endl;
-                                cout << "BTAG xIter second found " << endl;
-                            }
-                            ///Some necessary continue checks
-                            //                            if (TString(H_Current.xVarKey).Contains("MT2lb") && NJets < 2) continue;
-                            if (TString(H_Current.name).Contains("MT2ll_DPhiZMETClose")) {
-                                if (dPhi(diLepPhi, METPhi) > 1./3. * PI) continue;
-                            }
-                            else if (TString(H_Current.name).Contains("MT2ll_DPhiZMETMid")) {
-                                if (dPhi(diLepPhi, METPhi) < 1./3. * PI || dPhi(diLepPhi, METPhi) > 2./3. * PI) continue;
-                            }                        
-                            else if (TString(H_Current.name).Contains("MT2ll_DPhiZMETFar")) {
-                                if (dPhi(diLepPhi, METPhi) < 2./3. * PI) continue;
-                            }
-                            if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Close")) {
-                                if (dPhi(Lep0Vec.Phi(), Lep1Vec.Phi()) > 1./3. * PI) continue;
-                            }
-                            else if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Mid")) {
-                                if (dPhi(Lep0Vec.Phi(), Lep1Vec.Phi()) < 1./3. * PI || dPhi(Lep0Vec.Phi(), Lep1Vec.Phi()) > 2./3. * PI) continue;                         
-                            }                        
-                            else if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Far")) {
-                                if (dPhi(Lep0Vec.Phi(), Lep1Vec.Phi()) < 2./3. * PI) continue;
-                            }                        
-                            if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Close")) {
-                                if (DeltaPhiMT2lb_JetsUsed_BTagSFUp > 1./3. * PI) continue;
-                            }
-                            else if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Mid")) {
-                                if (DeltaPhiMT2lb_JetsUsed_BTagSFUp < 1./3. * PI || DeltaPhiMT2lb_JetsUsed_BTagSFUp > 2./3. * PI) continue;                         
-                            }                        
-                            else if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Far")) {
-                                if (DeltaPhiMT2lb_JetsUsed_BTagSFUp < 2./3. * PI) continue;
-                            }                        
-                            if (TString(H_Current.name).Contains("MT2lb_DPhiBLep0BLep1Close")) {
-                                if (DeltaPhiMT2lb_BLepsUsed_BTagSFUp > 1./3. * PI) continue;
-                            }
-                            else if (TString(H_Current.name).Contains("MT2lb_DPhiBLep0BLep1Mid")) {
-                                if (DeltaPhiMT2lb_BLepsUsed_BTagSFUp < 1./3. * PI || DeltaPhiMT2lb_BLepsUsed_BTagSFUp > 2./3. * PI) continue;                         
-                            }                        
-                            else if (TString(H_Current.name).Contains("MT2lb_DPhiBLep0BLep1Far")) {
-                                if (DeltaPhiMT2lb_BLepsUsed_BTagSFUp < 2./3. * PI) continue;
-                            }
-                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight : weight;
-                            histMap_1D[histKey(H_Current, S_Current)]->Fill(xIter->second, fillWeight);
-                        }
-                        if (doVerbosity) cout << "" << endl;                    
-                    }
-                    for (unsigned int ks = 0; ks < histVec_2D_Syst->size(); ++ks) {                  
-                        H_Current = histVec_2D_Syst->at(ks);
-                        if (!H_Current.name.Contains("BTagSFShiftUp")) continue;
-                        xIter = stringKeyToVar.find(H_Current.xVarKey);
-                        yIter = stringKeyToVar.find(H_Current.yVarKey);
-                        if (doVerbosity) {
-                            cout << "" << endl;
-                            cout << "ievt " << ievt << endl;
-                            cout << "i " << i << endl;
-                            cout << "ks " << ks << endl;
-                            cout << "S_Current.histNamesuffix " << S_Current.histNameSuffix << endl;
-                            cout << "H_Current.name " << H_Current.name << endl;
-                            cout << "H_Current.xVarKey " << H_Current.xVarKey << endl;
-                            cout << "H_Current.yVarKey " << H_Current.yVarKey << endl;
-                        }
-                        if (xIter != stringKeyToVar.end() && yIter != stringKeyToVar.end()) {
-                            if (doVerbosity) {
-                                cout << "xIter first " <<  xIter->first << endl;
-                                cout << "xIter second " << xIter->second << endl;
-                                cout << "yIter first " <<  yIter->first << endl;
-                                cout << "yIter second " << yIter->second << endl;
-                            }
-                            ///Some necessary continue checks
-                            //                            if (TString(H_Current.xVarKey).Contains("MT2lb") && NJets < 2) continue;
-                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight : weight;
-                            histMap_2D[histKey(H_Current, S_Current)]->Fill(xIter->second, yIter->second, fillWeight); //there could be shenanigans with this one
-                        }
-                        if (doVerbosity) cout << "" << endl;                    
-                    }
-                    for (unsigned int ls = 0; ls < histVec_3D_Syst->size(); ++ls) {                  
-                        H_Current = histVec_3D_Syst->at(ls);
-                        if (!H_Current.name.Contains("BTagSFShiftUp")) continue;
-                        xIter = stringKeyToVar.find(H_Current.xVarKey);
-                        yIter = stringKeyToVar.find(H_Current.yVarKey);
-                        zIter = stringKeyToVar.find(H_Current.zVarKey);
-                        if (doVerbosity) {
-                            cout << "" << endl;
-                            cout << "ievt " << ievt << endl;
-                            cout << "i " << i << endl;
-                            cout << "ls " << ls << endl;
-                            cout << "S_Current.histNamesuffix " << S_Current.histNameSuffix << endl;
-                            cout << "H_Current.name " << H_Current.name << endl;
-                            cout << "H_Current.xVarKey " << H_Current.xVarKey << endl;
-                            cout << "H_Current.yVarKey " << H_Current.yVarKey << endl;
-                            cout << "H_Current.zVarKey " << H_Current.zVarKey << endl;
-                        }
-                        if (xIter != stringKeyToVar.end() && yIter != stringKeyToVar.end() && zIter != stringKeyToVar.end()) {
-                            if (doVerbosity) {
-                                cout << "xIter first " <<  xIter->first << endl;
-                                cout << "xIter second " << xIter->second << endl;
-                                cout << "yIter first " <<  yIter->first << endl;
-                                cout << "yIter second " << yIter->second << endl;                            
-                                cout << "zIter first " <<  zIter->first << endl;
-                                cout << "zIter second " << zIter->second << endl;
-                            }
-                            ///Some necessary continue checks
-                            //                            if (TString(H_Current.xVarKey).Contains("MT2lb") && NJets < 2) continue;
-                            if (H_Current.name.Contains("h_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx")) {
-                                if (H_Current.name.Contains("21to30")) {
-                                    if ((nVtx > 30 || nVtx < 21)) continue;
-                                }
-                                else if (H_Current.name.Contains("11to20")) {
-                                    if ((nVtx > 20 || nVtx < 11)) continue;
-                                }
-                                else if (H_Current.name.Contains("1to10")) {
-                                    if ((nVtx > 10 || nVtx < 1)) continue;
-                                }
-                            }
-                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight : weight;
-                            histMap_3D[histKey(H_Current, S_Current)]->Fill(xIter->second, yIter->second, zIter->second, fillWeight); //there could be shenanigans with this one
-                        }
-                        if (doVerbosity) cout << "" << endl;                    
-                    }
-                }
-                
-                
-                if (subSampBool_BTagSFDown[S_Current] == true) {
-                    for (unsigned int js = 0; js < histVec_1D_Syst->size(); ++js) {
-                        H_Current = histVec_1D_Syst->at(js);
-                        xIter = stringKeyToVar.find(H_Current.xVarKey);
-                        if (!H_Current.name.Contains("BTagSFShiftDown")) continue;
-                        if (doVerbosity) {
-                            cout << "" << endl;
-                            cout << "ievt " << ievt << endl;
-                            cout << "i " << i << endl;
-                            cout << "js " << js << endl;
-                            cout << "S_Current.histNamesuffix " << S_Current.histNameSuffix << endl;
-                            cout << "H_Current.name " << H_Current.name << endl;
-                            cout << "H_Current.xVarKey " << H_Current.xVarKey << endl;
-                        }
-                        if (xIter != stringKeyToVar.end()) {
-                            if (doVerbosity) {
-                                cout << "xIter first " << xIter->first << endl;
-                                cout << "xIter second " << xIter->second << endl;
-                                cout << "BTAG xIter second found " << endl;
-                            }
-                            ///Some necessary continue checks
-                            //                            if (TString(H_Current.xVarKey).Contains("MT2lb") && NJets < 2) continue;
-                            if (TString(H_Current.name).Contains("MT2ll_DPhiZMETClose")) {
-                                if (dPhi(diLepPhi, METPhi) > 1./3. * PI) continue;
-                            }
-                            else if (TString(H_Current.name).Contains("MT2ll_DPhiZMETMid")) {
-                                if (dPhi(diLepPhi, METPhi) < 1./3. * PI || dPhi(diLepPhi, METPhi) > 2./3. * PI) continue;
-                            }                        
-                            else if (TString(H_Current.name).Contains("MT2ll_DPhiZMETFar")) {
-                                if (dPhi(diLepPhi, METPhi) < 2./3. * PI) continue;
-                            }
-                            if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Close")) {
-                                if (dPhi(Lep0Vec.Phi(), Lep1Vec.Phi()) > 1./3. * PI) continue;
-                            }
-                            else if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Mid")) {
-                                if (dPhi(Lep0Vec.Phi(), Lep1Vec.Phi()) < 1./3. * PI || dPhi(Lep0Vec.Phi(), Lep1Vec.Phi()) > 2./3. * PI) continue;                         
-                            }                        
-                            else if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Far")) {
-                                if (dPhi(Lep0Vec.Phi(), Lep1Vec.Phi()) < 2./3. * PI) continue;
-                            }                        
-                            if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Close")) {
-                                if (DeltaPhiMT2lb_JetsUsed_BTagSFDown > 1./3. * PI) continue;
-                            }
-                            else if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Mid")) {
-                                if (DeltaPhiMT2lb_JetsUsed_BTagSFDown < 1./3. * PI || DeltaPhiMT2lb_JetsUsed_BTagSFDown > 2./3. * PI) continue;                         
-                            }                        
-                            else if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Far")) {
-                                if (DeltaPhiMT2lb_JetsUsed_BTagSFDown < 2./3. * PI) continue;
-                            }                        
-                            if (TString(H_Current.name).Contains("MT2lb_DPhiBLep0BLep1Close")) {
-                                if (DeltaPhiMT2lb_BLepsUsed_BTagSFDown > 1./3. * PI) continue;
-                            }
-                            else if (TString(H_Current.name).Contains("MT2lb_DPhiBLep0BLep1Mid")) {
-                                if (DeltaPhiMT2lb_BLepsUsed_BTagSFDown < 1./3. * PI || DeltaPhiMT2lb_BLepsUsed_BTagSFDown > 2./3. * PI) continue;                         
-                            }                        
-                            else if (TString(H_Current.name).Contains("MT2lb_DPhiBLep0BLep1Far")) {
-                                if (DeltaPhiMT2lb_BLepsUsed_BTagSFDown < 2./3. * PI) continue;
-                            }
-                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight : weight;
-                            histMap_1D[histKey(H_Current, S_Current)]->Fill(xIter->second, fillWeight);
-                        }
-                        if (doVerbosity) cout << "" << endl;                    
-                    }
-                    for (unsigned int ks = 0; ks < histVec_2D_Syst->size(); ++ks) {                  
-                        H_Current = histVec_2D_Syst->at(ks);
-                        if (!H_Current.name.Contains("BTagSFShiftDown")) continue;
-                        xIter = stringKeyToVar.find(H_Current.xVarKey);
-                        yIter = stringKeyToVar.find(H_Current.yVarKey);
-                        if (doVerbosity) {
-                            cout << "" << endl;
-                            cout << "ievt " << ievt << endl;
-                            cout << "i " << i << endl;
-                            cout << "ks " << ks << endl;
-                            cout << "S_Current.histNamesuffix " << S_Current.histNameSuffix << endl;
-                            cout << "H_Current.name " << H_Current.name << endl;
-                            cout << "H_Current.xVarKey " << H_Current.xVarKey << endl;
-                            cout << "H_Current.yVarKey " << H_Current.yVarKey << endl;
-                        }
-                        if (xIter != stringKeyToVar.end() && yIter != stringKeyToVar.end()) {
-                            if (doVerbosity) {
-                                cout << "xIter first " <<  xIter->first << endl;
-                                cout << "xIter second " << xIter->second << endl;
-                                cout << "yIter first " <<  yIter->first << endl;
-                                cout << "yIter second " << yIter->second << endl;
-                            }
-                            ///Some necessary continue checks
-                            //                            if (TString(H_Current.xVarKey).Contains("MT2lb") && NJets < 2) continue;
-                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight : weight;
-                            histMap_2D[histKey(H_Current, S_Current)]->Fill(xIter->second, yIter->second, fillWeight); //there could be shenanigans with this one
-                        }
-                        if (doVerbosity) cout << "" << endl;                    
-                    }
-                    for (unsigned int ls = 0; ls < histVec_3D_Syst->size(); ++ls) {                  
-                        H_Current = histVec_3D_Syst->at(ls);
-                        if (!H_Current.name.Contains("BTagSFShiftDown")) continue;
-                        xIter = stringKeyToVar.find(H_Current.xVarKey);
-                        yIter = stringKeyToVar.find(H_Current.yVarKey);
-                        zIter = stringKeyToVar.find(H_Current.zVarKey);
-                        if (doVerbosity) {
-                            cout << "" << endl;
-                            cout << "ievt " << ievt << endl;
-                            cout << "i " << i << endl;
-                            cout << "ls " << ls << endl;
-                            cout << "S_Current.histNamesuffix " << S_Current.histNameSuffix << endl;
-                            cout << "H_Current.name " << H_Current.name << endl;
-                            cout << "H_Current.xVarKey " << H_Current.xVarKey << endl;
-                            cout << "H_Current.yVarKey " << H_Current.yVarKey << endl;
-                            cout << "H_Current.zVarKey " << H_Current.zVarKey << endl;
-                        }
-                        if (xIter != stringKeyToVar.end() && yIter != stringKeyToVar.end() && zIter != stringKeyToVar.end()) {
-                            if (doVerbosity) {
-                                cout << "xIter first " <<  xIter->first << endl;
-                                cout << "xIter second " << xIter->second << endl;
-                                cout << "yIter first " <<  yIter->first << endl;
-                                cout << "yIter second " << yIter->second << endl;                            
-                                cout << "zIter first " <<  zIter->first << endl;
-                                cout << "zIter second " << zIter->second << endl;
-                            }
-                            ///Some necessary continue checks
-                            //                            if (TString(H_Current.xVarKey).Contains("MT2lb") && NJets < 2) continue;
-                            if (H_Current.name.Contains("h_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx")) {
-                                if (H_Current.name.Contains("21to30")) {
-                                    if ((nVtx > 30 || nVtx < 21)) continue;
-                                }
-                                else if (H_Current.name.Contains("11to20")) {
-                                    if ((nVtx > 20 || nVtx < 11)) continue;
-                                }
-                                else if (H_Current.name.Contains("1to10")) {
-                                    if ((nVtx > 10 || nVtx < 1)) continue;
-                                }
-                            }
-                            fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight : weight;
-                            histMap_3D[histKey(H_Current, S_Current)]->Fill(xIter->second, yIter->second, zIter->second, fillWeight); //there could be shenanigans with this one
-                        }
-                        if (doVerbosity) cout << "" << endl;                    
-                    }
-                }
-                
-                
-            }
         }        
+        */
     }
     cout << "All events done" << endl;
     outputFile->cd();
@@ -3527,10 +1329,6 @@ int main( int argc, const char* argv[] ) {
     h_numParFiles->Write();
     h_eventCount->Write();
     h_CutFlow->Write();
-    h_ElecCharIso->Write();
-    h_ElecNeutIso->Write();
-    h_ElecPhotIso->Write();
-    h_ElecRelIso->Write();
     if (fInName.Contains("TT") || fInName.Contains("ttbarsignal")) {
         h_genTopPt->Write();
         h_genTopPtRW->Write();
