@@ -64,7 +64,9 @@ Added in a crucial line,
 ====MT2CutYieldCalc.C====
 Added in a crucial line,
 #include "../HeaderFiles/StopStructDefinitions.h"
-
+====METPhiCorrCalculator.C====
+Added in a crucial line,
+#include "../HeaderFiles/StopStructDefinitions.h"
 
 ========10/15/13========
 Big Structure update to the code, plus some physics as well
