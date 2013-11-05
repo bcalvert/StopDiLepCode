@@ -173,6 +173,45 @@ inline void METSystShift(vector<PFJet> * inputJetVec, vector<PFJet> * shiftJetVe
     return;
 }
 
+inline void METSystShift(vector<PFJet> * inputJetVec, vector<PFJet> * shiftJetVec, float &newMET, float &newMETPhi, float origMET, float origMETPhi, int doVerbosity) {
+    TVector3 vecMET;
+    TVector3 inputJetTotThreeVec; inputJetTotThreeVec.SetPtEtaPhi(0., 0., 0.);
+    TVector3 shiftJetTotThreeVec; shiftJetTotThreeVec.SetPtEtaPhi(0., 0., 0.);
+    TVector3 inputJetCurrThreeVec;
+    TVector3 shiftJetCurrThreeVec;
+    vecMET.SetPtEtaPhi(origMET, 0., origMETPhi);    
+    if (inputJetVec->size() != shiftJetVec->size()) {
+        cout << "inputJet size " << inputJetVec->size() << endl;
+        cout << "shiftJet size " << shiftJetVec->size() << endl;
+        cout << "issue: two input object vectors are not same size -- check it out" << endl;
+        return;
+    }
+    for (unsigned int i = 0; i < inputJetVec->size(); ++i) {
+        inputJetCurrThreeVec.SetPtEtaPhi(inputJetVec->at(i).P4.Pt(), inputJetVec->at(i).P4.Eta(), inputJetVec->at(i).P4.Phi());
+        shiftJetCurrThreeVec.SetPtEtaPhi(shiftJetVec->at(i).P4.Pt(), shiftJetVec->at(i).P4.Eta(), shiftJetVec->at(i).P4.Phi());
+        if (doVerbosity > 0) {
+            cout << "inputJetCurrThreeVec Pt " << inputJetCurrThreeVec.Pt() << endl;
+            cout << "shiftJetCurrThreeVec Pt " << shiftJetCurrThreeVec.Pt() << endl;
+            cout << "inputJetCurrThreeVec Eta " << inputJetCurrThreeVec.Eta() << endl;
+            cout << "shiftJetCurrThreeVec Eta " << shiftJetCurrThreeVec.Eta() << endl;
+            cout << "inputJetCurrThreeVec Phi " << inputJetCurrThreeVec.Phi() << endl;
+            cout << "shiftJetCurrThreeVec Phi " << shiftJetCurrThreeVec.Phi() << endl;
+        }
+        inputJetTotThreeVec = inputJetTotThreeVec + inputJetCurrThreeVec;
+        shiftJetTotThreeVec = shiftJetTotThreeVec + shiftJetCurrThreeVec;
+    }
+    vecMET = vecMET - inputJetTotThreeVec;
+    vecMET = vecMET + shiftJetTotThreeVec;
+
+    newMET = vecMET.Pt();
+    newMETPhi = vecMET.Phi();
+    if (doVerbosity > 0) {
+        cout << "old Met " << origMET << endl;
+        cout << "new MET " << newMET << endl;
+    }
+    return;
+}
+
 inline float MT2lbCalculator(vector<TLorentzVector> * vecLeps, vector<TLorentzVector> * vecJets, float MET, float METPhi, vector<TLorentzVector> &vecBLeps) {
     float MT2lbPair1;
     float MT2lbPair2;
@@ -304,7 +343,8 @@ inline void CorrectPlusSetMET(BasicEventInfo * inBEI, EventLepInfo * inELI, Even
      */
     inputEMI.EventMETPhi = TMath::ATan2(inputEMI.EventMETY, inputEMI.EventMETX);
     inputEMI.EventMET = TMath::Sqrt(inputEMI.EventMETX * inputEMI.EventMETX + inputEMI.EventMETY * inputEMI.EventMETY);
-    inputEMI.EventMETdivMeff = inputEMI.EventMET / (inputEMI.EventMET + inEJI->EventJetST + inELI->EventLepST);    
+    inputEMI.EventMETdivMeff = inputEMI.EventMET / (inputEMI.EventMET + inEJI->EventJetST + inELI->EventLepST);
+//    inputEMI.PrintVals();
 }
 inline void CalcMT2(EventLepInfo * inELI, EventJetInfo * inEJI, EventMETInfo &inputEMI) {
     vector<TLorentzVector> vecLepMT2lb(2), vecJetMT2lb(2);
@@ -395,11 +435,17 @@ inline float nVtxWeight(BasicEventInfo * inBEI, TH1F * nVtxSFHistOviToDESY, TH1F
 }
 
 inline void SetEventInformation(BasicEventInfo * inBEI, EventLepInfo * inELI, EventJetInfo * inEJI, EventMETInfo &inputEMI, EventDiStructureInfo &inputEDSI) {
+//    cout << "in SetEventInfo " << endl;
     inELI->GrabbedFromTree();
+//    cout << "inELI->GrabbedFromTree() passed " << endl;
     inEJI->GrabbedFromTree();
+//    cout << "inEJI->GrabbedFromTree() passed " << endl;
     CorrectPlusSetMET(inBEI, inELI, inEJI, inputEMI);
+//    cout << "MET Set " << endl;
     CalcMT2(inELI, inEJI, inputEMI);
+//    cout << "MT2ll Calculated " << endl;
     inputEDSI.SetVars(inELI, inEJI, &inputEMI);
+//    cout << "inputEDSI Set " << endl;
 }
 
 inline void SetStringKeyMap(map<string, float> &stringKeyToVar, EventLepInfo * inELI, EventJetInfo * inEJI, EventMETInfo * inEMI, EventDiStructureInfo * inEDSI, vector<SystT> * systVec, int whichSyst = 0) {
@@ -494,8 +540,6 @@ inline void SetStringKeyMap(map<string, float> &stringKeyToVar, EventLepInfo * i
         } 
     }
 }
-
-
 inline void SetStringKeyMapSpecial(map<string, float> &stringKeyToVar, EventMETInfo * inEMI, EventSpecialMT2Info * inESMT2I, vector<SystT> * systVec, int whichSyst = 0) {
     ///Set up the mapping of string keys to the appropriate event variables
     /*
@@ -510,11 +554,11 @@ inline void SetStringKeyMapSpecial(map<string, float> &stringKeyToVar, EventMETI
             if (systVec->at(iSyst).whichSystType == whichSyst) SystStringAppend = TString(systVec->at(iSyst).systVarKey);
         }
     }
-    if (SystStringAppend.Contains("UncESShiftUp")) {
+    if (SystStringAppend.Contains("UncESSpecShiftUp")) {
         MT2llToUse = inESMT2I->EventMT2ll_UncESUp;
         MT2lbToUse = inESMT2I->EventMT2lb_UncESUp;
     }
-    else if (SystStringAppend.Contains("UncESShiftDown")) {
+    else if (SystStringAppend.Contains("UncESSpecShiftDown")) {
         MT2llToUse = inESMT2I->EventMT2ll_UncESDown;
         MT2lbToUse = inESMT2I->EventMT2lb_UncESDown;
     }
@@ -535,6 +579,87 @@ inline void SetStringKeyMapSpecial(map<string, float> &stringKeyToVar, EventMETI
     stringKeyToVar[string(TString("METdivMeff_PassMT2llCut120") + SystStringAppend)]    = MT2llToUse > 120 ? inEMI->EventMETdivMeff : -99;
     stringKeyToVar[string(TString("MT2lb") + SystStringAppend)]                         = MT2lbToUse;
 }
+
+inline void SetStringKeyMapSmearJets(map<string, float> &stringKeyToVar, EventLepInfo * inELI, EventJetInfo * inEJI, EventMETInfo * inEMI, EventDiStructureInfo * inEDSI, vector<SystT> * systVec, int whichSyst = 0) {
+    TString SystStringAppend = "";
+    if (whichSyst != 0) {
+        for (unsigned int iSyst = 0; iSyst < systVec->size(); ++iSyst) {
+            if (systVec->at(iSyst).whichSystType == whichSyst) SystStringAppend = TString(systVec->at(iSyst).systVarKey);
+        }
+    }    
+    stringKeyToVar[string(TString("SmearMT2ll") + SystStringAppend)]                         = inEMI->EventMT2ll;
+    stringKeyToVar[string(TString("SmearPassMT2llCut80") + SystStringAppend)]                = (inEMI->EventMT2ll > 80.);
+    stringKeyToVar[string(TString("SmearPassMT2llCut90") + SystStringAppend)]                = (inEMI->EventMT2ll > 90.);
+    stringKeyToVar[string(TString("SmearPassMT2llCut100") + SystStringAppend)]               = (inEMI->EventMT2ll > 100.);
+    stringKeyToVar[string(TString("SmearPassMT2llCut110") + SystStringAppend)]               = (inEMI->EventMT2ll > 110.);
+    stringKeyToVar[string(TString("SmearPassMT2llCut120") + SystStringAppend)]               = (inEMI->EventMT2ll > 120.);
+    stringKeyToVar[string(TString("SmearMT2lb") + SystStringAppend)]                         = inEMI->EventMT2lb;
+    stringKeyToVar[string(TString("SmearMET") + SystStringAppend)]                           = inEMI->EventMET;
+    stringKeyToVar[string(TString("SmearMETdivMeff") + SystStringAppend)]                    = inEMI->EventMETdivMeff;
+    stringKeyToVar[string(TString("SmearMETdivMeff_PassMT2llCut80") + SystStringAppend)]     = inEMI->EventMT2ll > 80 ? inEMI->EventMETdivMeff : -99;
+    stringKeyToVar[string(TString("SmearMETdivMeff_PassMT2llCut90") + SystStringAppend)]     = inEMI->EventMT2ll > 90 ? inEMI->EventMETdivMeff : -99;
+    stringKeyToVar[string(TString("SmearMETdivMeff_PassMT2llCut190") + SystStringAppend)]    = inEMI->EventMT2ll > 100 ? inEMI->EventMETdivMeff : -99;
+    stringKeyToVar[string(TString("SmearMETdivMeff_PassMT2llCut110") + SystStringAppend)]    = inEMI->EventMT2ll > 110 ? inEMI->EventMETdivMeff : -99;
+    stringKeyToVar[string(TString("SmearMETdivMeff_PassMT2llCut120") + SystStringAppend)]    = inEMI->EventMT2ll > 120 ? inEMI->EventMETdivMeff : -99;        
+    stringKeyToVar[string(TString("SmearNJets") + SystStringAppend)]     = inEJI->EventNJets;
+    stringKeyToVar[string(TString("SmearNBJets") + SystStringAppend)]    = inEJI->EventNBtagJets;
+    stringKeyToVar[string(TString("SmearHT") + SystStringAppend)]        = inEJI->EventHT;    
+    if (inEJI->EventNJets > 0) {        
+        stringKeyToVar[string(TString("SmearleadJetPt") + SystStringAppend)]     = inEJI->Jet0.P4.Pt();        
+        if (inEJI->EventNBtagJets > 0) {
+            stringKeyToVar[string(TString("SmearleadBJetPt") + SystStringAppend)]    = inEJI->BtagJet0.P4.Pt();
+            stringKeyToVar[string(TString("SmearleadBJetEn") + SystStringAppend)]    = inEJI->BtagJet0.P4.E();
+        }
+        if (inEJI->EventNJets > 1) {
+            stringKeyToVar[string(TString("SmearsubJetPt") + SystStringAppend)]       = inEJI->Jet1.P4.Pt();
+            stringKeyToVar[string(TString("SmearELepEJet") + SystStringAppend)]       = inEDSI->ELepEJet;           
+            if (inEJI->EventNBtagJets > 1) {
+                stringKeyToVar[string(TString("SmearsubBJetPt") + SystStringAppend)]     = inEJI->BtagJet1.P4.Pt();
+                stringKeyToVar[string(TString("SmearsubBJetEn") + SystStringAppend)]     = inEJI->BtagJet1.P4.E();
+            }  
+        } 
+    }
+}
+inline void SetStringKeyMapSpecialSmearJets(map<string, float> &stringKeyToVar, EventMETInfo * inEMI, EventSpecialMT2Info * inESMT2I, vector<SystT> * systVec, int whichSyst = 0) {
+    ///Set up the mapping of string keys to the appropriate event variables
+    /*
+     list of keys needed can be found via the command:
+     cat StopFunctionDefinitions_v2.h | grep VarKey
+     _______________________________
+     */
+    float MT2llToUse, MT2lbToUse;
+    TString SystStringAppend = "";
+    if (whichSyst != 0) {
+        for (unsigned int iSyst = 0; iSyst < systVec->size(); ++iSyst) {
+            if (systVec->at(iSyst).whichSystType == whichSyst) SystStringAppend = TString(systVec->at(iSyst).systVarKey);
+        }
+    }
+    if (SystStringAppend.Contains("UncESSpecShiftUp")) {
+        MT2llToUse = inESMT2I->EventMT2ll_UncESUp;
+        MT2lbToUse = inESMT2I->EventMT2lb_UncESUp;
+    }
+    else if (SystStringAppend.Contains("UncESSpecShiftDown")) {
+        MT2llToUse = inESMT2I->EventMT2ll_UncESDown;
+        MT2lbToUse = inESMT2I->EventMT2lb_UncESDown;
+    }
+    else if (SystStringAppend.Contains("MT2llShift")) {
+        MT2llToUse = inESMT2I->EventMT2ll_ShiftUp;
+        MT2lbToUse = -99.;
+    }
+    stringKeyToVar[string(TString("SmearMT2ll") + SystStringAppend)]                         = MT2llToUse;
+    stringKeyToVar[string(TString("SmearPassMT2llCut80") + SystStringAppend)]                = (MT2llToUse > 80.);
+    stringKeyToVar[string(TString("SmearPassMT2llCut90") + SystStringAppend)]                = (MT2llToUse > 90.);
+    stringKeyToVar[string(TString("SmearPassMT2llCut100") + SystStringAppend)]               = (MT2llToUse > 100.);
+    stringKeyToVar[string(TString("SmearPassMT2llCut110") + SystStringAppend)]               = (MT2llToUse > 110.);
+    stringKeyToVar[string(TString("SmearPassMT2llCut120") + SystStringAppend)]               = (MT2llToUse > 120.);
+    stringKeyToVar[string(TString("SmearMETdivMeff_PassMT2llCut80") + SystStringAppend)]     = MT2llToUse > 80 ? inEMI->EventMETdivMeff : -99;
+    stringKeyToVar[string(TString("SmearMETdivMeff_PassMT2llCut90") + SystStringAppend)]     = MT2llToUse > 90 ? inEMI->EventMETdivMeff : -99;
+    stringKeyToVar[string(TString("SmearMETdivMeff_PassMT2llCut190") + SystStringAppend)]    = MT2llToUse > 100 ? inEMI->EventMETdivMeff : -99;
+    stringKeyToVar[string(TString("SmearMETdivMeff_PassMT2llCut110") + SystStringAppend)]    = MT2llToUse > 110 ? inEMI->EventMETdivMeff : -99;
+    stringKeyToVar[string(TString("SmearMETdivMeff_PassMT2llCut120") + SystStringAppend)]    = MT2llToUse > 120 ? inEMI->EventMETdivMeff : -99;
+    stringKeyToVar[string(TString("SmearMT2lb") + SystStringAppend)]                         = MT2lbToUse;
+}
+
 inline bool LepInBarrel(Lepton * inLep) {
     float barrelEtaEnd = 1.4442;
     return (fabs(inLep->P4.Eta()) < barrelEtaEnd);
@@ -618,6 +743,11 @@ inline void HistogramFillOneDee(std::map<SampleT, bool> * inputCutMap, map<strin
     const double PI = 3.14159265;
     for (unsigned int iSS = 0; iSS < subSampVec->size(); ++iSS) {
         S_Current = subSampVec->at(iSS);
+        /*
+        if (S_Current.histNameSuffix == "_FullCut") {
+            cout << "in input cut map CentVal? " << (*inputCutMap)[S_Current] << endl;
+        }
+        */
 //        cout << "S_Current = " << S_Current.histNameSuffix << endl;
         if ((*inputCutMap)[S_Current]) {
 //            cout << "passed inputCut Map for S_Current = " << S_Current.histNameSuffix << endl;
@@ -646,40 +776,40 @@ inline void HistogramFillOneDee(std::map<SampleT, bool> * inputCutMap, map<strin
                     if (S_Current.blindDataChannel && TString(H_Current.xVarKey).Contains("MT2lb")) {
                         if (inBEI->blindData && inBEI->doData && inEMI->EventMT2lb > MT2lbCut) continue;
                     }
-                    if (TString(H_Current.name).Contains("MT2ll_DPhiZMETClose")) {
+                    if (H_Current.name.Contains("MT2ll_DPhiZMETClose")) {
                         if (inEDSI->DPhiZMET > 1./3. * PI) continue;
                     }
-                    else if (TString(H_Current.name).Contains("MT2ll_DPhiZMETMid")) {
+                    else if (H_Current.name.Contains("MT2ll_DPhiZMETMid")) {
                         if (inEDSI->DPhiZMET < 1./3. * PI || inEDSI->DPhiZMET > 2./3. * PI) continue;                         
                     }                        
-                    else if (TString(H_Current.name).Contains("MT2ll_DPhiZMETFar")) {
+                    else if (H_Current.name.Contains("MT2ll_DPhiZMETFar")) {
                         if (inEDSI->DPhiZMET < 2./3. * PI) continue;
                     }                        
-                    if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Close")) {
+                    if (H_Current.name.Contains("MT2ll_DPhiLep0Lep1Close")) {
                         if (inEDSI->DPhiLep0Lep1 > 1./3. * PI) continue;
                     }
-                    else if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Mid")) {
+                    else if (H_Current.name.Contains("MT2ll_DPhiLep0Lep1Mid")) {
                         if (inEDSI->DPhiLep0Lep1 < 1./3. * PI || inEDSI->DPhiLep0Lep1 > 2./3. * PI) continue;                         
                     }                        
-                    else if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Far")) {
+                    else if (H_Current.name.Contains("MT2ll_DPhiLep0Lep1Far")) {
                         if (inEDSI->DPhiLep0Lep1 < 2./3. * PI) continue;
                     }
-                    if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Close")) {
+                    if (H_Current.name.Contains("MT2lb_DPhiJet0Jet1Close")) {
                         if (inEMI->EventDeltaPhiMT2lb_JetsUsed > 1./3. * PI) continue;
                     }
-                    else if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Mid")) {
+                    else if (H_Current.name.Contains("MT2lb_DPhiJet0Jet1Mid")) {
                         if (inEMI->EventDeltaPhiMT2lb_JetsUsed < 1./3. * PI || inEMI->EventDeltaPhiMT2lb_JetsUsed > 2./3. * PI) continue;                         
                     }                        
-                    else if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Far")) {
+                    else if (H_Current.name.Contains("MT2lb_DPhiJet0Jet1Far")) {
                         if (inEMI->EventDeltaPhiMT2lb_JetsUsed < 2./3. * PI) continue;
                     }
-                    if (TString(H_Current.name).Contains("MT2lb_DPhiBLep0BLep1Close")) {
+                    if (H_Current.name.Contains("MT2lb_DPhiBLep0BLep1Close")) {
                         if (inEDSI->DPhiBLep0BLep1 > 1./3. * PI) continue;
                     }
-                    else if (TString(H_Current.name).Contains("MT2lb_DPhiBLep0BLep1Mid")) {
+                    else if (H_Current.name.Contains("MT2lb_DPhiBLep0BLep1Mid")) {
                         if (inEDSI->DPhiBLep0BLep1 < 1./3. * PI || inEDSI->DPhiBLep0BLep1 > 2./3. * PI) continue;                         
                     }                        
-                    else if (TString(H_Current.name).Contains("MT2lb_DPhiBLep0BLep1Far")) {
+                    else if (H_Current.name.Contains("MT2lb_DPhiBLep0BLep1Far")) {
                         if (inEDSI->DPhiBLep0BLep1 < 2./3. * PI) continue;
                     }
                     fillWeight = H_Current.name.Contains("preRW") ? inBEI->preNVtxRWWeight : inBEI->weight;
@@ -704,10 +834,16 @@ inline void HistogramFillOneDeeSyst(std::map<SampleT, bool> * inputCutMap, map<s
     const double PI = 3.14159265;
     for (unsigned int iSS = 0; iSS < subSampVec->size(); ++iSS) {
         S_Current = subSampVec->at(iSS);
+        /*
+        if (S_Current.histNameSuffix == "_FullCut" && SystCheck.Contains("BTag")) {
+            cout << "for syst " << SystCheck << endl;
+            cout << "in input cut map? " << (*inputCutMap)[S_Current] << endl;
+        }
+        */
         if ((*inputCutMap)[S_Current]) {
             for (unsigned int iHT = 0; iHT < HistTVec->size(); ++iHT) {
                 H_Current = HistTVec->at(iHT);
-                if (!H_Current.name.Contains(SystCheck)) continue;                
+                if (!H_Current.name.Contains(SystCheck)) continue;
                 xIter = stringKeyToVar->find(H_Current.xVarKey);
                 /*
                 if (doVerbosity) {
@@ -731,40 +867,40 @@ inline void HistogramFillOneDeeSyst(std::map<SampleT, bool> * inputCutMap, map<s
                     if (S_Current.blindDataChannel && TString(H_Current.xVarKey).Contains("MT2lb")) {
                         if (inBEI->blindData && inBEI->doData && inEMI->EventMT2lb > MT2lbCut) continue;
                     }
-                    if (TString(H_Current.name).Contains("MT2ll_DPhiZMETClose")) {
+                    if (H_Current.name.Contains("MT2ll_DPhiZMETClose")) {
                         if (inEDSI->DPhiZMET > 1./3. * PI) continue;
                     }
-                    else if (TString(H_Current.name).Contains("MT2ll_DPhiZMETMid")) {
+                    else if (H_Current.name.Contains("MT2ll_DPhiZMETMid")) {
                         if (inEDSI->DPhiZMET < 1./3. * PI || inEDSI->DPhiZMET > 2./3. * PI) continue;                         
                     }                        
-                    else if (TString(H_Current.name).Contains("MT2ll_DPhiZMETFar")) {
+                    else if (H_Current.name.Contains("MT2ll_DPhiZMETFar")) {
                         if (inEDSI->DPhiZMET < 2./3. * PI) continue;
                     }                        
-                    if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Close")) {
+                    if (H_Current.name.Contains("MT2ll_DPhiLep0Lep1Close")) {
                         if (inEDSI->DPhiLep0Lep1 > 1./3. * PI) continue;
                     }
-                    else if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Mid")) {
+                    else if (H_Current.name.Contains("MT2ll_DPhiLep0Lep1Mid")) {
                         if (inEDSI->DPhiLep0Lep1 < 1./3. * PI || inEDSI->DPhiLep0Lep1 > 2./3. * PI) continue;                         
                     }                        
-                    else if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Far")) {
+                    else if (H_Current.name.Contains("MT2ll_DPhiLep0Lep1Far")) {
                         if (inEDSI->DPhiLep0Lep1 < 2./3. * PI) continue;
                     }
-                    if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Close")) {
+                    if (H_Current.name.Contains("MT2lb_DPhiJet0Jet1Close")) {
                         if (inEMI->EventDeltaPhiMT2lb_JetsUsed > 1./3. * PI) continue;
                     }
-                    else if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Mid")) {
+                    else if (H_Current.name.Contains("MT2lb_DPhiJet0Jet1Mid")) {
                         if (inEMI->EventDeltaPhiMT2lb_JetsUsed < 1./3. * PI || inEMI->EventDeltaPhiMT2lb_JetsUsed > 2./3. * PI) continue;                         
                     }                        
-                    else if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Far")) {
+                    else if (H_Current.name.Contains("MT2lb_DPhiJet0Jet1Far")) {
                         if (inEMI->EventDeltaPhiMT2lb_JetsUsed < 2./3. * PI) continue;
                     }
-                    if (TString(H_Current.name).Contains("MT2lb_DPhiBLep0BLep1Close")) {
+                    if (H_Current.name.Contains("MT2lb_DPhiBLep0BLep1Close")) {
                         if (inEDSI->DPhiBLep0BLep1 > 1./3. * PI) continue;
                     }
-                    else if (TString(H_Current.name).Contains("MT2lb_DPhiBLep0BLep1Mid")) {
+                    else if (H_Current.name.Contains("MT2lb_DPhiBLep0BLep1Mid")) {
                         if (inEDSI->DPhiBLep0BLep1 < 1./3. * PI || inEDSI->DPhiBLep0BLep1 > 2./3. * PI) continue;                         
                     }                        
-                    else if (TString(H_Current.name).Contains("MT2lb_DPhiBLep0BLep1Far")) {
+                    else if (H_Current.name.Contains("MT2lb_DPhiBLep0BLep1Far")) {
                         if (inEDSI->DPhiBLep0BLep1 < 2./3. * PI) continue;
                     }
                     fillWeight = H_Current.name.Contains("preRW") ? inBEI->preNVtxRWWeight : inBEI->weight;
@@ -928,6 +1064,106 @@ inline void HistogramFillThreeDeeSyst(std::map<SampleT, bool> * inputCutMap, map
                     fillWeight = H_Current.name.Contains("preRW") ? inBEI->preNVtxRWWeight : inBEI->weight;
                     (*inputHMap3D)[histKey(H_Current, S_Current)]->Fill(xIter->second, yIter->second, zIter->second, fillWeight);
                 }
+            }
+        }
+    }
+}
+
+inline void HistogramFillOneDeeSystRemain(std::map<SampleT, bool> * inputCutMap, map<string, float> * stringKeyToVar, vector<SampleT> * subSampVec, vector<HistogramT> * HistTVec, HMap_1D * inputHMap1D, BasicEventInfo * inBEI, EventLepInfo * inELI, EventJetInfo * inEJI, EventMETInfo * inEMI, EventDiStructureInfo * inEDSI, EventSpecialMT2Info * inESMT2I, bool doVerbosity) {
+    SampleT S_Current;
+    HistogramT H_Current;
+    float fillWeight;
+    map<string, float>::iterator xIter;
+    //    map<string, float>::iterator yIter;
+    //    map<string, float>::iterator zIter;
+    float MT2llCut = 80;
+    float MT2lbCut = 170;
+    float MT2llToUse, MT2lbToUse;
+    const double PI = 3.14159265;
+    for (unsigned int iSS = 0; iSS < subSampVec->size(); ++iSS) {
+        S_Current = subSampVec->at(iSS);
+        if ((*inputCutMap)[S_Current]) {
+            for (unsigned int iHT = 0; iHT < HistTVec->size(); ++iHT) {
+                H_Current = HistTVec->at(iHT);
+                if (H_Current.name.Contains(TString("MT2UncESSpecShiftUp"))) {
+                    MT2llToUse = inESMT2I->EventMT2ll_UncESUp;
+                    MT2lbToUse = inESMT2I->EventMT2lb_UncESUp;      
+                }
+                else if (H_Current.name.Contains(TString("MT2UncESSpecShiftDown"))) {
+                    MT2llToUse = inESMT2I->EventMT2ll_UncESDown;
+                    MT2lbToUse = inESMT2I->EventMT2lb_UncESDown;
+                }
+                else if (H_Current.name.Contains(TString("MT2llShiftUp"))) {
+                    MT2llToUse = inESMT2I->EventMT2ll_ShiftUp;
+                    MT2lbToUse = -99.;
+                }
+                else {
+                    continue;
+                }
+                xIter = stringKeyToVar->find(H_Current.xVarKey);
+                /*
+                 if (doVerbosity) {
+                 cout << "" << endl;
+                 cout << "ievt " << ievt << endl;
+                 cout << "i " << i << endl;
+                 cout << "j " << j << endl;
+                 cout << "S_Current.histNamesuffix " << S_Current.histNameSuffix << endl;
+                 cout << "H_Current.xVarKey " << H_Current.xVarKey << endl;
+                 }
+                 */
+                if (xIter != stringKeyToVar->end()) {
+                    if (doVerbosity) {
+                        cout << "xIter first " << xIter->first << endl;
+                        cout << "xIter second " << xIter->second << endl;
+                    }
+                    ///Some necessary continue checks
+                    if (S_Current.blindDataChannel && TString(H_Current.xVarKey).Contains("MT2ll")) {
+                        if (inBEI->blindData && inBEI->doData && MT2llToUse > MT2llCut) continue;
+                    }
+                    if (S_Current.blindDataChannel && TString(H_Current.xVarKey).Contains("MT2lb")) {
+                        if (inBEI->blindData && inBEI->doData && MT2lbToUse > MT2lbCut) continue;
+                    }
+                    if (H_Current.name.Contains("MT2ll_DPhiZMETClose")) {
+                        if (inEDSI->DPhiZMET > 1./3. * PI) continue;
+                    }
+                    else if (H_Current.name.Contains("MT2ll_DPhiZMETMid")) {
+                        if (inEDSI->DPhiZMET < 1./3. * PI || inEDSI->DPhiZMET > 2./3. * PI) continue;                         
+                    }                        
+                    else if (H_Current.name.Contains("MT2ll_DPhiZMETFar")) {
+                        if (inEDSI->DPhiZMET < 2./3. * PI) continue;
+                    }                        
+                    if (H_Current.name.Contains("MT2ll_DPhiLep0Lep1Close")) {
+                        if (inEDSI->DPhiLep0Lep1 > 1./3. * PI) continue;
+                    }
+                    else if (H_Current.name.Contains("MT2ll_DPhiLep0Lep1Mid")) {
+                        if (inEDSI->DPhiLep0Lep1 < 1./3. * PI || inEDSI->DPhiLep0Lep1 > 2./3. * PI) continue;                         
+                    }                        
+                    else if (H_Current.name.Contains("MT2ll_DPhiLep0Lep1Far")) {
+                        if (inEDSI->DPhiLep0Lep1 < 2./3. * PI) continue;
+                    }
+                    if (H_Current.name.Contains("MT2lb_DPhiJet0Jet1Close")) {
+                        if (inEMI->EventDeltaPhiMT2lb_JetsUsed > 1./3. * PI) continue;
+                    }
+                    else if (H_Current.name.Contains("MT2lb_DPhiJet0Jet1Mid")) {
+                        if (inEMI->EventDeltaPhiMT2lb_JetsUsed < 1./3. * PI || inEMI->EventDeltaPhiMT2lb_JetsUsed > 2./3. * PI) continue;                         
+                    }                        
+                    else if (H_Current.name.Contains("MT2lb_DPhiJet0Jet1Far")) {
+                        if (inEMI->EventDeltaPhiMT2lb_JetsUsed < 2./3. * PI) continue;
+                    }
+                    if (H_Current.name.Contains("MT2lb_DPhiBLep0BLep1Close")) {
+                        if (inEDSI->DPhiBLep0BLep1 > 1./3. * PI) continue;
+                    }
+                    else if (H_Current.name.Contains("MT2lb_DPhiBLep0BLep1Mid")) {
+                        if (inEDSI->DPhiBLep0BLep1 < 1./3. * PI || inEDSI->DPhiBLep0BLep1 > 2./3. * PI) continue;                         
+                    }                        
+                    else if (H_Current.name.Contains("MT2lb_DPhiBLep0BLep1Far")) {
+                        if (inEDSI->DPhiBLep0BLep1 < 2./3. * PI) continue;
+                    }
+                    fillWeight = H_Current.name.Contains("preRW") ? inBEI->preNVtxRWWeight : inBEI->weight;
+                    if (H_Current.name.Contains("h_ChannelCutFlow")) fillWeight = 1.;
+                    (*inputHMap1D)[histKey(H_Current, S_Current)]->Fill(xIter->second, fillWeight);
+                }
+                if (doVerbosity) cout << "" << endl;
             }
         }
     }

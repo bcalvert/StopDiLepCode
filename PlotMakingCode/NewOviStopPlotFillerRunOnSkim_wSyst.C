@@ -67,7 +67,7 @@ int main( int argc, const char* argv[] ) {
     TFile * inputPUFileMCDESY = new TFile(TString("OneDMCPURWNewDESY.root"));
     TFile * inputPUFileMCOviToDESY = new TFile(TString("OneDMCPURW_OviToDESY.root"));
     TFile * inputPUS7toS10 = new TFile(TString("S7toS10RW.root"));
-
+    
     //    TH1F * truePUDistMC = (TH1F*) inputPUFileMC->Get("MCPU");
     //    TFile * inputPUFileData = new TFile("RunABCPUDist.root");
     //    TH1F * truePUDistData = (TH1F*) inputPUFileData->Get("pileup");
@@ -91,52 +91,91 @@ int main( int argc, const char* argv[] ) {
     TH1F * h_eventCount, * h_CutFlow;    
     /////Event Variables/////////////////////
     bool  keepEvent;
-
-    BasicEventInfo       BEI;
-    EventLepInfo         ELI; ELI.ELIDefaultVarVals();
-    EventJetInfo         EJI; EJI.EJIDefaultVarVals();
-    EventMETInfo         EMI; EMI.EMIDefaultVarVals();
-    EventDiStructureInfo EDSI; EDSI.EDSIDefaultVarVals();
-    EventGenParticleInfo EGPI; EGPI.EGPIDefaultVarVals();
     
+    BasicEventInfo       BEI;
+    EventLepInfo         ELI;                   ELI.ELIDefaultVarVals();
+    EventJetInfo         EJI;                   EJI.EJIDefaultVarVals();
+    EventMETInfo         EMI;                   EMI.EMIDefaultVarVals();
+    EventDiStructureInfo EDSI;                  EDSI.EDSIDefaultVarVals();
+    EventGenParticleInfo EGPI;                  EGPI.EGPIDefaultVarVals();
+    
+    ////Systematics Versions of the Event Info Structures////
     BasicEventInfo       BEI_LepESUp, BEI_LepESDown;
     BasicEventInfo       BEI_GenTopRW;
     BasicEventInfo       BEI_StopXSecUp, BEI_StopXSecDown;
     BasicEventInfo       BEI_LepEffSFUp, BEI_LepEffSFDown;
     
-    EventLepInfo         ELI_LepESUp; ELI_LepESUp.ELIDefaultVarVals();
-    EventLepInfo         ELI_LepESDown; ELI_LepESDown.ELIDefaultVarVals();
+    EventLepInfo         ELI_LepESUp;           ELI_LepESUp.ELIDefaultVarVals();
+    EventLepInfo         ELI_LepESDown;         ELI_LepESDown.ELIDefaultVarVals();
     
-    EventJetInfo         EJI_JetESUp; EJI_JetESUp.EJIDefaultVarVals();
-    EventJetInfo         EJI_JetESDown; EJI_JetESDown.EJIDefaultVarVals();
-    EventJetInfo         EJI_BTagSFUp; EJI_BTagSFUp.EJIDefaultVarVals();
-    EventJetInfo         EJI_BTagSFDown; EJI_BTagSFDown.EJIDefaultVarVals();
+    EventJetInfo         EJI_JetESUp;           EJI_JetESUp.EJIDefaultVarVals();
+    EventJetInfo         EJI_JetESDown;         EJI_JetESDown.EJIDefaultVarVals();
+    EventJetInfo         EJI_BTagSFUp;          EJI_BTagSFUp.EJIDefaultVarVals();
+    EventJetInfo         EJI_BTagSFDown;        EJI_BTagSFDown.EJIDefaultVarVals();
     
-    EventMETInfo         EMI_LepESUp; EMI_LepESUp.EMIDefaultVarVals();
-    EventMETInfo         EMI_LepESDown; EMI_LepESDown.EMIDefaultVarVals();
-    EventMETInfo         EMI_JetESUp; EMI_JetESUp.EMIDefaultVarVals();
-    EventMETInfo         EMI_JetESDown; EMI_JetESDown.EMIDefaultVarVals();
-    EventMETInfo         EMI_BTagSFUp; EMI_BTagSFUp.EMIDefaultVarVals();
-    EventMETInfo         EMI_BTagSFDown; EMI_BTagSFDown.EMIDefaultVarVals();
+    EventMETInfo         EMI_LepESUp;           EMI_LepESUp.EMIDefaultVarVals();
+    EventMETInfo         EMI_LepESDown;         EMI_LepESDown.EMIDefaultVarVals();
+    EventMETInfo         EMI_JetESUp;           EMI_JetESUp.EMIDefaultVarVals();
+    EventMETInfo         EMI_JetESDown;         EMI_JetESDown.EMIDefaultVarVals();
+    EventMETInfo         EMI_BTagSFUp;          EMI_BTagSFUp.EMIDefaultVarVals();
+    EventMETInfo         EMI_BTagSFDown;        EMI_BTagSFDown.EMIDefaultVarVals();
     
-    EventDiStructureInfo EDSI_LepESUp; EDSI_LepESUp.EDSIDefaultVarVals();
-    EventDiStructureInfo EDSI_LepESDown; EDSI_LepESDown.EDSIDefaultVarVals();
-    EventDiStructureInfo EDSI_JetESUp; EDSI_JetESUp.EDSIDefaultVarVals();
-    EventDiStructureInfo EDSI_JetESDown; EDSI_JetESDown.EDSIDefaultVarVals();
-    EventDiStructureInfo EDSI_BTagSFUp; EDSI_BTagSFUp.EDSIDefaultVarVals();
-    EventDiStructureInfo EDSI_BTagSFDown; EDSI_BTagSFDown.EDSIDefaultVarVals();
+    EventDiStructureInfo EDSI_LepESUp;          EDSI_LepESUp.EDSIDefaultVarVals();
+    EventDiStructureInfo EDSI_LepESDown;        EDSI_LepESDown.EDSIDefaultVarVals();
+    EventDiStructureInfo EDSI_JetESUp;          EDSI_JetESUp.EDSIDefaultVarVals();
+    EventDiStructureInfo EDSI_JetESDown;        EDSI_JetESDown.EDSIDefaultVarVals();
+    EventDiStructureInfo EDSI_BTagSFUp;         EDSI_BTagSFUp.EDSIDefaultVarVals();
+    EventDiStructureInfo EDSI_BTagSFDown;       EDSI_BTagSFDown.EDSIDefaultVarVals();
+    ////Systematics Versions of the Event Info Structures////
     
+    ////Versions of the Event Info Structures containing smeared Jets (including systematics versions////
+    EventJetInfo         SmearEJI;               SmearEJI.EJIDefaultVarVals();
+    EventJetInfo         SmearEJI_JetESUp;       SmearEJI_JetESUp.EJIDefaultVarVals();
+    EventJetInfo         SmearEJI_JetESDown;     SmearEJI_JetESDown.EJIDefaultVarVals();    
+    EventJetInfo         SmearEJI_BTagSFUp;      SmearEJI_BTagSFUp.EJIDefaultVarVals();
+    EventJetInfo         SmearEJI_BTagSFDown;    SmearEJI_BTagSFDown.EJIDefaultVarVals();
+    EventJetInfo         SmearEJI_JetSmearUp;    SmearEJI_JetSmearUp.EJIDefaultVarVals();
+    EventJetInfo         SmearEJI_JetSmearDown;  SmearEJI_JetSmearDown.EJIDefaultVarVals();
+    
+    EventMETInfo         SmearEMI;               SmearEMI.EMIDefaultVarVals();
+    EventMETInfo         SmearEMI_LepESUp;       SmearEMI_LepESUp.EMIDefaultVarVals();
+    EventMETInfo         SmearEMI_LepESDown;     SmearEMI_LepESDown.EMIDefaultVarVals();
+    EventMETInfo         SmearEMI_JetESUp;       SmearEMI_JetESUp.EMIDefaultVarVals();
+    EventMETInfo         SmearEMI_JetESDown;     SmearEMI_JetESDown.EMIDefaultVarVals();
+    EventMETInfo         SmearEMI_BTagSFUp;      SmearEMI_BTagSFUp.EMIDefaultVarVals();
+    EventMETInfo         SmearEMI_BTagSFDown;    SmearEMI_BTagSFDown.EMIDefaultVarVals();
+    EventMETInfo         SmearEMI_UncESUp;       SmearEMI_UncESUp.EMIDefaultVarVals();
+    EventMETInfo         SmearEMI_UncESDown;     SmearEMI_UncESDown.EMIDefaultVarVals();
+    EventMETInfo         SmearEMI_JetSmearUp;    SmearEMI_JetSmearUp.EMIDefaultVarVals();
+    EventMETInfo         SmearEMI_JetSmearDown;  SmearEMI_JetSmearDown.EMIDefaultVarVals();
+    
+    EventDiStructureInfo SmearEDSI;              SmearEDSI.EDSIDefaultVarVals();
+    EventDiStructureInfo SmearEDSI_LepESUp;      SmearEDSI_LepESUp.EDSIDefaultVarVals();
+    EventDiStructureInfo SmearEDSI_LepESDown;    SmearEDSI_LepESDown.EDSIDefaultVarVals();
+    EventDiStructureInfo SmearEDSI_JetESUp;      SmearEDSI_JetESUp.EDSIDefaultVarVals();
+    EventDiStructureInfo SmearEDSI_JetESDown;    SmearEDSI_JetESDown.EDSIDefaultVarVals();
+    EventDiStructureInfo SmearEDSI_BTagSFUp;     SmearEDSI_BTagSFUp.EDSIDefaultVarVals();
+    EventDiStructureInfo SmearEDSI_BTagSFDown;   SmearEDSI_BTagSFDown.EDSIDefaultVarVals();
+    EventDiStructureInfo SmearEDSI_UncESUp;      SmearEDSI_UncESUp.EDSIDefaultVarVals();
+    EventDiStructureInfo SmearEDSI_UncESDown;    SmearEDSI_UncESDown.EDSIDefaultVarVals();
+    EventDiStructureInfo SmearEDSI_JetSmearUp;   SmearEDSI_JetSmearUp.EDSIDefaultVarVals();
+    EventDiStructureInfo SmearEDSI_JetSmearDown; SmearEDSI_JetSmearDown.EDSIDefaultVarVals();
+    ////Versions of the Event Info Structures containing smeared Jets (including systematics versions////
+    
+    ////Special Event Structure information for systematics not readily accounted for right now in the "whole" sense (Unclustered Energy's effect on MT2)////
     EventSpecialMT2Info  ESMT2I;
+    EventSpecialMT2Info  SmearESMT2I;
+    ////Special Event Structure information for systematics not readily accounted for right now in the "whole" sense (Unclustered Energy's effect on MT2)////
     
     int TGenStopMass0,TGenStopMass1,TGenChi0Mass0,TGenChi0Mass1, TGenCharginoMass0, TGenCharginoMass1;
     int   grabStopMass, grabChi0Mass, grabCharginoMass;
     int   massDiffThresh = 5;
     /*
-    float stopWeight    = 0.;
-    float stopWeightErr = 0.;
-    float stopWeightPlusErr = 0.;
-    float stopWeightMinusErr = 0.;
-    */
+     float stopWeight    = 0.;
+     float stopWeightErr = 0.;
+     float stopWeightPlusErr = 0.;
+     float stopWeightMinusErr = 0.;
+     */
     
     
     const double PI = 3.14159265;
@@ -163,9 +202,9 @@ int main( int argc, const char* argv[] ) {
     /********************************************************************************************************/
     
     
-//    float lumi = 19300; //5296.3; // ipb                                                                                 
+    //    float lumi = 19300; //5296.3; // ipb                                                                                 
     // add 5 GeV safety margin (deltaM = 10 GeV in the FineBin sample)  
-//    float Nevt_stop_oneMassPoint = 50000 * ( (genStopMassMax-genStopMassMin)/10. ) * ( (genDeltaM_stopChi0_Max-genDeltaM_stopChi0_Min)/10. );  
+    //    float Nevt_stop_oneMassPoint = 50000 * ( (genStopMassMax-genStopMassMin)/10. ) * ( (genDeltaM_stopChi0_Max-genDeltaM_stopChi0_Min)/10. );  
     // 50k evts per point x Npoints
     
     ////input cuts/commands    
@@ -191,6 +230,7 @@ int main( int argc, const char* argv[] ) {
     int  startPointNum   = 1;
     int  numBreakPoints  = 0;
     BEI.isSignal         = 0;
+    bool fileContainsTrueSmearedJets = 0;
     //bool isSignal  = 0;      // Whether or not one is running on signal -- if this is turned on the next two arguments have to be the stop mass to grab and the chi0 mass to grab respectively --- NOTE Now contained in the BasicEventInfo structure
     BEI.doReReco        = 0;
     int  startPoint, endPoint;
@@ -327,7 +367,7 @@ int main( int argc, const char* argv[] ) {
     else {
         fOutName += "_Output.root";        
     }
-    
+    if (fInName.Contains("SmearedJets")) fileContainsTrueSmearedJets = 1;
     cout << "saving to " << fOutName << endl;
     TFile * outputFile;
     outputFile = new TFile(fOutName,"RECREATE");
@@ -527,8 +567,189 @@ int main( int argc, const char* argv[] ) {
         fileTree.SetBranchAddress("TMET_JetESDown",           &EMI_JetESDown.EventMET_preCorr);
         fileTree.SetBranchAddress("TMET_Phi_LepESUp",         &EMI_LepESUp.EventMETPhi_preCorr);
         fileTree.SetBranchAddress("TMET_Phi_LepESDown",       &EMI_LepESDown.EventMETPhi_preCorr);
-        fileTree.SetBranchAddress("TMET_Phi_LepESUp",         &EMI_JetESUp.EventMETPhi_preCorr);
-        fileTree.SetBranchAddress("TMET_Phi_LepESDown",       &EMI_JetESDown.EventMETPhi_preCorr);
+        fileTree.SetBranchAddress("TMET_Phi_JetESUp",         &EMI_JetESUp.EventMETPhi_preCorr);
+        fileTree.SetBranchAddress("TMET_Phi_JetESDown",       &EMI_JetESDown.EventMETPhi_preCorr);
+        
+        
+        
+        
+        fileTree.SetBranchAddress("TSmearMET",                &SmearEMI.EventMET_preCorr);
+        fileTree.SetBranchAddress("TSmearMET_Phi",            &SmearEMI.EventMETPhi_preCorr);
+        
+        fileTree.SetBranchAddress("TNSmearJets",              &SmearEJI.EventNJets); 
+        fileTree.SetBranchAddress("TNSmearJetsBtag",          &SmearEJI.EventNBtagJets);
+        fileTree.SetBranchAddress("THTSmear",                 &SmearEJI.EventHT);
+        
+        fileTree.SetBranchAddress("TJet0isGenMatched",        &SmearEJI.EventJet0isGenMatched);
+        fileTree.SetBranchAddress("TJet0DeltaEnRecoGenMatch", &SmearEJI.EventJet0DeltaEnRecoGen);
+        fileTree.SetBranchAddress("TJet1isGenMatched",        &SmearEJI.EventJet1isGenMatched);
+        fileTree.SetBranchAddress("TJet1DeltaEnRecoGenMatch", &SmearEJI.EventJet1DeltaEnRecoGen);
+        
+        fileTree.SetBranchAddress("TSmearJet0Px",             &SmearEJI.EventJet0Px); 
+        fileTree.SetBranchAddress("TSmearJet0Py",             &SmearEJI.EventJet0Py); 
+        fileTree.SetBranchAddress("TSmearJet0Pz",             &SmearEJI.EventJet0Pz); 
+        fileTree.SetBranchAddress("TSmearJet0E",              &SmearEJI.EventJet0E);
+        fileTree.SetBranchAddress("TSmearJet1Px",             &SmearEJI.EventJet1Px); 
+        fileTree.SetBranchAddress("TSmearJet1Py",             &SmearEJI.EventJet1Py); 
+        fileTree.SetBranchAddress("TSmearJet1Pz",             &SmearEJI.EventJet1Pz); 
+        fileTree.SetBranchAddress("TSmearJet1E",              &SmearEJI.EventJet1E);
+        
+        fileTree.SetBranchAddress("TSmearBtagJet0Px",         &SmearEJI.EventBtagJet0Px); 
+        fileTree.SetBranchAddress("TSmearBtagJet0Py",         &SmearEJI.EventBtagJet0Py); 
+        fileTree.SetBranchAddress("TSmearBtagJet0Pz",         &SmearEJI.EventBtagJet0Pz); 
+        fileTree.SetBranchAddress("TSmearBtagJet0E",          &SmearEJI.EventBtagJet0E);
+        fileTree.SetBranchAddress("TSmearBtagJet0Index",      &SmearEJI.EventBtagJet0Index);    
+        fileTree.SetBranchAddress("TSmearBtagJet1Px",         &SmearEJI.EventBtagJet1Px); 
+        fileTree.SetBranchAddress("TSmearBtagJet1Py",         &SmearEJI.EventBtagJet1Py); 
+        fileTree.SetBranchAddress("TSmearBtagJet1Pz",         &SmearEJI.EventBtagJet1Pz); 
+        fileTree.SetBranchAddress("TSmearBtagJet1E",          &SmearEJI.EventBtagJet1E);
+        fileTree.SetBranchAddress("TSmearBtagJet1Index",      &SmearEJI.EventBtagJet1Index);
+        
+        ////####SMEAR JET Systematics Branches#####///////
+        fileTree.SetBranchAddress("TSmearMET_LepESUp",            &SmearEMI_LepESUp.EventMET_preCorr);
+        fileTree.SetBranchAddress("TSmearMET_LepESDown",          &SmearEMI_LepESDown.EventMET_preCorr);
+        fileTree.SetBranchAddress("TSmearMET_Phi_LepESUp",        &SmearEMI_LepESUp.EventMETPhi_preCorr);
+        fileTree.SetBranchAddress("TSmearMET_Phi_LepESDown",      &SmearEMI_LepESDown.EventMETPhi_preCorr);
+        
+        fileTree.SetBranchAddress("TSmearMET_JetESUp",            &SmearEMI_JetESUp.EventMET_preCorr);
+        fileTree.SetBranchAddress("TSmearMET_JetESDown",          &SmearEMI_JetESDown.EventMET_preCorr);
+        fileTree.SetBranchAddress("TSmearMET_Phi_JetESUp",        &SmearEMI_JetESUp.EventMETPhi_preCorr);
+        fileTree.SetBranchAddress("TSmearMET_Phi_JetESDown",      &SmearEMI_JetESDown.EventMETPhi_preCorr);
+        
+        fileTree.SetBranchAddress("TSmearMET_UncESUp",            &SmearEMI_UncESUp.EventMET_preCorr);
+        fileTree.SetBranchAddress("TSmearMET_UncESDown",          &SmearEMI_UncESDown.EventMET_preCorr);
+        fileTree.SetBranchAddress("TSmearMET_Phi_UncESUp",        &SmearEMI_UncESUp.EventMETPhi_preCorr);
+        fileTree.SetBranchAddress("TSmearMET_Phi_UncESDown",      &SmearEMI_UncESDown.EventMETPhi_preCorr);
+        
+        fileTree.SetBranchAddress("TSmearMET_JetSmearUp",         &SmearEMI_JetSmearUp.EventMET_preCorr);
+        fileTree.SetBranchAddress("TSmearMET_JetSmearDown",       &SmearEMI_JetSmearDown.EventMET_preCorr);
+        fileTree.SetBranchAddress("TSmearMET_Phi_JetSmearUp",     &SmearEMI_JetSmearUp.EventMETPhi_preCorr);
+        fileTree.SetBranchAddress("TSmearMET_Phi_JetSmearDown",   &SmearEMI_JetSmearDown.EventMETPhi_preCorr);
+        
+        fileTree.SetBranchAddress("TNSmearJets_JetESUp",              &SmearEJI_JetESUp.EventNJets); 
+        fileTree.SetBranchAddress("TNSmearJetsBtag_JetESUp",          &SmearEJI_JetESUp.EventNBtagJets);
+        fileTree.SetBranchAddress("THTSmear_JetESUp",                 &SmearEJI_JetESUp.EventHT);
+        
+        fileTree.SetBranchAddress("TNSmearJets_JetESDown",            &SmearEJI_JetESDown.EventNJets); 
+        fileTree.SetBranchAddress("TNSmearJetsBtag_JetESDown",        &SmearEJI_JetESDown.EventNBtagJets);
+        fileTree.SetBranchAddress("THTSmear_JetESDown",               &SmearEJI_JetESDown.EventHT);
+        
+        fileTree.SetBranchAddress("TSmearJet0Px_JetESUp",             &SmearEJI_JetESUp.EventJet0Px); 
+        fileTree.SetBranchAddress("TSmearJet0Py_JetESUp",             &SmearEJI_JetESUp.EventJet0Py); 
+        fileTree.SetBranchAddress("TSmearJet0Pz_JetESUp",             &SmearEJI_JetESUp.EventJet0Pz); 
+        fileTree.SetBranchAddress("TSmearJet0E_JetESUp",              &SmearEJI_JetESUp.EventJet0E);
+        fileTree.SetBranchAddress("TSmearJet1Px_JetESUp",             &SmearEJI_JetESUp.EventJet1Px); 
+        fileTree.SetBranchAddress("TSmearJet1Py_JetESUp",             &SmearEJI_JetESUp.EventJet1Py); 
+        fileTree.SetBranchAddress("TSmearJet1Pz_JetESUp",             &SmearEJI_JetESUp.EventJet1Pz); 
+        fileTree.SetBranchAddress("TSmearJet1E_JetESUp",              &SmearEJI_JetESUp.EventJet1E);       
+        
+        fileTree.SetBranchAddress("TSmearJet0Px_JetESDown",           &SmearEJI_JetESDown.EventJet0Px); 
+        fileTree.SetBranchAddress("TSmearJet0Py_JetESDown",           &SmearEJI_JetESDown.EventJet0Py); 
+        fileTree.SetBranchAddress("TSmearJet0Pz_JetESDown",           &SmearEJI_JetESDown.EventJet0Pz); 
+        fileTree.SetBranchAddress("TSmearJet0E_JetESDown",            &SmearEJI_JetESDown.EventJet0E);
+        fileTree.SetBranchAddress("TSmearJet1Px_JetESDown",           &SmearEJI_JetESDown.EventJet1Px); 
+        fileTree.SetBranchAddress("TSmearJet1Py_JetESDown",           &SmearEJI_JetESDown.EventJet1Py); 
+        fileTree.SetBranchAddress("TSmearJet1Pz_JetESDown",           &SmearEJI_JetESDown.EventJet1Pz); 
+        fileTree.SetBranchAddress("TSmearJet1E_JetESDown",            &SmearEJI_JetESDown.EventJet1E);
+        
+        fileTree.SetBranchAddress("TSmearBtagJet0Px_JetESUp",         &SmearEJI_JetESUp.EventBtagJet0Px); 
+        fileTree.SetBranchAddress("TSmearBtagJet0Py_JetESUp",         &SmearEJI_JetESUp.EventBtagJet0Py); 
+        fileTree.SetBranchAddress("TSmearBtagJet0Pz_JetESUp",         &SmearEJI_JetESUp.EventBtagJet0Pz); 
+        fileTree.SetBranchAddress("TSmearBtagJet0E_JetESUp",          &SmearEJI_JetESUp.EventBtagJet0E);
+        fileTree.SetBranchAddress("TSmearBtagJet0Index_JetESUp",      &SmearEJI_JetESUp.EventBtagJet0Index);    
+        fileTree.SetBranchAddress("TSmearBtagJet1Px_JetESUp",         &SmearEJI_JetESUp.EventBtagJet1Px); 
+        fileTree.SetBranchAddress("TSmearBtagJet1Py_JetESUp",         &SmearEJI_JetESUp.EventBtagJet1Py); 
+        fileTree.SetBranchAddress("TSmearBtagJet1Pz_JetESUp",         &SmearEJI_JetESUp.EventBtagJet1Pz); 
+        fileTree.SetBranchAddress("TSmearBtagJet1E_JetESUp",          &SmearEJI_JetESUp.EventBtagJet1E);
+        fileTree.SetBranchAddress("TSmearBtagJet1Index_JetESUp",      &SmearEJI_JetESUp.EventBtagJet1Index); 
+        
+        fileTree.SetBranchAddress("TSmearBtagJet0Px_JetESDown",       &SmearEJI_JetESDown.EventBtagJet0Px); 
+        fileTree.SetBranchAddress("TSmearBtagJet0Py_JetESDown",       &SmearEJI_JetESDown.EventBtagJet0Py); 
+        fileTree.SetBranchAddress("TSmearBtagJet0Pz_JetESDown",       &SmearEJI_JetESDown.EventBtagJet0Pz); 
+        fileTree.SetBranchAddress("TSmearBtagJet0E_JetESDown",        &SmearEJI_JetESDown.EventBtagJet0E);
+        fileTree.SetBranchAddress("TSmearBtagJet0Index_JetESDown",    &SmearEJI_JetESDown.EventBtagJet0Index);    
+        fileTree.SetBranchAddress("TSmearBtagJet1Px_JetESDown",       &SmearEJI_JetESDown.EventBtagJet1Px); 
+        fileTree.SetBranchAddress("TSmearBtagJet1Py_JetESDown",       &SmearEJI_JetESDown.EventBtagJet1Py); 
+        fileTree.SetBranchAddress("TSmearBtagJet1Pz_JetESDown",       &SmearEJI_JetESDown.EventBtagJet1Pz); 
+        fileTree.SetBranchAddress("TSmearBtagJet1E_JetESDown",        &SmearEJI_JetESDown.EventBtagJet1E);
+        fileTree.SetBranchAddress("TSmearBtagJet1Index_JetESDown",    &SmearEJI_JetESDown.EventBtagJet1Index);
+        
+        fileTree.SetBranchAddress("TNSmearJetsBtag_BTagSFUp",         &SmearEJI_BTagSFUp.EventNBtagJets);        
+        fileTree.SetBranchAddress("TSmearBtagJet0Px_BTagSFUp",        &SmearEJI_BTagSFUp.EventBtagJet0Px); 
+        fileTree.SetBranchAddress("TSmearBtagJet0Py_BTagSFUp",        &SmearEJI_BTagSFUp.EventBtagJet0Py); 
+        fileTree.SetBranchAddress("TSmearBtagJet0Pz_BTagSFUp",        &SmearEJI_BTagSFUp.EventBtagJet0Pz); 
+        fileTree.SetBranchAddress("TSmearBtagJet0E_BTagSFUp",         &SmearEJI_BTagSFUp.EventBtagJet0E);
+        fileTree.SetBranchAddress("TSmearBtagJet0Index_BTagSFUp",     &SmearEJI_BTagSFUp.EventBtagJet0Index);    
+        fileTree.SetBranchAddress("TSmearBtagJet1Px_BTagSFUp",        &SmearEJI_BTagSFUp.EventBtagJet1Px); 
+        fileTree.SetBranchAddress("TSmearBtagJet1Py_BTagSFUp",        &SmearEJI_BTagSFUp.EventBtagJet1Py); 
+        fileTree.SetBranchAddress("TSmearBtagJet1Pz_BTagSFUp",        &SmearEJI_BTagSFUp.EventBtagJet1Pz); 
+        fileTree.SetBranchAddress("TSmearBtagJet1E_BTagSFUp",         &SmearEJI_BTagSFUp.EventBtagJet1E);
+        fileTree.SetBranchAddress("TSmearBtagJet1Index_BTagSFUp",     &SmearEJI_BTagSFUp.EventBtagJet1Index);
+        
+        fileTree.SetBranchAddress("TNSmearJetsBtag_BTagSFDown",       &SmearEJI_BTagSFDown.EventNBtagJets);        
+        fileTree.SetBranchAddress("TSmearBtagJet0Px_BTagSFDown",      &SmearEJI_BTagSFDown.EventBtagJet0Px); 
+        fileTree.SetBranchAddress("TSmearBtagJet0Py_BTagSFDown",      &SmearEJI_BTagSFDown.EventBtagJet0Py); 
+        fileTree.SetBranchAddress("TSmearBtagJet0Pz_BTagSFDown",      &SmearEJI_BTagSFDown.EventBtagJet0Pz); 
+        fileTree.SetBranchAddress("TSmearBtagJet0E_BTagSFDown",       &SmearEJI_BTagSFDown.EventBtagJet0E);
+        fileTree.SetBranchAddress("TSmearBtagJet0Index_BTagSFDown",   &SmearEJI_BTagSFDown.EventBtagJet0Index);    
+        fileTree.SetBranchAddress("TSmearBtagJet1Px_BTagSFDown",      &SmearEJI_BTagSFDown.EventBtagJet1Px); 
+        fileTree.SetBranchAddress("TSmearBtagJet1Py_BTagSFDown",      &SmearEJI_BTagSFDown.EventBtagJet1Py); 
+        fileTree.SetBranchAddress("TSmearBtagJet1Pz_BTagSFDown",      &SmearEJI_BTagSFDown.EventBtagJet1Pz); 
+        fileTree.SetBranchAddress("TSmearBtagJet1E_BTagSFDown",       &SmearEJI_BTagSFDown.EventBtagJet1E);
+        fileTree.SetBranchAddress("TSmearBtagJet1Index_BTagSFDown",   &SmearEJI_BTagSFDown.EventBtagJet1Index);
+        
+        
+        
+        
+        fileTree.SetBranchAddress("TNSmearJets_JetSmearUp",           &SmearEJI_JetSmearUp.EventNJets); 
+        fileTree.SetBranchAddress("TNSmearJetsBtag_JetSmearUp",       &SmearEJI_JetSmearUp.EventNBtagJets);
+        fileTree.SetBranchAddress("THTSmear_JetSmearUp",              &SmearEJI_JetSmearUp.EventHT);
+        
+        fileTree.SetBranchAddress("TNSmearJets_JetSmearDown",         &SmearEJI_JetSmearDown.EventNJets); 
+        fileTree.SetBranchAddress("TNSmearJetsBtag_JetSmearDown",     &SmearEJI_JetSmearDown.EventNBtagJets);
+        fileTree.SetBranchAddress("THTSmear_JetSmearDown",            &SmearEJI_JetSmearDown.EventHT);
+        
+        fileTree.SetBranchAddress("TSmearJet0Px_JetSmearUp",          &SmearEJI_JetSmearUp.EventJet0Px); 
+        fileTree.SetBranchAddress("TSmearJet0Py_JetSmearUp",          &SmearEJI_JetSmearUp.EventJet0Py); 
+        fileTree.SetBranchAddress("TSmearJet0Pz_JetSmearUp",          &SmearEJI_JetSmearUp.EventJet0Pz); 
+        fileTree.SetBranchAddress("TSmearJet0E_JetSmearUp",           &SmearEJI_JetSmearUp.EventJet0E);
+        fileTree.SetBranchAddress("TSmearJet1Px_JetSmearUp",          &SmearEJI_JetSmearUp.EventJet1Px); 
+        fileTree.SetBranchAddress("TSmearJet1Py_JetSmearUp",          &SmearEJI_JetSmearUp.EventJet1Py); 
+        fileTree.SetBranchAddress("TSmearJet1Pz_JetSmearUp",          &SmearEJI_JetSmearUp.EventJet1Pz); 
+        fileTree.SetBranchAddress("TSmearJet1E_JetSmearUp",           &SmearEJI_JetSmearUp.EventJet1E);       
+        
+        fileTree.SetBranchAddress("TSmearJet0Px_JetSmearDown",        &SmearEJI_JetSmearDown.EventJet0Px); 
+        fileTree.SetBranchAddress("TSmearJet0Py_JetSmearDown",        &SmearEJI_JetSmearDown.EventJet0Py); 
+        fileTree.SetBranchAddress("TSmearJet0Pz_JetSmearDown",        &SmearEJI_JetSmearDown.EventJet0Pz); 
+        fileTree.SetBranchAddress("TSmearJet0E_JetSmearDown",         &SmearEJI_JetSmearDown.EventJet0E);
+        fileTree.SetBranchAddress("TSmearJet1Px_JetSmearDown",        &SmearEJI_JetSmearDown.EventJet1Px); 
+        fileTree.SetBranchAddress("TSmearJet1Py_JetSmearDown",        &SmearEJI_JetSmearDown.EventJet1Py); 
+        fileTree.SetBranchAddress("TSmearJet1Pz_JetSmearDown",        &SmearEJI_JetSmearDown.EventJet1Pz); 
+        fileTree.SetBranchAddress("TSmearJet1E_JetSmearDown",         &SmearEJI_JetSmearDown.EventJet1E);
+        
+        fileTree.SetBranchAddress("TSmearBtagJet0Px_JetSmearUp",      &SmearEJI_JetSmearUp.EventBtagJet0Px); 
+        fileTree.SetBranchAddress("TSmearBtagJet0Py_JetSmearUp",      &SmearEJI_JetSmearUp.EventBtagJet0Py); 
+        fileTree.SetBranchAddress("TSmearBtagJet0Pz_JetSmearUp",      &SmearEJI_JetSmearUp.EventBtagJet0Pz); 
+        fileTree.SetBranchAddress("TSmearBtagJet0E_JetSmearUp",       &SmearEJI_JetSmearUp.EventBtagJet0E);
+        fileTree.SetBranchAddress("TSmearBtagJet0Index_JetSmearUp",   &SmearEJI_JetSmearUp.EventBtagJet0Index);    
+        fileTree.SetBranchAddress("TSmearBtagJet1Px_JetSmearUp",      &SmearEJI_JetSmearUp.EventBtagJet1Px); 
+        fileTree.SetBranchAddress("TSmearBtagJet1Py_JetSmearUp",      &SmearEJI_JetSmearUp.EventBtagJet1Py); 
+        fileTree.SetBranchAddress("TSmearBtagJet1Pz_JetSmearUp",      &SmearEJI_JetSmearUp.EventBtagJet1Pz); 
+        fileTree.SetBranchAddress("TSmearBtagJet1E_JetSmearUp",       &SmearEJI_JetSmearUp.EventBtagJet1E);
+        fileTree.SetBranchAddress("TSmearBtagJet1Index_JetSmearUp",   &SmearEJI_JetSmearUp.EventBtagJet1Index); 
+        
+        fileTree.SetBranchAddress("TSmearBtagJet0Px_JetSmearDown",    &SmearEJI_JetSmearDown.EventBtagJet0Px); 
+        fileTree.SetBranchAddress("TSmearBtagJet0Py_JetSmearDown",    &SmearEJI_JetSmearDown.EventBtagJet0Py); 
+        fileTree.SetBranchAddress("TSmearBtagJet0Pz_JetSmearDown",    &SmearEJI_JetSmearDown.EventBtagJet0Pz); 
+        fileTree.SetBranchAddress("TSmearBtagJet0E_JetSmearDown",     &SmearEJI_JetSmearDown.EventBtagJet0E);
+        fileTree.SetBranchAddress("TSmearBtagJet0Index_JetSmearDown", &SmearEJI_JetSmearDown.EventBtagJet0Index);    
+        fileTree.SetBranchAddress("TSmearBtagJet1Px_JetSmearDown",    &SmearEJI_JetSmearDown.EventBtagJet1Px); 
+        fileTree.SetBranchAddress("TSmearBtagJet1Py_JetSmearDown",    &SmearEJI_JetSmearDown.EventBtagJet1Py); 
+        fileTree.SetBranchAddress("TSmearBtagJet1Pz_JetSmearDown",    &SmearEJI_JetSmearDown.EventBtagJet1Pz); 
+        fileTree.SetBranchAddress("TSmearBtagJet1E_JetSmearDown",     &SmearEJI_JetSmearDown.EventBtagJet1E);
+        fileTree.SetBranchAddress("TSmearBtagJet1Index_JetSmearDown", &SmearEJI_JetSmearDown.EventBtagJet1Index);
+        
+        
     }        
     if (fileTree.GetBranch("TGenMET")) {
         BEI.hasMETInfo = true;
@@ -583,14 +804,13 @@ int main( int argc, const char* argv[] ) {
     vector<HistogramT> * histVec_2D = TwoDeeHistTVec();
     vector<HistogramT> * histVec_3D = ThreeDeeHistTVec();
     vector<HistogramT> * histVec_1D_Smear, * histVec_1D_Smear_Syst;
-    /*
+    
     if (!BEI.doData) {
-        histVec_1D_Smear = OneDeeHistTVecSmearJets();
+        histVec_1D_Smear = OneDeeSmearHistTVec(fileContainsTrueSmearedJets);
         histVec_1D_Smear_Syst = new vector<HistogramT>;
     }
-    */
     vector<SampleT> * subSampVec    = SubSampVec();    ///Define things necessary for booking histograms
-    vector<SystT> * systVec         = SystVec();
+    vector<SystT> * systVec         = SystVec(true);
     vector<HistogramT> * histVec_1D_Syst = new vector<HistogramT>;
     vector<HistogramT> * histVec_2D_Syst = new vector<HistogramT>;
     vector<HistogramT> * histVec_3D_Syst = new vector<HistogramT>;
@@ -600,6 +820,13 @@ int main( int argc, const char* argv[] ) {
     passCutMap subSampBool_LepESUp, subSampBool_LepESDown;
     passCutMap subSampBool_JetESUp, subSampBool_JetESDown;
     passCutMap subSampBool_BTagSFUp, subSampBool_BTagSFDown;
+    
+    passCutMap subSampBoolSmear; 
+    passCutMap subSampBoolSmear_LepESUp, subSampBoolSmear_LepESDown;
+    passCutMap subSampBoolSmear_JetESUp, subSampBoolSmear_JetESDown;
+    passCutMap subSampBoolSmear_BTagSFUp, subSampBoolSmear_BTagSFDown;
+    passCutMap subSampBoolSmear_UncESUp, subSampBoolSmear_UncESDown;
+    passCutMap subSampBoolSmear_JetSmearUp, subSampBoolSmear_JetSmearDown;
     SampleT S_Current;
     TString histTitle;
     TString axesTitle;
@@ -608,15 +835,16 @@ int main( int argc, const char* argv[] ) {
     float yBinMin, yBinMax;
     float zBinMin, zBinMax;
     if (doBookSyst) {
+        //        histVec_1D_Syst = AddSystHists(histVec_1D, systVec, fInName, BEI.isSignal);
+        //        histVec_2D_Syst = AddSystHists(histVec_2D, systVec, fInName, BEI.isSignal);
         histVec_1D_Syst = AddSystHists(histVec_1D, systVec, fInName, BEI.isSignal);
+        histVec_2D_Syst = AddSystHists(histVec_2D, systVec, fInName, BEI.isSignal);
         
-        histVec_2D_Syst = AddSystHists(histVec_2D, systVec, fInName, BEI.isSignal);        
         /*
          histVec_3D_Syst = AddSystHists(histVec_3D, systVec, fInName, BEI.isSignal);
          */
-//        histVec_1D_Smear_Syst = AddSystHists(histVec_1D_Smear, systVec, fInName, BEI.isSignal);
-        //        addSystHists(histVec_2D, systVec);
-        //        addSystHists(histVec_3D, systVec);
+        //        histVec_1D_Smear_Syst = AddSystHists(histVec_1D_Smear, systVec, fInName, BEI.isSignal);
+        histVec_1D_Smear_Syst = AddSystHists(histVec_1D_Smear, systVec, fInName, BEI.isSignal);
     }
     for (unsigned int i = 0; i < subSampVec->size(); ++i) {
         S_Current = subSampVec->at(i);
@@ -636,7 +864,7 @@ int main( int argc, const char* argv[] ) {
                 xBinMin = H_Current.xMin;
                 xBinMax = H_Current.xMax;
             }
-            if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !H_Current.name.Contains("h_PassMT2ll") && !(H_Current.name.Contains("h_MT2llControl"))) {
+            if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !H_Current.name.Contains("PassMT2ll") && !(H_Current.name.Contains("MT2llControl"))) {
                 xBinMax = xBinMax / 2;
             }
             //            if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.
@@ -663,7 +891,7 @@ int main( int argc, const char* argv[] ) {
             nYBins = H_Current.yBinN;
             yBinMin = H_Current.yMin;
             yBinMax = H_Current.yMax;
-            if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !H_Current.name.Contains("h_PassMT2ll") && !(H_Current.name.Contains("h_MT2llControl"))) {
+            if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !H_Current.name.Contains("PassMT2ll") && !(H_Current.name.Contains("MT2llControl"))) {
                 xBinMax = xBinMax / 2;
             }
             h_2DCurr = new TH2F(histTitle, axesTitle, nXBins, xBinMin, xBinMax, nYBins, yBinMin, yBinMax); h_2DCurr->Sumw2();
@@ -684,15 +912,16 @@ int main( int argc, const char* argv[] ) {
             nZBins = H_Current.zBinN;
             zBinMin = H_Current.zMin;
             zBinMax = H_Current.zMax;
-            if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !H_Current.name.Contains("h_PassMT2ll") && !(H_Current.name.Contains("h_MT2llControl"))) {
+            if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !H_Current.name.Contains("PassMT2ll") && !(H_Current.name.Contains("MT2llControl"))) {
                 xBinMax = xBinMax / 2;
             }
             h_3DCurr = new TH3F(histTitle, axesTitle, nXBins, xBinMin, xBinMax, nYBins, yBinMin, yBinMax, nZBins, zBinMin, zBinMax); h_3DCurr->Sumw2(); 
             histMap_3D[histKey(H_Current, S_Current)] = h_3DCurr;
         }
-        if (doBookSyst) {
-            for (unsigned int js = 0; js < histVec_1D_Syst->size(); ++js) {                
-                H_Current = histVec_1D_Syst->at(js);
+        
+        if (!BEI.doData) {
+            for (unsigned int iSmear = 0; iSmear < histVec_1D_Smear->size(); ++iSmear) {
+                H_Current = histVec_1D_Smear->at(iSmear);
                 histTitle = H_Current.name + S_Current.histNameSuffix;
                 axesTitle = ";"; axesTitle += H_Current.xLabel;// axesTitle += S_Current.histXaxisSuffix;
                 axesTitle += ";"; axesTitle += H_Current.yLabel;  
@@ -706,54 +935,99 @@ int main( int argc, const char* argv[] ) {
                     xBinMin = H_Current.xMin;
                     xBinMax = H_Current.xMax;
                 }
-                if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !H_Current.name.Contains("h_PassMT2ll") && !(H_Current.name.Contains("h_MT2llControl"))) {
+                if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !H_Current.name.Contains("PassMT2ll") && !(H_Current.name.Contains("MT2llControl"))) {
                     xBinMax = xBinMax / 2;
                 }
                 h_1DCurr = new TH1F(histTitle, axesTitle, nXBins, xBinMin, xBinMax); h_1DCurr->Sumw2();
                 histMap_1D[histKey(H_Current, S_Current)] = h_1DCurr;
-                //will this cause memory leaks?
             }
-             for (unsigned int ks = 0; ks < histVec_2D_Syst->size(); ++ks) {
-             H_Current = histVec_2D_Syst->at(ks);
-             histTitle = H_Current.name + S_Current.histNameSuffix;
-             axesTitle = ";"; axesTitle += H_Current.xLabel;// axesTitle += S_Current.histXaxisSuffix;
-             axesTitle += ";"; axesTitle += H_Current.yLabel;// axesTitle += S_Current.histYaxisSuffix;
-             axesTitle += ";"; axesTitle += H_Current.zLabel;
-             nXBins = H_Current.xBinN;
-             xBinMin = H_Current.xMin;
-             xBinMax = H_Current.xMax;
-             nYBins = H_Current.yBinN;
-             yBinMin = H_Current.yMin;
-             yBinMax = H_Current.yMax;
-             if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !H_Current.name.Contains("h_PassMT2ll") && !(H_Current.name.Contains("h_MT2llControl"))) {
-             xBinMax = xBinMax / 2;
-             }
-             h_2DCurr = new TH2F(histTitle, axesTitle, nXBins, xBinMin, xBinMax, nYBins, yBinMin, yBinMax); h_2DCurr->Sumw2();
-             histMap_2D[histKey(H_Current, S_Current)] = h_2DCurr;
-             }
-            /*
-             for (unsigned int ls = 0; ls < histVec_3D_Syst->size(); ++ls) {
-             H_Current = histVec_3D_Syst->at(ls);
-             histTitle = H_Current.name + S_Current.histNameSuffix;
-             axesTitle = ";"; axesTitle += H_Current.xLabel;// axesTitle += S_Current.histXaxisSuffix;
-             axesTitle += ";"; axesTitle += H_Current.yLabel;// axesTitle += S_Current.histYaxisSuffix;
-             axesTitle += ";"; axesTitle += H_Current.zLabel;
-             nXBins = H_Current.xBinN;
-             xBinMin = H_Current.xMin;
-             xBinMax = H_Current.xMax;
-             nYBins = H_Current.yBinN;
-             yBinMin = H_Current.yMin;
-             yBinMax = H_Current.yMax;
-             nZBins = H_Current.zBinN;
-             zBinMin = H_Current.zMin;
-             zBinMax = H_Current.zMax;
-             if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !H_Current.name.Contains("h_PassMT2ll") && !(H_Current.name.Contains("h_MT2llControl"))) {
-             xBinMax = xBinMax / 2;
-             }
-             h_3DCurr = new TH3F(histTitle, axesTitle, nXBins, xBinMin, xBinMax, nYBins, yBinMin, yBinMax, nZBins, zBinMin, zBinMax); h_3DCurr->Sumw2(); 
-             histMap_3D[histKey(H_Current, S_Current)] = h_3DCurr;
-             }
-             */
+            if (doBookSyst) {
+                for (unsigned int iSmearSyst = 0; iSmearSyst < histVec_1D_Smear_Syst->size(); ++iSmearSyst) {
+                    H_Current = histVec_1D_Smear_Syst->at(iSmearSyst);
+                    histTitle = H_Current.name + S_Current.histNameSuffix;
+                    axesTitle = ";"; axesTitle += H_Current.xLabel;// axesTitle += S_Current.histXaxisSuffix;
+                    axesTitle += ";"; axesTitle += H_Current.yLabel;  
+                    if (S_Current.doZVeto == 0 && H_Current.xLabel.Contains("M_{ll}")) {
+                        nXBins = 100;
+                        xBinMin = ZWindowLB - 10;
+                        xBinMax = ZWindowUB + 10;
+                    }
+                    else {
+                        nXBins = H_Current.xBinN;
+                        xBinMin = H_Current.xMin;
+                        xBinMax = H_Current.xMax;
+                    }
+                    if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !H_Current.name.Contains("PassMT2ll") && !(H_Current.name.Contains("MT2llControl"))) {
+                        xBinMax = xBinMax / 2;
+                    }
+                    h_1DCurr = new TH1F(histTitle, axesTitle, nXBins, xBinMin, xBinMax); h_1DCurr->Sumw2();
+                    histMap_1D[histKey(H_Current, S_Current)] = h_1DCurr;
+                }
+                
+                for (unsigned int js = 0; js < histVec_1D_Syst->size(); ++js) {                
+                    H_Current = histVec_1D_Syst->at(js);
+                    histTitle = H_Current.name + S_Current.histNameSuffix;
+                    axesTitle = ";"; axesTitle += H_Current.xLabel;// axesTitle += S_Current.histXaxisSuffix;
+                    axesTitle += ";"; axesTitle += H_Current.yLabel;  
+                    if (S_Current.doZVeto == 0 && H_Current.xLabel.Contains("M_{ll}")) {
+                        nXBins = 100;
+                        xBinMin = ZWindowLB - 10;
+                        xBinMax = ZWindowUB + 10;
+                    }
+                    else {
+                        nXBins = H_Current.xBinN;
+                        xBinMin = H_Current.xMin;
+                        xBinMax = H_Current.xMax;
+                    }
+                    if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !H_Current.name.Contains("PassMT2ll") && !(H_Current.name.Contains("MT2llControl"))) {
+                        xBinMax = xBinMax / 2;
+                    }
+                    h_1DCurr = new TH1F(histTitle, axesTitle, nXBins, xBinMin, xBinMax); h_1DCurr->Sumw2();
+                    histMap_1D[histKey(H_Current, S_Current)] = h_1DCurr;
+                    //will this cause memory leaks?
+                }
+                for (unsigned int ks = 0; ks < histVec_2D_Syst->size(); ++ks) {
+                    H_Current = histVec_2D_Syst->at(ks);
+                    histTitle = H_Current.name + S_Current.histNameSuffix;
+                    axesTitle = ";"; axesTitle += H_Current.xLabel;// axesTitle += S_Current.histXaxisSuffix;
+                    axesTitle += ";"; axesTitle += H_Current.yLabel;// axesTitle += S_Current.histYaxisSuffix;
+                    axesTitle += ";"; axesTitle += H_Current.zLabel;
+                    nXBins = H_Current.xBinN;
+                    xBinMin = H_Current.xMin;
+                    xBinMax = H_Current.xMax;
+                    nYBins = H_Current.yBinN;
+                    yBinMin = H_Current.yMin;
+                    yBinMax = H_Current.yMax;
+                    if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !H_Current.name.Contains("PassMT2ll") && !(H_Current.name.Contains("MT2llControl"))) {
+                        xBinMax = xBinMax / 2;
+                    }
+                    h_2DCurr = new TH2F(histTitle, axesTitle, nXBins, xBinMin, xBinMax, nYBins, yBinMin, yBinMax); h_2DCurr->Sumw2();
+                    histMap_2D[histKey(H_Current, S_Current)] = h_2DCurr;
+                }
+                /*
+                 for (unsigned int ls = 0; ls < histVec_3D_Syst->size(); ++ls) {
+                 H_Current = histVec_3D_Syst->at(ls);
+                 histTitle = H_Current.name + S_Current.histNameSuffix;
+                 axesTitle = ";"; axesTitle += H_Current.xLabel;// axesTitle += S_Current.histXaxisSuffix;
+                 axesTitle += ";"; axesTitle += H_Current.yLabel;// axesTitle += S_Current.histYaxisSuffix;
+                 axesTitle += ";"; axesTitle += H_Current.zLabel;
+                 nXBins = H_Current.xBinN;
+                 xBinMin = H_Current.xMin;
+                 xBinMax = H_Current.xMax;
+                 nYBins = H_Current.yBinN;
+                 yBinMin = H_Current.yMin;
+                 yBinMax = H_Current.yMax;
+                 nZBins = H_Current.zBinN;
+                 zBinMin = H_Current.zMin;
+                 zBinMax = H_Current.zMax;
+                 if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !H_Current.name.Contains("h_PassMT2ll") && !(H_Current.name.Contains("h_MT2llControl"))) {
+                 xBinMax = xBinMax / 2;
+                 }
+                 h_3DCurr = new TH3F(histTitle, axesTitle, nXBins, xBinMin, xBinMax, nYBins, yBinMin, yBinMax, nZBins, zBinMin, zBinMax); h_3DCurr->Sumw2(); 
+                 histMap_3D[histKey(H_Current, S_Current)] = h_3DCurr;
+                 }
+                 */
+            }
         }
     }   
     /////
@@ -810,7 +1084,7 @@ int main( int argc, const char* argv[] ) {
         EJI.EJIDefaultVarVals();
         EMI.EMIDefaultVarVals();
         EDSI.EDSIDefaultVarVals();
-
+        
         if (!BEI.doData) {
             EGPI.EGPIDefaultVarVals();
             ELI_LepESUp.ELIDefaultVarVals();
@@ -834,11 +1108,48 @@ int main( int argc, const char* argv[] ) {
             EDSI_JetESDown.EDSIDefaultVarVals();
             EDSI_BTagSFUp.EDSIDefaultVarVals();
             EDSI_BTagSFDown.EDSIDefaultVarVals();
-        }
-        
-        
+            
+            SmearEJI.EJIDefaultVarVals();
+            SmearEJI_JetESUp.EJIDefaultVarVals();
+            SmearEJI_JetESDown.EJIDefaultVarVals();
+            SmearEJI_BTagSFUp.EJIDefaultVarVals();
+            SmearEJI_BTagSFDown.EJIDefaultVarVals();
+            SmearEJI_JetSmearUp.EJIDefaultVarVals();
+            SmearEJI_JetSmearDown.EJIDefaultVarVals();
+            
+            SmearEMI.EMIDefaultVarVals();
+            SmearEMI_LepESUp.EMIDefaultVarVals();
+            SmearEMI_LepESDown.EMIDefaultVarVals();
+            SmearEMI_JetESUp.EMIDefaultVarVals();
+            SmearEMI_JetESDown.EMIDefaultVarVals();
+            SmearEMI_BTagSFUp.EMIDefaultVarVals();
+            SmearEMI_BTagSFDown.EMIDefaultVarVals();
+            SmearEMI_UncESUp.EMIDefaultVarVals();
+            SmearEMI_UncESDown.EMIDefaultVarVals();
+            SmearEMI_JetSmearUp.EMIDefaultVarVals();
+            SmearEMI_JetSmearDown.EMIDefaultVarVals();
+            
+            SmearEDSI.EDSIDefaultVarVals();
+            SmearEDSI_LepESUp.EDSIDefaultVarVals();
+            SmearEDSI_LepESDown.EDSIDefaultVarVals();
+            SmearEDSI_JetESUp.EDSIDefaultVarVals();
+            SmearEDSI_JetESDown.EDSIDefaultVarVals();
+            SmearEDSI_BTagSFUp.EDSIDefaultVarVals();
+            SmearEDSI_BTagSFDown.EDSIDefaultVarVals();
+            SmearEDSI_JetSmearUp.EDSIDefaultVarVals();
+            SmearEDSI_JetSmearDown.EDSIDefaultVarVals();
+        }        
         fileTree.GetEntry(ievt);
-//        cout << "test 1 " << endl;
+        if (!fileContainsTrueSmearedJets) {
+            SmearEJI= EJI;
+            SmearEJI_JetESUp= EJI_JetESUp;
+            SmearEJI_JetESDown= EJI_JetESDown;
+            SmearEJI_BTagSFUp= EJI_BTagSFUp;
+            SmearEJI_BTagSFDown= EJI_BTagSFDown;
+            SmearEJI_JetSmearUp= EJI;
+            SmearEJI_JetSmearDown = EJI;            
+        }
+        //        cout << "test 1 " << endl;
         if (whichNTupleType == 0) {
             ELI.doEvent = EventPassTrigger(&BEI, &ELI);
             if (!BEI.doData) {
@@ -854,7 +1165,7 @@ int main( int argc, const char* argv[] ) {
             keepEvent = true;
         }
         if (!keepEvent) continue;
-//        cout << "test 2 " << endl;
+        //        cout << "test 2 " << endl;
         if (!BEI.doData) {
             EGPI.weight_GenTopReweight = 1.; // set it to 1 for default -- will switch later if "hasTopInfo"
             if (BEI.isSignal) {
@@ -873,7 +1184,7 @@ int main( int argc, const char* argv[] ) {
                 EGPI.genMET.PDGStatus = 0;
                 EGPI.genMET.Mass = 0.;
             }
-            if (BEI.hasTopInfo) {
+            if (BEI.hasTopInfo && (fInName.Contains("TT") || fInName.Contains("ttbar"))) {
                 genTop0Vec.SetPtEtaPhiE(genTop0Pt, genTop0Eta, genTop0Phi, genTop0En);
                 EGPI.genTop0.P4 = genTop0Vec;
                 EGPI.genTop0.PDGID = genTop0PdgId;
@@ -921,7 +1232,7 @@ int main( int argc, const char* argv[] ) {
         if (!BEI.doData) {
             BEI.weight = nVtxWeight(&BEI, nVtxSFHistOviToDESY, nVtxSFHist_v2, h_S7toS10RWHist, nVtxSFHist);
             BEI_GenTopRW.SetVars(&BEI); // i.e. no GenTopReweighting systematic.
-//            cout << "EGPI.weight_GenTopReweight " << EGPI.weight_GenTopReweight << endl;
+            //            cout << "EGPI.weight_GenTopReweight " << EGPI.weight_GenTopReweight << endl;
             BEI.weight *= EGPI.weight_GenTopReweight;
             BEI.preNVtxRWWeight *= EGPI.weight_GenTopReweight;
             BEI_LepESUp.SetVars(&BEI);
@@ -931,8 +1242,17 @@ int main( int argc, const char* argv[] ) {
             BEI_LepEffSFUp.SetVars(&BEI);
             BEI_LepEffSFDown.SetVars(&BEI);
         }
+        /*
+        cout << endl;
+        cout << "EMI.EventMET_preCorr " << EMI.EventMET_preCorr << endl;
+        cout << "EMI_LepESUp.EventMET_preCorr " << EMI_LepESUp.EventMET_preCorr << endl;
+        cout << "EMI_LepESDown.EventMET_preCorr " << EMI_LepESDown.EventMET_preCorr << endl;
+        cout << "EMI.EventMETPhi_preCorr " << EMI.EventMETPhi_preCorr << endl;
+        cout << "EMI_LepESUp.EventMETPhi_preCorr " << EMI_LepESUp.EventMETPhi_preCorr << endl;
+        cout << "EMI_LepESDown.EventMETPhi_preCorr " << EMI_LepESDown.EventMETPhi_preCorr << endl;
+        */
         SetEventInformation(&BEI, &ELI, &EJI, EMI, EDSI);
-
+        
         ///****************************************
         // Call the code to set up the event information
         ///****************************************        
@@ -942,21 +1262,40 @@ int main( int argc, const char* argv[] ) {
         if (ELI.EventDiLepType == -2) ELI.EventDiLepType = 2;
         if (BEI.doData) {
             if (!ELI.doEvent) continue;
-//            cout << "test 3 " << endl;
+            //            cout << "test 3 " << endl;
         }
         else {            
             if (doVerbosity) {
                 cout << "Type " << ELI.EventDiLepType << endl;
                 cout << "weight pre scale " << BEI.weight << endl;
             }
-            SetEventInformation(&BEI, &ELI_LepESUp,   &EJI,            EMI_LepESUp,    EDSI_LepESUp);
-            SetEventInformation(&BEI, &ELI_LepESDown, &EJI,            EMI_LepESDown,  EDSI_LepESDown);
-            SetEventInformation(&BEI, &ELI,           &EJI_JetESUp,    EMI_JetESUp,    EDSI_JetESUp);
-            SetEventInformation(&BEI, &ELI,           &EJI_JetESDown,  EMI_JetESDown,  EDSI_JetESDown);
-            EJI_BTagSFUp = EJI;
-            EJI_BTagSFDown = EJI;
+            SetEventInformation(&BEI_LepESUp,   &ELI_LepESUp,   &EJI,            EMI_LepESUp,    EDSI_LepESUp);
+            SetEventInformation(&BEI_LepESDown, &ELI_LepESDown, &EJI,            EMI_LepESDown,  EDSI_LepESDown);
+            SetEventInformation(&BEI,           &ELI,           &EJI_JetESUp,    EMI_JetESUp,    EDSI_JetESUp);
+            SetEventInformation(&BEI,           &ELI,           &EJI_JetESDown,  EMI_JetESDown,  EDSI_JetESDown);
+            EJI_BTagSFUp.SetNonBTagInfo(&EJI);
+            EJI_BTagSFDown.SetNonBTagInfo(&EJI);
+            EMI_BTagSFUp = EMI;
+            EMI_BTagSFDown = EMI;
             SetEventInformation(&BEI, &ELI,           &EJI_BTagSFUp,   EMI_BTagSFUp,   EDSI_BTagSFUp);
             SetEventInformation(&BEI, &ELI,           &EJI_BTagSFDown, EMI_BTagSFDown, EDSI_BTagSFDown);
+            
+            SetEventInformation(&BEI, &ELI, &SmearEJI,              SmearEMI,              SmearEDSI);
+            SetEventInformation(&BEI, &ELI, &SmearEJI,              SmearEMI_LepESUp,      SmearEDSI_LepESUp);
+            SetEventInformation(&BEI, &ELI, &SmearEJI,              SmearEMI_LepESDown,    SmearEDSI_LepESDown);
+            SetEventInformation(&BEI, &ELI, &SmearEJI_JetESUp,      SmearEMI_JetESUp,      SmearEDSI_JetESUp);
+            SetEventInformation(&BEI, &ELI, &SmearEJI_JetESDown,    SmearEMI_JetESDown,    SmearEDSI_JetESDown);
+            SmearEJI_BTagSFUp.SetNonBTagInfo(&SmearEJI);
+            SmearEJI_BTagSFDown.SetNonBTagInfo(&SmearEJI);
+            SmearEMI_BTagSFUp = SmearEMI;
+            SmearEMI_BTagSFDown = SmearEMI;
+            SetEventInformation(&BEI, &ELI, &SmearEJI_BTagSFUp,     SmearEMI_BTagSFUp,     SmearEDSI_BTagSFUp);
+            SetEventInformation(&BEI, &ELI, &SmearEJI_BTagSFDown,   SmearEMI_BTagSFDown,   SmearEDSI_BTagSFDown);
+            SetEventInformation(&BEI, &ELI, &SmearEJI,              SmearEMI_UncESUp,      SmearEDSI_UncESUp);
+            SetEventInformation(&BEI, &ELI, &SmearEJI,              SmearEMI_UncESDown,    SmearEDSI_UncESDown);
+            SetEventInformation(&BEI, &ELI, &SmearEJI_JetSmearUp,   SmearEMI_JetSmearUp,   SmearEDSI_JetSmearUp);
+            SetEventInformation(&BEI, &ELI, &SmearEJI_JetSmearDown, SmearEMI_JetSmearDown, SmearEDSI_JetSmearDown);
+            
             if (ELI_LepESUp.Lep1.P4.Pt() < subLepPtCut) {
                 ELI_LepESUp.doEvent = false;
             }
@@ -966,13 +1305,13 @@ int main( int argc, const char* argv[] ) {
             if (ELI_LepESUp.EventDiLepType == -2) ELI_LepESUp.EventDiLepType = 2;
             if (ELI_LepESDown.EventDiLepType == -2) ELI_LepESDown.EventDiLepType = 2;
             if (!ELI.doEvent && !ELI_LepESUp.doEvent && !ELI_LepESDown.doEvent) continue;
-//            cout << " for ievt " << ievt << endl;
-//            cout << "Type " << ELI.EventDiLepType << endl;
-//            cout << "weight pre scale " << BEI.weight << endl;
+            //            cout << " for ievt " << ievt << endl;
+            //            cout << "Type " << ELI.EventDiLepType << endl;
+            //            cout << "weight pre scale " << BEI.weight << endl;
             BEI.weight *= ScaleFactorMC(ELI.EventDiLepType, 0);
             BEI.preNVtxRWWeight *= ScaleFactorMC(ELI.EventDiLepType, 0);
-//            cout << "Type " << ELI.EventDiLepType << endl;
-//            cout << "weight post scale " << BEI.weight << endl;
+            //            cout << "Type " << ELI.EventDiLepType << endl;
+            //            cout << "weight post scale " << BEI.weight << endl;
             
             
             BEI_GenTopRW.weight *= ScaleFactorMC(ELI.EventDiLepType, 0);
@@ -992,7 +1331,7 @@ int main( int argc, const char* argv[] ) {
             BEI_StopXSecUp.preNVtxRWWeight *= ScaleFactorMC(ELI.EventDiLepType, 0);
             BEI_StopXSecDown.weight *= ScaleFactorMC(ELI.EventDiLepType, 0);
             BEI_StopXSecDown.preNVtxRWWeight *= ScaleFactorMC(ELI.EventDiLepType, 0);
-
+            
             if (BEI.isSignal) {
                 BEI.weight *= EGPI.StopWeight;
                 BEI.preNVtxRWWeight *= EGPI.StopWeight;
@@ -1028,9 +1367,10 @@ int main( int argc, const char* argv[] ) {
                 if (!(fInName.Contains("MuEG") || fInName.Contains("emu_run2012"))) continue;
             }
         }
-//        cout << "test 4 " << endl;
+        //        cout << "test 4 " << endl;
         ESMT2I.SetVars(&EMI, &EJI, MT2llMeanSmear, MT2llUncEnUpDelta2D, MT2llUncEnDownDelta2D, MT2lbUncEnUpDelta2D, MT2lbUncEnDownDelta2D, vecOneDeeMT2llUncEnUp, vecOneDeeMT2llUncEnDown, vecOneDeeMT2lbUncEnUp, vecOneDeeMT2lbUncEnDown);
         
+        SmearESMT2I.SetVars(&SmearEMI, &SmearEJI, MT2llMeanSmear, MT2llUncEnUpDelta2D, MT2llUncEnDownDelta2D, MT2lbUncEnUpDelta2D, MT2lbUncEnDownDelta2D, vecOneDeeMT2llUncEnUp, vecOneDeeMT2llUncEnDown, vecOneDeeMT2lbUncEnUp, vecOneDeeMT2lbUncEnDown);
         /******************************************************/
         ///Set up the mapping of string keys to the appropriate event variables
         /*
@@ -1043,274 +1383,349 @@ int main( int argc, const char* argv[] ) {
         stringKeyToVar["nVtx"]      = (float) BEI.nVtx;
         stringKeyToVar["nVtxTrue"]  = (float) BEI.nVtxTrue;
         
-        SetStringKeyMap(stringKeyToVar, &ELI, &EJI, &EMI, &EDSI, systVec);
-        
-        if (doBookSyst) {
-            SetStringKeyMap(stringKeyToVar, &ELI_LepESUp,    &EJI,           &EMI_LepESUp,   &EDSI_LepESUp,   systVec,  1);
-            SetStringKeyMap(stringKeyToVar, &ELI_LepESDown,  &EJI,           &EMI_LepESDown, &EDSI_LepESDown, systVec, -1);            
-            SetStringKeyMap(stringKeyToVar, &ELI,            &EJI_JetESUp,   &EMI_JetESUp,   &EDSI_JetESUp,   systVec,  2);
-            SetStringKeyMap(stringKeyToVar, &ELI,            &EJI_JetESDown, &EMI_JetESDown, &EDSI_JetESDown, systVec, -2);            
-            SetStringKeyMap(stringKeyToVar, &ELI,            &EJI_BTagSFUp,  &EMI_BTagSFUp,  &EDSI_BTagSFUp,  systVec,  3);
-            SetStringKeyMap(stringKeyToVar, &ELI,            &EJI_BTagSFUp,  &EMI_BTagSFUp,  &EDSI_BTagSFUp,  systVec, -3);
-            SetStringKeyMapSpecial(stringKeyToVar, &EMI, &ESMT2I, systVec, 5);
-            SetStringKeyMapSpecial(stringKeyToVar, &EMI, &ESMT2I, systVec, -5);
-            SetStringKeyMapSpecial(stringKeyToVar, &EMI, &ESMT2I, systVec, 8);
+        SetStringKeyMap(stringKeyToVar, &ELI, &EJI, &EMI, &EDSI, systVec);        
+        if (!BEI.doData) {
+            SetStringKeyMapSmearJets(stringKeyToVar, &ELI, &SmearEJI, &SmearEMI, &SmearEDSI, systVec);
+            if (doBookSyst) {
+                SetStringKeyMap(stringKeyToVar, &ELI_LepESUp,    &EJI,            &EMI_LepESUp,    &EDSI_LepESUp,    systVec,  1);
+                SetStringKeyMap(stringKeyToVar, &ELI_LepESDown,  &EJI,            &EMI_LepESDown,  &EDSI_LepESDown,  systVec, -1);            
+                SetStringKeyMap(stringKeyToVar, &ELI,            &EJI_JetESUp,    &EMI_JetESUp,    &EDSI_JetESUp,    systVec,  2);
+                SetStringKeyMap(stringKeyToVar, &ELI,            &EJI_JetESDown,  &EMI_JetESDown,  &EDSI_JetESDown,  systVec, -2);            
+                SetStringKeyMap(stringKeyToVar, &ELI,            &EJI_BTagSFUp,   &EMI_BTagSFUp,   &EDSI_BTagSFUp,   systVec,  3);
+                SetStringKeyMap(stringKeyToVar, &ELI,            &EJI_BTagSFDown, &EMI_BTagSFDown, &EDSI_BTagSFDown, systVec, -3);
+                SetStringKeyMapSpecial(stringKeyToVar, &EMI, &ESMT2I, systVec, 5);
+                SetStringKeyMapSpecial(stringKeyToVar, &EMI, &ESMT2I, systVec, -5);
+                SetStringKeyMapSpecial(stringKeyToVar, &EMI, &ESMT2I, systVec, 8);
+                
+                
+                SetStringKeyMapSmearJets(stringKeyToVar, &ELI_LepESUp,   &SmearEJI,              &SmearEMI_LepESUp,      &SmearEDSI_LepESUp,      systVec,   1);
+                SetStringKeyMapSmearJets(stringKeyToVar, &ELI_LepESDown, &SmearEJI,              &SmearEMI_LepESDown,    &SmearEDSI_LepESDown,    systVec,  -1);
+                SetStringKeyMapSmearJets(stringKeyToVar, &ELI,           &SmearEJI_JetESUp,      &SmearEMI_JetESUp,      &SmearEDSI_JetESUp,      systVec,   2);
+                SetStringKeyMapSmearJets(stringKeyToVar, &ELI,           &SmearEJI_JetESDown,    &SmearEMI_JetESDown,    &SmearEDSI_JetESDown,    systVec,  -2);
+                SetStringKeyMapSmearJets(stringKeyToVar, &ELI,           &SmearEJI_BTagSFUp,     &SmearEMI_BTagSFUp,     &SmearEDSI_BTagSFUp,     systVec,   3);
+                SetStringKeyMapSmearJets(stringKeyToVar, &ELI,           &SmearEJI_BTagSFDown,   &SmearEMI_BTagSFDown,   &SmearEDSI_BTagSFDown,   systVec,  -3);
+                SetStringKeyMapSmearJets(stringKeyToVar, &ELI,           &SmearEJI,              &SmearEMI_UncESUp,      &SmearEDSI_UncESUp,      systVec,   9);
+                SetStringKeyMapSmearJets(stringKeyToVar, &ELI,           &SmearEJI,              &SmearEMI_UncESDown,    &SmearEDSI_UncESDown,    systVec,  -9);
+                SetStringKeyMapSmearJets(stringKeyToVar, &ELI,           &SmearEJI_JetSmearUp,   &SmearEMI_JetSmearUp,   &SmearEDSI_JetSmearUp,   systVec,  10);
+                SetStringKeyMapSmearJets(stringKeyToVar, &ELI,           &SmearEJI_JetSmearDown, &SmearEMI_JetSmearDown, &SmearEDSI_JetSmearDown, systVec, -10);
+                SetStringKeyMapSpecialSmearJets(stringKeyToVar, &SmearEMI, &SmearESMT2I, systVec, 5);
+                SetStringKeyMapSpecialSmearJets(stringKeyToVar, &SmearEMI, &SmearESMT2I, systVec, -5);
+                SetStringKeyMapSpecialSmearJets(stringKeyToVar, &SmearEMI, &SmearESMT2I, systVec, 8);
+            }
         }
-
+        
         /*#######################
          MAKE SELECTION CUTS
          #####################*/
         SetPassCutMap(subSampBool, subSampVec, &ELI, &EJI, &EMI);
         /*
-        for (unsigned int iSamp = 0; iSamp < subSampVec->size(); ++iSamp) {
-            
-            cout << "inputCut Map is " << subSampBool[subSampVec->at(iSamp)] << " for S_Current = " << subSampVec->at(iSamp).histNameSuffix << endl;
+         for (unsigned int iSamp = 0; iSamp < subSampVec->size(); ++iSamp) {
+         
+         cout << "inputCut Map is " << subSampBool[subSampVec->at(iSamp)] << " for S_Current = " << subSampVec->at(iSamp).histNameSuffix << endl;
+         }
+         */
+        if (!BEI.doData) {
+            SetPassCutMap(subSampBoolSmear, subSampVec, &ELI, &SmearEJI, &SmearEMI);            
+            if (doBookSyst) {
+                SetPassCutMap(subSampBool_LepESUp,    subSampVec, &ELI_LepESUp,   &EJI,            &EMI_LepESUp);
+                SetPassCutMap(subSampBool_LepESDown,  subSampVec, &ELI_LepESDown, &EJI,            &EMI_LepESDown);            
+                SetPassCutMap(subSampBool_JetESUp,    subSampVec, &ELI,           &EJI_JetESUp,    &EMI_JetESUp);
+                SetPassCutMap(subSampBool_JetESDown,  subSampVec, &ELI,           &EJI_JetESDown,  &EMI_JetESDown);            
+                SetPassCutMap(subSampBool_BTagSFUp,   subSampVec, &ELI,           &EJI_BTagSFUp,   &EMI_BTagSFUp);
+                SetPassCutMap(subSampBool_BTagSFDown, subSampVec, &ELI,           &EJI_BTagSFDown, &EMI_BTagSFDown);
+                
+                SetPassCutMap(subSampBoolSmear_LepESUp,      subSampVec, &ELI_LepESUp,   &SmearEJI,              &SmearEMI_LepESUp);
+                SetPassCutMap(subSampBoolSmear_LepESDown,    subSampVec, &ELI_LepESDown, &SmearEJI,              &SmearEMI_LepESDown);
+                SetPassCutMap(subSampBoolSmear_JetESUp,      subSampVec, &ELI,           &SmearEJI_JetESUp,      &SmearEMI_JetESUp);
+                SetPassCutMap(subSampBoolSmear_JetESDown,    subSampVec, &ELI,           &SmearEJI_JetESDown,    &SmearEMI_JetESDown);
+                SetPassCutMap(subSampBoolSmear_BTagSFUp,     subSampVec, &ELI,           &SmearEJI_BTagSFUp,     &SmearEMI_BTagSFUp);
+                SetPassCutMap(subSampBoolSmear_BTagSFDown,   subSampVec, &ELI,           &SmearEJI_BTagSFDown,   &SmearEMI_BTagSFDown);
+                SetPassCutMap(subSampBoolSmear_UncESUp,      subSampVec, &ELI,           &SmearEJI,              &SmearEMI_UncESUp);
+                SetPassCutMap(subSampBoolSmear_UncESDown,    subSampVec, &ELI,           &SmearEJI,              &SmearEMI_UncESDown);
+                SetPassCutMap(subSampBoolSmear_JetSmearUp,   subSampVec, &ELI,           &SmearEJI_JetSmearUp,   &SmearEMI_JetSmearUp);
+                SetPassCutMap(subSampBoolSmear_JetSmearDown, subSampVec, &ELI,           &SmearEJI_JetSmearDown, &SmearEMI_JetSmearDown);
+            }
         }
+        /*
+        cout << "" << endl;
+        cout << "ievt " << ievt << endl;
+        cout << "ELIDiLepType " << ELI.EventDiLepType << endl;
+        cout << "ELIinZMass " << ELI.EventDiLepinZMass << endl;
+        cout << "EMI.EventMET " << EMI.EventMET << endl;
+        cout << "EMI_BTagSFUp.EventMET " << EMI_BTagSFUp.EventMET << endl;
+        cout << "EMI_BTagSFDown.EventMET " << EMI_BTagSFDown.EventMET << endl;
+        cout << "EJI.EventNJets " << EJI.EventNJets << endl;
+        cout << "EJI_BTagSFUp.EventNJets " << EJI_BTagSFUp.EventNJets << endl;
+        cout << "EJI_BTagSFDown.EventNJets " << EJI_BTagSFDown.EventNJets << endl;        
+        cout << "EJI.EventNBtagJets " << EJI.EventNBtagJets << endl;
+        cout << "EJI_BTagSFUp.EventNBtagJets " << EJI_BTagSFUp.EventNBtagJets << endl;
+        cout << "EJI_BTagSFDown.EventNBtagJets " << EJI_BTagSFDown.EventNBtagJets << endl;
         */
-        if (doBookSyst) {
-            SetPassCutMap(subSampBool_LepESUp,    subSampVec, &ELI_LepESUp,   &EJI,            &EMI_LepESUp);
-            SetPassCutMap(subSampBool_LepESDown,  subSampVec, &ELI_LepESDown, &EJI,            &EMI_LepESDown);            
-            SetPassCutMap(subSampBool_JetESUp,    subSampVec, &ELI,           &EJI_JetESUp,    &EMI_JetESUp);
-            SetPassCutMap(subSampBool_JetESDown,  subSampVec, &ELI,           &EJI_JetESDown,  &EMI_JetESDown);            
-            SetPassCutMap(subSampBool_BTagSFUp,   subSampVec, &ELI,           &EJI_BTagSFUp,   &EMI_BTagSFUp);
-            SetPassCutMap(subSampBool_BTagSFDown, subSampVec, &ELI,           &EJI_BTagSFDown, &EMI_BTagSFDown);
-        }
         HistogramFillOneDee(&subSampBool, &stringKeyToVar, subSampVec, histVec_1D, &histMap_1D, &BEI, &ELI, &EJI, &EMI, &EDSI, doVerbosity);
         HistogramFillTwoDee(&subSampBool, &stringKeyToVar, subSampVec, histVec_2D, &histMap_2D, &BEI, &ELI, &EJI, &EMI, &EDSI, doVerbosity);
         HistogramFillThreeDee(&subSampBool, &stringKeyToVar, subSampVec, histVec_3D, &histMap_3D, &BEI, &ELI, &EJI, &EMI, &EDSI, doVerbosity);
         if (!BEI.doData) {
-            HistogramFillOneDeeSyst(&subSampBool_LepESUp, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI_LepESUp, &ELI_LepESUp, &EJI, &EMI_LepESUp, &EDSI_LepESUp, "LepESShiftUp", doVerbosity);
-            HistogramFillTwoDeeSyst(&subSampBool_LepESUp, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI_LepESUp, &ELI_LepESUp, &EJI, &EMI_LepESUp, &EDSI_LepESUp, "LepESShiftUp", doVerbosity);
-            HistogramFillThreeDeeSyst(&subSampBool_LepESUp, &stringKeyToVar, subSampVec, histVec_3D_Syst, &histMap_3D, &BEI_LepESUp, &ELI_LepESUp, &EJI, &EMI_LepESUp, &EDSI_LepESUp, "LepESShiftUp", doVerbosity);            
-            HistogramFillOneDeeSyst(&subSampBool_LepESDown, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI_LepESDown, &ELI_LepESDown, &EJI, &EMI_LepESDown, &EDSI_LepESDown, "LepESShiftDown", doVerbosity);
-            HistogramFillTwoDeeSyst(&subSampBool_LepESDown, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI_LepESDown, &ELI_LepESDown, &EJI, &EMI_LepESDown, &EDSI_LepESDown, "LepESShiftDown", doVerbosity);
-            HistogramFillThreeDeeSyst(&subSampBool_LepESDown, &stringKeyToVar, subSampVec, histVec_3D_Syst, &histMap_3D, &BEI_LepESDown, &ELI_LepESDown, &EJI, &EMI_LepESDown, &EDSI_LepESDown, "LepESShiftDown", doVerbosity);
-            
-            HistogramFillOneDeeSyst(&subSampBool_JetESUp, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI, &ELI, &EJI_JetESUp, &EMI_JetESUp, &EDSI_JetESUp, "JetESShiftUp", doVerbosity);
-            HistogramFillTwoDeeSyst(&subSampBool_LepESDown, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI, &ELI, &EJI_JetESUp, &EMI_JetESUp, &EDSI_JetESUp, "JetESShiftUp", doVerbosity);
-            HistogramFillThreeDeeSyst(&subSampBool_JetESUp, &stringKeyToVar, subSampVec, histVec_3D_Syst, &histMap_3D, &BEI, &ELI, &EJI_JetESUp, &EMI_JetESUp, &EDSI_JetESUp, "JetESShiftUp", doVerbosity);            
-            HistogramFillOneDeeSyst(&subSampBool_JetESDown, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI, &ELI, &EJI_JetESDown, &EMI_JetESDown, &EDSI_JetESDown, "JetESShiftDown", doVerbosity);
-            HistogramFillTwoDeeSyst(&subSampBool_LepESDown, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI, &ELI, &EJI_JetESDown, &EMI_JetESDown, &EDSI_JetESDown, "JetESShiftDown", doVerbosity);
-            HistogramFillThreeDeeSyst(&subSampBool_JetESDown, &stringKeyToVar, subSampVec, histVec_3D_Syst, &histMap_3D, &BEI, &ELI, &EJI_JetESDown, &EMI_JetESDown, &EDSI_JetESDown, "JetESShiftDown", doVerbosity);
-            
-            HistogramFillOneDeeSyst(&subSampBool_BTagSFUp, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI, &ELI, &EJI_BTagSFUp, &EMI_BTagSFUp, &EDSI_BTagSFUp, "BTagSFShiftUp", doVerbosity);
-            HistogramFillTwoDeeSyst(&subSampBool_BTagSFUp, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI, &ELI, &EJI_BTagSFUp, &EMI_BTagSFUp, &EDSI_BTagSFUp, "BTagSFShiftUp", doVerbosity);
-            HistogramFillThreeDeeSyst(&subSampBool_BTagSFUp, &stringKeyToVar, subSampVec, histVec_3D_Syst, &histMap_3D, &BEI, &ELI, &EJI_BTagSFUp, &EMI_BTagSFUp, &EDSI_BTagSFUp, "BTagSFShiftUp", doVerbosity);
-            HistogramFillOneDeeSyst(&subSampBool_BTagSFDown, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI, &ELI, &EJI_BTagSFDown, &EMI_BTagSFDown, &EDSI_BTagSFDown, "BTagSFShiftDown", doVerbosity);
-            HistogramFillTwoDeeSyst(&subSampBool_BTagSFDown, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI, &ELI, &EJI_BTagSFDown, &EMI_BTagSFDown, &EDSI_BTagSFDown, "BTagSFShiftDown", doVerbosity);
-            HistogramFillThreeDeeSyst(&subSampBool_BTagSFDown, &stringKeyToVar, subSampVec, histVec_3D_Syst, &histMap_3D, &BEI, &ELI, &EJI_BTagSFDown, &EMI_BTagSFDown, &EDSI_BTagSFDown, "BTagSFShiftDown", doVerbosity);
-            
-            HistogramFillOneDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI_LepEffSFUp, &ELI, &EJI, &EMI, &EDSI, "LepEffSFShiftUp", doVerbosity);
-            HistogramFillTwoDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI_LepEffSFUp, &ELI, &EJI, &EMI, &EDSI, "LepEffSFShiftUp", doVerbosity);
-            HistogramFillThreeDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_3D_Syst, &histMap_3D, &BEI_LepEffSFUp, &ELI, &EJI, &EMI, &EDSI, "LepEffSFShiftUp", doVerbosity);            
-            HistogramFillOneDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI_LepEffSFDown, &ELI, &EJI, &EMI, &EDSI, "LepEffSFShiftDown", doVerbosity);
-            HistogramFillTwoDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI_LepEffSFDown, &ELI, &EJI, &EMI, &EDSI, "LepEffSFShiftDown", doVerbosity);
-            HistogramFillThreeDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_3D_Syst, &histMap_3D, &BEI_LepEffSFDown, &ELI, &EJI, &EMI, &EDSI, "LepEffSFShiftDown", doVerbosity);
-            
-            HistogramFillOneDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI_GenTopRW, &ELI, &EJI, &EMI, &EDSI, "genTopRW", doVerbosity);
-            HistogramFillTwoDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI_GenTopRW, &ELI, &EJI, &EMI, &EDSI, "genTopRW", doVerbosity);
-            HistogramFillThreeDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_3D_Syst, &histMap_3D, &BEI_GenTopRW, &ELI, &EJI, &EMI, &EDSI, "genTopRW", doVerbosity);           
-            
-            HistogramFillOneDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI_StopXSecUp, &ELI, &EJI, &EMI, &EDSI, "genStopXSecShiftUp", doVerbosity);
-            HistogramFillTwoDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI_StopXSecUp, &ELI, &EJI, &EMI, &EDSI, "genStopXSecShiftUp", doVerbosity);
-            HistogramFillThreeDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_3D_Syst, &histMap_3D, &BEI_StopXSecUp, &ELI, &EJI, &EMI, &EDSI, "genStopXSecShiftUp", doVerbosity);
-            HistogramFillOneDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI_StopXSecDown, &ELI, &EJI, &EMI, &EDSI, "genStopXSecShiftDown", doVerbosity);
-            HistogramFillTwoDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI_StopXSecDown, &ELI, &EJI, &EMI, &EDSI, "genStopXSecShiftDown", doVerbosity);
-            HistogramFillThreeDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_3D_Syst, &histMap_3D, &BEI_StopXSecDown, &ELI, &EJI, &EMI, &EDSI, "genStopXSecShiftDown", doVerbosity);                                    
+            HistogramFillOneDee(&subSampBoolSmear, &stringKeyToVar, subSampVec, histVec_1D_Smear, &histMap_1D, &BEI, &ELI, &SmearEJI, &SmearEMI, &SmearEDSI, doVerbosity);
+            if (doBookSyst) {
+                HistogramFillOneDeeSyst(&subSampBool_LepESUp, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI_LepESUp, &ELI_LepESUp, &EJI, &EMI_LepESUp, &EDSI_LepESUp, "LepESShiftUp", doVerbosity);
+                HistogramFillTwoDeeSyst(&subSampBool_LepESUp, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI_LepESUp, &ELI_LepESUp, &EJI, &EMI_LepESUp, &EDSI_LepESUp, "LepESShiftUp", doVerbosity);
+                HistogramFillThreeDeeSyst(&subSampBool_LepESUp, &stringKeyToVar, subSampVec, histVec_3D_Syst, &histMap_3D, &BEI_LepESUp, &ELI_LepESUp, &EJI, &EMI_LepESUp, &EDSI_LepESUp, "LepESShiftUp", doVerbosity);
+                
+                HistogramFillOneDeeSyst(&subSampBool_LepESDown, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI_LepESDown, &ELI_LepESDown, &EJI, &EMI_LepESDown, &EDSI_LepESDown, "LepESShiftDown", doVerbosity);
+                HistogramFillTwoDeeSyst(&subSampBool_LepESDown, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI_LepESDown, &ELI_LepESDown, &EJI, &EMI_LepESDown, &EDSI_LepESDown, "LepESShiftDown", doVerbosity);
+                HistogramFillThreeDeeSyst(&subSampBool_LepESDown, &stringKeyToVar, subSampVec, histVec_3D_Syst, &histMap_3D, &BEI_LepESDown, &ELI_LepESDown, &EJI, &EMI_LepESDown, &EDSI_LepESDown, "LepESShiftDown", doVerbosity);
+                
+                HistogramFillOneDeeSyst(&subSampBool_JetESUp, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI, &ELI, &EJI_JetESUp, &EMI_JetESUp, &EDSI_JetESUp, "JetESShiftUp", doVerbosity);
+                HistogramFillTwoDeeSyst(&subSampBool_LepESDown, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI, &ELI, &EJI_JetESUp, &EMI_JetESUp, &EDSI_JetESUp, "JetESShiftUp", doVerbosity);
+                HistogramFillThreeDeeSyst(&subSampBool_JetESUp, &stringKeyToVar, subSampVec, histVec_3D_Syst, &histMap_3D, &BEI, &ELI, &EJI_JetESUp, &EMI_JetESUp, &EDSI_JetESUp, "JetESShiftUp", doVerbosity);
+                
+                HistogramFillOneDeeSyst(&subSampBool_JetESDown, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI, &ELI, &EJI_JetESDown, &EMI_JetESDown, &EDSI_JetESDown, "JetESShiftDown", doVerbosity);
+                HistogramFillTwoDeeSyst(&subSampBool_LepESDown, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI, &ELI, &EJI_JetESDown, &EMI_JetESDown, &EDSI_JetESDown, "JetESShiftDown", doVerbosity);
+                HistogramFillThreeDeeSyst(&subSampBool_JetESDown, &stringKeyToVar, subSampVec, histVec_3D_Syst, &histMap_3D, &BEI, &ELI, &EJI_JetESDown, &EMI_JetESDown, &EDSI_JetESDown, "JetESShiftDown", doVerbosity);
+                
+                HistogramFillOneDeeSyst(&subSampBool_BTagSFUp, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI, &ELI, &EJI_BTagSFUp, &EMI_BTagSFUp, &EDSI_BTagSFUp, "BTagSFShiftUp", doVerbosity);
+                HistogramFillTwoDeeSyst(&subSampBool_BTagSFUp, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI, &ELI, &EJI_BTagSFUp, &EMI_BTagSFUp, &EDSI_BTagSFUp, "BTagSFShiftUp", doVerbosity);
+                HistogramFillThreeDeeSyst(&subSampBool_BTagSFUp, &stringKeyToVar, subSampVec, histVec_3D_Syst, &histMap_3D, &BEI, &ELI, &EJI_BTagSFUp, &EMI_BTagSFUp, &EDSI_BTagSFUp, "BTagSFShiftUp", doVerbosity);
+                
+                HistogramFillOneDeeSyst(&subSampBool_BTagSFDown, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI, &ELI, &EJI_BTagSFDown, &EMI_BTagSFDown, &EDSI_BTagSFDown, "BTagSFShiftDown", doVerbosity);
+                HistogramFillTwoDeeSyst(&subSampBool_BTagSFDown, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI, &ELI, &EJI_BTagSFDown, &EMI_BTagSFDown, &EDSI_BTagSFDown, "BTagSFShiftDown", doVerbosity);
+                HistogramFillThreeDeeSyst(&subSampBool_BTagSFDown, &stringKeyToVar, subSampVec, histVec_3D_Syst, &histMap_3D, &BEI, &ELI, &EJI_BTagSFDown, &EMI_BTagSFDown, &EDSI_BTagSFDown, "BTagSFShiftDown", doVerbosity);
+                
+                HistogramFillOneDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI_LepEffSFUp, &ELI, &EJI, &EMI, &EDSI, "LepEffSFShiftUp", doVerbosity);
+                HistogramFillTwoDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI_LepEffSFUp, &ELI, &EJI, &EMI, &EDSI, "LepEffSFShiftUp", doVerbosity);
+                HistogramFillThreeDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_3D_Syst, &histMap_3D, &BEI_LepEffSFUp, &ELI, &EJI, &EMI, &EDSI, "LepEffSFShiftUp", doVerbosity);
+
+                HistogramFillOneDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI_LepEffSFDown, &ELI, &EJI, &EMI, &EDSI, "LepEffSFShiftDown", doVerbosity);
+                HistogramFillTwoDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI_LepEffSFDown, &ELI, &EJI, &EMI, &EDSI, "LepEffSFShiftDown", doVerbosity);
+                HistogramFillThreeDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_3D_Syst, &histMap_3D, &BEI_LepEffSFDown, &ELI, &EJI, &EMI, &EDSI, "LepEffSFShiftDown", doVerbosity);
+                
+                HistogramFillOneDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI_GenTopRW, &ELI, &EJI, &EMI, &EDSI, "genTopRW", doVerbosity);
+                HistogramFillTwoDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI_GenTopRW, &ELI, &EJI, &EMI, &EDSI, "genTopRW", doVerbosity);
+                HistogramFillThreeDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_3D_Syst, &histMap_3D, &BEI_GenTopRW, &ELI, &EJI, &EMI, &EDSI, "genTopRW", doVerbosity);           
+                
+                HistogramFillOneDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI_StopXSecUp, &ELI, &EJI, &EMI, &EDSI, "genStopXSecShiftUp", doVerbosity);
+                HistogramFillTwoDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI_StopXSecUp, &ELI, &EJI, &EMI, &EDSI, "genStopXSecShiftUp", doVerbosity);
+                HistogramFillThreeDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_3D_Syst, &histMap_3D, &BEI_StopXSecUp, &ELI, &EJI, &EMI, &EDSI, "genStopXSecShiftUp", doVerbosity);
+                HistogramFillOneDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI_StopXSecDown, &ELI, &EJI, &EMI, &EDSI, "genStopXSecShiftDown", doVerbosity);
+                HistogramFillTwoDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI_StopXSecDown, &ELI, &EJI, &EMI, &EDSI, "genStopXSecShiftDown", doVerbosity);
+                HistogramFillThreeDeeSyst(&subSampBool, &stringKeyToVar, subSampVec, histVec_3D_Syst, &histMap_3D, &BEI_StopXSecDown, &ELI, &EJI, &EMI, &EDSI, "genStopXSecShiftDown", doVerbosity);
+                
+                HistogramFillOneDeeSystRemain(&subSampBool, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI, &ELI, &EJI, &EMI, &EDSI, &ESMT2I, doVerbosity);
+                
+                HistogramFillOneDeeSyst(&subSampBoolSmear_LepESUp, &stringKeyToVar, subSampVec, histVec_1D_Smear_Syst, &histMap_1D, &BEI_LepESUp, &ELI_LepESUp, &SmearEJI, &SmearEMI_LepESUp, &SmearEDSI_LepESUp, "LepESShiftUp", doVerbosity);
+                HistogramFillOneDeeSyst(&subSampBoolSmear_LepESDown, &stringKeyToVar, subSampVec, histVec_1D_Smear_Syst, &histMap_1D, &BEI_LepESDown, &ELI_LepESDown, &SmearEJI, &SmearEMI_LepESDown, &SmearEDSI_LepESDown, "LepESShiftDown", doVerbosity);
+                HistogramFillOneDeeSyst(&subSampBoolSmear_JetESUp, &stringKeyToVar, subSampVec, histVec_1D_Smear_Syst, &histMap_1D, &BEI, &ELI, &SmearEJI_JetESUp, &SmearEMI_JetESUp, &SmearEDSI_JetESUp, "JetESShiftUp", doVerbosity);
+                HistogramFillOneDeeSyst(&subSampBoolSmear_JetESDown, &stringKeyToVar, subSampVec, histVec_1D_Smear_Syst, &histMap_1D, &BEI, &ELI, &SmearEJI_JetESDown, &SmearEMI_JetESDown, &SmearEDSI_JetESDown, "JetESShiftDown", doVerbosity);
+                HistogramFillOneDeeSyst(&subSampBoolSmear_BTagSFUp, &stringKeyToVar, subSampVec, histVec_1D_Smear_Syst, &histMap_1D, &BEI, &ELI, &SmearEJI_BTagSFUp, &SmearEMI_BTagSFUp, &SmearEDSI_BTagSFUp, "BTagSFShiftUp", doVerbosity);
+                HistogramFillOneDeeSyst(&subSampBoolSmear_BTagSFDown, &stringKeyToVar, subSampVec, histVec_1D_Smear_Syst, &histMap_1D, &BEI, &ELI, &SmearEJI_BTagSFDown, &SmearEMI_BTagSFDown, &SmearEDSI_BTagSFDown, "BTagSFShiftDown", doVerbosity);
+                HistogramFillOneDeeSyst(&subSampBoolSmear, &stringKeyToVar, subSampVec, histVec_1D_Smear_Syst, &histMap_1D, &BEI_LepEffSFUp, &ELI, &SmearEJI, &SmearEMI, &SmearEDSI, "LepEffSFShiftUp", doVerbosity);
+                HistogramFillOneDeeSyst(&subSampBoolSmear, &stringKeyToVar, subSampVec, histVec_1D_Smear_Syst, &histMap_1D, &BEI_LepEffSFDown, &ELI, &SmearEJI, &SmearEMI, &SmearEDSI, "LepEffSFShiftDown", doVerbosity);
+                HistogramFillOneDeeSyst(&subSampBoolSmear, &stringKeyToVar, subSampVec, histVec_1D_Smear_Syst, &histMap_1D, &BEI_GenTopRW, &ELI, &SmearEJI, &SmearEMI, &SmearEDSI, "genTopRW", doVerbosity);
+                HistogramFillOneDeeSyst(&subSampBoolSmear, &stringKeyToVar, subSampVec, histVec_1D_Smear_Syst, &histMap_1D, &BEI_StopXSecUp, &ELI, &SmearEJI, &SmearEMI, &SmearEDSI, "genStopXSecShiftUp", doVerbosity);
+                HistogramFillOneDeeSyst(&subSampBoolSmear, &stringKeyToVar, subSampVec, histVec_1D_Smear_Syst, &histMap_1D, &BEI_StopXSecDown, &ELI, &SmearEJI, &SmearEMI, &SmearEDSI, "genStopXSecShiftDown", doVerbosity);
+
+                HistogramFillOneDeeSyst(&subSampBoolSmear_UncESUp, &stringKeyToVar, subSampVec, histVec_1D_Smear_Syst, &histMap_1D, &BEI, &ELI, &SmearEJI, &SmearEMI_UncESUp, &SmearEDSI_UncESUp, "UncESShiftUp", doVerbosity);
+                HistogramFillOneDeeSyst(&subSampBoolSmear_UncESDown, &stringKeyToVar, subSampVec, histVec_1D_Smear_Syst, &histMap_1D, &BEI, &ELI, &SmearEJI, &SmearEMI_UncESDown, &SmearEDSI_UncESDown, "UncESShiftDown", doVerbosity);
+                
+                HistogramFillOneDeeSyst(&subSampBoolSmear_JetSmearUp, &stringKeyToVar, subSampVec, histVec_1D_Smear_Syst, &histMap_1D, &BEI, &ELI, &SmearEJI_JetSmearUp, &SmearEMI_JetSmearUp, &SmearEDSI_JetSmearUp, "JetSmearShiftUp", doVerbosity);
+                HistogramFillOneDeeSyst(&subSampBoolSmear_JetSmearDown, &stringKeyToVar, subSampVec, histVec_1D_Smear_Syst, &histMap_1D, &BEI, &ELI, &SmearEJI_JetSmearDown, &SmearEMI_JetSmearDown, &SmearEDSI_JetSmearDown, "JetSmearShiftDown", doVerbosity);
+                
+                HistogramFillOneDeeSystRemain(&subSampBoolSmear, &stringKeyToVar, subSampVec, histVec_1D_Smear_Syst, &histMap_1D, &BEI, &ELI, &SmearEJI, &SmearEMI, &SmearEDSI, &SmearESMT2I, doVerbosity);
+            }
         }
         /*
-        for (unsigned int i = 0; i < subSampVec->size(); ++i) {
-            S_Current = subSampVec->at(i);
-            if (subSampBool[S_Current] == true) {                            
-                if (!doData) {
-                    for (unsigned int js = 0; js < histVec_1D_Syst->size(); ++js) {
-                        H_Current = histVec_1D_Syst->at(js);
-                        if (H_Current.name.Contains("LepESShift") || H_Current.name.Contains("JetESShift") || H_Current.name.Contains("BTagSFShift")) continue;
-                        xIter = stringKeyToVar.find(H_Current.xVarKey);
-                        if (doVerbosity) {
-                            cout << "" << endl;
-                            cout << "ievt " << ievt << endl;
-                            cout << "i " << i << endl;
-                            cout << "js " << js << endl;
-                            cout << "S_Current.histNamesuffix " << S_Current.histNameSuffix << endl;
-                            cout << "H_Current.name " << H_Current.name << endl;
-                            cout << "H_Current.xVarKey " << H_Current.xVarKey << endl;
-                        }
-                        if (xIter != stringKeyToVar.end()) {
-                            if (doVerbosity) {
-                                cout << "xIter first " << xIter->first << endl;
-                                cout << "xIter second " << xIter->second << endl;
-                            }
-                            ///Some necessary continue checks
-                            //                            if (TString(H_Current.xVarKey).Contains("MT2lb") && NJets < 2) continue;
-                            if (TString(H_Current.name).Contains("MT2ll_DPhiZMETClose")) {
-                                if (dPhi(diLepPhi, METPhi) > 1./3. * PI) continue;
-                            }
-                            else if (TString(H_Current.name).Contains("MT2ll_DPhiZMETMid")) {
-                                if (dPhi(diLepPhi, METPhi) < 1./3. * PI || dPhi(diLepPhi, METPhi) > 2./3. * PI) continue;
-                            }                        
-                            else if (TString(H_Current.name).Contains("MT2ll_DPhiZMETFar")) {
-                                if (dPhi(diLepPhi, METPhi) < 2./3. * PI) continue;
-                            }
-                            if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Close")) {
-                                if (dPhi(ELI.Lep0.P4.Phi(), ELI.Lep1.P4.Phi()) > 1./3. * PI) continue;
-                            }
-                            else if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Mid")) {
-                                if (dPhi(ELI.Lep0.P4.Phi(), ELI.Lep1.P4.Phi()) < 1./3. * PI || dPhi(ELI.Lep0.P4.Phi(), ELI.Lep1.P4.Phi()) > 2./3. * PI) continue;                         
-                            }                        
-                            else if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Far")) {
-                                if (dPhi(ELI.Lep0.P4.Phi(), ELI.Lep1.P4.Phi()) < 2./3. * PI) continue;
-                            }
-                            if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Close")) {
-                                if (DeltaPhiMT2lb_JetsUsed > 1./3. * PI) continue;
-                            }
-                            else if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Mid")) {
-                                if (DeltaPhiMT2lb_JetsUsed < 1./3. * PI || DeltaPhiMT2lb_JetsUsed > 2./3. * PI) continue;                         
-                            }                        
-                            else if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Far")) {
-                                if (DeltaPhiMT2lb_JetsUsed < 2./3. * PI) continue;
-                            }                        
-                            if (TString(H_Current.name).Contains("MT2lb_DPhiBLep0BLep1Close")) {
-                                if (DeltaPhiMT2lb_BLepsUsed > 1./3. * PI) continue;
-                            }
-                            else if (TString(H_Current.name).Contains("MT2lb_DPhiBLep0BLep1Mid")) {
-                                if (DeltaPhiMT2lb_BLepsUsed < 1./3. * PI || DeltaPhiMT2lb_BLepsUsed > 2./3. * PI) continue;                         
-                            }                        
-                            else if (TString(H_Current.name).Contains("MT2lb_DPhiBLep0BLep1Far")) {
-                                if (DeltaPhiMT2lb_BLepsUsed < 2./3. * PI) continue;
-                            }
-                            if (H_Current.name.Contains("LepEffSFShiftUp")) {
-                                fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_LepEffSFUp : weight_LepEffSFUp;
-                            }
-                            else if (H_Current.name.Contains("LepEffSFShiftDown")) {
-                                fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_LepEffSFDown : weight_LepEffSFDown;
-                            }
-                            else if (H_Current.name.Contains("genTopRW")) {
-                                fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_GenTopReweight : weight_GenTopReweight;
-                            }
-                            else if (H_Current.name.Contains("genStopXSecShiftUp")) {
-                                fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_genStopXSecUp : weight_genStopXSecUp;
-                            }
-                            else if (H_Current.name.Contains("genStopXSecShiftDown")) {
-                                fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_genStopXSecDown : weight_genStopXSecDown;
-                            }
-                            else {
-                                fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight : weight;
-                            }
-                            histMap_1D[histKey(H_Current, S_Current)]->Fill(xIter->second, fillWeight);
-                        }
-                        if (doVerbosity) cout << "" << endl;                    
-                    }
-                    
-                    for (unsigned int ks = 0; ks < histVec_2D_Syst->size(); ++ks) {                  
-                        H_Current = histVec_2D_Syst->at(ks);
-                        if (H_Current.name.Contains("LepESShift") || H_Current.name.Contains("JetESShift") || H_Current.name.Contains("BTagSFShift")) continue;
-                        xIter = stringKeyToVar.find(H_Current.xVarKey);
-                        yIter = stringKeyToVar.find(H_Current.yVarKey);
-                        if (doVerbosity) {
-                            cout << "" << endl;
-                            cout << "ievt " << ievt << endl;
-                            cout << "i " << i << endl;
-                            cout << "ks " << ks << endl;
-                            cout << "S_Current.histNamesuffix " << S_Current.histNameSuffix << endl;
-                            cout << "H_Current.name " << H_Current.name << endl;
-                            cout << "H_Current.xVarKey " << H_Current.xVarKey << endl;
-                            cout << "H_Current.yVarKey " << H_Current.yVarKey << endl;
-                        }
-                        if (xIter != stringKeyToVar.end() && yIter != stringKeyToVar.end()) {
-                            if (doVerbosity) {
-                                cout << "xIter first " <<  xIter->first << endl;
-                                cout << "xIter second " << xIter->second << endl;
-                                cout << "yIter first " <<  yIter->first << endl;
-                                cout << "yIter second " << yIter->second << endl;
-                            }
-                            if (H_Current.name.Contains("LepEffSFShiftUp")) {
-                                fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_LepEffSFUp : weight_LepEffSFUp;
-                            }
-                            else if (H_Current.name.Contains("LepEffSFShiftDown")) {
-                                fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_LepEffSFDown : weight_LepEffSFDown;
-                            }
-                            else if (H_Current.name.Contains("genTopRW")) {
-                                fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_GenTopReweight : weight_GenTopReweight;
-                            }
-                            else if (H_Current.name.Contains("genStopXSecShiftUp")) {
-                                fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_genStopXSecUp : weight_genStopXSecUp;
-                            }
-                            else if (H_Current.name.Contains("genStopXSecShiftDown")) {
-                                fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_genStopXSecDown : weight_genStopXSecDown;
-                            }
-                            else {
-                                fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight : weight;
-                            }
-                            histMap_2D[histKey(H_Current, S_Current)]->Fill(xIter->second, yIter->second, fillWeight); //there could be shenanigans with this one
-                        }
-                        if (doVerbosity) cout << "" << endl;                    
-                    }
-                    for (unsigned int ls = 0; ls < histVec_3D_Syst->size(); ++ls) {                  
-                        H_Current = histVec_3D_Syst->at(ls);
-                        if (H_Current.name.Contains("LepESShift") || H_Current.name.Contains("JetESShift")|| H_Current.name.Contains("BTagSFShift")) continue;
-                        xIter = stringKeyToVar.find(H_Current.xVarKey);
-                        yIter = stringKeyToVar.find(H_Current.yVarKey);
-                        zIter = stringKeyToVar.find(H_Current.zVarKey);
-                        if (doVerbosity) {
-                            cout << "" << endl;
-                            cout << "ievt " << ievt << endl;
-                            cout << "i " << i << endl;
-                            cout << "ls " << ls << endl;
-                            cout << "S_Current.histNamesuffix " << S_Current.histNameSuffix << endl;
-                            cout << "H_Current.name " << H_Current.name << endl;
-                            cout << "H_Current.xVarKey " << H_Current.xVarKey << endl;
-                            cout << "H_Current.yVarKey " << H_Current.yVarKey << endl;
-                            cout << "H_Current.zVarKey " << H_Current.zVarKey << endl;
-                        }
-                        if (xIter != stringKeyToVar.end() && yIter != stringKeyToVar.end() && zIter != stringKeyToVar.end()) {
-                            if (doVerbosity) {
-                                cout << "xIter first " <<  xIter->first << endl;
-                                cout << "xIter second " << xIter->second << endl;
-                                cout << "yIter first " <<  yIter->first << endl;
-                                cout << "yIter second " << yIter->second << endl;                            
-                                cout << "zIter first " <<  zIter->first << endl;
-                                cout << "zIter second " << zIter->second << endl;
-                            }
-                            ///Some necessary continue checks
-                            //                            if (TString(H_Current.xVarKey).Contains("MT2lb") && NJets < 2) continue;
-                            if (H_Current.name.Contains("h_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx")) {
-                                if (H_Current.name.Contains("21to30")) {
-                                    if ((nVtx > 30 || nVtx < 21)) continue;
-                                }
-                                else if (H_Current.name.Contains("11to20")) {
-                                    if ((nVtx > 20 || nVtx < 11)) continue;
-                                }
-                                else if (H_Current.name.Contains("1to10")) {
-                                    if ((nVtx > 10 || nVtx < 1)) continue;
-                                }
-                            }
-                            if (H_Current.name.Contains("LepEffSFShiftUp")) {
-                                fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_LepEffSFUp : weight_LepEffSFUp;
-                            }
-                            else if (H_Current.name.Contains("LepEffSFShiftDown")) {
-                                fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_LepEffSFDown : weight_LepEffSFDown;
-                            }
-                            else if (H_Current.name.Contains("genTopRW")) {
-                                fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_GenTopReweight : weight_GenTopReweight;
-                            }
-                            else if (H_Current.name.Contains("genStopXSecShiftUp")) {
-                                fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_genStopXSecUp : weight_genStopXSecUp;
-                            }
-                            else if (H_Current.name.Contains("genStopXSecShiftDown")) {
-                                fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_genStopXSecDown : weight_genStopXSecDown;
-                            }
-                            else {
-                                fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight : weight;
-                            }
-                            histMap_3D[histKey(H_Current, S_Current)]->Fill(xIter->second, yIter->second, zIter->second, fillWeight); //there could be shenanigans with this one
-                        }
-                        if (doVerbosity) cout << "" << endl;                    
-                    }
-                }
-            }
-        }        
-        */
+         for (unsigned int i = 0; i < subSampVec->size(); ++i) {
+         S_Current = subSampVec->at(i);
+         if (subSampBool[S_Current] == true) {                            
+         if (!doData) {
+         for (unsigned int js = 0; js < histVec_1D_Syst->size(); ++js) {
+         H_Current = histVec_1D_Syst->at(js);
+         if (H_Current.name.Contains("LepESShift") || H_Current.name.Contains("JetESShift") || H_Current.name.Contains("BTagSFShift")) continue;
+         xIter = stringKeyToVar.find(H_Current.xVarKey);
+         if (doVerbosity) {
+         cout << "" << endl;
+         cout << "ievt " << ievt << endl;
+         cout << "i " << i << endl;
+         cout << "js " << js << endl;
+         cout << "S_Current.histNamesuffix " << S_Current.histNameSuffix << endl;
+         cout << "H_Current.name " << H_Current.name << endl;
+         cout << "H_Current.xVarKey " << H_Current.xVarKey << endl;
+         }
+         if (xIter != stringKeyToVar.end()) {
+         if (doVerbosity) {
+         cout << "xIter first " << xIter->first << endl;
+         cout << "xIter second " << xIter->second << endl;
+         }
+         ///Some necessary continue checks
+         //                            if (TString(H_Current.xVarKey).Contains("MT2lb") && NJets < 2) continue;
+         if (TString(H_Current.name).Contains("MT2ll_DPhiZMETClose")) {
+         if (dPhi(diLepPhi, METPhi) > 1./3. * PI) continue;
+         }
+         else if (TString(H_Current.name).Contains("MT2ll_DPhiZMETMid")) {
+         if (dPhi(diLepPhi, METPhi) < 1./3. * PI || dPhi(diLepPhi, METPhi) > 2./3. * PI) continue;
+         }                        
+         else if (TString(H_Current.name).Contains("MT2ll_DPhiZMETFar")) {
+         if (dPhi(diLepPhi, METPhi) < 2./3. * PI) continue;
+         }
+         if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Close")) {
+         if (dPhi(ELI.Lep0.P4.Phi(), ELI.Lep1.P4.Phi()) > 1./3. * PI) continue;
+         }
+         else if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Mid")) {
+         if (dPhi(ELI.Lep0.P4.Phi(), ELI.Lep1.P4.Phi()) < 1./3. * PI || dPhi(ELI.Lep0.P4.Phi(), ELI.Lep1.P4.Phi()) > 2./3. * PI) continue;                         
+         }                        
+         else if (TString(H_Current.name).Contains("MT2ll_DPhiLep0Lep1Far")) {
+         if (dPhi(ELI.Lep0.P4.Phi(), ELI.Lep1.P4.Phi()) < 2./3. * PI) continue;
+         }
+         if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Close")) {
+         if (DeltaPhiMT2lb_JetsUsed > 1./3. * PI) continue;
+         }
+         else if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Mid")) {
+         if (DeltaPhiMT2lb_JetsUsed < 1./3. * PI || DeltaPhiMT2lb_JetsUsed > 2./3. * PI) continue;                         
+         }                        
+         else if (TString(H_Current.name).Contains("MT2lb_DPhiJet0Jet1Far")) {
+         if (DeltaPhiMT2lb_JetsUsed < 2./3. * PI) continue;
+         }                        
+         if (TString(H_Current.name).Contains("MT2lb_DPhiBLep0BLep1Close")) {
+         if (DeltaPhiMT2lb_BLepsUsed > 1./3. * PI) continue;
+         }
+         else if (TString(H_Current.name).Contains("MT2lb_DPhiBLep0BLep1Mid")) {
+         if (DeltaPhiMT2lb_BLepsUsed < 1./3. * PI || DeltaPhiMT2lb_BLepsUsed > 2./3. * PI) continue;                         
+         }                        
+         else if (TString(H_Current.name).Contains("MT2lb_DPhiBLep0BLep1Far")) {
+         if (DeltaPhiMT2lb_BLepsUsed < 2./3. * PI) continue;
+         }
+         if (H_Current.name.Contains("LepEffSFShiftUp")) {
+         fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_LepEffSFUp : weight_LepEffSFUp;
+         }
+         else if (H_Current.name.Contains("LepEffSFShiftDown")) {
+         fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_LepEffSFDown : weight_LepEffSFDown;
+         }
+         else if (H_Current.name.Contains("genTopRW")) {
+         fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_GenTopReweight : weight_GenTopReweight;
+         }
+         else if (H_Current.name.Contains("genStopXSecShiftUp")) {
+         fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_genStopXSecUp : weight_genStopXSecUp;
+         }
+         else if (H_Current.name.Contains("genStopXSecShiftDown")) {
+         fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_genStopXSecDown : weight_genStopXSecDown;
+         }
+         else {
+         fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight : weight;
+         }
+         histMap_1D[histKey(H_Current, S_Current)]->Fill(xIter->second, fillWeight);
+         }
+         if (doVerbosity) cout << "" << endl;                    
+         }
+         
+         for (unsigned int ks = 0; ks < histVec_2D_Syst->size(); ++ks) {                  
+         H_Current = histVec_2D_Syst->at(ks);
+         if (H_Current.name.Contains("LepESShift") || H_Current.name.Contains("JetESShift") || H_Current.name.Contains("BTagSFShift")) continue;
+         xIter = stringKeyToVar.find(H_Current.xVarKey);
+         yIter = stringKeyToVar.find(H_Current.yVarKey);
+         if (doVerbosity) {
+         cout << "" << endl;
+         cout << "ievt " << ievt << endl;
+         cout << "i " << i << endl;
+         cout << "ks " << ks << endl;
+         cout << "S_Current.histNamesuffix " << S_Current.histNameSuffix << endl;
+         cout << "H_Current.name " << H_Current.name << endl;
+         cout << "H_Current.xVarKey " << H_Current.xVarKey << endl;
+         cout << "H_Current.yVarKey " << H_Current.yVarKey << endl;
+         }
+         if (xIter != stringKeyToVar.end() && yIter != stringKeyToVar.end()) {
+         if (doVerbosity) {
+         cout << "xIter first " <<  xIter->first << endl;
+         cout << "xIter second " << xIter->second << endl;
+         cout << "yIter first " <<  yIter->first << endl;
+         cout << "yIter second " << yIter->second << endl;
+         }
+         if (H_Current.name.Contains("LepEffSFShiftUp")) {
+         fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_LepEffSFUp : weight_LepEffSFUp;
+         }
+         else if (H_Current.name.Contains("LepEffSFShiftDown")) {
+         fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_LepEffSFDown : weight_LepEffSFDown;
+         }
+         else if (H_Current.name.Contains("genTopRW")) {
+         fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_GenTopReweight : weight_GenTopReweight;
+         }
+         else if (H_Current.name.Contains("genStopXSecShiftUp")) {
+         fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_genStopXSecUp : weight_genStopXSecUp;
+         }
+         else if (H_Current.name.Contains("genStopXSecShiftDown")) {
+         fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_genStopXSecDown : weight_genStopXSecDown;
+         }
+         else {
+         fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight : weight;
+         }
+         histMap_2D[histKey(H_Current, S_Current)]->Fill(xIter->second, yIter->second, fillWeight); //there could be shenanigans with this one
+         }
+         if (doVerbosity) cout << "" << endl;                    
+         }
+         for (unsigned int ls = 0; ls < histVec_3D_Syst->size(); ++ls) {                  
+         H_Current = histVec_3D_Syst->at(ls);
+         if (H_Current.name.Contains("LepESShift") || H_Current.name.Contains("JetESShift")|| H_Current.name.Contains("BTagSFShift")) continue;
+         xIter = stringKeyToVar.find(H_Current.xVarKey);
+         yIter = stringKeyToVar.find(H_Current.yVarKey);
+         zIter = stringKeyToVar.find(H_Current.zVarKey);
+         if (doVerbosity) {
+         cout << "" << endl;
+         cout << "ievt " << ievt << endl;
+         cout << "i " << i << endl;
+         cout << "ls " << ls << endl;
+         cout << "S_Current.histNamesuffix " << S_Current.histNameSuffix << endl;
+         cout << "H_Current.name " << H_Current.name << endl;
+         cout << "H_Current.xVarKey " << H_Current.xVarKey << endl;
+         cout << "H_Current.yVarKey " << H_Current.yVarKey << endl;
+         cout << "H_Current.zVarKey " << H_Current.zVarKey << endl;
+         }
+         if (xIter != stringKeyToVar.end() && yIter != stringKeyToVar.end() && zIter != stringKeyToVar.end()) {
+         if (doVerbosity) {
+         cout << "xIter first " <<  xIter->first << endl;
+         cout << "xIter second " << xIter->second << endl;
+         cout << "yIter first " <<  yIter->first << endl;
+         cout << "yIter second " << yIter->second << endl;                            
+         cout << "zIter first " <<  zIter->first << endl;
+         cout << "zIter second " << zIter->second << endl;
+         }
+         ///Some necessary continue checks
+         //                            if (TString(H_Current.xVarKey).Contains("MT2lb") && NJets < 2) continue;
+         if (H_Current.name.Contains("h_MT2ll_vs_DeltaPhiZMET_vs_NJets_nVtx")) {
+         if (H_Current.name.Contains("21to30")) {
+         if ((nVtx > 30 || nVtx < 21)) continue;
+         }
+         else if (H_Current.name.Contains("11to20")) {
+         if ((nVtx > 20 || nVtx < 11)) continue;
+         }
+         else if (H_Current.name.Contains("1to10")) {
+         if ((nVtx > 10 || nVtx < 1)) continue;
+         }
+         }
+         if (H_Current.name.Contains("LepEffSFShiftUp")) {
+         fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_LepEffSFUp : weight_LepEffSFUp;
+         }
+         else if (H_Current.name.Contains("LepEffSFShiftDown")) {
+         fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_LepEffSFDown : weight_LepEffSFDown;
+         }
+         else if (H_Current.name.Contains("genTopRW")) {
+         fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_GenTopReweight : weight_GenTopReweight;
+         }
+         else if (H_Current.name.Contains("genStopXSecShiftUp")) {
+         fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_genStopXSecUp : weight_genStopXSecUp;
+         }
+         else if (H_Current.name.Contains("genStopXSecShiftDown")) {
+         fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight_genStopXSecDown : weight_genStopXSecDown;
+         }
+         else {
+         fillWeight = H_Current.name.Contains("preRW") ? preNVtxRWweight : weight;
+         }
+         histMap_3D[histKey(H_Current, S_Current)]->Fill(xIter->second, yIter->second, zIter->second, fillWeight); //there could be shenanigans with this one
+         }
+         if (doVerbosity) cout << "" << endl;                    
+         }
+         }
+         }
+         }        
+         */
     }
     cout << "All events done" << endl;
     outputFile->cd();

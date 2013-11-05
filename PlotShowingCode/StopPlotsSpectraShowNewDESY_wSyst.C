@@ -66,7 +66,9 @@ int main( int argc, char* argv[]) {
     bool multiChannelAdd = 0;
     TString multiChannelSetupFile = "";
     int  versNumber     = 1;
-    bool doReReco       = 0;  
+    bool doReReco       = 0;
+    bool SmearedPlots   = 0;
+    int  JetsSmeared    = 0;
     for (int k = 0; k < argc; ++k) {
         cout << "argv[k] for k = " << k << " is: " << argv[k] << endl;
         if (strncmp (argv[k],"wChan", 5) == 0) {
@@ -137,6 +139,10 @@ int main( int argc, char* argv[]) {
         }
         else if (strncmp (argv[k],"doStats", 7) == 0) {
             doStats = 1;
+        }
+        else if (strncmp (argv[k],"JsSm", 4) == 0) {
+            SmearedPlots = 1;
+            JetsSmeared = strtol(argv[k+1], NULL, 10);
         }
         else if (strncmp (argv[k],"sDCF", 4) == 0) {
             saveDotCFile = 1;
@@ -241,10 +247,12 @@ int main( int argc, char* argv[]) {
 //    vector<HistogramT> * histVec_1D = OneDeeHistTVec();
     vector<HistogramT> * histVec_1D = OneDeeHistTVecStatusReport();
     vector<HistogramT> * histVec_2D = TwoDeeHistTVec();
-    vector<HistogramT> * histVec_3D = ThreeDeeHistTVec();    
+    vector<HistogramT> * histVec_3D = ThreeDeeHistTVec(); 
+    vector<HistogramT> * histVec_1DSmear = OneDeeSmearHistTVec(JetsSmeared);
+    vector<HistogramT> * histVec1DtoUse = SmearedPlots ? histVec_1DSmear : histVec_1D;
     vector<SampleT> * subSampVec    = SubSampVec();
     cout << "subsamp size " << subSampVec->size() << endl;
-    vector<SystT> * systVec         = SystVec();
+    vector<SystT> * systVec         = SystVec(SmearedPlots);
     vector<TString> * vecIsoPlotNames = IsoPlotNames(whichNTuple);
     
     //some relevant things for saving names        
@@ -280,6 +288,7 @@ int main( int argc, char* argv[]) {
     if (doReReco) canvSuffixSaveName += "_ReReco";
     if (doAbsRatio) canvSuffixSaveName += "_AbsRatio";
     if (!showLegend) canvSuffixSaveName += "_noLegend";
+    if (SmearedPlots) canvSuffixSaveName += "_SmearedMET";
     if (versNumber == 2) canvSuffixSaveName += "_vers2";
     
     ///Systematics stuff////
@@ -496,7 +505,7 @@ int main( int argc, char* argv[]) {
     }
     ///Data-Driven systematics stuff
     //Oviedo EMu: .912598, EE: 0.658692, MuMu: .884796, FullCut: .863585
-    float TTBarFullCutSFOviReReco[3] = {1.01276, 0.933961, 1.03732};
+    float TTBarFullCutSFOviReReco[3] = {1.01276, 0.933961, 1.04784};
     float TTBarFullCutSFOvi[3] = {0.946965, 0.873284, 0.969927};
     float TTBarFullCutSFDESY[3] = {0.84936, 0.843207, 0.949907};
     if (!doExcSamps) {
@@ -511,7 +520,6 @@ int main( int argc, char* argv[]) {
         else {
             TTBarSF = TTBarFullCutSFOvi[whichTTbarGen];            
         }
-
         TTBarSF_Other = TTBarFullCutSFDESY[whichTTbarGen];
     }
     else {
@@ -554,7 +562,7 @@ int main( int argc, char* argv[]) {
     TString dataLegendComp = "Data";
     THStack * mcStack;
     TString mcStackName;
-    unsigned int num1DPlots = histVec_1D->size(); 
+    unsigned int num1DPlots = histVec1DtoUse->size();
     unsigned int num2DPlots = histVec_2D->size(); 
     unsigned int num3DPlots = histVec_3D->size();
     unsigned int numIsoPlots = vecIsoPlotNames->size();
@@ -605,12 +613,12 @@ int main( int argc, char* argv[]) {
             if (doAllPlots) {
                 for (unsigned int k = 0; k < num1DPlots; ++k) {
                     plotVarName = "";
-                    plotVarName += histVec_1D->at(k).name;
+                    plotVarName += histVec1DtoUse->at(k).name;
                     plotVarName.Replace(0, 2, "");                                
-                    histOneplot = histVec_1D->at(k).name;
+                    histOneplot = histVec1DtoUse->at(k).name;
                     if (!multiChannelAdd) histOneplot += subSampName;                
                     if (multHistsSingSampCompare) {
-                        histTwoplot = histVec_1D->at(k).name;
+                        histTwoplot = histVec1DtoUse->at(k).name;
                         if (!multiChannelAdd) histTwoplot += subSampName;
                     }
                     else {
@@ -626,7 +634,7 @@ int main( int argc, char* argv[]) {
                     }
                     canvName += canvNameAdd;
                     c_Var = new TCanvas(canvName, canvName, wtopx, wtopy, W_, H_);
-                    doSystCurrPlot = (doSyst && histVec_1D->at(k).doXSyst);
+                    doSystCurrPlot = (doSyst && histVec1DtoUse->at(k).doXSyst);
                     SingSampCompHistogramGrabber(firstSampInFile, histOne1D, histOne1DSystVec, histOneplot, secondSampInFile, histTwo1D, histTwo1DSystVec, histTwoplot, subSampName, RBNX[k], RBNY[k], RBNZ[k], doOverflow[k], doUnderflow[k], doSystCurrPlot);
                     histMax = (multHistsSingSampCompare) ? TMath::Max(histOne1D->GetMaximum(), histTwo1D->GetMaximum()) : histOne1D->GetMaximum();
                     YAxisUB = (YAxisUBBase > 1) ? histMax * 2.5E2 : histMax * 2.5;
@@ -705,7 +713,7 @@ int main( int argc, char* argv[]) {
                 }
                 
                 plotVarName = "";
-                plotVarName += histVec_1D->at(k).name;
+                plotVarName += histVec1DtoUse->at(k).name;
                 plotVarName.Replace(0, 2, "");
                 if (multiChannelAdd) {
                     cout << "multiChannelCompOutputName " << multiChannelCompOutputName << endl;
@@ -716,8 +724,11 @@ int main( int argc, char* argv[]) {
                     
                 }
                 cout << "Doing " << plotVarName << endl;
-                dataplot = histVec_1D->at(k).name;
-                mcplot = histVec_1D->at(k).name;
+                dataplot = histVec1DtoUse->at(k).name;
+                mcplot = histVec1DtoUse->at(k).name;                    
+                if (SmearedPlots) {
+                    dataplot.Replace(2,5,"");
+                }
                 canvName = "c_";
                 canvName += plotVarName;
                 mcStackName = "mcStack_";
@@ -736,17 +747,18 @@ int main( int argc, char* argv[]) {
                 
                 c_Var = new TCanvas(canvName, canvName, wtopx, wtopy, W_, H_);
                 mcStack = new THStack(mcStackName, "");
-                //        doSystCurrPlot = (doSyst && histVec_1D->at(k).doXSyst)  ? true : false;
-                doSystCurrPlot = (doSyst && histVec_1D->at(k).doXSyst);
+                doSystCurrPlot = (doSyst && histVec1DtoUse->at(k).doXSyst);
                 if (multiChannelAdd) {
                     HistogramVecGrabberCentValGrab(inputFiles, true, dataHistTH1Vec, nVtxBackScaleVec, dataplot, subSampVec, multiChannelIDs, useDDEstimate, TTBarSF, scaleLumi); 
                     cout << " test 22" << endl;
-                    HistogramVecGrabberCentValGrab(inputFiles, false, mcHistTH1Vec, nVtxBackScaleVec, dataplot, subSampVec, multiChannelIDs, useDDEstimate, TTBarSF, scaleLumi);
+                    HistogramVecGrabberCentValGrab(inputFiles, false, mcHistTH1Vec, nVtxBackScaleVec, mcplot, subSampVec, multiChannelIDs, useDDEstimate, TTBarSF, scaleLumi);
                     cout << " test 24" << endl;
                 }
                 else {
+                    cout << "testing 1b " << endl;
                     HistogramVecGrabberCentValGrab(inputFiles, true, dataHistTH1Vec, nVtxBackScaleVec, dataplot, subSampName, useDDEstimate, TTBarSF, scaleLumi);
-                    HistogramVecGrabberCentValGrab(inputFiles, false, mcHistTH1Vec, nVtxBackScaleVec, dataplot, subSampName, useDDEstimate, TTBarSF, scaleLumi);
+                    cout << "testing 1b " << endl;
+                    HistogramVecGrabberCentValGrab(inputFiles, false, mcHistTH1Vec, nVtxBackScaleVec, mcplot, subSampName, useDDEstimate, TTBarSF, scaleLumi);
                 }
                 HistogramAdderData(dataHistTH1Vec, h_DataComp, RBNX[k], 1, 1, -1, -1, -1, -1, "", doOverflow[k], doUnderflow[k], "");
 //                cout << " grabbed mc central val " << endl;
@@ -761,12 +773,12 @@ int main( int argc, char* argv[]) {
                     if (multiChannelAdd) {
                         HistogramVecGrabberCentValGrab(inputFiles_Other, true, dataHistTH1Vec_Other, nVtxBackScaleVec_Other, dataplot, subSampVec, multiChannelIDs, useDDEstimate, TTBarSF_Other, scaleLumi);
                         cout << " test 33" << endl;
-                        HistogramVecGrabberCentValGrab(inputFiles_Other, false, mcHistTH1Vec_Other, nVtxBackScaleVec_Other, dataplot, subSampVec, multiChannelIDs, useDDEstimate, TTBarSF_Other, scaleLumi);
+                        HistogramVecGrabberCentValGrab(inputFiles_Other, false, mcHistTH1Vec_Other, nVtxBackScaleVec_Other, mcplot, subSampVec, multiChannelIDs, useDDEstimate, TTBarSF_Other, scaleLumi);
                         cout << " test 34" << endl;
                     }
                     else {
                         HistogramVecGrabberCentValGrab(inputFiles_Other, true, dataHistTH1Vec_Other, nVtxBackScaleVec_Other, dataplot, subSampName, useDDEstimate, TTBarSF_Other, scaleLumi);
-                        HistogramVecGrabberCentValGrab(inputFiles_Other, false, mcHistTH1Vec_Other, nVtxBackScaleVec_Other, dataplot, subSampName, useDDEstimate, TTBarSF_Other, scaleLumi);
+                        HistogramVecGrabberCentValGrab(inputFiles_Other, false, mcHistTH1Vec_Other, nVtxBackScaleVec_Other, mcplot, subSampName, useDDEstimate, TTBarSF_Other, scaleLumi);
                     }
                     HistogramAdderData(dataHistTH1Vec_Other, h_DataComp_Other, RBNX[k], 1, 1, -1, -1, -1, -1, "", doOverflow[k], doUnderflow[k], "");
                     HistogramAdderMC(mcHistTH1Vec_Other, mcCompHist1DCentValVec_Other, sampleStartPositions_Other, sampleAddNames_Other, h_MCComp_Other, RBNX[k], 1, 1, -1, -1, -1, -1, "", doOverflow[k], doUnderflow[k], "");
@@ -800,7 +812,7 @@ int main( int argc, char* argv[]) {
                             cout << "currSignal1DCentValHist " << currSignal1DCentValHist->GetName() << endl;
                             cout << "vecCurrStop1DSystHists size " << vecCurrStop1DSystHists->size() << endl;
                             */
-                            SystGraphMakers(currSignal1DCentValHist, vecCurrStop1DSystHists, vecCurrSigCompSpecSource, vecCurrSigCompSpecSource_pStat, fracRatioSystVec, systCanvNameVec, mcColorsSignal->at(iSigPoints), plotVarName, doAbsRatio, fracRatioYAxisRange, doSymErr, true);
+                            SystGraphMakers(currSignal1DCentValHist, vecCurrStop1DSystHists, vecCurrSigCompSpecSource, vecCurrSigCompSpecSource_pStat, fracRatioSystVec, systCanvNameVec, mcColorsSignal->at(iSigPoints), plotVarName, doAbsRatio, fracRatioYAxisRange, doSymErr, true, SmearedPlots);
                             vecErrSigCompVecSpecSource->push_back(vecCurrSigCompSpecSource);
                             vecErrSigCompVecSpecSource_pStat->push_back(vecCurrSigCompSpecSource_pStat);
                         }
@@ -842,7 +854,7 @@ int main( int argc, char* argv[]) {
                 
                 if (doSystCurrPlot) {
                     
-                    SystGraphMakers(h_MCComp, mcCompHist1DSystVec, errCompSpecSource, errCompSpecSource_pStat, fracRatioSystVec, systCanvNameVec, kGray + 1, plotVarName, doAbsRatio, fracRatioYAxisRange, doSymErr, false);
+                    SystGraphMakers(h_MCComp, mcCompHist1DSystVec, errCompSpecSource, errCompSpecSource_pStat, fracRatioSystVec, systCanvNameVec, kGray + 1, plotVarName, doAbsRatio, fracRatioYAxisRange, doSymErr, false, SmearedPlots);
                     for (unsigned int iSyst = 0; iSyst < systCanvNameVec->size(); ++iSyst) {
                         systCanvName = canvName + systCanvNameVec->at(iSyst);
                         c_Var = new TCanvas(systCanvName, systCanvName, wtopx, wtopy, W_, H_);
@@ -1151,7 +1163,7 @@ int main( int argc, char* argv[]) {
 //            cout << "test Iso 3 " << dataHistTH1Vec->size() << endl;
             HistogramAdderData(dataHistTH1Vec, h_DataComp, RBNX[k], 1, 1, -1, -1, -1, -1, "", doOverflow[k], doUnderflow[k], "");
 //            cout << "test Iso 4" << endl;
-            HistogramVecGrabberCentValGrab(inputFiles, false, mcHistTH1Vec, nVtxBackScaleVec, dataplot, subSampName, useDDEstimate, TTBarSF, scaleLumi);
+            HistogramVecGrabberCentValGrab(inputFiles, false, mcHistTH1Vec, nVtxBackScaleVec, mcplot, subSampName, useDDEstimate, TTBarSF, scaleLumi);
 //            cout << "test Iso 5 " << mcHistTH1Vec->size() << endl;
             HistogramAdderMC(mcHistTH1Vec, mcCompHist1DCentValVec, sampleStartPositions, sampleAddNames, h_MCComp, RBNX[k], 1, 1, -1, -1, -1, -1, "", doOverflow[k], doUnderflow[k], "");
 //            cout << "test Iso 6" << endl;

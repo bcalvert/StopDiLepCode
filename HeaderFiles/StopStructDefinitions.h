@@ -236,7 +236,7 @@ typedef struct PFJet{
     bool            isGenJetMatched;
     float           dEnRecoGen;
     void ClearVars() {
-        P4.SetPxPyPzE(0., 0., 0., 0.);
+        P4.SetPxPyPzE(1E-8, 1E-8, 1E-4, 1E-8);
         valBTagDisc = 0.0;
         partonFlavor = -999999;
         isBJet = false;
@@ -455,7 +455,33 @@ typedef struct EventJetInfo{
     bool  EventJet0isGenMatched, EventJet1isGenMatched;
     float EventJet0DeltaEnRecoGen, EventJet1DeltaEnRecoGen;
     
-    
+    void SetNonBTagInfo(EventJetInfo * inEJI) {
+        EventHT = inEJI->EventHT;
+        EventJetST = inEJI->EventJetST;
+        EventNJets = inEJI->EventNJets;
+        Jet0 = inEJI->Jet0;
+        Jet1 = inEJI->Jet1;
+        EventJet0Px = inEJI->EventJet0Px;
+        EventJet0Py = inEJI->EventJet0Py;
+        EventJet0Pz = inEJI->EventJet0Pz;
+        EventJet0E =  inEJI->EventJet0E;
+        EventJet1Px = inEJI->EventJet1Px;
+        EventJet1Py = inEJI->EventJet1Py;
+        EventJet1Pz = inEJI->EventJet1Pz;
+        EventJet1E =  inEJI->EventJet1E;
+        EventJet0isGenMatched = inEJI->EventJet0isGenMatched;
+        EventJet1isGenMatched = inEJI->EventJet0isGenMatched;
+        EventJet0DeltaEnRecoGen = inEJI->EventJet0DeltaEnRecoGen;
+        EventJet1DeltaEnRecoGen = inEJI->EventJet1DeltaEnRecoGen;
+        
+        BtagJet0.isBadJet(); BtagJet1.isBadJet();
+        if (EventNBtagJets > 0) {
+            BtagJet0.P4.SetPxPyPzE(EventBtagJet0Px, EventBtagJet0Py, EventBtagJet0Pz, EventBtagJet0E);
+            if (EventNBtagJets > 1) {
+                BtagJet1.P4.SetPxPyPzE(EventBtagJet1Px, EventBtagJet1Py, EventBtagJet1Pz, EventBtagJet1E);
+            }
+        }
+    }
     void EJIDefaultVarVals() {
         EventHT = 0.; EventJetST = 0.; EventNJets = 0; EventNBtagJets = 0;
         Jet0.ClearVars(); Jet1.ClearVars();
@@ -584,6 +610,19 @@ typedef struct EventMETInfo {
         EventMETdivMeff = 0.;
         caseMT2lb = 0;
     }
+    
+    void PrintVals() {
+        std::cout << "EventMET " << EventMET << std::endl;
+        std::cout << "EventMETPhi " << EventMETPhi << std::endl;
+        std::cout << "EventMETX " << EventMETX << std::endl;
+        std::cout << "EventMETY " << EventMETY << std::endl;
+        
+        std::cout << "EventMET_preCorr " << EventMET_preCorr << std::endl;
+        std::cout << "EventMETPhi_preCorr " << EventMETPhi_preCorr << std::endl;
+        std::cout << "EventMETX_preCorr " << EventMETX_preCorr << std::endl;
+        std::cout << "EventMETY_preCorr " << EventMETY_preCorr << std::endl;
+        std::cout << "EventMETdivMeff " << EventMETdivMeff << std::endl;
+    }
 } EventMETInfo;
 
 typedef struct EventSpecialMT2Info {
@@ -652,17 +691,31 @@ typedef struct EventDiStructureInfo{
         DPhiJet1BJet0 = -99.; DPhiJet1BJet1 = -99.;
     }
     void SetVars(EventLepInfo * inELI, EventJetInfo * inEJI, EventMETInfo * inEMI) {
+//        cout << "test a" << endl;
         diLepInvMass = inELI->EventDiLepMass;
+//        cout << "test b" << endl;
         diLepPt  = (inELI->Lep0.P4 + inELI->Lep1.P4).Pt();
+//        cout << "test c" << endl;
         diLepEta = (inELI->Lep0.P4 + inELI->Lep1.P4).Eta();
+//        cout << "test cd" << endl;
         diLepPhi = (inELI->Lep0.P4 + inELI->Lep1.P4).Phi();
+//        cout << "test e" << endl;
         DPhiLep0Lep1        = dPhi(inELI->Lep0.P4.Phi(), inELI->Lep1.P4.Phi());
+//        cout << "test e1" << endl;
         DPhiLep0MET         = dPhi((float) inELI->Lep0.P4.Phi(), inEMI->EventMETPhi);
+//        cout << "test e2 " << DPhiLep0MET << endl;
+//        cout << "additional test " << inELI->Lep0.P4.Phi() << endl;
+//        cout << "additional test " << inEMI->EventMETPhi_preCorr << endl;
         DPhiLep0MET_PreCorr = dPhi((float) inELI->Lep0.P4.Phi(), inEMI->EventMETPhi_preCorr);
+//        cout << "test e3" << endl;
         DPhiLep1MET         = dPhi((float) inELI->Lep1.P4.Phi(), inEMI->EventMETPhi);
+//        cout << "test e34" << endl;
         DPhiLep1MET_PreCorr = dPhi((float) inELI->Lep1.P4.Phi(), inEMI->EventMETPhi_preCorr);        
+//        cout << "test e5" << endl;
         DPhiZMET            = dPhi(diLepPhi, inEMI->EventMETPhi);
+//        cout << "test e6" << endl;
         DPhiZMET_PreCorr    = dPhi(diLepPhi, inEMI->EventMETPhi_preCorr);
+//        cout << "test f" << endl;
         if (inEJI->EventNJets > 0) {
             DPhiLep0Jet0 = dPhi(inELI->Lep0.P4.Phi(), inEJI->Jet0.P4.Phi());
             if (inEJI->EventNJets > 1) {
@@ -674,6 +727,7 @@ typedef struct EventDiStructureInfo{
                 diJetPhi     = (inEJI->Jet0.P4 + inEJI->Jet1.P4).Phi();
                 diJetInvMass = (inEJI->Jet0.P4 + inEJI->Jet1.P4).M();
             }
+//            cout << "test g" << endl;
             if (inEJI->EventNBtagJets > 0) {
                 DPhiLep0BJet0 = dPhi(inELI->Lep0.P4.Phi(), inEJI->BtagJet0.P4.Phi());
                 DPhiJet0BJet0 = dPhi(inEJI->Jet0.P4.Phi(), inEJI->BtagJet0.P4.Phi());

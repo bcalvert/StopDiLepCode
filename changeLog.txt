@@ -1,3 +1,66 @@
+========11/5/13========
+Primary update here was adding in the "Macguyver" fix for MET smearing, wherein I have "calculated" the effects of jet smearing on MET in separate nTuples (nTuples from the MET JINST performance study) and have made smearing functions to propagate those effects into the distributions in the Stop analysis
+
+Note, I ran into an interesting issue while working on this. I kept hitting "double free or corruption" errors, which stemmed from the following. I had a TFile, I grabbed a hist from said file (i.e. grabbed the pointer to the memory address of the histogram) in a given function, and in the course of said function I de-referenced the pointer and pushed the resulting hist into a vector. When this function closed it killed the memory associated with the dereferenced histogram (aka what is stored at the memory address that the pointer pointed to), and then when it closed the input TFile it tried to delete the already deleted memory address
+====StopFillFunctions.h====
+Added in version of METSystShift to work with PFJets
+
+Fixed a bug with the "special" MT2 Unclustered Energy Smearing
+
+Added in a the string key map set for "smeared jets", SetStringKeyMapSmearJets,
+as well as the special version with MT2 special cases, SetStringKeyMapSpecialSmearJets
+
+Added in the auto Histogram Filler for stuff that remains after initial fillings,
+HistogramFillOneDeeSystRemain
+
+====StopFunctionDefinitions_v2.h====
+Fixed the SmearJet function to be better in sync with the official version of this code, SmearedJetProducerT.h, but we're still not using it for now
+
+Made a new version of the function, "AddSystHists", to better work with my current sytematics structure
+
+Added a function to make the vector of HistogramTs for the smeared histograms, OneDeeSmearHistTVec
+
+Changed the function that returns the vector of SystTs, SystVec, to have a "jet smear option" so that you don't grab the smeared jets systematic when you don't need to
+
+Added in the function, SmearHist, that grabs the correct TH2F to make 1D smearing histograms from (based upon inputfile's name)
+
+Added in the function, SetMETSmearHistVec, that makes the vector of TH2Fs for smearing purposes based upon the vector of input TFiles
+
+Added in the function, DeltaMET, that calculates a change to the MET value based upon the input vector of 1D smearing histograms (by finding the appropriate bin and what-not)
+
+====StopPlotSetup.h====
+Added in BTagging and JetSmearing systematics into the plotting
+
+Working on adding in a SmoothedTGraph function which will smooth out input TGraphs
+
+====StopStructDefinitions.h====
+Minor changes to pre-existing structs -- function "SetNonBTagInfo" used for the BTag systematics for EventJetInfo (i.e. used in NewOviStopPlotFillerRunOnSkim_wSyst.C
+====NewOviStopPlotFillerRunOnSkim_wSyst.C====
+Added in MET smearing via "hack" method (for this macro, that consists of just changing how information is grabbed)
+
+Added in JetSmear systematic
+
+Fixed some minor bugs here and there:
+Bug with "smeared histograms" x axis for MT2ll
+Bug with "special" systematics and filling of histograms
+
+====JetResolution.txt====
+Fixed the ordering of the numbers, which was reversed for some of the rows
+
+====NewOviStopPlotSkimmer.C====
+Added in stuff (TFile names, histogram names, etc.) for MET smearing "hack"
+
+Added in ability to run with only a sub-sample of the file (i.e. limit statistics for fasting commissioning)
+
+Added in unclustered energy systematic to MET
+
+====MT2CutYieldCalc.C====
+Working on updating the code to work with smeared version of histograms
+
+====StopPlotsSpectraShowNewDESY_wSyst.C====
+Added in stuff for plotting Smeared MET histograms
+
+
 ========10/24/13========
 Another structure update to the code, not as major as 10/15/13
 This time, it was to facilitate the filling of plots, which is done in NewOviStopPlotFillerRunOnSkim_wSyst.C

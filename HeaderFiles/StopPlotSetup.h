@@ -18,8 +18,7 @@ void sampleStartPositionsNames(int whichNTuple, int whichTTBarGen, vector<TStrin
     TString QCDName         = "_QCD";
     TString VGName          = "_VG";
     TString HiggsName       = "_Higgs";
-    TString RareName        = "_Rare";
-    
+    TString RareName        = "_Rare";    
     int numTTBar = (doExcSamp && whichTTBarGen == 0) ? 2 : 1;
     if (whichNTuple == 1) numTTBar = 2;
     int numVV               = 3;
@@ -919,21 +918,27 @@ void HistogramVecGrabber_Signal(vector<TFile *> * inputFilesSignal, vector<float
 void HistogramVecGrabberCentValGrab(vector<TFile *> * inputFiles, bool grabData, vector<TH1 *> * vecHist, vector<float> * nVtxBackScaleVec, TString histPlotName, TString subSampName, bool useDDEstimate, float scaleFacTTBar, float scaleLumi) {
     TString fileName;
     TH1 * currHist;
+    TString histGrabName;
     for (unsigned int iFile = 0; iFile < inputFiles->size(); ++iFile) {
         fileName = inputFiles->at(iFile)->GetName();
-        cout << "fileName" << " is " << fileName << endl;
-        cout << "hist plot name " << histPlotName << endl;
-        currHist = (TH1 *) inputFiles->at(iFile)->Get(histPlotName);
-        cout << "currHist " << currHist->Integral() << endl;
+        cout << "fileName is " << fileName << endl;
         if (grabData) {
             if (!fileName.Contains("Data")) continue;
+            histGrabName = histPlotName;
         }
         else {
-            if (fileName.Contains("Data")) continue;
+            if (fileName.Contains("Data")) continue; 
+            histGrabName = histPlotName;
+            histGrabName += subSampName;
+        }
+        cout << "hist plot name " << histGrabName << endl;
+        currHist = (TH1 *) inputFiles->at(iFile)->Get(histGrabName);
+        if (!grabData) {            
             currHist->Scale(scaleLumi);
             currHist->Scale(nVtxBackScaleVec->at(iFile)); // correct for PURW changes to integral
             if (useDDEstimate && fileName.Contains("TTBar")) currHist->Scale(scaleFacTTBar);  
-        }
+        }        
+        cout << "currHist " << currHist->Integral() << endl;
         vecHist->push_back(currHist);
         //        cout << "pushed hist into vector for iFile " << iFile << endl;
     }
@@ -944,7 +949,7 @@ void HistogramVecGrabberCentValGrab(vector<TFile *> * inputFiles, bool grabData,
     for (unsigned int iFile = 0; iFile < inputFiles->size(); ++iFile) {
         currHist = NULL;
         fileName = inputFiles->at(iFile)->GetName();
-        cout << "fileName" << " is " << fileName << endl;
+        cout << "fileName is " << fileName << endl;
         if (grabData) {
             if (!fileName.Contains("Data")) continue;
         }
@@ -1034,6 +1039,7 @@ void HistogramVecGrabberSystGrab(vector<TFile *> * inputFiles, vector<TH1 *> * v
                     if (useDDEstimate && fileName.Contains("TTBar")) currHistPatsy->Scale(scaleFacTTBar);                    
                     currHistPatsy->Scale(scaleLumi);
                     currHistPatsy->Scale(nVtxBackScaleVec->at(iFile)); // correct for PURW changes to integral
+                    cout << "currHist integral " << currHistPatsy->Integral() << endl;
                     if (currHist == NULL) {
                         currHist = currHistPatsy;
                     }
@@ -1691,13 +1697,14 @@ void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH2F *> * dataHist
                     grabSyst = true;
                 }    
                 if (grabSyst) {
-                    currHist = (TH2F *) inputFiles->at(k)->Get(mcSystPlotName);
+                    currHist = (TH2F *) inputFiles->at(k)->Get(mcSystPlotName);                    
+                    currHist->Scale(scaleLumi);
+                    currHist->Scale(nVtxBackScaleVec->at(k)); // correct for PURW changes to integral
+                    if (useDDEstimate && fileName.Contains("TTBar")) currHist->Scale(scaleFacTTBar);
                 }
                 else {
                     currHist = (TH2F *) inputFiles->at(k)->Get(mcGrabName);
                 }
-                currHist->Scale(nVtxBackScaleVec->at(k)); // correct for PURW changes to integral
-                if (useDDEstimate && fileName.Contains("TTBar")) currHist->Scale(scaleFacTTBar);
                 NBinsX = currHist->GetNbinsX();
                 NBinsY = currHist->GetNbinsY();
                 NBinsZ = currHist->GetNbinsZ();
@@ -1729,20 +1736,25 @@ void HistogramVecGrabber(vector<TFile *> * inputFiles, vector<TH2F *> * dataHist
 
 
 
-void SystGraphMakers(TH1F * inputBaseMCHist, vector<TH1F *> * inputBaseMCSystHists, vector<TGraphAsymmErrors *> * errCompSpecSource, vector<TGraphAsymmErrors *> * errCompSpecSource_pStat, vector<TGraphAsymmErrors *> * fracRatioSystVec, vector<TString> * systCanvNameVec, Color_t colorErrGraph, TString plotVarName, bool doAbsRatio, float fracRatioYAxisRange, bool doSymErr, bool doSignal) {
+void SystGraphMakers(TH1F * inputBaseMCHist, vector<TH1F *> * inputBaseMCSystHists, vector<TGraphAsymmErrors *> * errCompSpecSource, vector<TGraphAsymmErrors *> * errCompSpecSource_pStat, vector<TGraphAsymmErrors *> * fracRatioSystVec, vector<TString> * systCanvNameVec, Color_t colorErrGraph, TString plotVarName, bool doAbsRatio, float fracRatioYAxisRange, bool doSymErr, bool doSignal, bool doSmear) {
     
-    TString stringLepEffSF = "LepEffSF";
-    TString stringLepEnSc = "LepES";
-    TString stringJetEnSc = "JetES";
-    TString stringUncEnSc = "UncES";
-    TString stringBTagSF = "BTagSF";
-    TString stringMT2ll = "MT2ll";  
-    TString stringGenTopRW = "genTopRW";
+    TString stringLepEffSF       = "LepEffSF";
+    TString stringLepEnSc        = "LepES";
+    TString stringJetEnSc        = "JetES";
+    TString stringUncEnSc        = "UncES";
+    TString stringSpecialUncEnSc = "UncESSpec";
+    TString stringBTagSF         = "BTagSF";
+    TString stringMT2ll          = "MT2ll";  
+    TString stringGenTopRW       = "genTopRW";
     TString stringStopXSecUncert = "genStopXSec";
+    TString stringJetSmear       = "JetSmear";
     
     TGraphAsymmErrors * errCompStatCentVal, * errSystQuadSum, * errSystQuadSum_pStat;
-    TGraphAsymmErrors * errLepEnSc, * errLepEffSF, * errJetEnSc, * errUncEnSc, * errMT2ll, * errBTagSF, * errGenTopRW, * errStopXSecUncert;
-    TGraphAsymmErrors * errLepEnSc_pStat, * errLepEffSF_pStat, * errJetEnSc_pStat, * errUncEnSc_pStat, * errMT2ll_pStat, * errBTagSF_pStat, * errGenTopRW_pStat, * errStopXSecUncert_pStat;
+    TGraphAsymmErrors * errLepEnSc, * errLepEffSF, * errJetEnSc, * errUncEnSc, * errBTagSF, * errGenTopRW, * errStopXSecUncert;
+    TGraphAsymmErrors * errJetSmear, * errMT2ll, * errSpecUncEnSc;
+    
+    TGraphAsymmErrors * errLepEnSc_pStat, * errLepEffSF_pStat, * errJetEnSc_pStat, * errUncEnSc_pStat, * errBTagSF_pStat, * errGenTopRW_pStat, * errStopXSecUncert_pStat;
+    TGraphAsymmErrors * errJetSmear_pStat, * errMT2ll_pStat, * errSpecUncEnSc_pStat;
     TGraphAsymmErrors * currFracRatioGraph;
     
     //    cout << "plotVarName " << plotVarName << endl;
@@ -1771,19 +1783,47 @@ void SystGraphMakers(TH1F * inputBaseMCHist, vector<TH1F *> * inputBaseMCSystHis
         currFracRatioGraph = fracGraph(inputBaseMCHist, errJetEnSc, doAbsRatio, fracRatioYAxisRange);
         fracRatioSystVec->push_back(currFracRatioGraph);
     }
-    if (plotVarName.Contains("MT2ll")) {
-        errUncEnSc = GraphSystErrorSet_SingleSource(inputBaseMCHist, inputBaseMCSystHists, stringUncEnSc + TString("Shift"), doSymErr, 0);
-        errUncEnSc_pStat = GraphSystErrorSumErrors(errCompStatCentVal, stringUncEnSc, errUncEnSc, inputBaseMCHist);
-        GraphMainAttSet(errUncEnSc, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
-        GraphMainAttSet(errUncEnSc_pStat, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
-        errCompSpecSource->push_back(errUncEnSc);
-        errCompSpecSource_pStat->push_back(errUncEnSc_pStat);
+    
+    errUncEnSc = GraphSystErrorSet_SingleSource(inputBaseMCHist, inputBaseMCSystHists, stringUncEnSc + TString("Shift"), doSymErr, 0);
+    errUncEnSc_pStat = GraphSystErrorSumErrors(errCompStatCentVal, stringUncEnSc, errUncEnSc, inputBaseMCHist);
+    GraphMainAttSet(errUncEnSc, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
+    GraphMainAttSet(errUncEnSc_pStat, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
+    errCompSpecSource->push_back(errUncEnSc);
+    errCompSpecSource_pStat->push_back(errUncEnSc_pStat);
+    if (!doSignal) {
+        systCanvNameVec->push_back(stringUncEnSc);
+        currFracRatioGraph = fracGraph(inputBaseMCHist, errUncEnSc, doAbsRatio, fracRatioYAxisRange);
+        fracRatioSystVec->push_back(currFracRatioGraph);
+    }
+    
+    if (doSmear) {
+        errJetSmear = GraphSystErrorSet_SingleSource(inputBaseMCHist, inputBaseMCSystHists, stringJetSmear + TString("Shift"), doSymErr, 0);
+        errJetSmear_pStat = GraphSystErrorSumErrors(errCompStatCentVal, stringJetSmear, errJetSmear, inputBaseMCHist);
+        GraphMainAttSet(errJetSmear, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
+        GraphMainAttSet(errJetSmear_pStat, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
+        errCompSpecSource->push_back(errJetSmear);
+        errCompSpecSource_pStat->push_back(errJetSmear_pStat);
         if (!doSignal) {
-            systCanvNameVec->push_back(stringUncEnSc);
-            currFracRatioGraph = fracGraph(inputBaseMCHist, errUncEnSc, doAbsRatio, fracRatioYAxisRange);
+            systCanvNameVec->push_back(stringJetSmear);
+            currFracRatioGraph = fracGraph(inputBaseMCHist, errJetSmear, doAbsRatio, fracRatioYAxisRange);
             fracRatioSystVec->push_back(currFracRatioGraph);
         }
     }
+    /*
+    if (plotVarName.Contains("MT2ll")) {
+        errSpecUncEnSc = GraphSystErrorSet_SingleSource(inputBaseMCHist, inputBaseMCSystHists, stringSpecialUncEnSc + TString("Shift"), doSymErr, 0);
+        errSpecUncEnSc_pStat = GraphSystErrorSumErrors(errCompStatCentVal, stringSpecialUncEnSc, errSpecUncEnSc, inputBaseMCHist);
+        GraphMainAttSet(errSpecUncEnSc, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
+        GraphMainAttSet(errSpecUncEnSc_pStat, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
+        errCompSpecSource->push_back(errSpecUncEnSc);
+        errCompSpecSource_pStat->push_back(errSpecUncEnSc_pStat);
+        if (!doSignal) {
+            systCanvNameVec->push_back(stringSpecialUncEnSc);
+            currFracRatioGraph = fracGraph(inputBaseMCHist, errSpecUncEnSc, doAbsRatio, fracRatioYAxisRange);
+            fracRatioSystVec->push_back(currFracRatioGraph);
+        }
+    }
+    */
     /*
      if (plotVarName.Contains("MT2ll")) {
      errMT2ll = GraphSystErrorSet_SingleSource(inputBaseMCHist, inputBaseMCSystHists, stringMT2ll + TString("Shift"), doSymErr, 1);
@@ -1802,19 +1842,17 @@ void SystGraphMakers(TH1F * inputBaseMCHist, vector<TH1F *> * inputBaseMCSystHis
      errMT2ll = NULL;
      }
      */
-    /*
-     errBTagSF = GraphSystErrorSet_SingleSource(inputBaseMCHist, inputBaseMCSystHists, stringBTagSF + TString("Shift"), doSymErr, 0);
-     errBTagSF_pStat = GraphSystErrorSumErrors(errCompStatCentVal, stringBTagSF, errBTagSF, inputBaseMCHist);
-     GraphMainAttSet(errBTagSF, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
-     GraphMainAttSet(errBTagSF_pStat, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
-     errCompSpecSource->push_back(errBTagSF);
-     errCompSpecSource_pStat->push_back(errBTagSF_pStat);
-     if (!doSignal) {
-     systCanvNameVec->push_back(stringBTagSF); 
-     currFracRatioGraph = fracGraph(inputBaseMCHist, errBTagSF, doAbsRatio, fracRatioYAxisRange);
-     fracRatioSystVec->push_back(currFracRatioGraph);
+    errBTagSF = GraphSystErrorSet_SingleSource(inputBaseMCHist, inputBaseMCSystHists, stringBTagSF + TString("Shift"), doSymErr, 0);
+    errBTagSF_pStat = GraphSystErrorSumErrors(errCompStatCentVal, stringBTagSF, errBTagSF, inputBaseMCHist);
+    GraphMainAttSet(errBTagSF, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
+    GraphMainAttSet(errBTagSF_pStat, colorErrGraph, 3001, colorErrGraph, 2, kWhite, 0, 0); 
+    errCompSpecSource->push_back(errBTagSF);
+    errCompSpecSource_pStat->push_back(errBTagSF_pStat);
+    if (!doSignal) {
+        systCanvNameVec->push_back(stringBTagSF); 
+        currFracRatioGraph = fracGraph(inputBaseMCHist, errBTagSF, doAbsRatio, fracRatioYAxisRange);
+        fracRatioSystVec->push_back(currFracRatioGraph);
      }
-     */
     
     errLepEffSF = GraphSystErrorSet_SingleSource(inputBaseMCHist, inputBaseMCSystHists, stringLepEffSF + TString("Shift"), doSymErr, 0);
     errLepEffSF_pStat = GraphSystErrorSumErrors(errCompStatCentVal, stringLepEffSF, errLepEffSF, inputBaseMCHist);
@@ -2050,6 +2088,7 @@ void HistogramAdderSyst(vector<TH1F *> * dataHistVec, vector<TH1F *> * mcIndHist
         mcCompHistCentValVec->push_back(QCDComp);
     }
 }
+
 void SpectrumDraw(TCanvas * InputCanvas, TH1F * Hist1, TString legHist1, TH1F * Hist2, TH1F * fracRatioHist, TH1F * errHist, THStack * MCStack, float TextXPos, float TextYStartPos, float YAxisLB, float YAxisUB, bool logYPad1, vector<TString> * mcLegends, vector<TH1F *> * indMCHists, bool doMean, TString cutUsed, float inputLumi, TLegend * &leg, bool doSFR, bool doODFR, TH1F * fracRatioHist_Other, bool showLegend) {
     TLatex * tl = new TLatex();
     //    TLegend * leg;
@@ -2387,6 +2426,18 @@ void SpectrumDrawSyst_AddSignal(TCanvas * InputCanvas, vector<TH1F *> * vecSigna
      Pad2->Update();
      Pad2->Modified();
      */
+}
+
+
+
+TGraphAsymmErrors * SmoothedTGraph(TGraphAsymmErrors * inputTGraph) {
+    int NGraphPoints = inputTGraph->GetN();
+    TString GraphName = inputTGraph->GetName();
+    Double_t xMin, xMax, yMin, yMax;
+    Double_t xCurr, yCurr;
+    inputTGraph->GetPoint(0, xMin, yMin); 
+    inputTGraph->GetPoint(NGraphPoints - 1, xMax, yMax);
+    TH1F * UpErr = new TH1F(GraphName + TString("UpErrSmooth", "", ngra)
 }
 
 void SpectrumDrawSingSampCompare(TCanvas * InputCanvas, TH1F * Hist1, TString legHist1, TH1F * Hist2, TString legHist2, TH1F * fracRatioHist, float TextXPos, float TextYStartPos, float YAxisLB, float YAxisUB, bool logYPad1, bool doMean, TString cutUsed, float inputLumi) {

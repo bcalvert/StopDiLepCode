@@ -40,7 +40,9 @@ int main( int argc, char* argv[]) {
     bool doTwoDeeFOM     = 0;
     bool doYieldV1    = 1;
     bool doYieldV2    = 0;
-    bool doReReco     = 0;    
+    bool doReReco     = 0; 
+    bool SmearedPlots   = 0;
+    int  JetsSmeared    = 0;   
     TString typeSMS   = "";         // Which type of SMS to grab -- either "T2tt" or "T2bw" (as of 8/5/13) only has T2tt FineBin
     TString prefixT2tt   = "";      // prefix for which kind of T2tt to grab
     vector<int> * vecStopMassGrab = new vector<int>;       // vector to hold the list of Stop masses to brab
@@ -92,6 +94,10 @@ int main( int argc, char* argv[]) {
         }
         else if (strncmp (argv[k],"sDCF", 4) == 0) {
             saveDotCFile = 1;
+        }
+        else if (strncmp (argv[k],"JsSm", 4) == 0) {
+            SmearedPlots = 1;
+            JetsSmeared = strtol(argv[k+1], NULL, 10);
         }
         else if (strncmp (argv[k],"doSignal", 8) == 0) {
             doSignal = 1;
@@ -149,7 +155,7 @@ int main( int argc, char* argv[]) {
     }
     vector<SampleT> * subSampVec    = SubSampVec();
     cout << "subsamp size " << subSampVec->size() << endl;
-    vector<SystT> * systVec         = SystVec();
+    vector<SystT> * systVec         = SystVec(SmearedPlots);
     
     //some relevant things for saving names        
     TString TTBarGenName[3] = {"_madgraph", "_mcatnlo", "_powheg"};
