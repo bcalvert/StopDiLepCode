@@ -56,6 +56,14 @@ int main( int argc, char* argv[]) {
     bool useDDEstimate = 0;         // whether or not to use data-driven estimates for appropriate backgrounds -- as of right now it is just the TTBar norm to MT2ll < 80 GeV (7/22/13)
     bool allMT2llSystematic = 0;    // Whether or not to use the MT2ll systematic smearing for all MC or just TTBar
     int  versNumber     = 1;
+    bool makePlots      = 1;
+    bool dispIndSource = 0;
+    bool printFOMInfo  = 0;
+    int  typeFOM       = 0;
+    TString FOMString = "";
+    int  MT2llaxisCut = 80;
+    int  MT2lbaxisCut = 170;
+    bool UseUnblindedData = 0;
     for (int k = 0; k < argc; ++k) {
         cout << "argv[k] for k = " << k << " is: " << argv[k] << endl;
         if (strncmp (argv[k],"wChan", 5) == 0) {
@@ -69,7 +77,25 @@ int main( int argc, char* argv[]) {
         }
         else if (strncmp (argv[k],"doExcSamps", 10) == 0) {
             doExcSamps = 1;
-        }        
+        }     
+        else if (strncmp (argv[k],"DIS", 3) == 0) {
+            dispIndSource = 1;
+        }
+        else if (strncmp (argv[k],"ReleaseTheKraken", 16) == 0) {
+            UseUnblindedData = 1;
+            cout << "RELEASING THE KRAKEN!!! " << endl;
+            cout << "http://www.youtube.com/watch?v=gb2zIR2rvRQ " << endl;
+        }
+        else if (strncmp (argv[k],"pFOMI", 5) == 0) {
+            printFOMInfo = 1;
+        }
+        else if (strncmp (argv[k],"MT2AxisCuts", 11) == 0) {
+            MT2llaxisCut = strtol(argv[k+1], NULL, 10 );
+            MT2lbaxisCut = strtol(argv[k+2], NULL, 10 );
+        }
+        else if (strncmp (argv[k],"noPlots", 7) == 0) {
+            makePlots = 0;
+        }
         else if (strncmp (argv[k],"versNum", 7) == 0) {
             versNumber = strtol(argv[k+1], NULL, 10 );
         }       
@@ -81,6 +107,8 @@ int main( int argc, char* argv[]) {
         }        
         else if (strncmp (argv[k],"doFOM", 5) == 0) {
             doFOM = 1;
+            typeFOM = strtol(argv[k+1], NULL, 10 );
+            FOMString = typeFOM == 0 ? "S/sqrt(S+B)" : "S/sqrt(B)";
         }      
         else if (strncmp (argv[k],"doOneDeeFOM", 11) == 0) {
             doOneDeeFOM = 1;
@@ -137,7 +165,7 @@ int main( int argc, char* argv[]) {
     //Set up the file input
     //    vector<TFile *> * inFiles = new vector<TFile*>;
     vector<TString> * fileInNames = StopFileNames(whichNTuple, whichTTbarGen, doExcSamps, doReReco);
-    vector<TFile *> * inputFiles  = StopFiles(whichNTuple, fileInNames, doExcSamps, whichTTbarGen, doPURW, doSyst, versNumber);
+    vector<TFile *> * inputFiles  = StopFiles(whichNTuple, fileInNames, doExcSamps, whichTTbarGen, doPURW, doSyst, versNumber, UseUnblindedData);
     
     vector<TString> * sampleAddNames = new vector<TString>;
     vector<int> * sampleStartPositions = new vector<int>;
@@ -195,7 +223,8 @@ int main( int argc, char* argv[]) {
     canvSuffixSaveName += stringExcSamp;
     canvSuffixSaveName += stringSignal;
     if (doReReco) canvSuffixSaveName += "_ReReco";
-    if (versNumber == 2) canvSuffixSaveName += "_vers2";    
+    if (versNumber == 2) canvSuffixSaveName += "_vers2";
+    if (SmearedPlots) canvSuffixSaveName += "_SmearedMET";
     TString saveNameAddition("../Plots/");
     
     ///Systematics stuff////
@@ -228,7 +257,8 @@ int main( int argc, char* argv[]) {
     vector<TGraphAsymmErrors *> * vecCurrSigCompSpecSource, * vecCurrSigCompSpecSource_pStat;
     
     ///Data-Driven systematics stuff
-    float TTBarFullCutSFOviReReco[3] = {1.01276, 0.933961, 1.03732};
+//    float TTBarFullCutSFOviReReco[3] = {1.01276, 0.933961, 1.03732};
+ float TTBarFullCutSFOviReReco[3] = {1.01276, 0.933961, 1.00069};
     float TTBarFullCutSFOvi[3] = {0.946965, 0.873284, 0.969927};
     float TTBarFullCutSFDESY[3] = {0.84936, 0.843207, 0.949907};
     if (!doExcSamps) {
@@ -274,19 +304,21 @@ int main( int argc, char* argv[]) {
     vector<float> * signalSkimScaleVec;
     if (doSignal) signalSkimScaleVec = SignalSkimEfficiencyCalc(typeSMS, prefixT2tt, vecStopMassGrab, vecChi0MassGrab, vecCharginoMassGrab, intLumi);
     
-    TString plotGrabBaseName = "h_PassMT2llCut";
-    TString plotGrabName;
+    TString plotGrabBaseName = SmearedPlots ? "h_SmearPassMT2llCut" : "h_PassMT2llCut";
+    TString plotMCGrabName, plotDataGrabName;
     TString plotSystGrabName;
     TString plotVarName, subSampName;;
     TString dataLegendComp = "Data";
     float   fracRatioYAxisRange = 0.21;
     
-    /*
+    
     const int numMT2llCuts = 5;
     int MT2llCuts[numMT2llCuts] = {80, 90, 100, 110, 120};     
-    */
+    
+    /*
     const int numMT2llCuts = 3;
     int MT2llCuts[numMT2llCuts] = {100, 110, 120};
+     */
     if (calcTTBarNorm) {
         MT2llCuts[0] = 80;
     }
@@ -310,18 +342,21 @@ int main( int argc, char* argv[]) {
             
             subSampName = "";
             subSampName += subSampVec->at(grabChan[whichChan]).histNameSuffix;
-            plotGrabName = plotGrabBaseName;
-            plotGrabName += MT2llCuts[iMT2Cut];
-            plotSystGrabName = plotGrabName;                
-            plotGrabName += subSampVec->at(grabChan[whichChan]).histNameSuffix;
-            
+            plotMCGrabName = plotGrabBaseName;
+            plotMCGrabName += MT2llCuts[iMT2Cut];
+            plotSystGrabName = plotMCGrabName;
+            plotDataGrabName = plotMCGrabName;
+            plotDataGrabName += subSampVec->at(grabChan[whichChan]).histNameSuffix;
+            if (SmearedPlots) {
+                plotDataGrabName.Replace(2,5,"");
+            }            
             if (doNonSig) {
-                HistogramVecGrabberCentValGrab(inputFiles, true, dataHistTH1Vec, nVtxBackScaleVec, plotGrabName, subSampName, useDDEstimate, TTBarSF, scaleLumi);
+                HistogramVecGrabberCentValGrab(inputFiles, true, dataHistTH1Vec, nVtxBackScaleVec, plotDataGrabName, subSampName, useDDEstimate, TTBarSF, scaleLumi);
                 HistogramAdderData(dataHistTH1Vec, h_DataComp, 1, 1, 1, -1, -1, -1, -1, "", false, false, "");     
                 
 
                 
-                HistogramVecGrabberCentValGrab(inputFiles, false, mcHistTH1Vec, nVtxBackScaleVec, plotGrabName, subSampName, useDDEstimate, TTBarSF, scaleLumi);
+                HistogramVecGrabberCentValGrab(inputFiles, false, mcHistTH1Vec, nVtxBackScaleVec, plotMCGrabName, subSampName, useDDEstimate, TTBarSF, scaleLumi);
                 HistogramAdderMC(mcHistTH1Vec, mcCompHist1DCentValVec, sampleStartPositions, sampleAddNames, h_MCComp, 1, 1, 1, -1, -1, -1, -1, "", false, false, "");
                 
                 if (calcTTBarNorm) {
@@ -332,7 +367,7 @@ int main( int argc, char* argv[]) {
                 if (doSyst) {
                     HistogramVecGrabberSystGrab(inputFiles, mcHistTH1Vec, mcHistSystTH1Vec, nVtxBackScaleVec, plotSystGrabName, subSampName, systVec, useDDEstimate, TTBarSF, scaleLumi, allMT2llSystematic, whichNTuple);            
                     HistogramProjectorSyst(mcHistSystTH1Vec, mcCompHist1DSystVec, 1, 1, 1, -1, -1, -1, -1, "", false, false, "");
-                    SystGraphMakers(h_MCComp, mcCompHist1DSystVec, errCompSpecSource, errCompSpecSource_pStat, fracRatioSystVec, systCanvNameVec, kGray + 1, plotGrabName, true, fracRatioYAxisRange, doSymErr, false);
+                    SystGraphMakers(h_MCComp, mcCompHist1DSystVec, errCompSpecSource, errCompSpecSource_pStat, fracRatioSystVec, systCanvNameVec, kGray + 1, plotMCGrabName, true, fracRatioYAxisRange, doSymErr, false, SmearedPlots);
                 }
                 cout << "Cutting on MT2ll equals: " << MT2llCuts[iMT2Cut] << endl;
                 cout << "h_DataComp Name " << h_DataComp->GetName() << endl;
@@ -345,8 +380,54 @@ int main( int argc, char* argv[]) {
                 cout << "h_MCComp Bin Error 1 " << h_MCComp->GetBinError(1) << endl;
                 cout << "h_MCComp Bin Content 2 " << h_MCComp->GetBinContent(2) << endl;
                 cout << "h_MCComp Bin Error 2 " << h_MCComp->GetBinError(2) << endl;
+                if (dispIndSource) {
+                    cout << "Printing Individual Sources yield information: " << endl;
+                    for (unsigned int iSource = 0; iSource < mcCompHist1DCentValVec->size(); ++iSource) {
+                        cout << "Name of Individual Source: " << mcCompHist1DCentValVec->at(iSource)->GetName() << endl;
+                        cout << "Individual Source Bin Content 1 " << mcCompHist1DCentValVec->at(iSource)->GetBinContent(1) << endl;
+                        cout << "Individual Source Bin Error 1 " << mcCompHist1DCentValVec->at(iSource)->GetBinError(1) << endl;
+                        cout << "Individual Source Bin Content 2 " << mcCompHist1DCentValVec->at(iSource)->GetBinContent(2) << endl;
+                        cout << "Individual Source Bin Error 2 " << mcCompHist1DCentValVec->at(iSource)->GetBinError(2) << endl;
+                    }
+                    if (doSyst) {
+                        int grabIndex = -1;                                                
+                        vector<float> UpErrBin2, DownErrBin2;
+                        
+                        for (unsigned int iFile = 0; iFile < inputFiles->size(); ++iFile) {
+                            TString fileName = inputFiles->at(iFile)->GetName();
+                            cout << "fileName " << fileName << endl;
+                            if (fileName.Contains("Data")) continue;                            
+                            grabIndex++;
+                            
+                            vector<TH1F *> * ind1DSystVec = new vector<TH1F *>;
+                            vector<TH1 *> * IndSystHistVec = IndividualHistSysts(inputFiles->at(iFile), mcHistTH1Vec->at(grabIndex), plotSystGrabName, subSampName,systVec, whichNTuple);
+                            vector<TGraphAsymmErrors *> * errCompSpecSourceSpecFile = new vector<TGraphAsymmErrors *>;
+                            vector<TGraphAsymmErrors *> * errCompSpecSourceSpecFile_pStat = new vector<TGraphAsymmErrors *>;
+                            HistogramProjectorSyst(IndSystHistVec, ind1DSystVec, 1, 1, 1, -1, -1, -1, -1, "", false, false, fileName);
+                            SystGraphMakersIndivSamp((TH1F*) mcHistTH1Vec->at(grabIndex), ind1DSystVec, errCompSpecSourceSpecFile, errCompSpecSourceSpecFile_pStat, doSymErr, SmearedPlots);
+                            for (unsigned int iSyst = 0; iSyst < systCanvNameVec->size(); ++iSyst) {
+                                cout << "For file: " << fileName << " and syst " << systCanvNameVec->at(iSyst) << endl;
+                                cout << "ErrGraph Up Err at point 1 " << errCompSpecSourceSpecFile->at(iSyst)->GetErrorYhigh(1) << endl;
+                                cout << "ErrGraph Down Err at point 1 " << errCompSpecSourceSpecFile->at(iSyst)->GetErrorYlow(1) << endl;
+                                cout << "ErrGraph Up Err at point 2 " << errCompSpecSourceSpecFile->at(iSyst)->GetErrorYhigh(2) << endl;
+                                cout << "ErrGraph Down Err at point 2 " << errCompSpecSourceSpecFile->at(iSyst)->GetErrorYlow(2) << endl;
+                                cout << endl;
+                                if (systCanvNameVec->at(iSyst).Contains("FullSyst")) {
+                                    UpErrBin2.push_back(errCompSpecSourceSpecFile->at(iSyst)->GetErrorYhigh(2));
+                                    DownErrBin2.push_back(errCompSpecSourceSpecFile->at(iSyst)->GetErrorYlow(2));
+                                }
+                            }
+                            delete ind1DSystVec;
+                            delete IndSystHistVec;
+                            delete errCompSpecSourceSpecFile;
+                            delete errCompSpecSourceSpecFile_pStat;
+                        }
+                        PrintSystInfo(&UpErrBin2, &DownErrBin2, mcCompHist1DCentValVec, sampleStartPositions);
+                    }
+                }
                 if (doSyst) {
-                    for (unsigned int iSyst = 0; iSyst < systCanvNameVec->size(); ++iSyst) {
+                    cout << "Printing Comprehensive Systematics Info: " << endl;
+                    for (unsigned int iSyst = 0; iSyst < systCanvNameVec->size(); ++iSyst) {                        
                         cout << "For syst " << systCanvNameVec->at(iSyst) << endl;
                         cout << "ErrGraph Up Err at point 1 " << errCompSpecSource->at(iSyst)->GetErrorYhigh(1) << endl;
                         cout << "ErrGraph Down Err at point 1 " << errCompSpecSource->at(iSyst)->GetErrorYlow(1) << endl;
@@ -364,7 +445,7 @@ int main( int argc, char* argv[]) {
                 HistogramAdderSignal(currSignalCentValTH1Hist, currSignal1DCentValHist, 1, 1, 1, -1, -1, -1, -1, "", false, false, "");
                 if (doSyst) {                    
                     HistogramProjectorSyst(vecCurrSignalSystTH1Hists, vecCurrStop1DSystHists, 1, 1, 1, -1, -1, -1, -1, "", false, false, "");
-                    SystGraphMakers(currSignal1DCentValHist, vecCurrStop1DSystHists, vecCurrSigCompSpecSource, vecCurrSigCompSpecSource_pStat, fracRatioSystVec, systCanvNameVec, mcColorsSignal->at(0), plotGrabName, true, fracRatioYAxisRange, doSymErr, (doSignal && doNonSig));
+                    SystGraphMakers(currSignal1DCentValHist, vecCurrStop1DSystHists, vecCurrSigCompSpecSource, vecCurrSigCompSpecSource_pStat, fracRatioSystVec, systCanvNameVec, mcColorsSignal->at(0), plotMCGrabName, true, fracRatioYAxisRange, doSymErr, (doSignal && doNonSig), SmearedPlots);
                 }
                 cout << "Cutting on MT2ll equals: " << MT2llCuts[iMT2Cut] << endl;
                 cout << "currSignal1DCentValHist Name " << currSignal1DCentValHist->GetName() << endl;
@@ -403,16 +484,17 @@ int main( int argc, char* argv[]) {
             subSampName += subSampVec->at(grabChanV2[iChan]).histNameSuffix;
             cout << "grabChanV2[iChan] " << grabChanV2[iChan]  << endl;
             cout << "subSampName " << subSampName << endl;
-            plotGrabName = plotGrabBaseName;
-            plotGrabName += 80;
-            plotSystGrabName = plotGrabName;                
-            plotGrabName += subSampVec->at(grabChanV2[iChan]).histNameSuffix;
+            plotMCGrabName = plotGrabBaseName;
+            plotMCGrabName += 80;
+            plotSystGrabName = plotMCGrabName;
+            plotDataGrabName = plotMCGrabName;
+            plotDataGrabName += subSampVec->at(grabChanV2[iChan]).histNameSuffix;
             
             if (doNonSig) {
-                HistogramVecGrabberCentValGrab(inputFiles, true, dataHistTH1Vec, nVtxBackScaleVec, plotGrabName, subSampName, useDDEstimate, TTBarSF, scaleLumi);
+                HistogramVecGrabberCentValGrab(inputFiles, true, dataHistTH1Vec, nVtxBackScaleVec, plotDataGrabName, subSampName, useDDEstimate, TTBarSF, scaleLumi);
                 HistogramAdderData(dataHistTH1Vec, h_DataComp, 1, 1, 1, -1, -1, -1, -1, "", false, false, "");     
                                 
-                HistogramVecGrabberCentValGrab(inputFiles, false, mcHistTH1Vec, nVtxBackScaleVec, plotGrabName, subSampName, useDDEstimate, TTBarSF, scaleLumi);
+                HistogramVecGrabberCentValGrab(inputFiles, false, mcHistTH1Vec, nVtxBackScaleVec, plotMCGrabName, subSampName, useDDEstimate, TTBarSF, scaleLumi);
                 HistogramAdderMC(mcHistTH1Vec, mcCompHist1DCentValVec, sampleStartPositions, sampleAddNames, h_MCComp, 1, 1, 1, -1, -1, -1, -1, "", false, false, "");
                 
                 cout << "h_DataComp Name " << h_DataComp->GetName() << endl;
@@ -438,7 +520,7 @@ int main( int argc, char* argv[]) {
                 if (doSyst) {
                     HistogramVecGrabberSystGrab(inputFiles, mcHistTH1Vec, mcHistSystTH1Vec, nVtxBackScaleVec, plotSystGrabName, subSampName, systVec, useDDEstimate, TTBarSF, scaleLumi, allMT2llSystematic, whichNTuple);            
                     HistogramProjectorSyst(mcHistSystTH1Vec, mcCompHist1DSystVec, 1, 1, 1, -1, -1, -1, -1, "", false, false, "");
-                    SystGraphMakers(h_MCComp, mcCompHist1DSystVec, errCompSpecSource, errCompSpecSource_pStat, fracRatioSystVec, systCanvNameVec, kGray + 1, plotGrabName, true, fracRatioYAxisRange, doSymErr, false);                
+                    SystGraphMakers(h_MCComp, mcCompHist1DSystVec, errCompSpecSource, errCompSpecSource_pStat, fracRatioSystVec, systCanvNameVec, kGray + 1, plotMCGrabName, true, fracRatioYAxisRange, doSymErr, false, SmearedPlots);                
                     for (unsigned int iSyst = 0; iSyst < systCanvNameVec->size(); ++iSyst) {
                         cout << "For hist " << h_MCComp->GetName() << " and syst " << systCanvNameVec->at(iSyst) << endl;
                         cout << "ErrGraph Up Err at point 1 " << errCompSpecSource->at(iSyst)->GetErrorYhigh(1) << endl;
@@ -463,7 +545,7 @@ int main( int argc, char* argv[]) {
                 if (doSyst) {
                     
                     HistogramProjectorSyst(vecCurrSignalSystTH1Hists, vecCurrStop1DSystHists, 1, 1, 1, -1, -1, -1, -1, "", false, false, "");
-                    SystGraphMakers(currSignal1DCentValHist, vecCurrStop1DSystHists, vecCurrSigCompSpecSource, vecCurrSigCompSpecSource_pStat, fracRatioSystVec, systCanvNameVec, mcColorsSignal->at(0), plotGrabName, true, fracRatioYAxisRange, doSymErr, (doSignal && doNonSig));
+                    SystGraphMakers(currSignal1DCentValHist, vecCurrStop1DSystHists, vecCurrSigCompSpecSource, vecCurrSigCompSpecSource_pStat, fracRatioSystVec, systCanvNameVec, mcColorsSignal->at(0), plotMCGrabName, true, fracRatioYAxisRange, doSymErr, (doSignal && doNonSig), SmearedPlots);
                     for (unsigned int iSyst = 0; iSyst < systCanvNameVec->size(); ++iSyst) {
                         cout << "For hist " << currSignal1DCentValHist->GetName() << " and syst " << systCanvNameVec->at(iSyst) << endl;
                         cout << "Signal ErrGraph Up Err at point 1 " << vecCurrSigCompSpecSource->at(iSyst)->GetErrorYhigh(1) << endl;
@@ -480,26 +562,32 @@ int main( int argc, char* argv[]) {
 
     
     TString canvNameBase, canvName;
-    TString canvNameAdd[12] = {"_CentVal", "_LepESShiftUp", "_LepESShiftDown", "_JetESShiftUp", "_JetESShiftDown", "_MT2UncESShiftUp", "_MT2UncESShiftDown", "_LepEffSFShiftUp", "_LepEffSFShiftDown", "_genTopRW", "_genStopXSecShiftUp", "_genStopXSecShiftDown"};    
-    vector<TH2F *> vecMCComp(12);
-    vector<TH2F *> vecSig(12);
-    vector<TH2F *> vecFOMHists(12);
+    const Int_t numCanvs = 14;
+    TString canvNameAdd[numCanvs] = {"_CentVal", "_LepESShiftUp", "_LepESShiftDown", "_JetESShiftUp", "_JetESShiftDown", "_UncESShiftUp", "_UncESShiftDown", "_LepEffSFShiftUp", "_LepEffSFShiftDown", "_genTopRW", "_genStopXSecShiftUp", "_genStopXSecShiftDown", "_BTagSFShiftUp", "_BTagSFShiftDown"};    
+    vector<TH2F *> vecMCComp(numCanvs);
+    vector<TH2F *> vecSig(numCanvs);
+    vector<TH2F *> vecFOMHists(numCanvs);
     
-    vector<TH1F *> vecMCComp1D(12);
-    vector<TH1F *> vecSig1D(12);
-    vector<TH1F *> vecFOMHists1D(12);
-    
+    vector<TH1F *> vecMCComp1D(numCanvs);
+    vector<TH1F *> vecSig1D(numCanvs);
+    vector<TH1F *> vecFOMHists1D(numCanvs);
+    TString SigStringTitle;
     if (doFOM) {
+        SigStringTitle = mcLegendsSignal->at(0);
         if (doOneDeeFOM) {
-            plotGrabBaseName = "h_MT2ll";            
-            plotGrabName = plotGrabBaseName;
-            plotSystGrabName = plotGrabName;                
-            plotGrabName += subSampName;
+            plotGrabBaseName = SmearedPlots ? "h_SmearMT2ll" : "h_MT2ll";
+            plotMCGrabName = plotGrabBaseName;
+            plotSystGrabName = plotMCGrabName;
+            plotDataGrabName = plotMCGrabName;
+            plotDataGrabName += subSampName;
+            if (SmearedPlots) {
+                plotDataGrabName.Replace(2,5,"");
+            }
             canvNameBase = "c_FOM_OneDee";
             mcHistTH1Vec = new vector<TH1 *>;
             mcHistSystTH1Vec = new vector<TH1 *>;
             vecCurrSignalSystTH1Hists = new vector<TH1 *>;        
-            HistogramVecGrabberCentValGrab(inputFiles, false, mcHistTH1Vec, nVtxBackScaleVec, plotGrabName, subSampName, useDDEstimate, TTBarSF, scaleLumi);
+            HistogramVecGrabberCentValGrab(inputFiles, false, mcHistTH1Vec, nVtxBackScaleVec, plotMCGrabName, subSampName, useDDEstimate, TTBarSF, scaleLumi);
             vecMCComp1D[0] = HistogramAdderMCOneDee(mcHistTH1Vec);
             HistogramVecGrabber_Signal(inputFilesSignal, signalSkimScaleVec, 0, currSignalCentValTH1Hist, plotSystGrabName, vecCurrSignalSystTH1Hists, systVec, subSampName, false, false, doSyst, allMT2llSystematic);
             vecSig1D[0] = (TH1F*) currSignalCentValTH1Hist;
@@ -507,49 +595,84 @@ int main( int argc, char* argv[]) {
             //        cout << vecMCComp[0]->GetName() << " integral " << vecMCComp[0]->Integral() << endl;
             //        cout << "vecSig[0] ";
             //        cout << vecSig[0]->GetName() << " integral " << vecSig[0]->Integral() << endl;
-            vecFOMHists1D[0] = FOMHist(vecMCComp1D[0], vecSig1D[0], 0);
-            canvName = canvNameBase;
-            canvName += canvNameAdd[0];
-            canvName += canvSuffixSaveName;
-            c_Var = new TCanvas(canvName, canvName, 0, 0, 700, 700);
-            vecFOMHists1D[0]->Draw("e1");
-            c_Var->SaveAs(saveNameAddition + canvName + TString(".pdf"));
-            if (saveDotCFile) c_Var->SaveAs(saveNameAddition + canvName + TString(".C"));
-            if (doSyst) {
-                HistogramVecGrabberSystGrab(inputFiles, mcHistTH1Vec, mcHistSystTH1Vec, nVtxBackScaleVec, plotSystGrabName, subSampName, systVec, useDDEstimate, TTBarSF, scaleLumi, allMT2llSystematic, whichNTuple);
-                for (int iSyst = 0; iSyst < 11; ++iSyst) {
-                    canvName = canvNameBase;
-                    canvName += canvNameAdd[iSyst + 1];
-                    canvName += canvSuffixSaveName;
-                    if (canvNameAdd[iSyst + 1].Contains("genStop")) {
-                        vecMCComp1D[iSyst + 1] = HistogramAdderMCOneDee(mcHistTH1Vec);
-                    }
-                    else {
-                        vecMCComp1D[iSyst + 1] = SystHistFinderOneDee(mcHistSystTH1Vec, canvNameAdd[iSyst + 1]);
-                    }
-                    cout << "vecMCComp[iSyst + 1] " << vecMCComp1D[iSyst + 1]->GetName() << " Integral " << vecMCComp1D[iSyst + 1]->Integral() << endl;
-                    cout << "vecMCComp[iSyst + 1] " << vecMCComp1D[iSyst + 1]->GetName() << " Mean " << vecMCComp1D[iSyst + 1]->GetMean(1) << endl;
-                    vecSig1D[iSyst + 1] = SystHistFinderOneDee(vecCurrSignalSystTH1Hists, canvNameAdd[iSyst + 1]);
-                    cout << "vecSig[iSyst + 1] " << vecSig1D[iSyst + 1]->GetName() << " Integral " << vecSig1D[iSyst + 1]->Integral() << endl;
-                    cout << "vecSig[iSyst + 1] " << vecSig1D[iSyst + 1]->GetName() << " Mean " << vecSig1D[iSyst + 1]->GetMean(1) << endl;
-                    vecFOMHists1D[iSyst + 1] = FOMHist(vecMCComp1D[iSyst + 1], vecSig1D[iSyst + 1], iSyst + 1);
-                    c_Var = new TCanvas(canvName, canvName, 0, 0, 700, 700);
-                    vecFOMHists1D[iSyst + 1]->Draw("e1");
-                    c_Var->SaveAs(saveNameAddition + canvName + TString(".pdf"));
-                    if (saveDotCFile) c_Var->SaveAs(saveNameAddition + canvName + TString(".C"));
+            vecFOMHists1D[0] = FOMHist(vecMCComp1D[0], vecSig1D[0], SigStringTitle, typeFOM, 0);
+            if (makePlots) {
+                canvName = canvNameBase;
+                canvName += canvNameAdd[0];
+                canvName += canvSuffixSaveName;
+                c_Var = new TCanvas(canvName, canvName, 0, 0, 700, 700);
+                //            vecFOMHists1D[0]->Draw("e1");
+                vecFOMHists1D[0]->Draw("hist");
+                c_Var->SaveAs(saveNameAddition + canvName + TString(".pdf"));
+                if (saveDotCFile) c_Var->SaveAs(saveNameAddition + canvName + TString(".C"));
+            }
+            if (printFOMInfo) {
+                
+                int XBinMaxVal, YBinMaxVal, ZBinMaxVal;
+                TAxis * xAxis = vecFOMHists1D[0]->GetXaxis();
+                int MinXBin = xAxis->FindBin(MT2llaxisCut);
+                int MaxXBin = xAxis->GetNbins();
+                xAxis->SetRange(MinXBin, MaxXBin);
+                vecFOMHists1D[0]->GetMaximumBin(XBinMaxVal, YBinMaxVal, ZBinMaxVal);
+                cout << "Printing FOM Info " << endl;
+                if (SmearedPlots) {
+                    cout << "In the range of SMEARED MT2ll = " << xAxis->GetBinLowEdge(MinXBin) << " to " << xAxis->GetBinUpEdge(MaxXBin) << endl;
+                    cout << "Max F.O.M., using F.O.M. of " << FOMString << " is " << vecFOMHists1D[0]->GetBinContent(XBinMaxVal, YBinMaxVal) << " and is found cutting at MT2ll = " << xAxis->GetBinLowEdge(XBinMaxVal) << endl;
                 }
-            }  
+                else {
+                    cout << "In the range of MT2ll = " << xAxis->GetBinLowEdge(MinXBin) << " to " << xAxis->GetBinUpEdge(MaxXBin) << endl;
+                    cout << "Max F.O.M., using F.O.M. of " << FOMString << " is " << vecFOMHists1D[0]->GetBinContent(XBinMaxVal, YBinMaxVal) << " and is found cutting at MT2ll = " << xAxis->GetBinLowEdge(XBinMaxVal) << endl;
+                }
+                /*
+                int MinXBin = vecFOMHists1D[0]->FindBin(MT2llaxisCut);
+                int MaxXBin = vecFOMHists1D[0]->GetNbinsX();
+                TAxis * xAxis = vecFOMHists1D[0]->GetXaxis();
+                xAxis->SetRange(MinXBin, MaxXBin);
+                cout << "In the range of MT2ll = " << xAxis->GetBinLowEdge(MinXBin) << " to  " << xAxis->GetBinUpEdge(MaxXBin) << endl;
+                cout << "Max F.O.M., using F.O.M. of " << FOMString << " is " << vecFOMHists1D[0]->GetMaximum() << " and is found cutting at MT2ll = " << xAxis->GetBinLowEdge(vecFOMHists1D[0]->GetMaximumBin()) << endl;
+                */
+            }
+            else {
+                if (doSyst) {
+                    HistogramVecGrabberSystGrab(inputFiles, mcHistTH1Vec, mcHistSystTH1Vec, nVtxBackScaleVec, plotSystGrabName, subSampName, systVec, useDDEstimate, TTBarSF, scaleLumi, allMT2llSystematic, whichNTuple);
+                    for (int iSyst = 0; iSyst < numCanvs - 1; ++iSyst) {
+                        if (canvNameAdd[iSyst + 1].Contains("genStop")) {
+                            vecMCComp1D[iSyst + 1] = HistogramAdderMCOneDee(mcHistTH1Vec);
+                        }
+                        else {
+                            vecMCComp1D[iSyst + 1] = SystHistFinderOneDee(mcHistSystTH1Vec, canvNameAdd[iSyst + 1]);
+                        }
+                        cout << "vecMCComp[iSyst + 1] " << vecMCComp1D[iSyst + 1]->GetName() << " Integral " << vecMCComp1D[iSyst + 1]->Integral() << endl;
+                        cout << "vecMCComp[iSyst + 1] " << vecMCComp1D[iSyst + 1]->GetName() << " Mean " << vecMCComp1D[iSyst + 1]->GetMean(1) << endl;
+                        vecSig1D[iSyst + 1] = SystHistFinderOneDee(vecCurrSignalSystTH1Hists, canvNameAdd[iSyst + 1]);
+                        cout << "vecSig[iSyst + 1] " << vecSig1D[iSyst + 1]->GetName() << " Integral " << vecSig1D[iSyst + 1]->Integral() << endl;
+                        cout << "vecSig[iSyst + 1] " << vecSig1D[iSyst + 1]->GetName() << " Mean " << vecSig1D[iSyst + 1]->GetMean(1) << endl;
+                        vecFOMHists1D[iSyst + 1] = FOMHist(vecMCComp1D[iSyst + 1], vecSig1D[iSyst + 1], SigStringTitle, typeFOM, iSyst + 1);
+                        if (makePlots) {
+                            canvName = canvNameBase;
+                            canvName += canvNameAdd[iSyst + 1];
+                            canvName += canvSuffixSaveName;
+                            c_Var = new TCanvas(canvName, canvName, 0, 0, 700, 700);
+                            //                    vecFOMHists1D[iSyst + 1]->Draw("e1"); 
+                            vecFOMHists1D[iSyst + 1]->Draw("hist");
+                            c_Var->SaveAs(saveNameAddition + canvName + TString(".pdf"));
+                            if (saveDotCFile) c_Var->SaveAs(saveNameAddition + canvName + TString(".C"));
+                        }
+                    }
+                } 
+            }
         }
         if (doTwoDeeFOM) {
             plotGrabBaseName = "h_MT2ll_vs_MT2lb";   
             canvNameBase = "c_FOM_TwoDee";
-            plotGrabName = plotGrabBaseName;
-            plotSystGrabName = plotGrabName;                
-            plotGrabName += subSampName;
+            plotMCGrabName = plotGrabBaseName;
+            plotSystGrabName = plotMCGrabName;
+            plotDataGrabName = plotMCGrabName;
+            plotDataGrabName += subSampName;
             mcHistTH1Vec = new vector<TH1 *>;
             mcHistSystTH1Vec = new vector<TH1 *>;
             vecCurrSignalSystTH1Hists = new vector<TH1 *>;        
-            HistogramVecGrabberCentValGrab(inputFiles, false, mcHistTH1Vec, nVtxBackScaleVec, plotGrabName, subSampName, useDDEstimate, TTBarSF, scaleLumi);
+            HistogramVecGrabberCentValGrab(inputFiles, false, mcHistTH1Vec, nVtxBackScaleVec, plotMCGrabName, subSampName, useDDEstimate, TTBarSF, scaleLumi);
             vecMCComp[0] = HistogramAdderMCTwoDee(mcHistTH1Vec);
             HistogramVecGrabber_Signal(inputFilesSignal, signalSkimScaleVec, 0, currSignalCentValTH1Hist, plotSystGrabName, vecCurrSignalSystTH1Hists, systVec, subSampName, false, false, doSyst, allMT2llSystematic);
             vecSig[0] = (TH2F*) currSignalCentValTH1Hist;
@@ -557,36 +680,65 @@ int main( int argc, char* argv[]) {
             //        cout << vecMCComp[0]->GetName() << " integral " << vecMCComp[0]->Integral() << endl;
             //        cout << "vecSig[0] ";
             //        cout << vecSig[0]->GetName() << " integral " << vecSig[0]->Integral() << endl;
-            vecFOMHists[0] = FOMHist(vecMCComp[0], vecSig[0], 0);
-            canvName = canvNameBase;
-            canvName += canvNameAdd[0];
-            canvName += canvSuffixSaveName;
-            c_Var = new TCanvas(canvName, canvName, 0, 0, 700, 700);
-            vecFOMHists[0]->Draw("colz");
-            c_Var->SaveAs(saveNameAddition + canvName + TString(".pdf"));
-            if (saveDotCFile) c_Var->SaveAs(saveNameAddition + canvName + TString(".C"));
-            if (doSyst) {
-                HistogramVecGrabberSystGrab(inputFiles, mcHistTH1Vec, mcHistSystTH1Vec, nVtxBackScaleVec, plotSystGrabName, subSampName, systVec, useDDEstimate, TTBarSF, scaleLumi, allMT2llSystematic, whichNTuple);
-                for (int iSyst = 0; iSyst < 11; ++iSyst) {
-                    canvName = canvNameBase;
-                    canvName += canvNameAdd[iSyst + 1];
-                    canvName += canvSuffixSaveName;
-                    if (canvNameAdd[iSyst + 1].Contains("genStop")) {
-                        vecMCComp[iSyst + 1] = HistogramAdderMCTwoDee(mcHistTH1Vec);
+            vecFOMHists[0] = FOMHist(vecMCComp[0], vecSig[0], SigStringTitle, typeFOM, 0);
+            if (makePlots) {
+                canvName = canvNameBase;
+                canvName += canvNameAdd[0];
+                canvName += canvSuffixSaveName;
+                c_Var = new TCanvas(canvName, canvName, 0, 0, 700, 700);
+                vecFOMHists[0]->Draw("colz");
+                c_Var->SaveAs(saveNameAddition + canvName + TString(".pdf"));
+                if (saveDotCFile) c_Var->SaveAs(saveNameAddition + canvName + TString(".C"));
+            }
+            if (printFOMInfo) {
+                int XBinMaxVal, YBinMaxVal, ZBinMaxVal;
+//                cout << " test " << endl;
+                TAxis * xAxis = vecFOMHists[0]->GetXaxis();
+//                cout << " test2 " << xAxis->GetName() << endl;
+                int MinXBin = xAxis->FindBin(MT2llaxisCut);
+                int MaxXBin = xAxis->GetNbins();
+                TAxis * yAxis = vecFOMHists[0]->GetYaxis();
+                int MinYBin = yAxis->FindBin(MT2lbaxisCut);
+                int MaxYBin = yAxis->GetNbins();
+                xAxis->SetRange(MinXBin, MaxXBin);
+                yAxis->SetRange(MinYBin, MaxYBin);
+                vecFOMHists[0]->GetMaximumBin(XBinMaxVal, YBinMaxVal, ZBinMaxVal);
+                cout << "Printing FOM Info " << endl;
+                if (SmearedPlots) {
+                    cout << "Currently Smearing doesn't work right with MT2lblb " << endl;
+                }
+                else {
+                    cout << "In the range of MT2ll = " << xAxis->GetBinLowEdge(MinXBin) << " to " << xAxis->GetBinUpEdge(MaxXBin) << endl;
+                    cout << "In the range of MT2lb = " << yAxis->GetBinLowEdge(MinYBin) << " to " << yAxis->GetBinUpEdge(MaxYBin) << endl;
+                }
+                cout << "Max F.O.M., using F.O.M. of " << FOMString << " is " << vecFOMHists[0]->GetBinContent(XBinMaxVal, YBinMaxVal) << " and is found cutting at MT2ll = " << xAxis->GetBinLowEdge(XBinMaxVal) << " and MT2lblb = " << yAxis->GetBinLowEdge(YBinMaxVal) << endl;
+            }
+            else {
+                if (doSyst) {
+                    HistogramVecGrabberSystGrab(inputFiles, mcHistTH1Vec, mcHistSystTH1Vec, nVtxBackScaleVec, plotSystGrabName, subSampName, systVec, useDDEstimate, TTBarSF, scaleLumi, allMT2llSystematic, whichNTuple);
+                    for (int iSyst = 0; iSyst < numCanvs -1; ++iSyst) {
+                        if (canvNameAdd[iSyst + 1].Contains("genStop")) {
+                            vecMCComp[iSyst + 1] = HistogramAdderMCTwoDee(mcHistTH1Vec);
+                        }
+                        else {
+                            vecMCComp[iSyst + 1] = SystHistFinderTwoDee(mcHistSystTH1Vec, canvNameAdd[iSyst + 1]);
+                        }
+                        cout << "vecMCComp[iSyst + 1] " << vecMCComp[iSyst + 1]->GetName() << " Integral " << vecMCComp[iSyst + 1]->Integral() << endl;
+                        cout << "vecMCComp[iSyst + 1] " << vecMCComp[iSyst + 1]->GetName() << " Mean " << vecMCComp[iSyst + 1]->GetMean(1) << endl;
+                        vecSig[iSyst + 1] = SystHistFinderTwoDee(vecCurrSignalSystTH1Hists, canvNameAdd[iSyst + 1]);
+                        cout << "vecSig[iSyst + 1] " << vecSig[iSyst + 1]->GetName() << " Integral " << vecSig[iSyst + 1]->Integral() << endl;
+                        cout << "vecSig[iSyst + 1] " << vecSig[iSyst + 1]->GetName() << " Mean " << vecSig[iSyst + 1]->GetMean(1) << endl;
+                        vecFOMHists[iSyst + 1] = FOMHist(vecMCComp[iSyst + 1], vecSig[iSyst + 1], SigStringTitle, typeFOM, iSyst + 1);
+                        if (makePlots) {
+                            canvName = canvNameBase;
+                            canvName += canvNameAdd[iSyst + 1];
+                            canvName += canvSuffixSaveName;
+                            c_Var = new TCanvas(canvName, canvName, 0, 0, 700, 700);
+                            vecFOMHists[iSyst + 1]->Draw("colz");
+                            c_Var->SaveAs(saveNameAddition + canvName + TString(".pdf"));
+                            if (saveDotCFile) c_Var->SaveAs(saveNameAddition + canvName + TString(".C"));
+                        }
                     }
-                    else {
-                        vecMCComp[iSyst + 1] = SystHistFinderTwoDee(mcHistSystTH1Vec, canvNameAdd[iSyst + 1]);
-                    }
-                    cout << "vecMCComp[iSyst + 1] " << vecMCComp[iSyst + 1]->GetName() << " Integral " << vecMCComp[iSyst + 1]->Integral() << endl;
-                    cout << "vecMCComp[iSyst + 1] " << vecMCComp[iSyst + 1]->GetName() << " Mean " << vecMCComp[iSyst + 1]->GetMean(1) << endl;
-                    vecSig[iSyst + 1] = SystHistFinderTwoDee(vecCurrSignalSystTH1Hists, canvNameAdd[iSyst + 1]);
-                    cout << "vecSig[iSyst + 1] " << vecSig[iSyst + 1]->GetName() << " Integral " << vecSig[iSyst + 1]->Integral() << endl;
-                    cout << "vecSig[iSyst + 1] " << vecSig[iSyst + 1]->GetName() << " Mean " << vecSig[iSyst + 1]->GetMean(1) << endl;
-                    vecFOMHists[iSyst + 1] = FOMHist(vecMCComp[iSyst + 1], vecSig[iSyst + 1], iSyst + 1);
-                    c_Var = new TCanvas(canvName, canvName, 0, 0, 700, 700);
-                    vecFOMHists[iSyst + 1]->Draw("colz");
-                    c_Var->SaveAs(saveNameAddition + canvName + TString(".pdf"));
-                    if (saveDotCFile) c_Var->SaveAs(saveNameAddition + canvName + TString(".C"));
                 }
             }
         }

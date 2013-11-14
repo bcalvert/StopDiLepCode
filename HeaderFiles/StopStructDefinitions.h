@@ -40,6 +40,7 @@ typedef struct HistAxis {
 
 typedef struct {
     TString name;
+    TString stringAxis;
     TString xLabel;
     int xBinN;
     int RBNX;
@@ -65,6 +66,47 @@ typedef struct {
     float zLB, zUB;
     
     bool logY1D;
+    
+    void SetAxisString(TString XString, TString YString, TString ZString, TString titleString = "") {
+        stringAxis = titleString;
+        stringAxis += ";";
+        stringAxis += XString;
+        stringAxis += ";";
+        stringAxis += YString;
+        stringAxis += ";";
+        stringAxis += ZString;
+        stringAxis += ";";
+    }
+    void SetName(TString XString, TString YString, TString ZString, TString AppendString = "", int numDims = 1) {
+        name = "h_";
+        if (numDims > 0) {
+            name += XString;
+            if (numDims > 1) {
+                name += "_vs_";
+                name += YString;
+                if (numDims > 2) {
+                    name += "_vs_";
+                    name += ZString;
+                }
+            }
+        }
+        name += AppendString;
+    }
+    void SetIndAxisLabel(TString inputString, map<TString, TString> * mapVartoLabel, int whichDim = 1) {
+        map<TString, TString>::iterator xIter;
+        xIter = mapVartoLabel->Find(inputString);
+        if (xIter != mapVartoLabel->end()) {
+            if (whichDim == 1) {
+                xLabel = xIter->second;
+            }
+            else if (whichDim == 2) {
+                yLabel = xIter->second;
+            }
+            else if (whichDim == 3) {
+                zLabel = xIter->second;
+            }
+        }
+    }
 } HistogramT;
 
 typedef struct {
@@ -172,6 +214,13 @@ inline double deltaR(double eta1, double phi1, double eta2, double phi2) {
     result = sqrt(result);
     return result;
 }
+typedef struct PFJetEventPointers {
+    std::vector<float> * JetPx, * JetPy, * JetPz, * JetE, * JetNHF, * JetNEF, * JetCHF, * JetCEF, * JetBTag;
+    std::vector<int> * JetNDaug, * JetCharMult, * JetPartFlav;
+    unsigned int numPFJets;
+    //    std::vector<float> * genJetPx, * genJetPy, * genJetPz, * genJetEn, * genJetInvisE; //* genJetEt, * genJetEta;
+    //    std::vector<bool> * genJetIsGenJet;
+}PFJetEventPointers;
 
 typedef struct Lepton{
     TLorentzVector  P4;
@@ -186,6 +235,12 @@ typedef struct Lepton{
         P4.SetPxPyPzE(-99999., -99999., -99999., -99999.);
         PDGID = 0;
         relPFLepIso = -99999;
+    }
+    bool isElec() {
+        return (abs(PDGID) == 11);
+    }
+    bool isMuon() {
+        return (abs(PDGID) == 13);
     }
     /*
      Lepton(TLorentzVector input4Vec, int pdgid) : P4(input4Vec), PDGID(pdgid) {}
@@ -228,6 +283,46 @@ typedef struct ElectronEventPointers {
     unsigned int numElectrons;
 }ElectronEventPointers;
 
+
+typedef struct JetCutInfo {
+    // Look here for CutID definitions: https://twiki.cern.ch/twiki/bin/view/CMS/JetID
+    float cutNHF, cutNEF, cutCHF, cutCEF;
+    int cutNConst, cutChMult;
+    float cutBTagDisc, cutJetPt, cutJetEta;
+    void SetJetCutVars(int cutStrength) {
+        // cutStrength 0: Loose, 1: Medium, 2: Tight
+        float cutNHFStrength[3] = {0.99, 0.95, 0.90};
+        float cutNEFStrength[3] = {0.99, 0.95, 0.90};
+        float cutCHFStrength[3] = {0., 0., 0.};
+        float cutCEFStrength[3] = {0.99, 0.99, 0.99};
+        int cutNConstStrength[3] = {1, 1, 1};
+        int cutChMultStrength[3] = {0, 0, 0};
+        cutNHF = cutNHFStrength[cutStrength];
+        cutNEF = cutNEFStrength[cutStrength];
+        cutCHF = cutCHFStrength[cutStrength];
+        cutCEF = cutCEFStrength[cutStrength];
+        cutNConst = cutNConstStrength[cutStrength];
+        cutChMult = cutChMultStrength[cutStrength];
+    }
+    void DefaultCutVarVals() {
+        SetJetCutVars(0);
+        cutJetPt = 30.;
+        cutJetEta = 2.4;
+        cutBTagDisc = 0.679;  //CSV Middle working point, see (remove underscore in address): h_ttps://twiki.cern.ch/twiki/bin/viewauth/CMS/BTagPerformanceOP
+    }
+    void PrintVals() {
+        std::cout << "cutNHF " << cutNHF << std::endl;
+        std::cout << "cutNEF " << cutNEF << std::endl;
+        std::cout << "cutCHF " << cutCHF << std::endl;
+        std::cout << "cutCEF " << cutCEF << std::endl;
+        std::cout << "cutNConst " << cutNConst << std::endl;
+        std::cout << "cutChMult " << cutChMult << std::endl;
+        std::cout << "cutBTagDisc " << cutBTagDisc << std::endl;
+        std::cout << "cutJetPt " << cutJetPt << std::endl;
+        std::cout << "cutJetEta " << cutJetEta << std::endl;
+    }
+} JetCutInfo;
+
 typedef struct PFJet{
     TLorentzVector  P4;
     float           valBTagDisc;
@@ -235,13 +330,23 @@ typedef struct PFJet{
     bool            isBJet;
     bool            isGenJetMatched;
     float           dEnRecoGen;
+    float NeutHadFrac, ChargeHadFrac, NeutEMFrac, ChargeEMFrac;
+    int   NumDaughters, ChargeMult;
+    bool  passJetID;
     void ClearVars() {
         P4.SetPxPyPzE(1E-8, 1E-8, 1E-4, 1E-8);
         valBTagDisc = 0.0;
         partonFlavor = -999999;
         isBJet = false;
         isGenJetMatched = false;
-        dEnRecoGen = 0.0;
+        dEnRecoGen      = 0.0;
+        NeutHadFrac     = 0.0;
+        ChargeHadFrac   = 0.0;
+        NeutEMFrac      = 0.0;
+        ChargeEMFrac    = 0.0;
+        NumDaughters    = 0;
+        ChargeMult      = 0;
+        passJetID       = true;
     }
     void isBadJet() {
         P4.SetPxPyPzE(-99999., -99999., -99999., -99999.);
@@ -251,25 +356,58 @@ typedef struct PFJet{
         isGenJetMatched = false;
         dEnRecoGen = 0.0;
     }
+    bool PassesID(JetCutInfo * inJCI) {
+        bool passJetID = false;
+        passJetID = (NeutHadFrac < inJCI->cutNHF && NeutEMFrac < inJCI->cutNEF);
+//        std::cout << "passJetIDStage 1? " << passJetID << std::endl;
+        if (fabs(P4.Eta()) < inJCI->cutJetEta) {
+//            std::cout << "P4.Eta() " << P4.Eta() << std::endl;
+            passJetID &= (ChargeEMFrac < inJCI->cutCEF && ChargeHadFrac > inJCI->cutCHF);
+            passJetID &= (ChargeMult > inJCI->cutChMult);
+//            std::cout << "passJetIDStage 2? " << passJetID << std::endl;
+        }
+        return passJetID;
+    }
+    void SetJetVars(PFJetEventPointers inPFJEPs, int iJet) {
+        //Set LorentzVector
+        P4.SetPxPyPzE(inPFJEPs.JetPx->at(iJet), inPFJEPs.JetPy->at(iJet), inPFJEPs.JetPz->at(iJet), inPFJEPs.JetE->at(iJet));
+        // Set BTagging info
+        valBTagDisc = inPFJEPs.JetBTag->at(iJet);
+        partonFlavor = inPFJEPs.JetPartFlav->at(iJet);
+        
+        //Set Jet quality cut variables
+        NeutHadFrac = inPFJEPs.JetNHF->at(iJet);
+        ChargeHadFrac = inPFJEPs.JetCHF->at(iJet);
+        NeutEMFrac = inPFJEPs.JetNEF->at(iJet);
+        ChargeEMFrac = inPFJEPs.JetCEF->at(iJet);
+        NumDaughters = inPFJEPs.JetNDaug->at(iJet);
+        ChargeMult      = inPFJEPs.JetCharMult->at(iJet);
+    }
+    void PrintVals() {
+        std::cout << "P4.Pt() " << P4.Pt() << std::endl;
+        std::cout << "P4.Eta() " << P4.Eta() << std::endl;
+        std::cout << "P4.Phi() " << P4.Phi() << std::endl;
+        std::cout << "P4.E() " << P4.E() << std::endl;
+        
+        std::cout << "valBTagDisc " << valBTagDisc << std::endl;
+        std::cout << "partonFlavor " << partonFlavor << std::endl;
+        
+        std::cout << "NeutHadFrac " << NeutHadFrac << std::endl;        
+        std::cout << "ChargeHadFrac " << ChargeHadFrac << std::endl;
+        std::cout << "NeutEMFrac " << NeutEMFrac << std::endl;
+        std::cout << "ChargeEMFrac " << ChargeEMFrac << std::endl;
+        std::cout << "NumDaughters " << NumDaughters << std::endl;
+        std::cout << "ChargeMult " << ChargeMult << std::endl;
+    }
 } PFJet;
 inline bool operator<(const PFJet &a, const PFJet &b)
 {
     return (a.P4.Pt() < b.P4.Pt());
 }
-
 inline bool operator>(const PFJet &a, const PFJet &b)
 {
     return (a.P4.Pt() > b.P4.Pt());
 }
-typedef struct PFJetEventPointers {
-    std::vector<float> * JetPx, * JetPy, * JetPz, * JetE, * JetNHF, * JetNEF, * JetCHF, * JetCEF, * JetBTag;
-    std::vector<int> * JetNDaug, * JetCharMult, * JetPartFlav;
-    unsigned int numPFJets;
-//    std::vector<float> * genJetPx, * genJetPy, * genJetPz, * genJetEn, * genJetInvisE; //* genJetEt, * genJetEta;
-//    std::vector<bool> * genJetIsGenJet;
-}PFJetEventPointers;
-
-
 typedef struct GenJet{
     TLorentzVector  P4;
     int             seedPDGID;
@@ -373,6 +511,13 @@ typedef struct EventLepInfo{
     float EventDiLepMass, EventLepST;
     bool  EventDiLepinZMass; //When true, means the diLep Mass is inside the ZMassWindow (76:106) GeV
     Lepton Lep0, Lep1;
+    std::vector<float> DiLeptonTrigSF;
+    std::vector<float> DiLeptonIDIsoSF;
+    std::vector<float> DiLeptonTotSF;
+    /*
+    float DiLeptonTrigSF, DiLeptonTrigSFUpErr, DiLeptonTrigSFDownErr;
+    float DiLeptonIDIsoSF, DiLeptonIDIsoSFUpErr, DiLeptonIDIsoSFDownErr;
+    */
     
     float EventLep0Px, EventLep0Py, EventLep0Pz, EventLep0E;
     float EventLep1Px, EventLep1Py, EventLep1Pz, EventLep1E;
@@ -396,6 +541,9 @@ typedef struct EventLepInfo{
         EventNViableLepPairsPreMassCut = 0;
         doEvent = false;
         EventDiLepinZMass = false;
+        DiLeptonTrigSF.clear();
+        DiLeptonIDIsoSF.clear();
+        DiLeptonTotSF.clear();
     }
     void EventFails() {
         EventDiLepMass = -99999.; EventDiLepType = -1; EventLepST = -1.;
@@ -408,6 +556,9 @@ typedef struct EventLepInfo{
         EventNViableLepPairsPreMassCut = -1;
         doEvent = false;
         EventDiLepinZMass = false;
+        DiLeptonTrigSF.clear();
+        DiLeptonIDIsoSF.clear();
+        DiLeptonTotSF.clear();
     }
     void EventPasses(int indexLep0, int indexLep1, std::vector<Lepton> * inputLepVec) {
         Lep0 = inputLepVec->at(indexLep0); Lep1 = inputLepVec->at(indexLep1);
@@ -428,6 +579,136 @@ typedef struct EventLepInfo{
         Lep1.PDGID = EventLep1PDGID; Lep1.relPFLepIso = EventLep1RelPFIso;
         EventLepST = Lep0.P4.Pt() + Lep1.P4.Pt();
         EventDiLepinZMass = EventDiLepMass > 76 && EventDiLepMass < 106;
+    }
+    void ScaleFactorTrigMC(vector<TH2F *> * vecTrigSF) {
+
+        //    float DiLeptonTrigSFCentVal, DiLeptonTrigSFErr;
+        int XBin, YBin;
+        float LepEtaX = (abs(Lep0.PDGID) < abs(Lep1.PDGID)) ? Lep0.P4.Eta() : Lep1.P4.Eta();
+        float LepEtaY = (abs(Lep0.PDGID) > abs(Lep1.PDGID)) ? Lep1.P4.Eta() : Lep0.P4.Eta();
+        XBin = vecTrigSF->at(EventDiLepType)->GetXaxis()->FindBin(fabs(LepEtaX));
+        YBin = vecTrigSF->at(EventDiLepType)->GetXaxis()->FindBin(fabs(LepEtaY));
+        if (XBin > vecTrigSF->at(EventDiLepType)->GetNbinsX()) XBin = vecTrigSF->at(EventDiLepType)->GetNbinsX();
+        if (YBin > vecTrigSF->at(EventDiLepType)->GetNbinsY()) YBin = vecTrigSF->at(EventDiLepType)->GetNbinsY();
+        
+        //    DiLeptonTrigSFCentVal = vecTrigSF->at(EventDiLepType)->GetBinContent(XBin, YBin);
+        //    DiLeptonTrigSFErr = vecTrigSF->at(EventDiLepType)->GetBinError(XBin, YBin);
+        //    return DiLeptonTrigSFCentVal + Syst * DiLeptonTrigSFErr;
+        DiLeptonTrigSF.resize(3);
+        DiLeptonTrigSF[0] = vecTrigSF->at(EventDiLepType)->GetBinContent(XBin, YBin);
+        DiLeptonTrigSF[1] = vecTrigSF->at(EventDiLepType)->GetBinError(XBin, YBin);
+        DiLeptonTrigSF[2] = vecTrigSF->at(EventDiLepType)->GetBinError(XBin, YBin);
+    }
+    void ScaleFactorIDIsoMC(bool doSignal, TH2F * histElecFastSimSF, TH2F * histMuonFastSimSF) {
+        float Lep0FastSimSF, Lep1FastSimSF;
+        float Lep0FastSimSFErr = 0, Lep1FastSimSFErr = 0;
+        float TotLepFastSimSF, TotLepFastSimSFUpErr = 0, TotLepFastSimSFDownErr = 0;
+        float FastSimSystErrBase = 0.02;
+        TH2F * Lep0FastSimHist, * Lep1FastSimHist;
+        float SF_IDISO[3]           = {0.997, 0.975, 0.986};
+        float SF_IDISOSystUp[3]     = {0.00085, 0.006, 0.007};
+        float SF_IDISOSystDown[3]   = {0.00085, 0.006, 0.007};        
+        
+        float baseSF = SF_IDISO[EventDiLepType];
+        float baseSFUpErr = 0, baseSFDownErr = 0;
+        int XBin, YBin;
+        baseSFUpErr = SF_IDISOSystUp[EventDiLepType];
+        baseSFDownErr = SF_IDISOSystDown[EventDiLepType];
+        
+        DiLeptonIDIsoSF.resize(3);
+        if (doSignal) {
+            Lep0FastSimHist = Lep0.isElec() ? histElecFastSimSF : histMuonFastSimSF;
+            XBin = Lep0FastSimHist->GetXaxis()->FindBin(Lep0.P4.Pt());
+            YBin = Lep0FastSimHist->GetYaxis()->FindBin(fabs(Lep0.P4.Eta()));
+            if (XBin > Lep0FastSimHist->GetNbinsX()) XBin = Lep0FastSimHist->GetNbinsX();
+            if (YBin > Lep0FastSimHist->GetNbinsY()) YBin = Lep0FastSimHist->GetNbinsY();
+            Lep0FastSimSF = Lep0FastSimHist->GetBinContent(XBin, YBin);
+            
+            Lep1FastSimHist = Lep1.isElec() ? histElecFastSimSF : histMuonFastSimSF;
+            XBin = Lep1FastSimHist->GetXaxis()->FindBin(Lep1.P4.Pt());
+            YBin = Lep1FastSimHist->GetYaxis()->FindBin(fabs(Lep1.P4.Eta()));
+            if (XBin > Lep1FastSimHist->GetNbinsX()) XBin = Lep1FastSimHist->GetNbinsX();
+            if (YBin > Lep1FastSimHist->GetNbinsY()) YBin = Lep1FastSimHist->GetNbinsY();
+            Lep1FastSimSF = Lep1FastSimHist->GetBinContent(XBin, YBin);
+            
+            TotLepFastSimSF = Lep0FastSimSF * Lep1FastSimSF;
+            
+            Lep0FastSimSFErr = FastSimSystErrBase * Lep0FastSimSF;
+            Lep1FastSimSFErr = FastSimSystErrBase * Lep1FastSimSF;
+            TotLepFastSimSFUpErr = Lep0FastSimSFErr * Lep1FastSimSFErr;
+            TotLepFastSimSFUpErr += Lep0FastSimSF * Lep1FastSimSFErr + Lep1FastSimSF * Lep0FastSimSFErr;
+            TotLepFastSimSFDownErr = Lep0FastSimSFErr * Lep1FastSimSFErr;
+            TotLepFastSimSFDownErr -= Lep0FastSimSF * Lep1FastSimSFErr + Lep1FastSimSF * Lep0FastSimSFErr;
+            TotLepFastSimSFDownErr = fabs(TotLepFastSimSFDownErr);
+            
+            DiLeptonIDIsoSF[0] = baseSF * TotLepFastSimSF;
+            DiLeptonIDIsoSF[1] = TotLepFastSimSFUpErr * baseSFUpErr; 
+            DiLeptonIDIsoSF[1] += TotLepFastSimSF * baseSFUpErr + TotLepFastSimSFUpErr * baseSF;
+            DiLeptonIDIsoSF[2] = TotLepFastSimSFDownErr * baseSFDownErr;
+            DiLeptonIDIsoSF[2] -= TotLepFastSimSF * baseSFDownErr + TotLepFastSimSFDownErr * baseSF;
+            DiLeptonIDIsoSF[2] = fabs(DiLeptonIDIsoSF[2]);
+        }
+        else {        
+            DiLeptonIDIsoSF[0] = baseSF;
+            DiLeptonIDIsoSF[1] = baseSFUpErr;
+            DiLeptonIDIsoSF[2] = baseSFDownErr;
+        }
+    }
+    void SetScaleFactors(bool doSignal, std::vector<TH2F *> * vecTrigSFBkg, std::vector<TH2F *> * vecTrigSFSig, TH2F * histElecFastSimSF, TH2F * histMuonFastSimSF) {
+        if (doSignal) {
+            ScaleFactorTrigMC(vecTrigSFSig);
+        }
+        else {
+            ScaleFactorTrigMC(vecTrigSFBkg);
+        }
+        ScaleFactorIDIsoMC(doSignal, histElecFastSimSF, histMuonFastSimSF);
+        DiLeptonTotSF.resize(3);
+        if (DiLeptonIDIsoSF.size() < 3 || DiLeptonTrigSF.size() < 3) {
+            cout << "issue: sizes are less than 3! check that they got set " << endl;
+            cout << "DiLeptonIDIsoSF.size()  " << DiLeptonIDIsoSF.size() << endl;
+            cout << "DiLeptonTrigSF.size()  " << DiLeptonTrigSF.size() << endl;
+        }
+        else {
+            /*
+            cout << "DiLeptonTrigSF[0] " << DiLeptonTrigSF[0] << endl;
+            cout << "DiLeptonTrigSF[1] " << DiLeptonTrigSF[1] << endl;
+            cout << "DiLeptonTrigSF[2] " << DiLeptonTrigSF[2] << endl;
+            cout << "DiLeptonIDIsoSF[0] " << DiLeptonIDIsoSF[0] << endl;
+            cout << "DiLeptonIDIsoSF[1] " << DiLeptonIDIsoSF[1] << endl;
+            cout << "DiLeptonIDIsoSF[2] " << DiLeptonIDIsoSF[2] << endl;
+             */
+            DiLeptonTotSF[0] = DiLeptonTrigSF[0] * DiLeptonIDIsoSF[0];
+            DiLeptonTotSF[1] = TMath::Sqrt(DiLeptonTrigSF[1] * DiLeptonTrigSF[1] + DiLeptonIDIsoSF[1] * DiLeptonIDIsoSF[1]);
+            DiLeptonTotSF[2] = TMath::Sqrt(DiLeptonTrigSF[2] * DiLeptonTrigSF[2] + DiLeptonIDIsoSF[2] * DiLeptonIDIsoSF[2]);
+        }
+    }
+    void SetScaleFactorsFailedEvent() {
+        DiLeptonTrigSF.resize(3);
+        DiLeptonTrigSF[0] = 0.0;
+        DiLeptonTrigSF[1] = 0.0;
+        DiLeptonTrigSF[1] = 0.0;
+        DiLeptonIDIsoSF.resize(3);
+        DiLeptonIDIsoSF[0] = 0.0;
+        DiLeptonIDIsoSF[1] = 0.0;
+        DiLeptonIDIsoSF[2] = 0.0;
+        DiLeptonTotSF.resize(3);
+        DiLeptonTotSF[0] = 0.0;
+        DiLeptonTotSF[1] = 0.0;
+        DiLeptonTotSF[2] = 0.0;
+    }
+    float GetSF(int Syst = 0) {
+        if (DiLeptonTotSF.size() < 3) cout << "issue with DiLeptonTotSF.size(): " << DiLeptonTotSF.size() << endl;
+        float outSF = DiLeptonTotSF[0];
+//        cout << "DiLeptonTotSF[0] " << DiLeptonTotSF[0] << endl;
+        if (Syst > 0) {
+            outSF += DiLeptonTotSF[1];
+//            cout << "DiLeptonTotSF[1] " << DiLeptonTotSF[1] << endl;
+        }
+        else if (Syst < 0) {
+            outSF -= DiLeptonTotSF[2];
+//            cout << "DiLeptonTotSF[2] " << DiLeptonTotSF[1] << endl;
+        }
+        return outSF;
     }
     /*
     ELISetValsInput(int indexLep0, int indexLep1, std::vector<Lepton> * inputLepVec) {
@@ -592,6 +873,7 @@ typedef struct EventJetInfo{
 } EventJetInfo;
 
 typedef struct EventMETInfo {
+    TVector3 P3;
     float EventMET, EventMETPhi, EventMETX, EventMETY, EventMETSig;
     float EventMET_preCorr, EventMETPhi_preCorr, EventMETX_preCorr, EventMETY_preCorr, EventMETSig_preCorr;
     float EventMT2ll, EventMT2lb;
@@ -622,6 +904,21 @@ typedef struct EventMETInfo {
         std::cout << "EventMETX_preCorr " << EventMETX_preCorr << std::endl;
         std::cout << "EventMETY_preCorr " << EventMETY_preCorr << std::endl;
         std::cout << "EventMETdivMeff " << EventMETdivMeff << std::endl;
+    }
+    void GrabbedFromTree() {
+        P3.SetPtEtaPhi(EventMET, 0., EventMETPhi);
+        EventMETX = P3.Px(); EventMETY = P3.Py();
+    }
+    void SetVarsfromVec() {
+        EventMET = P3.Pt();
+        EventMETPhi = P3.Phi();
+        EventMETX = P3.Px();
+        EventMETY = P3.Py();
+    }
+    void SetVarsfromXY() {
+        P3.SetXYZ(EventMETX, EventMETY, 0.);
+        EventMET = P3.Pt();
+        EventMET = P3.Phi();
     }
 } EventMETInfo;
 

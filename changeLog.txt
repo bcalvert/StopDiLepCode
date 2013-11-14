@@ -1,4 +1,71 @@
-========11/5/13========
+========11/14/13========
+Primary update was a final push of stuff needed for unblinding
+
+Current To-Do Items:
+SmearMETPhi histogram isn't booking properly
+Smearing based on METX and METY isn't working properly
+FOM stat errors are wrong right now -- also need to fold in systematic errors
+
+====HistogramSystematics2.h====
+Changed relative errors here when calculating the ratio graphs (had them flipped)
+====StopFillFunctions.h====
+MC Lepton Scale Factors are no longer contained here (instead stored elsewhere)
+
+Wrote a function METComponents that breaks down MET and MET Phi into MET X and MET Y (or vice versa)
+
+Added in Smeared MET X, MET Y, and MET Phi to the Map
+
+====StopFunctionDefinitions_v2.h====
+
+Added in Smeared MET X, MET Y, and MET Phi to the histograms for the smeared case
+
+Although not getting used, added in the function jetPassPFID to this file (use a different function for checking that)
+ Instead, I utilize the function PassesID (a function of PFJet) for checking if a Jet passes ID requirements
+
+Made special OneDee Hist Vec for the unblinding OneDeeHistTVecSpecial
+
+Changed around SmearHist() to account for additional MET smearing template files I got from Matthieu
+Subsequently changed around SetMETSmearHistVec()
+
+Started to add in the smearing based on METX and METY but was running into issues with those prescriptions (smearing was giving ridiculous METPhi values) so this still needs work
+====StopPlotSetup.h====
+Added in bits for handling looking at unblinded data
+
+Added in function IndividualHistSysts that grabs systematics for individual MC contributing topologies (TTBar, VV, etc.)
+As a corollary to this, added in function SystGraphMakersIndivSamp to make the syst graphs for individual MC topologies
+
+Added in effective error graph smoothing function, SmoothedTGraph, that utilizes two additional written in functions,
+SetPointsAsymmGraphfromHists
+and 
+SetPointsHistsfromAsymmGraph
+
+Altered FOMHist function to have additional systematics (BTagging) and have print values allowed (also turned of FOM stat error for now)
+
+====StopStructDefinitions.h====
+Added in some functions to HistogramT to help with booking of associated histograms
+Added struct JetCutInfo that contains the settings for what Jet ID to apply
+Added in some additional functions to PFJet to help with auto-setting variables
+Added in functions into the DiLepInfo Struct to help with calculating event scale factors
+Similar thing with EventMETInfo (functions to faciliate utilizing the struct)
+
+====NewOviStopPlotFillerRunOnSkim_wSyst.C====
+Added in the scale factor histograms
+====NewOviStopPlotSkimmer.C====
+Added in new MET smearing template files
+Added in foundations for new MET XY smearing
+====MT2CutYieldCalc.C====
+Added in stuff for new FOM hists
+Added in unblinding
+Added in other minor options
+Updated the TTBar normalization scale factor
+Added in ability to see individual MC source systematics
+
+====StopPlotsSpectraShowNewDESY_wSyst.C====
+Added in Unblinding option
+Added in Smooth Systematics error band option
+Updated the TTBar normalization scale factor
+
+================================================11/5/13================================================
 Primary update here was adding in the "Macguyver" fix for MET smearing, wherein I have "calculated" the effects of jet smearing on MET in separate nTuples (nTuples from the MET JINST performance study) and have made smearing functions to propagate those effects into the distributions in the Stop analysis
 
 Note, I ran into an interesting issue while working on this. I kept hitting "double free or corruption" errors, which stemmed from the following. I had a TFile, I grabbed a hist from said file (i.e. grabbed the pointer to the memory address of the histogram) in a given function, and in the course of said function I de-referenced the pointer and pushed the resulting hist into a vector. When this function closed it killed the memory associated with the dereferenced histogram (aka what is stored at the memory address that the pointer pointed to), and then when it closed the input TFile it tried to delete the already deleted memory address

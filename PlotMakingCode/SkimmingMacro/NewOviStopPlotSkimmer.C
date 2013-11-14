@@ -64,43 +64,72 @@ int main( int argc, const char* argv[] ) {
     bool doSmearHack;
     
     TFile * TTBarFile = new TFile("TTbarJets_Output.root");
-    TFile * DYFile = new TFile("GMadgraphHaddplots.root");
+    TFile * DYFile = new TFile("ZJets_2l_Output.root");
+//    TFile * DYFile = new TFile("GMadgraphHaddplots.root");
+    TFile * WWFile = new TFile("WW_Output.root");
+    TFile * WZFile = new TFile("WZ_Output.root");
+    TFile * ZZFile = new TFile("ZZ_Output.root");
     TFile * WJFile = new TFile("WJHaddplots.root");
     TFile * ZGFile = new TFile("ZGHaddplots.root");
     TFile * WGFile = new TFile("WGHaddplots.root");
     vector<TFile *> * METSmearFiles = new vector<TFile *>;
     METSmearFiles->push_back(TTBarFile);
     METSmearFiles->push_back(DYFile);
+    METSmearFiles->push_back(WWFile);
+    METSmearFiles->push_back(WZFile);
+    METSmearFiles->push_back(ZZFile);
     METSmearFiles->push_back(WJFile);
     METSmearFiles->push_back(ZGFile);
     METSmearFiles->push_back(WGFile);
+    
+    /*
+    vector<TH2F * > * METXSmearHistVec          = SetMETXYSmearHistVec(1, METSmearFiles);
+    vector<TH2F * > * METXSmearJERUpHistVec     = SetMETXYSmearHistVec(1, METSmearFiles, 1, 1);
+    vector<TH2F * > * METXSmearJERDownHistVec   = SetMETXYSmearHistVec(1, METSmearFiles, 1, -1);
+    vector<TH2F * > * METXSmearUncESUpHistVec   = SetMETXYSmearHistVec(1, METSmearFiles, 2, 2);
+    vector<TH2F * > * METXSmearUncESDownHistVec = SetMETXYSmearHistVec(1, METSmearFiles, 2, -2);
+
+    vector<TH2F * > * METYSmearHistVec          = SetMETXYSmearHistVec(0, METSmearFiles);
+    vector<TH2F * > * METYSmearJERUpHistVec     = SetMETXYSmearHistVec(0, METSmearFiles, 1, 1);
+    vector<TH2F * > * METYSmearJERDownHistVec   = SetMETXYSmearHistVec(0, METSmearFiles, 1, -1);
+    vector<TH2F * > * METYSmearUncESUpHistVec   = SetMETXYSmearHistVec(0, METSmearFiles, 2, 2);
+    vector<TH2F * > * METYSmearUncESDownHistVec = SetMETXYSmearHistVec(0, METSmearFiles, 2, -2);    
+    
+    std::map<string, int> METXSmearMap;
+    std::map<string, int> METYSmearMap;
+
+    SetMETSmearHistMap(METXSmearMap);
+    SetMETSmearHistMap(METYSmearMap);
+
+    TH2F * METXSmearHist2D, * METYSmearHist2D;
+
+    TH2F * METXSmearJERUpHist2D, * METXSmearJERDownHist2D;
+    TH2F * METYSmearJERUpHist2D, * METYSmearJERDownHist2D;
+    
+    TH2F * METXSmearUncESUpHist2D, * METXSmearUncESDownHist2D;
+    TH2F * METYSmearUncESUpHist2D, * METYSmearUncESDownHist2D;
+    
+    vector<TH1F *> * vecOneDeeMETXSmearHist;
+    vector<TH1F *> * vecOneDeeMETYSmearHist;
+    
+    vector<TH1F *> * vecOneDeeMETXSmearJERUpHist, * vecOneDeeMETXSmearJERDownHist;
+    vector<TH1F *> * vecOneDeeMETXSmearUncESUpHist, * vecOneDeeMETXSmearUncESDownHist;
+    
+    vector<TH1F *> * vecOneDeeMETYSmearJERUpHist, * vecOneDeeMETYSmearJERDownHist;
+    vector<TH1F *> * vecOneDeeMETYSmearUncESUpHist, * vecOneDeeMETYSmearUncESDownHist;
+    */
+    
     vector<TH2F * > * METSmearHistVec          = SetMETSmearHistVec(1, METSmearFiles);
     vector<TH2F * > * METSmearJERUpHistVec     = SetMETSmearHistVec(1, METSmearFiles, 1, 1);
     vector<TH2F * > * METSmearJERDownHistVec   = SetMETSmearHistVec(1, METSmearFiles, 1, -1);
     vector<TH2F * > * METSmearUncESUpHistVec   = SetMETSmearHistVec(1, METSmearFiles, 2, 2);
-    vector<TH2F * > * METSmearUncESDownHistVec = SetMETSmearHistVec(1, METSmearFiles, 2, -2);
-    
-    /*
-    cout << "size of vec " << METSmearHistVec->size() << endl;
-    cout << "size of vec " << METSmearJERUpHistVec->size() << endl;
-    cout << "size of vec " << METSmearJERDownHistVec->size() << endl;
-    cout << "size of vec " << METSmearUncESUpHistVec->size() << endl;
-    cout << "size of vec " << METSmearUncESDownHistVec->size() << endl;
-    */
-    
+    vector<TH2F * > * METSmearUncESDownHistVec = SetMETSmearHistVec(1, METSmearFiles, 2, -2);    
     vector<TH2F * > * METPhiSmearHistVec          = SetMETSmearHistVec(0, METSmearFiles);        
     vector<TH2F * > * METPhiSmearJERUpHistVec     = SetMETSmearHistVec(0, METSmearFiles, 1, 1);
     vector<TH2F * > * METPhiSmearJERDownHistVec   = SetMETSmearHistVec(0, METSmearFiles, 1, -1);
     vector<TH2F * > * METPhiSmearUncESUpHistVec   = SetMETSmearHistVec(0, METSmearFiles, 2, 2);
     vector<TH2F * > * METPhiSmearUncESDownHistVec = SetMETSmearHistVec(0, METSmearFiles, 2, -2);
     
-    /*
-    cout << "size of vec " << METPhiSmearHistVec->size() << endl;
-    cout << "size of vec " << METPhiSmearJERUpHistVec->size() << endl;
-    cout << "size of vec " << METPhiSmearJERDownHistVec->size() << endl;
-    cout << "size of vec " << METPhiSmearUncESUpHistVec->size() << endl;
-    cout << "size of vec " << METPhiSmearUncESDownHistVec->size() << endl;
-    */
     
     std::map<string, int> METSmearMap;
     std::map<string, int> METPhiSmearMap;
@@ -174,6 +203,7 @@ int main( int argc, const char* argv[] ) {
 //    vector<float> * JetPx, * JetPy, * JetPz, * JetE, * JetNHF, * JetNEF, * JetCHF, * JetCEF, * JetBTag;
 //    vector<int> * JetNDaug, * JetCharMult, * JetPartFlav;
     PFJetEventPointers PFJEPs;
+    JetCutInfo         JCI; JCI.DefaultCutVarVals(); JCI.PrintVals();
     
     BTagSFUtil * BTagSFUtilBase, * BTagSFUtilSignal, * BTagSFUtilToUse;
     TString BTagSFAlgorithm = "CSVM", BTagSFDataPeriod = "ABCD", BTagSFSignalString;
@@ -266,45 +296,11 @@ int main( int argc, const char* argv[] ) {
     EJISmear.EJIDefaultVarVals();
     EJISmear_JetESUp.EJIDefaultVarVals();
     EJISmear_JetESDown.EJIDefaultVarVals();
-    /*
-    int NSmearJets, NSmearJets_JetESUp, NSmearJets_JetESDown;
-    int NSmearBtagJets, NSmearBtagJets_JetESUp, NSmearBtagJets_JetESDown;
-    float SmearJet0Px, SmearJet0Px_JetESUp, SmearJet0Px_JetESDown;
-    float SmearJet0Py, SmearJet0Py_JetESUp, SmearJet0Py_JetESDown;
-    float SmearJet0Pz, SmearJet0Pz_JetESUp, SmearJet0Pz_JetESDown;
-    float SmearJet0E,  SmearJet0E_JetESUp,  SmearJet0E_JetESDown;
-    float SmearJet1Px, SmearJet1Px_JetESUp, SmearJet1Px_JetESDown;
-    float SmearJet1Py, SmearJet1Py_JetESUp, SmearJet1Py_JetESDown;
-    float SmearJet1Pz, SmearJet1Pz_JetESUp, SmearJet1Pz_JetESDown;
-    float SmearJet1E,  SmearJet1E_JetESUp,  SmearJet1E_JetESDown;
-    
-    float SmearBtagJet0Px, SmearBtagJet0Px_JetESUp, SmearBtagJet0Px_JetESDown;
-    float SmearBtagJet0Py, SmearBtagJet0Py_JetESUp, SmearBtagJet0Py_JetESDown;
-    float SmearBtagJet0Pz, SmearBtagJet0Pz_JetESUp, SmearBtagJet0Pz_JetESDown;
-    float SmearBtagJet0E,  SmearBtagJet0E_JetESUp,  SmearBtagJet0E_JetESDown;
-    int   SmearBtagJet0Index, SmearBtagJet0Index_JetESUp, SmearBtagJet0Index_JetESDown;
-    float SmearBtagJet1Px, SmearBtagJet1Px_JetESUp, SmearBtagJet1Px_JetESDown;
-    float SmearBtagJet1Py, SmearBtagJet1Py_JetESUp, SmearBtagJet1Py_JetESDown;
-    float SmearBtagJet1Pz, SmearBtagJet1Pz_JetESUp, SmearBtagJet1Pz_JetESDown;
-    float SmearBtagJet1E,  SmearBtagJet1E_JetESUp,  SmearBtagJet1E_JetESDown;
-    int   SmearBtagJet1Index, SmearBtagJet1Index_JetESUp, SmearBtagJet1Index_JetESDown;
-    */
+
     EventJetInfo EJISmear_BTagSFUp, EJISmear_BTagSFDown;
     EJISmear_BTagSFUp.EJIDefaultVarVals();
     EJISmear_BTagSFDown.EJIDefaultVarVals();
-    /*
-    int NSmearBtagJets_BTagSFUp, NSmearBtagJets_BTagSFDown;
-    float SmearBtagJet0Px_BTagSFUp, SmearBtagJet0Px_BTagSFDown;
-    float SmearBtagJet0Py_BTagSFUp, SmearBtagJet0Py_BTagSFDown;
-    float SmearBtagJet0Pz_BTagSFUp, SmearBtagJet0Pz_BTagSFDown;
-    float SmearBtagJet0E_BTagSFUp,  SmearBtagJet0E_BTagSFDown;
-    int   SmearBtagJet0Index_BTagSFUp, SmearBtagJet0Index_BTagSFDown;
-    float SmearBtagJet1Px_BTagSFUp, SmearBtagJet1Px_BTagSFDown;
-    float SmearBtagJet1Py_BTagSFUp, SmearBtagJet1Py_BTagSFDown;
-    float SmearBtagJet1Pz_BTagSFUp, SmearBtagJet1Pz_BTagSFDown;
-    float SmearBtagJet1E_BTagSFUp,  SmearBtagJet1E_BTagSFDown;
-    int   SmearBtagJet1Index_BTagSFUp, SmearBtagJet1Index_BTagSFDown;
-    */
+    
     EventJetInfo EJISmear_JetSmearUp, EJISmear_JetSmearDown;
     EJISmear_JetSmearUp.EJIDefaultVarVals();
     EJISmear_JetSmearDown.EJIDefaultVarVals();
@@ -315,6 +311,13 @@ int main( int argc, const char* argv[] ) {
     float SmearMET_JetSmearUp, SmearMET_JetSmearDown, SmearMET_Phi_JetSmearUp, SmearMET_Phi_JetSmearDown;
     float SmearMET_UncESUp, SmearMET_UncESDown, SmearMET_Phi_UncESUp, SmearMET_Phi_UncESDown;
 
+    float SmearMETX, SmearMETY;
+    float SmearMETX_JetSmearUp, SmearMETY_JetSmearUp;
+    float SmearMETX_JetSmearDown, SmearMETY_JetSmearDown;    
+    float SmearMETX_UncESUp, SmearMETY_UncESUp;
+    float SmearMETX_UncESDown, SmearMETY_UncESDown;
+    
+    float METX_Corr, METY_Corr, MET_Corr, MET_Phi_Corr;
     
     //SUSY particle Gen Mass stuff
     
@@ -722,19 +725,46 @@ int main( int argc, const char* argv[] ) {
     TFile inputFile(fInName + TString(".root"));
     
     if (!doData) {
+        /*
+        METXSmearHist2D          = SmearHist(fInName, &METXSmearMap, METXSmearHistVec);
+        METXSmearJERUpHist2D     = SmearHist(fInName, &METXSmearMap, METXSmearJERUpHistVec);
+        METXSmearJERDownHist2D   = SmearHist(fInName, &METXSmearMap, METXSmearJERDownHistVec);
+        METXSmearUncESUpHist2D   = SmearHist(fInName, &METXSmearMap, METXSmearUncESUpHistVec);
+        METXSmearUncESDownHist2D = SmearHist(fInName, &METXSmearMap, METXSmearUncESDownHistVec);
+        
+        METYSmearHist2D          = SmearHist(fInName, &METYSmearMap, METYSmearHistVec);
+        METYSmearJERUpHist2D     = SmearHist(fInName, &METYSmearMap, METYSmearJERUpHistVec);
+        METYSmearJERDownHist2D   = SmearHist(fInName, &METYSmearMap, METYSmearJERDownHistVec);
+        METYSmearUncESUpHist2D   = SmearHist(fInName, &METYSmearMap, METYSmearUncESUpHistVec);
+        METYSmearUncESDownHist2D = SmearHist(fInName, &METYSmearMap, METYSmearUncESDownHistVec);
+        
+        cout << "METXSmearHist2D->Integral() > 0? " << METXSmearHist2D->Integral() << endl;
+        doSmearHack = (METXSmearHist2D->Integral() > 0);
+        vecOneDeeMETXSmearHist          = OneDProjectionReturnVec(METXSmearHist2D,          2, 2, 1, 1, 2, "METXSmearHist");
+        vecOneDeeMETXSmearJERUpHist     = OneDProjectionReturnVec(METXSmearJERUpHist2D,     2, 2, 1, 1, 2, "METXSmearJERUpHist");
+        vecOneDeeMETXSmearJERDownHist   = OneDProjectionReturnVec(METXSmearJERDownHist2D,   2, 2, 1, 1, 2, "METXSmearJERDownHist");        
+        vecOneDeeMETXSmearUncESUpHist   = OneDProjectionReturnVec(METXSmearUncESUpHist2D,   2, 2, 1, 1, 2, "METXSmearUncESUpHist");
+        vecOneDeeMETXSmearUncESDownHist = OneDProjectionReturnVec(METXSmearUncESDownHist2D, 2, 2, 1, 1, 2, "METXSmearUncESDownHist");
+        
+        doSmearHack = (METYSmearHist2D->Integral() > 0);
+        vecOneDeeMETYSmearHist          = OneDProjectionReturnVec(METYSmearHist2D,          2, 2, 1, 1, 2, "METYSmearHist");
+        vecOneDeeMETYSmearJERUpHist     = OneDProjectionReturnVec(METYSmearJERUpHist2D,     2, 2, 1, 1, 2, "METYSmearJERUpHist");
+        vecOneDeeMETYSmearJERDownHist   = OneDProjectionReturnVec(METYSmearJERDownHist2D,   2, 2, 1, 1, 2, "METYSmearJERDownHist");        
+        vecOneDeeMETYSmearUncESUpHist   = OneDProjectionReturnVec(METYSmearUncESUpHist2D,   2, 2, 1, 1, 2, "METYSmearUncESUpHist");
+        vecOneDeeMETYSmearUncESDownHist = OneDProjectionReturnVec(METYSmearUncESDownHist2D, 2, 2, 1, 1, 2, "METYSmearUncESDownHist");
+        */
         METSmearHist2D          = SmearHist(fInName, &METSmearMap, METSmearHistVec);
         METSmearJERUpHist2D     = SmearHist(fInName, &METSmearMap, METSmearJERUpHistVec);
         METSmearJERDownHist2D   = SmearHist(fInName, &METSmearMap, METSmearJERDownHistVec);
         METSmearUncESUpHist2D   = SmearHist(fInName, &METSmearMap, METSmearUncESUpHistVec);
         METSmearUncESDownHist2D = SmearHist(fInName, &METSmearMap, METSmearUncESDownHistVec);
-       
+        
         METPhiSmearHist2D          = SmearHist(fInName, &METPhiSmearMap, METPhiSmearHistVec);
         METPhiSmearJERUpHist2D     = SmearHist(fInName, &METPhiSmearMap, METPhiSmearJERUpHistVec);
         METPhiSmearJERDownHist2D   = SmearHist(fInName, &METPhiSmearMap, METPhiSmearJERDownHistVec);
         METPhiSmearUncESUpHist2D   = SmearHist(fInName, &METPhiSmearMap, METPhiSmearUncESUpHistVec);
         METPhiSmearUncESDownHist2D = SmearHist(fInName, &METPhiSmearMap, METPhiSmearUncESDownHistVec);
         
-
         cout << "METSmearHist2D->Integral() > 0? " << METSmearHist2D->Integral() << endl;
         doSmearHack = (METSmearHist2D->Integral() > 0);
         vecOneDeeMETSmearHist          = OneDProjectionReturnVec(METSmearHist2D,          2, 2, 1, 1, 2, "METSmearHist");
@@ -747,7 +777,8 @@ int main( int argc, const char* argv[] ) {
         vecOneDeeMETPhiSmearJERUpHist     = OneDProjectionReturnVec(METPhiSmearJERUpHist2D,     2, 2, 1, 1, 2, "METPhiSmearJERUpHist");
         vecOneDeeMETPhiSmearJERDownHist   = OneDProjectionReturnVec(METPhiSmearJERDownHist2D,   2, 2, 1, 1, 2, "METPhiSmearJERDownHist");        
         vecOneDeeMETPhiSmearUncESUpHist   = OneDProjectionReturnVec(METPhiSmearUncESUpHist2D,   2, 2, 1, 1, 2, "METPhiSmearUncESUpHist");
-        vecOneDeeMETPhiSmearUncESDownHist = OneDProjectionReturnVec(METPhiSmearUncESDownHist2D, 2, 2, 1, 1, 2, "METPhiSmearUncESDownHist");        
+        vecOneDeeMETPhiSmearUncESDownHist = OneDProjectionReturnVec(METPhiSmearUncESDownHist2D, 2, 2, 1, 1, 2, "METPhiSmearUncESDownHist");
+        
     }
     
     //////////////////////////
@@ -1888,7 +1919,7 @@ int main( int argc, const char* argv[] ) {
         }
         if (whichNTupleType == 0) {
 //            Jets = JetInfo(vecIsoLeptons, JetPx, JetPy, JetPz, JetE, JetNHF, JetNEF, JetCHF, JetCEF, JetNDaug, JetCharMult, JetBTag, JetPartFlav,  0., h_JetESUp);            
-            Jets = JetInfo(vecIsoLeptons, PFJEPs,  0., h_JetESUp);            
+            Jets = JetInfo(vecIsoLeptons, PFJEPs, &JCI,  0., h_JetESUp);            
             sort(Jets->begin(), Jets->end(), greater<PFJet>());
             EJI = JetKinematicsCut(Jets, BTagSFUtilToUse, doData); 
         }
@@ -1903,12 +1934,12 @@ int main( int argc, const char* argv[] ) {
                 EJI_BTagSFDown = JetKinematicsCutBTagSyst(Jets, BTagSFUtilToUse, -1, doSignal);
                 
 //                Jets_JetESUp = JetInfo(vecIsoLeptons, JetPx, JetPy, JetPz, JetE, JetNHF, JetNEF, JetCHF, JetCEF, JetNDaug, JetCharMult, JetBTag, JetPartFlav, 1.0, h_JetESUp);
-                Jets_JetESUp = JetInfo(vecIsoLeptons, PFJEPs, 1.0, h_JetESUp);
+                Jets_JetESUp = JetInfo(vecIsoLeptons, PFJEPs, &JCI, 1.0, h_JetESUp);
                 sort(Jets_JetESUp->begin(), Jets_JetESUp->end(), greater<PFJet>());
                 EJI_JetESUp = JetKinematicsCut(Jets_JetESUp, BTagSFUtilToUse, doData);
                 
 //                Jets_JetESDown = JetInfo(vecIsoLeptons, JetPx, JetPy, JetPz, JetE, JetNHF, JetNEF, JetCHF, JetCEF, JetNDaug, JetCharMult, JetBTag, JetPartFlav, -1.0, h_JetESDown);
-                Jets_JetESDown = JetInfo(vecIsoLeptons, PFJEPs, -1.0, h_JetESUp);
+                Jets_JetESDown = JetInfo(vecIsoLeptons, PFJEPs, &JCI, -1.0, h_JetESUp);
                 sort(Jets_JetESDown->begin(), Jets_JetESDown->end(), greater<PFJet>());
                 EJI_JetESDown = JetKinematicsCut(Jets_JetESDown, BTagSFUtilToUse, doData);
                 
@@ -1960,17 +1991,45 @@ int main( int argc, const char* argv[] ) {
                 }
                 else {
                     if (doSmearHack) {
-                        SmearMET              += DeltaMET(vecOneDeeMETSmearHist,          METSmearHist2D,          MET, 0);
-                        SmearMET_JetSmearUp   += DeltaMET(vecOneDeeMETSmearJERUpHist,     METSmearJERUpHist2D,     MET, 0);
-                        SmearMET_JetSmearDown += DeltaMET(vecOneDeeMETSmearJERDownHist,   METSmearJERDownHist2D,   MET, 0);                        
-                        SmearMET_UncESUp      += DeltaMET(vecOneDeeMETSmearUncESUpHist,   METSmearUncESUpHist2D,   MET, 0);
-                        SmearMET_UncESDown    += DeltaMET(vecOneDeeMETSmearUncESDownHist, METSmearUncESDownHist2D, MET, 0);
+                        METComponents(MET, MET_Phi, METX_Corr, METY_Corr, 1);
+                        MetPhiCorrect(false, METX_Corr, METY_Corr, nVtx, false);
+                        METComponents(MET_Corr, MET_Phi_Corr, METX_Corr, METY_Corr, 0);
+                        /*
+                        METComponents(SmearMET, SmearMET_Phi, SmearMETX, SmearMETY, 1);
+                        METComponents(SmearMET_JetSmearUp, SmearMET_Phi_JetSmearUp, SmearMETX_JetSmearUp, SmearMETY_JetSmearUp, 1);
+                        METComponents(SmearMET_JetSmearDown, SmearMET_Phi_JetSmearDown, SmearMETX_JetSmearDown, SmearMETY_JetSmearDown, 1);
+                        METComponents(SmearMET_UncESUp, SmearMET_Phi_UncESUp, SmearMETX_UncESUp, SmearMETY_UncESUp, 1);
+                        METComponents(SmearMET_UncESDown, SmearMET_Phi_UncESDown, SmearMETX_UncESDown, SmearMETY_UncESDown, 1);            
+                        
+                        SmearMETX              += DeltaMETXY(vecOneDeeMETXSmearHist,          METXSmearHist2D,          MET_Corr);
+                        SmearMETX_JetSmearUp   += DeltaMETXY(vecOneDeeMETXSmearJERUpHist,     METXSmearJERUpHist2D,     MET_Corr);
+                        SmearMETX_JetSmearDown += DeltaMETXY(vecOneDeeMETXSmearJERDownHist,   METXSmearJERDownHist2D,   MET_Corr);                        
+                        SmearMETX_UncESUp      += DeltaMETXY(vecOneDeeMETXSmearUncESUpHist,   METXSmearUncESUpHist2D,   MET_Corr);
+                        SmearMETX_UncESDown    += DeltaMETXY(vecOneDeeMETXSmearUncESDownHist, METXSmearUncESDownHist2D, MET_Corr);
+                        
+                        SmearMETY              += DeltaMETXY(vecOneDeeMETYSmearHist,          METYSmearHist2D,          MET_Corr);
+                        SmearMETY_JetSmearUp   += DeltaMETXY(vecOneDeeMETYSmearJERUpHist,     METYSmearJERUpHist2D,     MET_Corr);
+                        SmearMETY_JetSmearDown += DeltaMETXY(vecOneDeeMETYSmearJERDownHist,   METYSmearJERDownHist2D,   MET_Corr);                        
+                        SmearMETY_UncESUp      += DeltaMETXY(vecOneDeeMETYSmearUncESUpHist,   METYSmearUncESUpHist2D,   MET_Corr);
+                        SmearMETY_UncESDown    += DeltaMETXY(vecOneDeeMETYSmearUncESDownHist, METYSmearUncESDownHist2D, MET_Corr);                        
+                        
+                        METComponents(SmearMET, SmearMET_Phi, SmearMETX, SmearMETY, 0);
+                        METComponents(SmearMET_JetSmearUp, SmearMET_Phi_JetSmearUp, SmearMETX_JetSmearUp, SmearMETY_JetSmearUp, 0);
+                        METComponents(SmearMET_JetSmearDown, SmearMET_Phi_JetSmearDown, SmearMETX_JetSmearDown, SmearMETY_JetSmearDown, 0);
+                        METComponents(SmearMET_UncESUp, SmearMET_Phi_UncESUp, SmearMETX_UncESUp, SmearMETY_UncESUp, 0);
+                        METComponents(SmearMET_UncESDown, SmearMET_Phi_UncESDown, SmearMETX_UncESDown, SmearMETY_UncESDown, 0);
+                        */
+                        SmearMET              += DeltaMET(vecOneDeeMETSmearHist,          METSmearHist2D,          MET_Corr, 0, 1.3);
+                        SmearMET_JetSmearUp   += DeltaMET(vecOneDeeMETSmearJERUpHist,     METSmearJERUpHist2D,     MET_Corr, 0, 1.3);
+                        SmearMET_JetSmearDown += DeltaMET(vecOneDeeMETSmearJERDownHist,   METSmearJERDownHist2D,   MET_Corr, 0, 1.3);                        
+                        SmearMET_UncESUp      += DeltaMET(vecOneDeeMETSmearUncESUpHist,   METSmearUncESUpHist2D,   MET_Corr, 0, 1.3);
+                        SmearMET_UncESDown    += DeltaMET(vecOneDeeMETSmearUncESDownHist, METSmearUncESDownHist2D, MET_Corr, 0, 1.3);
                                                 
-                        SmearMET_Phi              += DeltaMET(vecOneDeeMETPhiSmearHist,          METPhiSmearHist2D,          MET, 1);                        
-                        SmearMET_Phi_JetSmearUp   += DeltaMET(vecOneDeeMETPhiSmearJERUpHist,     METPhiSmearJERUpHist2D,     MET, 1);                        
-                        SmearMET_Phi_JetSmearDown += DeltaMET(vecOneDeeMETPhiSmearJERDownHist,   METPhiSmearJERDownHist2D,   MET, 1);                        
-                        SmearMET_Phi_UncESUp      += DeltaMET(vecOneDeeMETPhiSmearUncESUpHist,   METPhiSmearUncESUpHist2D,   MET, 1);
-                        SmearMET_Phi_UncESDown    += DeltaMET(vecOneDeeMETPhiSmearUncESDownHist, METPhiSmearUncESDownHist2D, MET, 1);
+                        SmearMET_Phi              += DeltaMET(vecOneDeeMETPhiSmearHist,          METPhiSmearHist2D,          MET_Corr, 1, 1.3);                        
+                        SmearMET_Phi_JetSmearUp   += DeltaMET(vecOneDeeMETPhiSmearJERUpHist,     METPhiSmearJERUpHist2D,     MET_Corr, 1, 1.3);                        
+                        SmearMET_Phi_JetSmearDown += DeltaMET(vecOneDeeMETPhiSmearJERDownHist,   METPhiSmearJERDownHist2D,   MET_Corr, 1, 1.3);                        
+                        SmearMET_Phi_UncESUp      += DeltaMET(vecOneDeeMETPhiSmearUncESUpHist,   METPhiSmearUncESUpHist2D,   MET_Corr, 1, 1.3);
+                        SmearMET_Phi_UncESDown    += DeltaMET(vecOneDeeMETPhiSmearUncESDownHist, METPhiSmearUncESDownHist2D, MET_Corr, 1, 1.3);
                         
 
 //                        cout << "MET: " << MET << " and MET_Phi " << MET_Phi << endl;
@@ -1981,6 +2040,7 @@ int main( int argc, const char* argv[] ) {
                         //                    SmearMET_JetSmearUp += DeltaMET(vecOneDeeMETSmearHist, METSmearHist2D, SmearMET, 0);
                         //                    SmearMET_Phi_JetSmearUp += DeltaMET(vecOneDeeMETSmearHist, METSmearHist2D, SmearMET, 1);
                     }
+                    
                     SmearMET_LepESUp = SmearMET; SmearMET_Phi_LepESUp = SmearMET_Phi;
                     SmearMET_LepESDown = SmearMET; SmearMET_Phi_LepESDown = SmearMET_Phi;
                     METSystShift(vecIsoLeptonsCentValMETPatsy_LepESUp, vecIsoLeptons_LepESUp, SmearMET_LepESUp, SmearMET_Phi_LepESUp, SmearMET, SmearMET_Phi);

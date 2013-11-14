@@ -790,6 +790,53 @@ inline bool isLeptonJet(vector<Lepton> * isoLeptons, TLorentzVector * inputJet) 
     }
     return false;
 }
+/*
+bool jetPassPFID(float jetNHF, float jetNEF, float jetEta, int jetNConst, float jetCHF, float jetCEF, int jetChMult, int whichCut, bool beVerbose) {
+    //taken from this twiki https://twiki.cern.ch/twiki/bin/view/CMS/JetID
+    // whichCut: 0 = Loose, 1 = Medium, 2 = Tight    
+    float etaSwitch = 2.4;
+    float cutNHF[3] = {0.99, 0.95, 0.90};
+    float cutNEF[3] = {0.99, 0.95, 0.90};
+    float cutCHF[3] = {0., 0., 0.};
+    float cutCEF[3] = {0.99, 0.99, 0.99};
+    int cutNConst[3] = {1, 1, 1};
+    int cutChMult[3] = {0, 0, 0};
+    
+    bool failNHF = (jetNHF >= cutNHF[whichCut]);
+    bool failNEF = (jetNEF >= cutNEF[whichCut]);
+    bool failNConst = (jetNConst <= cutNConst[whichCut]);
+    bool failCHF = false;
+    bool failCEF = false;
+    bool failChMult = false;
+    if (abs(jetEta) < etaSwitch) {
+        failCHF = (jetCHF <= cutCHF[whichCut]);
+        failCEF = (jetCEF >= cutCEF[whichCut]);
+        failChMult = (jetChMult <= cutChMult[whichCut]);
+    }
+    bool failAny = (failNHF || failNEF || failNConst || failChMult || failCHF || failCEF);
+    
+    if (beVerbose) {
+        cout << "jetNHF " << jetNHF << " is " << failNHF << endl;
+        cout << "jetNEF " << jetNEF << " is " << failNEF <<endl;
+        cout << "jetNConst " << jetNConst << " is " << failNConst <<endl;
+        cout << "jetEta " << jetEta << endl;
+        cout << "jetCHF " << jetCHF << " is " << failCHF <<endl;
+        cout << "jetCEF " << jetCEF << " is " << failCEF <<endl;
+        cout << "jetChMult " << jetChMult << " is " << failChMult <<endl;
+        cout << "failAny? " << failAny << endl;
+    }
+    return !failAny;
+}
+*/
+/*
+inline bool passLoosePFJetID(float currJetEta, int currJetIndex, PFJetEventPointers inPFJEPs, int strengthCut) {
+    bool passID = (inPFJEPs.JetNHF->at(iJet) < 0.99 && inPFJEPs.JetNEF->at(iJet) < 0.99);
+    if (fabs(currJetEta < 2.4)) {
+        passID &= (inPFJEPs.JetCEF->at(iJet) < 0.99 && inPFJEPs.JetCHF->at(iJet) > 0 && inPFJEPs.JetCharMult->at(iJet) > 0);
+    }
+    return passID;
+}
+*/
 inline vector<PFJet> * JetInfoDESY(vector<Lepton> * isoLeptons, VLV * Jets, vector<double> * JetBTag, float whichSystCase, TH2F * shiftHist) {
     vector<PFJet> * outVecJets = new vector<PFJet>;
     TLorentzVector patsyJetLV;
@@ -799,18 +846,12 @@ inline vector<PFJet> * JetInfoDESY(vector<Lepton> * isoLeptons, VLV * Jets, vect
     float JetFactor;
     Double_t currJetPt, currJetEta, currJetPhi;
     for (unsigned int iJet = 0; iJet < Jets->size(); ++iJet) {
-        leptonJet = 0;
+        leptonJet = 0;        
         patsyJetLV.SetPxPyPzE(Jets->at(iJet).Px(), Jets->at(iJet).Py(), Jets->at(iJet).Pz(), Jets->at(iJet).E());
         currJetPt = patsyJetLV.Pt();
         currJetEta = patsyJetLV.Eta();
         currJetPhi = patsyJetLV.Phi();
         if (isLeptonJet(isoLeptons, &patsyJetLV)) continue;
-        /*
-        for (unsigned int iLep = 0; iLep < isoLeptons->size(); ++iLep) {
-            if (deltaR(currJetEta, currJetPhi, isoLeptons->at(iLep).P4.Eta(), isoLeptons->at(iLep).P4.Phi()) < dRcut) leptonJet = 1;
-        }
-        if (leptonJet) continue;
-         */
         if (currJetPt < 9.0) continue;
         if (whichSystCase != 0) {
             JetFactor = JESUncertFactor(shiftHist, whichSystCase, (float) currJetPt, (float) currJetEta);
@@ -824,7 +865,7 @@ inline vector<PFJet> * JetInfoDESY(vector<Lepton> * isoLeptons, VLV * Jets, vect
     return outVecJets;
 }
 //inline vector<PFJet> * JetInfo(vector<Lepton> * Leptons, vector<float> * JetPx, vector<float> * JetPy, vector<float> * JetPz, vector<float> * JetE, vector<float> * JetNHF, vector<float> * JetNEF, vector<float> * JetCHF, vector<float> * JetCEF, vector<int> * JetNDaug, vector<int> * JetCharMult, vector<float> * JetBTag, vector<int> * JetPartFlav, float whichSystCase, TH2F * shiftHist) {
-inline vector<PFJet> * JetInfo(vector<Lepton> * isoLeptons, PFJetEventPointers inPFJEPs, float whichSystCase, TH2F * shiftHist) {
+inline vector<PFJet> * JetInfo(vector<Lepton> * isoLeptons, PFJetEventPointers inPFJEPs, JetCutInfo * inJCI, float whichSystCase, TH2F * shiftHist) {
     vector<PFJet> * Jets = new vector<PFJet>;
     TLorentzVector patsyJetLV;
     PFJet currPFJet;
@@ -832,34 +873,29 @@ inline vector<PFJet> * JetInfo(vector<Lepton> * isoLeptons, PFJetEventPointers i
     float dRcut = 0.4;
     float JetFactor;
     Double_t currJetPt, currJetEta, currJetPhi;
-    bool currJetPassJetID;        
-//    for (unsigned int iJet = 0; iJet < JetPx->size(); ++iJet) {
     for (unsigned int iJet = 0; iJet < inPFJEPs.numPFJets; ++iJet) {
         leptonJet = 0;
-        patsyJetLV.SetPxPyPzE(inPFJEPs.JetPx->at(iJet), inPFJEPs.JetPy->at(iJet), inPFJEPs.JetPz->at(iJet), inPFJEPs.JetE->at(iJet));
-        currJetPt = patsyJetLV.Pt();
-        currJetEta = patsyJetLV.Eta();
-        currJetPhi = patsyJetLV.Phi();
-        if (isLeptonJet(isoLeptons, &patsyJetLV)) continue;
-        /*
-        for (unsigned int iLep = 0; iLep < isoLeptons->size(); ++iLep) {
-            if (deltaR(currJetEta, currJetPhi, isoLeptons->at(iLep).P4.Eta(), isoLeptons->at(iLep).P4.Phi()) < dRcut) leptonJet = 1;
-        }
-        if (leptonJet) continue;
-        */
+        currPFJet.SetJetVars(inPFJEPs, iJet);
+        currJetPt = currPFJet.P4.Pt();
+        currJetEta = currPFJet.P4.Eta();
+        currJetPhi = currPFJet.P4.Phi();
+        if (isLeptonJet(isoLeptons, &currPFJet.P4)) continue;
         if (currJetPt < 9.0) continue;
-        currJetPassJetID = (inPFJEPs.JetNHF->at(iJet) < 0.99 && inPFJEPs.JetNEF->at(iJet) < 0.99);
-        if (fabs(currJetEta < 2.4)) {
-            currJetPassJetID &= (inPFJEPs.JetCEF->at(iJet) < 0.99 && inPFJEPs.JetCHF->at(iJet) > 0 && inPFJEPs.JetCharMult->at(iJet) > 0);
-        }
-        if (currJetPassJetID) {
+/*
+        currPFJet.PrintVals();
+        cout <<endl;
+        */
+        if (currPFJet.PassesID(inJCI)) {
+            /*
+            cout <<endl;
+            cout << "passedID " << endl;
+            cout <<endl;
+            cout <<endl;
+            */
             if (whichSystCase != 0) {
                 JetFactor = JESUncertFactor(shiftHist, whichSystCase, (float) currJetPt, (float) currJetEta);
-                patsyJetLV *= JetFactor;
+                currPFJet.P4 *= JetFactor;
             }
-            currPFJet.P4 = patsyJetLV;
-            currPFJet.valBTagDisc = inPFJEPs.JetBTag->at(iJet);
-            currPFJet.partonFlavor = inPFJEPs.JetPartFlav->at(iJet);
             Jets->push_back(currPFJet);
         }
         else {
@@ -3051,11 +3087,6 @@ inline vector<HistogramT> * OneDeeHistTVecStatusReport() {
     return histVec_1D;
 }
 
-
-
-
-
-
 inline vector<HistogramT> * OneDeeSmearHistTVec(bool fileContainsTrueSmearedJets) {
     const double PI = 3.14159265;
     int EnergyPtBinN = 40;
@@ -3284,6 +3315,16 @@ inline vector<HistogramT> * OneDeeSmearHistTVec(bool fileContainsTrueSmearedJets
     H_MET.xVarKey = "SmearMET";
     H_MET.doXSyst = true;
     
+    /*
+    HistogramT H_METPhi; H_METPhi.name = "h_SmearMETPhi"; 
+    H_METPhi.xLabel = "#slash{E}_{T} #phi"; H_METPhi.xBinN = PhiBinN; H_METPhi.xMin = -PI; H_METPhi.xMax = PI; 
+    H_METPhi.yLabel = "Number of Events / ";
+    numDivs = (H_METPhi.xMax - H_METPhi.xMin) / (float) H_METPhi.xBinN;
+    H_METPhi.yLabel += "NUM"; H_METPhi.yLabel += " radians";
+    H_METPhi.xVarKey = "SmearMETPhi";
+    H_METPhi.doXSyst = true;
+    */
+    
     HistogramT H_METX; H_METX.name = "h_SmearMETX";
     H_METX.xLabel = "#slash{E}_{x} [GeV]"; H_METX.xBinN = METXYBinN; H_METX.xMin = METXYBinLB; H_METX.xMax = METXYBinUB;
     H_METX.yLabel = "Number of Events / ";
@@ -3384,7 +3425,234 @@ inline vector<HistogramT> * OneDeeSmearHistTVec(bool fileContainsTrueSmearedJets
     histVecSmear_1D->push_back(H_PassMT2llCut80); histVecSmear_1D->push_back(H_PassMT2llCut90); histVecSmear_1D->push_back(H_PassMT2llCut100); histVecSmear_1D->push_back(H_PassMT2llCut110); histVecSmear_1D->push_back(H_PassMT2llCut120);
     histVecSmear_1D->push_back(H_MT2ll_DPhiZMETClose); histVecSmear_1D->push_back(H_MT2ll_DPhiZMETMid); histVecSmear_1D->push_back(H_MT2ll_DPhiZMETFar);    
     histVecSmear_1D->push_back(H_MT2ll_DPhiLep0Lep1Close); histVecSmear_1D->push_back(H_MT2ll_DPhiLep0Lep1Mid); histVecSmear_1D->push_back(H_MT2ll_DPhiLep0Lep1Far);
-    histVecSmear_1D->push_back(H_MET); histVecSmear_1D->push_back(H_METX); histVecSmear_1D->push_back(H_METY);
+    histVecSmear_1D->push_back(H_MET); histVecSmear_1D->push_back(H_METX); histVecSmear_1D->push_back(H_METY); // histVecSmear_1D->push_back(H_METPhi); 
+    return histVecSmear_1D;
+}
+
+
+inline vector<HistogramT> * OneDeeHistTVecSpecial(bool doSmearedPlots, bool fileContainsTrueSmearedJets = 0) {
+    const double PI = 3.14159265;
+    int EnergyPtBinN = 40;
+    int MassBinN     = 200;
+    int EtaBinN      = 50;
+    int PhiBinN      = 50;
+    int METBinN      = 40;    
+    int METXYBinN    = 50;    
+    int NJetsBinN    = 11;
+    int nVtxBinN     = 60;
+    
+    float EnergyPtBinLB = 0;
+    float EnergyPtBinUB = 400;
+    float EtaBinLB      = -6;
+    float EtaBinUB      = 6;
+    float METBinLB      = 0;
+    float METBinUB      = 400;
+    float METXYBinLB    = -200;
+    float METXYBinUB    = 200;
+    float NJetsBinLB    = -0.5;
+    float NJetsBinUB    = 10.5;
+    float nVtxBinLB     = 0.5;
+    float nVtxBinUB     = 60.5;
+    
+    float numDivs;
+    ///Met or MET related variable plots
+    
+    HistogramT H_MT2ll; H_MT2ll.name = "h_SmearMT2ll"; 
+    H_MT2ll.xLabel = "MT2_{ll} [GeV]"; H_MT2ll.xBinN = METBinN; H_MT2ll.xMin = METBinLB; H_MT2ll.xMax = METBinUB; 
+    H_MT2ll.yLabel = "Number of Events / ";
+    numDivs = (H_MT2ll.xMax - H_MT2ll.xMin) / (float) H_MT2ll.xBinN;
+    H_MT2ll.yLabel += "NUM"; H_MT2ll.yLabel += " GeV";
+    H_MT2ll.xVarKey = "SmearMT2ll";
+    H_MT2ll.doXSyst = true;
+    
+    HistogramT H_PassMT2llCut80; H_PassMT2llCut80.name = "h_SmearPassMT2llCut80"; 
+    H_PassMT2llCut80.xLabel = "Event MT2_{ll} > 80 [GeV]"; H_PassMT2llCut80.xBinN = 2; H_PassMT2llCut80.xMin = -0.5; H_PassMT2llCut80.xMax = 1.5; 
+    H_PassMT2llCut80.yLabel = "Events Passing/Failing MT2ll Cut";
+    H_PassMT2llCut80.xVarKey = "SmearPassMT2llCut80";
+    H_PassMT2llCut80.doXSyst = true;
+    
+    HistogramT H_PassMT2llCut90; H_PassMT2llCut90.name = "h_SmearPassMT2llCut90"; 
+    H_PassMT2llCut90.xLabel = "Event MT2_{ll} > 90 [GeV]"; H_PassMT2llCut90.xBinN = 2; H_PassMT2llCut90.xMin = -0.5; H_PassMT2llCut90.xMax = 1.5; 
+    H_PassMT2llCut90.yLabel = "Events Passing/Failing MT2ll Cut";
+    H_PassMT2llCut90.xVarKey = "SmearPassMT2llCut90";
+    H_PassMT2llCut90.doXSyst = true;
+    
+    HistogramT H_PassMT2llCut100; H_PassMT2llCut100.name = "h_SmearPassMT2llCut100"; 
+    H_PassMT2llCut100.xLabel = "Event MT2_{ll} > 100 [GeV]"; H_PassMT2llCut100.xBinN = 2; H_PassMT2llCut100.xMin = -0.5; H_PassMT2llCut100.xMax = 1.5; 
+    H_PassMT2llCut100.yLabel = "Events Passing/Failing MT2ll Cut";
+    H_PassMT2llCut100.xVarKey = "SmearPassMT2llCut100";
+    H_PassMT2llCut100.doXSyst = true;
+    
+    HistogramT H_PassMT2llCut110; H_PassMT2llCut110.name = "h_SmearPassMT2llCut110"; 
+    H_PassMT2llCut110.xLabel = "Event MT2_{ll} > 110 [GeV]"; H_PassMT2llCut110.xBinN = 2; H_PassMT2llCut110.xMin = -0.5; H_PassMT2llCut110.xMax = 1.5; 
+    H_PassMT2llCut110.yLabel = "Events Passing/Failing MT2ll Cut";
+    H_PassMT2llCut110.xVarKey = "SmearPassMT2llCut110";
+    H_PassMT2llCut110.doXSyst = true;
+    
+    HistogramT H_PassMT2llCut120; H_PassMT2llCut120.name = "h_SmearPassMT2llCut120"; 
+    H_PassMT2llCut120.xLabel = "Event MT2_{ll} > 120 [GeV]"; H_PassMT2llCut120.xBinN = 2; H_PassMT2llCut120.xMin = -0.5; H_PassMT2llCut120.xMax = 1.5; 
+    H_PassMT2llCut120.yLabel = "Events Passing/Failing MT2ll Cut";
+    H_PassMT2llCut120.xVarKey = "SmearPassMT2llCut120";
+    H_PassMT2llCut120.doXSyst = true;
+    
+    HistogramT H_MT2ll_DPhiZMETClose; H_MT2ll_DPhiZMETClose.name = "h_SmearMT2ll_DPhiZMETClose"; 
+    H_MT2ll_DPhiZMETClose.xLabel = "MT2_{ll} [GeV]"; H_MT2ll_DPhiZMETClose.xBinN = METBinN; H_MT2ll_DPhiZMETClose.xMin = METBinLB; H_MT2ll_DPhiZMETClose.xMax = METBinUB; 
+    H_MT2ll_DPhiZMETClose.yLabel = "Number of Events / ";
+    numDivs = (H_MT2ll_DPhiZMETClose.xMax - H_MT2ll_DPhiZMETClose.xMin) / (float) H_MT2ll_DPhiZMETClose.xBinN;
+    H_MT2ll_DPhiZMETClose.yLabel += "NUM"; H_MT2ll_DPhiZMETClose.yLabel += " GeV";
+    H_MT2ll_DPhiZMETClose.xVarKey = "SmearMT2ll";
+    H_MT2ll_DPhiZMETClose.doXSyst = true;
+    
+    
+    HistogramT H_MT2ll_DPhiZMETMid; H_MT2ll_DPhiZMETMid.name = "h_SmearMT2ll_DPhiZMETMid"; 
+    H_MT2ll_DPhiZMETMid.xLabel = "MT2_{ll} [GeV]"; H_MT2ll_DPhiZMETMid.xBinN = METBinN; H_MT2ll_DPhiZMETMid.xMin = METBinLB; H_MT2ll_DPhiZMETMid.xMax = METBinUB; 
+    H_MT2ll_DPhiZMETMid.yLabel = "Number of Events / ";
+    numDivs = (H_MT2ll_DPhiZMETMid.xMax - H_MT2ll_DPhiZMETMid.xMin) / (float) H_MT2ll_DPhiZMETMid.xBinN;
+    H_MT2ll_DPhiZMETMid.yLabel += "NUM"; H_MT2ll_DPhiZMETMid.yLabel += " GeV";
+    H_MT2ll_DPhiZMETMid.xVarKey = "SmearMT2ll";
+    H_MT2ll_DPhiZMETMid.doXSyst = true;
+    
+    HistogramT H_MT2ll_DPhiZMETFar; H_MT2ll_DPhiZMETFar.name = "h_SmearMT2ll_DPhiZMETFar"; 
+    H_MT2ll_DPhiZMETFar.xLabel = "MT2_{ll} [GeV]"; H_MT2ll_DPhiZMETFar.xBinN = METBinN; H_MT2ll_DPhiZMETFar.xMin = METBinLB; H_MT2ll_DPhiZMETFar.xMax = METBinUB; 
+    H_MT2ll_DPhiZMETFar.yLabel = "Number of Events / ";
+    numDivs = (H_MT2ll_DPhiZMETFar.xMax - H_MT2ll_DPhiZMETFar.xMin) / (float) H_MT2ll_DPhiZMETFar.xBinN;
+    H_MT2ll_DPhiZMETFar.yLabel += "NUM"; H_MT2ll_DPhiZMETFar.yLabel += " GeV";
+    H_MT2ll_DPhiZMETFar.xVarKey = "SmearMT2ll";
+    H_MT2ll_DPhiZMETFar.doXSyst = true;
+    
+    
+    HistogramT H_MT2ll_DPhiLep0Lep1Close; H_MT2ll_DPhiLep0Lep1Close.name = "h_SmearMT2ll_DPhiLep0Lep1Close"; 
+    H_MT2ll_DPhiLep0Lep1Close.xLabel = "MT2_{ll} [GeV]"; H_MT2ll_DPhiLep0Lep1Close.xBinN = METBinN; H_MT2ll_DPhiLep0Lep1Close.xMin = METBinLB; H_MT2ll_DPhiLep0Lep1Close.xMax = METBinUB; 
+    H_MT2ll_DPhiLep0Lep1Close.yLabel = "Number of Events / ";
+    numDivs = (H_MT2ll_DPhiLep0Lep1Close.xMax - H_MT2ll_DPhiLep0Lep1Close.xMin) / (float) H_MT2ll_DPhiLep0Lep1Close.xBinN;
+    H_MT2ll_DPhiLep0Lep1Close.yLabel += "NUM"; H_MT2ll_DPhiLep0Lep1Close.yLabel += " GeV";
+    H_MT2ll_DPhiLep0Lep1Close.xVarKey = "SmearMT2ll";
+    H_MT2ll_DPhiLep0Lep1Close.doXSyst = true;
+    
+    HistogramT H_MT2ll_DPhiLep0Lep1Mid; H_MT2ll_DPhiLep0Lep1Mid.name = "h_SmearMT2ll_DPhiLep0Lep1Mid"; 
+    H_MT2ll_DPhiLep0Lep1Mid.xLabel = "MT2_{ll} [GeV]"; H_MT2ll_DPhiLep0Lep1Mid.xBinN = METBinN; H_MT2ll_DPhiLep0Lep1Mid.xMin = METBinLB; H_MT2ll_DPhiLep0Lep1Mid.xMax = METBinUB; 
+    H_MT2ll_DPhiLep0Lep1Mid.yLabel = "Number of Events / ";
+    numDivs = (H_MT2ll_DPhiLep0Lep1Mid.xMax - H_MT2ll_DPhiLep0Lep1Mid.xMin) / (float) H_MT2ll_DPhiLep0Lep1Mid.xBinN;
+    H_MT2ll_DPhiLep0Lep1Mid.yLabel += "NUM"; H_MT2ll_DPhiLep0Lep1Mid.yLabel += " GeV";
+    H_MT2ll_DPhiLep0Lep1Mid.xVarKey = "SmearMT2ll";
+    H_MT2ll_DPhiLep0Lep1Mid.doXSyst = true;
+    
+    HistogramT H_MT2ll_DPhiLep0Lep1Far; H_MT2ll_DPhiLep0Lep1Far.name = "h_SmearMT2ll_DPhiLep0Lep1Far"; 
+    H_MT2ll_DPhiLep0Lep1Far.xLabel = "MT2_{ll} [GeV]"; H_MT2ll_DPhiLep0Lep1Far.xBinN = METBinN; H_MT2ll_DPhiLep0Lep1Far.xMin = METBinLB; H_MT2ll_DPhiLep0Lep1Far.xMax = METBinUB; 
+    H_MT2ll_DPhiLep0Lep1Far.yLabel = "Number of Events / ";
+    numDivs = (H_MT2ll_DPhiLep0Lep1Far.xMax - H_MT2ll_DPhiLep0Lep1Far.xMin) / (float) H_MT2ll_DPhiLep0Lep1Far.xBinN;
+    H_MT2ll_DPhiLep0Lep1Far.yLabel += "NUM"; H_MT2ll_DPhiLep0Lep1Far.yLabel += " GeV";
+    H_MT2ll_DPhiLep0Lep1Far.xVarKey = "SmearMT2ll";
+    H_MT2ll_DPhiLep0Lep1Far.doXSyst = true;
+    
+    
+    HistogramT H_MT2lb; H_MT2lb.name = "h_SmearMT2lb"; 
+    H_MT2lb.xLabel = "MT2lb [GeV]"; H_MT2lb.xBinN = METBinN; H_MT2lb.xMin = METBinLB; H_MT2lb.xMax = METBinUB; 
+    H_MT2lb.yLabel = "Number of Events / ";
+    numDivs = (H_MT2lb.xMax - H_MT2lb.xMin) / (float) H_MT2lb.xBinN;
+    H_MT2lb.yLabel += "NUM"; H_MT2lb.yLabel += " GeV";
+    H_MT2lb.xVarKey = "SmearMT2lb";
+    H_MT2lb.doXSyst = true;
+    HistogramT H_MT2lb_DPhiBLep0BLep1Close; H_MT2lb_DPhiBLep0BLep1Close.name = "h_SmearMT2lb_DPhiBLep0BLep1Close"; 
+    H_MT2lb_DPhiBLep0BLep1Close.xLabel = "MT2lb [GeV] [GeV]"; H_MT2lb_DPhiBLep0BLep1Close.xBinN = METBinN; H_MT2lb_DPhiBLep0BLep1Close.xMin = METBinLB; H_MT2lb_DPhiBLep0BLep1Close.xMax = METBinUB; 
+    H_MT2lb_DPhiBLep0BLep1Close.yLabel = "Number of Events / ";
+    numDivs = (H_MT2lb_DPhiBLep0BLep1Close.xMax - H_MT2lb_DPhiBLep0BLep1Close.xMin) / (float) H_MT2lb_DPhiBLep0BLep1Close.xBinN;
+    H_MT2lb_DPhiBLep0BLep1Close.yLabel += "NUM"; H_MT2lb_DPhiBLep0BLep1Close.yLabel += " GeV";
+    H_MT2lb_DPhiBLep0BLep1Close.xVarKey = "SmearMT2lb";
+    H_MT2lb_DPhiBLep0BLep1Close.doXSyst = true;
+    
+    HistogramT H_MT2lb_DPhiBLep0BLep1Mid; H_MT2lb_DPhiBLep0BLep1Mid.name = "h_SmearMT2lb_DPhiBLep0BLep1Mid"; 
+    H_MT2lb_DPhiBLep0BLep1Mid.xLabel = "MT2lb [GeV] [GeV]"; H_MT2lb_DPhiBLep0BLep1Mid.xBinN = METBinN; H_MT2lb_DPhiBLep0BLep1Mid.xMin = METBinLB; H_MT2lb_DPhiBLep0BLep1Mid.xMax = METBinUB; 
+    H_MT2lb_DPhiBLep0BLep1Mid.yLabel = "Number of Events / ";
+    numDivs = (H_MT2lb_DPhiBLep0BLep1Mid.xMax - H_MT2lb_DPhiBLep0BLep1Mid.xMin) / (float) H_MT2lb_DPhiBLep0BLep1Mid.xBinN;
+    H_MT2lb_DPhiBLep0BLep1Mid.yLabel += "NUM"; H_MT2lb_DPhiBLep0BLep1Mid.yLabel += " GeV";
+    H_MT2lb_DPhiBLep0BLep1Mid.xVarKey = "SmearMT2lb";
+    H_MT2lb_DPhiBLep0BLep1Mid.doXSyst = true;
+    
+    HistogramT H_MT2lb_DPhiBLep0BLep1Far; H_MT2lb_DPhiBLep0BLep1Far.name = "h_SmearMT2lb_DPhiBLep0BLep1Far"; 
+    H_MT2lb_DPhiBLep0BLep1Far.xLabel = "MT2lb [GeV] [GeV]"; H_MT2lb_DPhiBLep0BLep1Far.xBinN = METBinN; H_MT2lb_DPhiBLep0BLep1Far.xMin = METBinLB; H_MT2lb_DPhiBLep0BLep1Far.xMax = METBinUB; 
+    H_MT2lb_DPhiBLep0BLep1Far.yLabel = "Number of Events / ";
+    numDivs = (H_MT2lb_DPhiBLep0BLep1Far.xMax - H_MT2lb_DPhiBLep0BLep1Far.xMin) / (float) H_MT2lb_DPhiBLep0BLep1Far.xBinN;
+    H_MT2lb_DPhiBLep0BLep1Far.yLabel += "NUM"; H_MT2lb_DPhiBLep0BLep1Far.yLabel += " GeV";
+    H_MT2lb_DPhiBLep0BLep1Far.xVarKey = "SmearMT2lb";
+    H_MT2lb_DPhiBLep0BLep1Far.doXSyst = true;
+    
+    HistogramT H_MT2lb_DPhiJet0Jet1Close; H_MT2lb_DPhiJet0Jet1Close.name = "h_SmearMT2lb_DPhiJet0Jet1Close"; 
+    H_MT2lb_DPhiJet0Jet1Close.xLabel = "MT2lb [GeV] [GeV]"; H_MT2lb_DPhiJet0Jet1Close.xBinN = METBinN; H_MT2lb_DPhiJet0Jet1Close.xMin = METBinLB; H_MT2lb_DPhiJet0Jet1Close.xMax = METBinUB; 
+    H_MT2lb_DPhiJet0Jet1Close.yLabel = "Number of Events / ";
+    numDivs = (H_MT2lb_DPhiJet0Jet1Close.xMax - H_MT2lb_DPhiJet0Jet1Close.xMin) / (float) H_MT2lb_DPhiJet0Jet1Close.xBinN;
+    H_MT2lb_DPhiJet0Jet1Close.yLabel += "NUM"; H_MT2lb_DPhiJet0Jet1Close.yLabel += " GeV";
+    H_MT2lb_DPhiJet0Jet1Close.xVarKey = "SmearMT2lb";
+    H_MT2lb_DPhiJet0Jet1Close.doXSyst = true;
+    
+    HistogramT H_MT2lb_DPhiJet0Jet1Mid; H_MT2lb_DPhiJet0Jet1Mid.name = "h_SmearMT2lb_DPhiJet0Jet1Mid"; 
+    H_MT2lb_DPhiJet0Jet1Mid.xLabel = "MT2lb [GeV] [GeV]"; H_MT2lb_DPhiJet0Jet1Mid.xBinN = METBinN; H_MT2lb_DPhiJet0Jet1Mid.xMin = METBinLB; H_MT2lb_DPhiJet0Jet1Mid.xMax = METBinUB; 
+    H_MT2lb_DPhiJet0Jet1Mid.yLabel = "Number of Events / ";
+    numDivs = (H_MT2lb_DPhiJet0Jet1Mid.xMax - H_MT2lb_DPhiJet0Jet1Mid.xMin) / (float) H_MT2lb_DPhiJet0Jet1Mid.xBinN;
+    H_MT2lb_DPhiJet0Jet1Mid.yLabel += "NUM"; H_MT2lb_DPhiJet0Jet1Mid.yLabel += " GeV";
+    H_MT2lb_DPhiJet0Jet1Mid.xVarKey = "SmearMT2lb";
+    H_MT2lb_DPhiJet0Jet1Mid.doXSyst = true;
+    
+    HistogramT H_MT2lb_DPhiJet0Jet1Far; H_MT2lb_DPhiJet0Jet1Far.name = "h_SmearMT2lb_DPhiJet0Jet1Far"; 
+    H_MT2lb_DPhiJet0Jet1Far.xLabel = "MT2lb [GeV] [GeV]"; H_MT2lb_DPhiJet0Jet1Far.xBinN = METBinN; H_MT2lb_DPhiJet0Jet1Far.xMin = METBinLB; H_MT2lb_DPhiJet0Jet1Far.xMax = METBinUB; 
+    H_MT2lb_DPhiJet0Jet1Far.yLabel = "Number of Events / ";
+    numDivs = (H_MT2lb_DPhiJet0Jet1Far.xMax - H_MT2lb_DPhiJet0Jet1Far.xMin) / (float) H_MT2lb_DPhiJet0Jet1Far.xBinN;
+    H_MT2lb_DPhiJet0Jet1Far.yLabel += "NUM"; H_MT2lb_DPhiJet0Jet1Far.yLabel += " GeV";
+    H_MT2lb_DPhiJet0Jet1Far.xVarKey = "SmearMT2lb";
+    H_MT2lb_DPhiJet0Jet1Far.doXSyst = true;
+        
+    HistogramT H_MET_div_Meff_PassMT2llCut80; H_MET_div_Meff_PassMT2llCut80.name = "h_SmearMET_div_Meff_PassMT2llCut80";
+    H_MET_div_Meff_PassMT2llCut80.xLabel = "#slash{E}_{T} / M_{eff}"; H_MET_div_Meff_PassMT2llCut80.xBinN = 50; H_MET_div_Meff_PassMT2llCut80.xMin = 0.; H_MET_div_Meff_PassMT2llCut80.xMax = 1.;
+    H_MET_div_Meff_PassMT2llCut80.yLabel = "Number of Events / "; H_MET_div_Meff_PassMT2llCut80.yLabel += "NUM";
+    H_MET_div_Meff_PassMT2llCut80.xVarKey = "SmearMETdivMeff_PassMT2llCut80";
+    H_MET_div_Meff_PassMT2llCut80.doXSyst = true;
+    
+    HistogramT H_MET_div_Meff_PassMT2llCut90; H_MET_div_Meff_PassMT2llCut90.name = "h_SmearMET_div_Meff_PassMT2llCut90";
+    H_MET_div_Meff_PassMT2llCut90.xLabel = "#slash{E}_{T} / M_{eff}"; H_MET_div_Meff_PassMT2llCut90.xBinN = 50; H_MET_div_Meff_PassMT2llCut90.xMin = 0.; H_MET_div_Meff_PassMT2llCut90.xMax = 1.;
+    H_MET_div_Meff_PassMT2llCut90.yLabel = "Number of Events / "; H_MET_div_Meff_PassMT2llCut90.yLabel += "NUM";
+    H_MET_div_Meff_PassMT2llCut90.xVarKey = "SmearMETdivMeff_PassMT2llCut90";
+    H_MET_div_Meff_PassMT2llCut90.doXSyst = true;
+    
+    HistogramT H_MET_div_Meff_PassMT2llCut100; H_MET_div_Meff_PassMT2llCut100.name = "h_SmearMET_div_Meff_PassMT2llCut100";
+    H_MET_div_Meff_PassMT2llCut100.xLabel = "#slash{E}_{T} / M_{eff}"; H_MET_div_Meff_PassMT2llCut100.xBinN = 50; H_MET_div_Meff_PassMT2llCut100.xMin = 0.; H_MET_div_Meff_PassMT2llCut100.xMax = 1.;
+    H_MET_div_Meff_PassMT2llCut100.yLabel = "Number of Events / "; H_MET_div_Meff_PassMT2llCut100.yLabel += "NUM";
+    H_MET_div_Meff_PassMT2llCut100.xVarKey = "SmearMETdivMeff_PassMT2llCut100";
+    H_MET_div_Meff_PassMT2llCut100.doXSyst = true;
+    
+    HistogramT H_MET_div_Meff_PassMT2llCut110; H_MET_div_Meff_PassMT2llCut110.name = "h_SmearMET_div_Meff_PassMT2llCut110";
+    H_MET_div_Meff_PassMT2llCut110.xLabel = "#slash{E}_{T} / M_{eff}"; H_MET_div_Meff_PassMT2llCut110.xBinN = 50; H_MET_div_Meff_PassMT2llCut110.xMin = 0.; H_MET_div_Meff_PassMT2llCut110.xMax = 1.;
+    H_MET_div_Meff_PassMT2llCut110.yLabel = "Number of Events / "; H_MET_div_Meff_PassMT2llCut110.yLabel += "NUM";
+    H_MET_div_Meff_PassMT2llCut110.xVarKey = "SmearMETdivMeff_PassMT2llCut110";
+    H_MET_div_Meff_PassMT2llCut110.doXSyst = true;
+    
+    HistogramT H_MET_div_Meff_PassMT2llCut120; H_MET_div_Meff_PassMT2llCut120.name = "h_SmearMET_div_Meff_PassMT2llCut120";
+    H_MET_div_Meff_PassMT2llCut120.xLabel = "#slash{E}_{T} / M_{eff}"; H_MET_div_Meff_PassMT2llCut120.xBinN = 50; H_MET_div_Meff_PassMT2llCut120.xMin = 0.; H_MET_div_Meff_PassMT2llCut120.xMax = 1.;
+    H_MET_div_Meff_PassMT2llCut120.yLabel = "Number of Events / "; H_MET_div_Meff_PassMT2llCut120.yLabel += "NUM";
+    H_MET_div_Meff_PassMT2llCut120.xVarKey = "SmearMETdivMeff_PassMT2llCut120";
+    H_MET_div_Meff_PassMT2llCut120.doXSyst = true;
+        
+    //push the 1D histograms structures into a vector for eventual use in booking histograms
+    vector<HistogramT> * histVecSmear_1D = new vector<HistogramT>;
+    if (fileContainsTrueSmearedJets) {
+        histVecSmear_1D->push_back(H_MT2lb);            
+        histVecSmear_1D->push_back(H_MT2lb_DPhiBLep0BLep1Close); histVecSmear_1D->push_back(H_MT2lb_DPhiBLep0BLep1Mid); histVecSmear_1D->push_back(H_MT2lb_DPhiBLep0BLep1Far);
+        histVecSmear_1D->push_back(H_MT2lb_DPhiJet0Jet1Close); histVecSmear_1D->push_back(H_MT2lb_DPhiJet0Jet1Mid); histVecSmear_1D->push_back(H_MT2lb_DPhiJet0Jet1Far);
+        histVecSmear_1D->push_back(H_MET_div_Meff_PassMT2llCut80); histVecSmear_1D->push_back(H_MET_div_Meff_PassMT2llCut90); histVecSmear_1D->push_back(H_MET_div_Meff_PassMT2llCut100); histVecSmear_1D->push_back(H_MET_div_Meff_PassMT2llCut110); histVecSmear_1D->push_back(H_MET_div_Meff_PassMT2llCut120);
+    }
+    else if (!doSmearedPlots) {
+        histVecSmear_1D->push_back(H_MT2lb);            
+        histVecSmear_1D->push_back(H_MT2lb_DPhiBLep0BLep1Close); histVecSmear_1D->push_back(H_MT2lb_DPhiBLep0BLep1Mid); histVecSmear_1D->push_back(H_MT2lb_DPhiBLep0BLep1Far);
+        histVecSmear_1D->push_back(H_MT2lb_DPhiJet0Jet1Close); histVecSmear_1D->push_back(H_MT2lb_DPhiJet0Jet1Mid); histVecSmear_1D->push_back(H_MT2lb_DPhiJet0Jet1Far);
+    }       
+    histVecSmear_1D->push_back(H_MT2ll); 
+    histVecSmear_1D->push_back(H_PassMT2llCut80); histVecSmear_1D->push_back(H_PassMT2llCut90); histVecSmear_1D->push_back(H_PassMT2llCut100); histVecSmear_1D->push_back(H_PassMT2llCut110); histVecSmear_1D->push_back(H_PassMT2llCut120);
+    histVecSmear_1D->push_back(H_MT2ll_DPhiZMETClose); histVecSmear_1D->push_back(H_MT2ll_DPhiZMETMid); histVecSmear_1D->push_back(H_MT2ll_DPhiZMETFar);    
+    histVecSmear_1D->push_back(H_MT2ll_DPhiLep0Lep1Close); histVecSmear_1D->push_back(H_MT2ll_DPhiLep0Lep1Mid); histVecSmear_1D->push_back(H_MT2ll_DPhiLep0Lep1Far);
+    if (!doSmearedPlots) {
+        for (unsigned int iHistT = 0; iHistT < histVecSmear_1D->size(); ++iHistT) {
+            histVecSmear_1D->at(iHistT).name.Replace(2, 5, "");
+        }
+    }
     return histVecSmear_1D;
 }
 
@@ -4302,64 +4570,68 @@ inline TH2F * SmearHist(TString inputFileName, std::map<string, int> * inputHist
 inline void SetMETSmearHistMap(std::map<string, int> &inputHistSmearMap) {
     int TTBarIndex  = 0;
     int DYIndex     = 1;
-    int WJIndex     = 2;
-    int ZZ_ZGIndex  = 3;
-    int WGIndex     = 4;
-    int WWIndex     = 5;
+    int WWIndex     = 2;
+    int WZIndex     = 3;
+    int ZZIndex     = 4;
+    int WJIndex     = 5;
+    int ZGIndex     = 6;
+    int WGIndex     = 7;
     TH2F currHist;
     //Signal -- use TTBar for now...
     inputHistSmearMap["T2tt"] = TTBarIndex;
     inputHistSmearMap["T2bw"] = TTBarIndex;
     
-    inputHistSmearMap["TTbar_Powheg"] = TTBarIndex;
-    inputHistSmearMap["TTbar_Madgraph"] = TTBarIndex;
-    inputHistSmearMap["TTbar_MCatNLO"] = TTBarIndex;
-    inputHistSmearMap["TTJetsFullHadrMG"] = TTBarIndex;
-    inputHistSmearMap["TTJetsSemiLeptMG"] = TTBarIndex;
+    inputHistSmearMap["TTbar_Powheg"]           = TTBarIndex;
+    inputHistSmearMap["TTbar_Madgraph"]         = TTBarIndex;
+    inputHistSmearMap["TTbar_MCatNLO"]          = TTBarIndex;
+    inputHistSmearMap["TTJetsFullHadrMG"]       = TTBarIndex;
+    inputHistSmearMap["TTJetsSemiLeptMG"]       = TTBarIndex;
     inputHistSmearMap["TTJetsFullLeptMGtauola"] = TTBarIndex;
-    inputHistSmearMap["TTJetsFullLeptMG"] = TTBarIndex;
-    inputHistSmearMap["TWDilep"] = TTBarIndex;
-    inputHistSmearMap["TbarWDilep"] = TTBarIndex;
-    inputHistSmearMap["TTWJets"] = TTBarIndex;
-    inputHistSmearMap["TTZJets"] = TTBarIndex;
-    inputHistSmearMap["TTWWJets"] = TTBarIndex;
-    inputHistSmearMap["TTGJets"] = TTBarIndex;
+    inputHistSmearMap["TTJetsFullLeptMG"]       = TTBarIndex;
+    inputHistSmearMap["TWDilep"]                = TTBarIndex;
+    inputHistSmearMap["TbarWDilep"]             = TTBarIndex;
+    inputHistSmearMap["TTWJets"]                = TTBarIndex;
+    inputHistSmearMap["TTZJets"]                = TTBarIndex;
+    inputHistSmearMap["TTWWJets"]               = TTBarIndex;
+    inputHistSmearMap["TTGJets"]                = TTBarIndex;
     
-    inputHistSmearMap["DYJets_Madgraph"] = DYIndex;
-    inputHistSmearMap["DY50toLLMad1jet"] = DYIndex;
-    inputHistSmearMap["DY50toLLMad2jet"] = DYIndex;
-    inputHistSmearMap["DY50toLLMad3jet"] = DYIndex;
-    inputHistSmearMap["DY50toLLMad4jet"] = DYIndex;
-    inputHistSmearMap["ZJets_Madgraph"] = DYIndex;
+    inputHistSmearMap["DYJets_Madgraph"]    = DYIndex;
+    inputHistSmearMap["DY50toLLMad1jet"]    = DYIndex;
+    inputHistSmearMap["DY50toLLMad2jet"]    = DYIndex;
+    inputHistSmearMap["DY50toLLMad3jet"]    = DYIndex;
+    inputHistSmearMap["DY50toLLMad4jet"]    = DYIndex;
+    inputHistSmearMap["ZJets_Madgraph"]     = DYIndex;
         
-    inputHistSmearMap["SingleTop_Tchannel"] = WJIndex;
-    inputHistSmearMap["SingleTopBar_Tchannel"] = WJIndex;
-    inputHistSmearMap["SingleTop_Schannel"] = WJIndex;
-    inputHistSmearMap["SingleTopBar_Schannel"] = WJIndex;
-    inputHistSmearMap["WJets_Madgraph"] = WJIndex;
+    inputHistSmearMap["SingleTop_Tchannel"]     = WJIndex;
+    inputHistSmearMap["SingleTopBar_Tchannel"]  = WJIndex;
+    inputHistSmearMap["SingleTop_Schannel"]     = WJIndex;
+    inputHistSmearMap["SingleTopBar_Schannel"]  = WJIndex;
+    inputHistSmearMap["WJets_Madgraph"]         = WJIndex;
     
-    inputHistSmearMap["WGstarToElNuMad"] = WGIndex;
-    inputHistSmearMap["WGstarToMuNuMad"] = WGIndex;
-    inputHistSmearMap["WGstarToTauNuMad"] = WGIndex;
-    inputHistSmearMap["WZ_"] = WGIndex;
-    inputHistSmearMap["WgammaToLNuG"] = WGIndex;        
-    inputHistSmearMap["ZZ_"] = ZZ_ZGIndex;
+    inputHistSmearMap["WGstarToElNuMad"]    = WGIndex;
+    inputHistSmearMap["WGstarToMuNuMad"]    = WGIndex;
+    inputHistSmearMap["WGstarToTauNuMad"]   = WGIndex;
+    inputHistSmearMap["WgammaToLNuG"]       = WGIndex;        
 
-    inputHistSmearMap["ZgammaToLLG"] = ZZ_ZGIndex;
+    inputHistSmearMap["ZgammaToLLG"]        = ZGIndex;
+    
+    inputHistSmearMap["ZZ_"]                = ZZIndex;    
+    inputHistSmearMap["ZZZJets"]            = ZZIndex;
+    inputHistSmearMap["HZZ4L"]              = ZZIndex;    
+    
+    inputHistSmearMap["WZZJets"]            = WZIndex;
+    inputHistSmearMap["WZ_"]                = WZIndex;
 
-//    inputHistSmearMap["WWincl"] = WWIndex;
-//    inputHistSmearMap["ggWWto2L"] = WWIndex;
-//    inputHistSmearMap["WWTo2L2Nu_Madgraph"] = WWIndex;
-//    inputHistSmearMap["HWW125"] = WWIndex;
-//    inputHistSmearMap["VBF125"] = WWIndex;
-//    inputHistSmearMap["HZZ4L"] = ;
-//    inputHistSmearMap["WWGJets"] = WWIndex;
-//    inputHistSmearMap["WZZJets"] = ;
-//    inputHistSmearMap["ZZZJets"] = ZZ_ZGIndex;
-//    inputHistSmearMap["WWZJets"] = ;
-//    inputHistSmearMap["WWWJets"] = ;                                                                   
+    inputHistSmearMap["WWincl"]             = WWIndex;
+    inputHistSmearMap["ggWWto2L"]           = WWIndex;
+    inputHistSmearMap["WWTo2L2Nu_Madgraph"] = WWIndex;
+    inputHistSmearMap["HWW125"]             = WWIndex;
+    inputHistSmearMap["VBF125"]             = WWIndex;
+    inputHistSmearMap["WWGJets"]            = WWIndex;
+    inputHistSmearMap["WWZJets"]            = WWIndex;
+    inputHistSmearMap["WWWJets"]            = WWIndex;                                                                   
 }
-inline vector<TH2F *> * SetMETSmearHistVec(int METorMETPhi, vector<TFile *> * inputVecMETSmearFiles, int whichSystCase = 0, int whichSystDirection = 0) {
+inline vector<TH2F *> * SetMETSmearHistVec(int METorMETPhi, vector<TFile *> * inputVecMETSmearFiles, int whichSystCase = 0, int whichSystDirection = 0) {    
     TString METSmearString = "METSmearMinMET_vs_MET";
     TString METPhiSmearString = "METPhiSmearMinMETPhi_vs_MET";
     TString METSmearSystString[4] = {"METSmearJetERUpMinMET_vs_MET", "METSmearJetERDownMinMET_vs_MET", "METSmearUncESUpMinMET_vs_MET", "METSmearUncESDownMinMET_vs_MET"};
@@ -4388,8 +4660,14 @@ inline vector<TH2F *> * SetMETSmearHistVec(int METorMETPhi, vector<TFile *> * in
     TString grabString;
     TH2F * currHist;
     for (unsigned int iFile = 0; iFile < inputVecMETSmearFiles->size(); ++iFile) {
-        if (whichSystCase != 0 && iFile != 0) continue; // no JER or UncEnSmearing for nonTTBar for now
-        grabString = iFile == 0 ? TTBarHistString : OtherHistString;
+        if (whichSystCase != 0 && iFile > 4) continue; // no JER or UncEnSmearing for nonTTBar for now
+        grabString = iFile < 5 ? TTBarHistString : OtherHistString;
+/*
+        if (iFile == 1) {
+            if (whichSystCase != 0) continue;
+            grabString = OtherHistString;
+        }
+        */
         //        cout << "fileName " << inputVecMETSmearFiles->at(iFile)->GetName();
         currHist = (TH2F *) inputVecMETSmearFiles->at(iFile)->Get(grabString);
         outVec->push_back(currHist);
@@ -4398,7 +4676,7 @@ inline vector<TH2F *> * SetMETSmearHistVec(int METorMETPhi, vector<TFile *> * in
     return outVec;
 }
 
-inline float DeltaMET(std::vector<TH1F *> * vecOneDeeHists, TH2F * TwoDeeHist, float inputMETValue, bool isMETPhi) {
+inline float DeltaMET(std::vector<TH1F *> * vecOneDeeHists, TH2F * TwoDeeHist, float inputMETValue, bool isMETPhi, float SF = 1.0) {
     //returns float which is a random number drawn from the distribution of MET (Phi) Smeared - MET (Phi) Unsmeared
     // Also works for the "Jet Smear systematics version"
     // the "isMETPhi" boolean turns on an additional random number that is +/- 1 (since dPhi for the METPhi p.d.f. is a magnitude thing)
@@ -4423,9 +4701,75 @@ inline float DeltaMET(std::vector<TH1F *> * vecOneDeeHists, TH2F * TwoDeeHist, f
         return 0;
     }
     else {
-        return sign * vecOneDeeHists->at(whichOneDeeHist)->GetRandom();   
+        return SF * sign * vecOneDeeHists->at(whichOneDeeHist)->GetRandom();   
     }
 }
+
+
+
+
+
+inline vector<TH2F *> * SetMETXYSmearHistVec(int METXorMETY, vector<TFile *> * inputVecMETSmearFiles, int whichSystCase = 0, int whichSystDirection = 0) {
+    TString METXSmearString = "METXSmearMinMETX_vs_MET";
+    TString METYSmearString = "METYSmearMinMETY_vs_MET";
+    TString METXSmearSystString[4] = {"METXSmearJetERUpMinMETX_vs_MET", "METXSmearJetERDownMinMETX_vs_MET", "METXSmearUncESUpMinMETX_vs_MET", "METXSmearUncESDownMinMETX_vs_MET"};
+    TString METYSmearSystString[4] = {"METYSmearJetERUpMinMETY_vs_MET", "METYSmearJetERDownMinMETY_vs_MET", "METYSmearUncESUpMinMETY_vs_MET", "METYSmearUncESDownMinMETY_vs_MET"};
+    TString TTBarHistString = "h_";
+    int systGrabIndex = 0;
+    if (whichSystCase > 0) {
+        if (whichSystDirection == 0) cout << "error with Systs: they're turned on, but no direction has been specified " << whichSystDirection << endl;
+        if (whichSystCase == 1) {
+            systGrabIndex = whichSystDirection > 0 ? 0 : 1;
+        }
+        else if (whichSystCase == 2) {
+            systGrabIndex = whichSystDirection > 0 ? 2 : 3;
+        }
+        TTBarHistString += METXorMETY > 0 ? METXSmearSystString[systGrabIndex] : METYSmearSystString[systGrabIndex];
+    }
+    else if (whichSystCase == 0) {
+        TTBarHistString += METXorMETY > 0 ? METXSmearString : METYSmearString;
+    }
+    else {
+        cout << "bug in whichSystCase! " << whichSystCase << endl;
+    }
+    TTBarHistString += "_inclusive";
+    vector<TH2F *> * outVec = new vector<TH2F *>;
+    TString OtherHistString = METXorMETY > 0 ? "h_SmearMetXMinUnsmearMetX_vs_UnsmearMet" : "h_SmearMetYMinUnsmearMetY_vs_UnsmearMet";
+    TString grabString;
+    TH2F * currHist;
+    for (unsigned int iFile = 0; iFile < inputVecMETSmearFiles->size(); ++iFile) {
+        if (whichSystCase != 0 && iFile > 4) continue; // no JER or UncEnSmearing for nonTTBar for now
+        grabString = iFile < 5 ? TTBarHistString : OtherHistString;
+        //        cout << "fileName " << inputVecMETSmearFiles->at(iFile)->GetName();
+        currHist = (TH2F *) inputVecMETSmearFiles->at(iFile)->Get(grabString);
+        outVec->push_back(currHist);        
+    }
+    return outVec;
+}
+
+inline float DeltaMETXY(std::vector<TH1F *> * vecOneDeeHists, TH2F * TwoDeeHist, float inputMETValue) {
+    //returns float which is a random number drawn from the distribution of MET (Phi) Smeared - MET (Phi) Unsmeared
+    // Also works for the "Jet Smear systematics version"
+    // the "isMETPhi" boolean turns on an additional random number that is +/- 1 (since dPhi for the METPhi p.d.f. is a magnitude thing)
+    int whichOneDeeHist = TwoDeeHist->GetXaxis()->FindBin(inputMETValue) - 1;
+    unsigned int numOneDeeHists = vecOneDeeHists->size();
+    if (whichOneDeeHist < 0) {
+        std::cout << inputMETValue << std::endl;
+        std::cout << "ERROR with which one dee hist!" << std::endl;
+        return 0.;
+    }
+    else if (whichOneDeeHist >= (int) numOneDeeHists) {
+        whichOneDeeHist = (int) numOneDeeHists - 1;
+    }
+    if (vecOneDeeHists->at(whichOneDeeHist)->Integral() == 0) {
+        return 0;
+    }
+    else {
+        return vecOneDeeHists->at(whichOneDeeHist)->GetRandom();   
+    }
+}
+
+
 
 
 #endif //HistSampFunc_h_

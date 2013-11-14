@@ -346,9 +346,11 @@ TGraphAsymmErrors * fracGraph(TH1 * centValMCHist, TGraphAsymmErrors * errGraphS
             relDownErr = 0;
         }
         else {
-            relUpErr = (doAbsRatio) ? errGraphSystPlusStat->GetErrorYlow(i) :  errGraphSystPlusStat->GetErrorYhigh(i);
+//            relUpErr = (doAbsRatio) ? errGraphSystPlusStat->GetErrorYlow(i) :  errGraphSystPlusStat->GetErrorYhigh(i);
+            relUpErr = (!doAbsRatio) ? errGraphSystPlusStat->GetErrorYlow(i) :  errGraphSystPlusStat->GetErrorYhigh(i);
             relUpErr /= centValMCHist->GetBinContent(i);
-            relDownErr = (doAbsRatio) ? errGraphSystPlusStat->GetErrorYhigh(i) :  errGraphSystPlusStat->GetErrorYlow(i);
+//            relDownErr = (doAbsRatio) ? errGraphSystPlusStat->GetErrorYhigh(i) :  errGraphSystPlusStat->GetErrorYlow(i);
+            relDownErr = (!doAbsRatio) ? errGraphSystPlusStat->GetErrorYhigh(i) :  errGraphSystPlusStat->GetErrorYlow(i);
             relDownErr /= centValMCHist->GetBinContent(i);
         }
         ratioGraph->SetPointEYhigh(i, relUpErr);

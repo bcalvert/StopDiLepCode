@@ -85,6 +85,35 @@ int main( int argc, const char* argv[] ) {
     vector<TH1F *> * vecOneDeeMT2llUncEnDown = OneDProjectionReturnVec(MT2llUncEnDownDelta2D, 2, 2, 1, 1, 2, "MT2llUncEnDown");
     vector<TH1F *> * vecOneDeeMT2lbUncEnUp = OneDProjectionReturnVec(MT2lbUncEnUpDelta2D, 2, 2, 1, 1, 2, "MT2lbUncEnUp");
     vector<TH1F *> * vecOneDeeMT2lbUncEnDown = OneDProjectionReturnVec(MT2lbUncEnDownDelta2D, 2, 2, 1, 1, 2, "MT2lbUncEnDown");
+    
+    TFile * fileTriggerBkgMuMu  = new TFile("triggerSummary_mumu_ttbar.root");
+    TFile * fileTriggerBkgEE    = new TFile("triggerSummary_ee_ttbar.root");
+    TFile * fileTriggerBkgEMu   = new TFile("triggerSummary_emu_ttbar.root");    
+    TH2F * h_TrigSFBkgMuMu      = (TH2F *) fileTriggerBkgMuMu->Get("scalefactor eta2d with syst");
+    TH2F * h_TrigSFBkgEE        = (TH2F *) fileTriggerBkgEE->Get("scalefactor eta2d with syst");
+    TH2F * h_TrigSFBkgEMu       = (TH2F *) fileTriggerBkgEMu->Get("scalefactor eta2d with syst");
+    
+    TFile * fileTriggerSigMuMu  = new TFile("triggerSummary_mumu_stop.root");
+    TFile * fileTriggerSigEE    = new TFile("triggerSummary_ee_stop.root");
+    TFile * fileTriggerSigEMu   = new TFile("triggerSummary_emu_stop.root");
+    TH2F * h_TrigSFSigMuMu      = (TH2F *) fileTriggerSigMuMu->Get("scalefactor eta2d with syst");
+    TH2F * h_TrigSFSigEE        = (TH2F *) fileTriggerSigEE->Get("scalefactor eta2d with syst");
+    TH2F * h_TrigSFSigEMu       = (TH2F *) fileTriggerSigEMu->Get("scalefactor eta2d with syst");
+    vector<TH2F *> h_TrigSFBkgVec;    
+    vector<TH2F *> h_TrigSFSigVec;
+    h_TrigSFBkgVec.push_back(h_TrigSFBkgMuMu);
+    h_TrigSFBkgVec.push_back(h_TrigSFBkgEE);
+    h_TrigSFBkgVec.push_back(h_TrigSFBkgEMu);
+    h_TrigSFSigVec.push_back(h_TrigSFSigMuMu);
+    h_TrigSFSigVec.push_back(h_TrigSFSigEE);
+    h_TrigSFSigVec.push_back(h_TrigSFSigEMu);
+    
+    TFile * fileFastSimLepIDIsoMuMu = new TFile("muon_FastSim_EWKino.root");
+    TFile * fileFastSimLepIDIsoEE = new TFile("electron_FastSim_EWKino.root");
+    
+    TH2F * h_LepIDIsoSFSigMuMu = (TH2F *) fileFastSimLepIDIsoMuMu->Get("SF");
+    TH2F * h_LepIDIsoSFSigEE = (TH2F *) fileFastSimLepIDIsoEE->Get("SF");
+    
     TString fileTreeName;    
     TString fInName;
     TString fOutName;    
@@ -1086,7 +1115,6 @@ int main( int argc, const char* argv[] ) {
         EDSI.EDSIDefaultVarVals();
         
         if (!BEI.doData) {
-            EGPI.EGPIDefaultVarVals();
             ELI_LepESUp.ELIDefaultVarVals();
             ELI_LepESDown.ELIDefaultVarVals();
             
@@ -1308,12 +1336,64 @@ int main( int argc, const char* argv[] ) {
             //            cout << " for ievt " << ievt << endl;
             //            cout << "Type " << ELI.EventDiLepType << endl;
             //            cout << "weight pre scale " << BEI.weight << endl;
-            BEI.weight *= ScaleFactorMC(ELI.EventDiLepType, 0);
+            if (ELI.doEvent) {
+                ELI.SetScaleFactors(BEI.isSignal, &h_TrigSFBkgVec, &h_TrigSFSigVec, h_LepIDIsoSFSigEE, h_LepIDIsoSFSigMuMu);
+            }
+            else {
+                ELI.SetScaleFactorsFailedEvent();
+            }
+            if (ELI_LepESUp.doEvent) {
+                ELI_LepESUp.SetScaleFactors(BEI.isSignal, &h_TrigSFBkgVec, &h_TrigSFSigVec, h_LepIDIsoSFSigEE, h_LepIDIsoSFSigMuMu);
+            }
+            else {
+                ELI_LepESUp.SetScaleFactorsFailedEvent();
+            }
+            if (ELI_LepESDown.doEvent) {
+                ELI_LepESDown.SetScaleFactors(BEI.isSignal, &h_TrigSFBkgVec, &h_TrigSFSigVec, h_LepIDIsoSFSigEE, h_LepIDIsoSFSigMuMu);
+            }
+            else {
+                ELI_LepESDown.SetScaleFactorsFailedEvent();
+            }
+            
+/*
+ BEI.weight *= ScaleFactorMC(ELI.EventDiLepType, 0);
             BEI.preNVtxRWWeight *= ScaleFactorMC(ELI.EventDiLepType, 0);
+ */
+            /*
+            cout << "ievt " << ievt << endl;
+            cout << "ELI.EventDiLepType " << ELI.EventDiLepType << endl;
+            cout << "ELI_LepESUp.EventDiLepType " << ELI_LepESUp.EventDiLepType << endl;
+            cout << "ELI_LepESDown.EventDiLepType " << ELI_LepESDown.EventDiLepType << endl;
+            cout << "ScaleFactorMC(ELI.EventDiLepType, 0) " << ELI.GetSF() << endl;
+            cout << "ScaleFactorMC(ELI_LepESUp.EventDiLepType, 0) " << ELI_LepESUp.GetSF() << endl;
+            cout << "ScaleFactorMC(ELI_LepESDown.EventDiLepType, 0) " << ELI_LepESDown.GetSF() << endl;
+            cout << "ScaleFactorMC(ELI.EventDiLepType, 1) " << ELI.GetSF(1) << endl;
+            cout << "ScaleFactorMC(ELI.EventDiLepType, -1) " << ELI.GetSF(-1) << endl;
+            */
+            BEI.weight *= ELI.GetSF();
+            BEI.preNVtxRWWeight *= ELI.GetSF();
             //            cout << "Type " << ELI.EventDiLepType << endl;
             //            cout << "weight post scale " << BEI.weight << endl;
+            BEI_GenTopRW.weight *= ELI.GetSF();
+            BEI_GenTopRW.preNVtxRWWeight *= ELI.GetSF();
             
+            BEI_LepESUp.weight *= ELI_LepESUp.GetSF();
+            BEI_LepESUp.preNVtxRWWeight *= ELI_LepESUp.GetSF();
             
+            BEI_LepESDown.weight *= ELI_LepESDown.GetSF();
+            BEI_LepESDown.preNVtxRWWeight *= ELI_LepESDown.GetSF();
+            
+            BEI_LepEffSFUp.weight *= ELI.GetSF(1);
+            BEI_LepEffSFUp.preNVtxRWWeight *= ELI.GetSF(1);
+            
+            BEI_LepEffSFDown.weight *= ELI.GetSF(-1);
+            BEI_LepEffSFDown.preNVtxRWWeight *= ELI.GetSF(-1);
+            
+            BEI_StopXSecUp.weight *= ELI.GetSF();
+            BEI_StopXSecUp.preNVtxRWWeight *= ELI.GetSF();
+            BEI_StopXSecDown.weight *= ELI.GetSF();
+            BEI_StopXSecDown.preNVtxRWWeight *= ELI.GetSF();
+            /*
             BEI_GenTopRW.weight *= ScaleFactorMC(ELI.EventDiLepType, 0);
             BEI_GenTopRW.preNVtxRWWeight *= ScaleFactorMC(ELI.EventDiLepType, 0);
             
@@ -1331,7 +1411,7 @@ int main( int argc, const char* argv[] ) {
             BEI_StopXSecUp.preNVtxRWWeight *= ScaleFactorMC(ELI.EventDiLepType, 0);
             BEI_StopXSecDown.weight *= ScaleFactorMC(ELI.EventDiLepType, 0);
             BEI_StopXSecDown.preNVtxRWWeight *= ScaleFactorMC(ELI.EventDiLepType, 0);
-            
+             */
             if (BEI.isSignal) {
                 BEI.weight *= EGPI.StopWeight;
                 BEI.preNVtxRWWeight *= EGPI.StopWeight;
@@ -1353,7 +1433,7 @@ int main( int argc, const char* argv[] ) {
                 
                 BEI_GenTopRW.weight *= EGPI.StopWeight;
                 BEI_GenTopRW.preNVtxRWWeight *= EGPI.StopWeight;
-            }         
+            }
         }
         // basic condition, if running on data, only select type of events that are relevant to prevent double counting
         if (BEI.doData) {

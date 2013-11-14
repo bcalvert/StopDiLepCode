@@ -68,7 +68,10 @@ int main( int argc, char* argv[]) {
     int  versNumber     = 1;
     bool doReReco       = 0;
     bool SmearedPlots   = 0;
+    bool doSmoothSyst   = 0;
     int  JetsSmeared    = 0;
+    bool UseUnblindedData = 0;
+    bool justMT2Plots   = 0;
     for (int k = 0; k < argc; ++k) {
         cout << "argv[k] for k = " << k << " is: " << argv[k] << endl;
         if (strncmp (argv[k],"wChan", 5) == 0) {
@@ -91,7 +94,15 @@ int main( int argc, char* argv[]) {
             vecStopMassGrab->push_back(strtol(argv[k+3], NULL, 10 ));
             vecChi0MassGrab->push_back(strtol(argv[k+4], NULL, 10 ));
             vecCharginoMassGrab->push_back(strtol(argv[k+5], NULL, 10 ));
-        }      
+        }
+        else if (strncmp (argv[k],"ReleaseTheKraken", 16) == 0) {
+            UseUnblindedData = 1;
+            cout << "RELEASING THE KRAKEN!!! " << endl;
+            cout << "http://www.youtube.com/watch?v=gb2zIR2rvRQ " << endl;
+        }
+        else if (strncmp (argv[k],"jMT2P", 5) == 0) {
+            justMT2Plots = 1;
+        }
         else if (strncmp (argv[k],"doPURW", 6) == 0) {
             doPURW = 1;
         }
@@ -168,6 +179,9 @@ int main( int argc, char* argv[]) {
         else if (strncmp (argv[k],"doReReco", 8) == 0) {
             doReReco = 1;
         }
+        else if (strncmp (argv[k],"doSmoothSyst", 12) == 0) {
+            doSmoothSyst = 1;
+        }
     }
     TRint theApp("App", &argc, argv);
     Bool_t retVal = kTRUE;
@@ -204,7 +218,7 @@ int main( int argc, char* argv[]) {
     //Set up the file input
     //    vector<TFile *> * inFiles = new vector<TFile*>;
     vector<TString> * fileInNames = StopFileNames(whichNTuple, whichTTbarGen, doExcSamps, doReReco);
-    vector<TFile *> * inputFiles  = StopFiles(whichNTuple, fileInNames, doExcSamps, whichTTbarGen, doPURW, doSyst, versNumber);
+    vector<TFile *> * inputFiles  = StopFiles(whichNTuple, fileInNames, doExcSamps, whichTTbarGen, doPURW, doSyst, versNumber, UseUnblindedData);
     vector<TString> * mcLegends   = MCLegends(whichNTuple, addThings);
     vector<Color_t> * mcColors    = MCColors(whichNTuple, addThings);
     
@@ -212,7 +226,7 @@ int main( int argc, char* argv[]) {
     vector<TFile *> * inputFiles_Other;
     if (doOviDESYFracRatio) {
         fileInNames_Other = StopFileNames((whichNTuple + 1) % 2, whichTTbarGen, doExcSamps, doReReco);
-        inputFiles_Other  = StopFiles((whichNTuple + 1) % 2, fileInNames_Other, doExcSamps, whichTTbarGen, doPURW, doSyst, versNumber);
+        inputFiles_Other  = StopFiles((whichNTuple + 1) % 2, fileInNames_Other, doExcSamps, whichTTbarGen, doPURW, doSyst, versNumber, UseUnblindedData);
     }
     
     vector<TString> * sampleAddNames = new vector<TString>;
@@ -242,14 +256,16 @@ int main( int argc, char* argv[]) {
     
     TString fracRatioNumerName = (doAbsRatio) ? "Data" : "(MC-Data)";
     TString fracRatioDenomName = (doAbsRatio) ? "MC" : "Data"; 
-    float   fracRatioYAxisRange = (doAbsRatio) ? 0.21 : 0.26;
+    float   fracRatioYAxisRange = (doAbsRatio) ? 0.23 : 0.26;
     
 //    vector<HistogramT> * histVec_1D = OneDeeHistTVec();
     vector<HistogramT> * histVec_1D = OneDeeHistTVecStatusReport();
     vector<HistogramT> * histVec_2D = TwoDeeHistTVec();
     vector<HistogramT> * histVec_3D = ThreeDeeHistTVec(); 
     vector<HistogramT> * histVec_1DSmear = OneDeeSmearHistTVec(JetsSmeared);
+    vector<HistogramT> * histVec1DSpecial = OneDeeHistTVecSpecial(SmearedPlots, JetsSmeared);
     vector<HistogramT> * histVec1DtoUse = SmearedPlots ? histVec_1DSmear : histVec_1D;
+    if (UseUnblindedData && justMT2Plots) histVec1DtoUse = histVec1DSpecial;
     vector<SampleT> * subSampVec    = SubSampVec();
     cout << "subsamp size " << subSampVec->size() << endl;
     vector<SystT> * systVec         = SystVec(SmearedPlots);
@@ -289,7 +305,9 @@ int main( int argc, char* argv[]) {
     if (doAbsRatio) canvSuffixSaveName += "_AbsRatio";
     if (!showLegend) canvSuffixSaveName += "_noLegend";
     if (SmearedPlots) canvSuffixSaveName += "_SmearedMET";
+    if (doSmoothSyst) canvSuffixSaveName += "_SmoothedSysts";
     if (versNumber == 2) canvSuffixSaveName += "_vers2";
+    if (UseUnblindedData) canvSuffixSaveName += "_UnblindedData";      
     
     ///Systematics stuff////
     vector<TH1F *> * dataHist1DVec;
@@ -505,7 +523,8 @@ int main( int argc, char* argv[]) {
     }
     ///Data-Driven systematics stuff
     //Oviedo EMu: .912598, EE: 0.658692, MuMu: .884796, FullCut: .863585
-    float TTBarFullCutSFOviReReco[3] = {1.01276, 0.933961, 1.04784};
+//    float TTBarFullCutSFOviReReco[3] = {1.01276, 0.933961, 1.04784};
+    float TTBarFullCutSFOviReReco[3] = {1.01276, 0.933961, 1.00069};
     float TTBarFullCutSFOvi[3] = {0.946965, 0.873284, 0.969927};
     float TTBarFullCutSFDESY[3] = {0.84936, 0.843207, 0.949907};
     if (!doExcSamps) {
@@ -577,7 +596,7 @@ int main( int argc, char* argv[]) {
     float YaxisLegendStart[num1DPlots];
     TLegend * leg;
     for (unsigned int i = 0; i < num1DPlots; ++i) {
-        doOverflow[i] = false;
+        doOverflow[i] = true;
         doUnderflow[i] = false;
         RBNX[i] = 1;
         RBNY[i] = 1;
@@ -858,7 +877,7 @@ int main( int argc, char* argv[]) {
                     for (unsigned int iSyst = 0; iSyst < systCanvNameVec->size(); ++iSyst) {
                         systCanvName = canvName + systCanvNameVec->at(iSyst);
                         c_Var = new TCanvas(systCanvName, systCanvName, wtopx, wtopy, W_, H_);
-                        SpectrumDrawSyst(c_Var, h_DataComp, dataLegendComp, h_MCComp, mcStack, errCompSpecSource_pStat->at(iSyst), errCompSpecSource->at(iSyst), h_FracratioComp, fracRatioSystVec->at(iSyst), XaxisLegendPos[k], YaxisLegendStart[k], YAxisLB, YAxisUB, logYPad1, mcLegends, mcCompHist1DCentValVecSorted, doStats, "", intLumi, leg, doSmartFracRatio, doOviDESYFracRatio, h_FracratioComp_Other, showLegend);
+                        SpectrumDrawSyst(c_Var, h_DataComp, dataLegendComp, h_MCComp, mcStack, errCompSpecSource_pStat->at(iSyst), errCompSpecSource->at(iSyst), h_FracratioComp, fracRatioSystVec->at(iSyst), XaxisLegendPos[k], YaxisLegendStart[k], YAxisLB, YAxisUB, logYPad1, mcLegends, mcCompHist1DCentValVecSorted, doStats, "", intLumi, leg, doSmartFracRatio, doOviDESYFracRatio, h_FracratioComp_Other, showLegend, doSmoothSyst);
                         
                         if (doSignal) {
                             SpectrumDrawSyst_AddSignal(c_Var, vecStop1DCentValHists, vecErrSigCompVecSpecSource_pStat, iSyst, mcLegendsSignal, leg, showLegend);

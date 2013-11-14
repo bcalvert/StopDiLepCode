@@ -272,6 +272,7 @@ inline float ScaleFactorMC(int Type, int Syst) {
     // Note! As of 8/10/13, trying an additional SF just for funsies, ok not really just for funsies, basically we find that the DD TTBar normalization is different for the three separate channels, which is bad news bears because it is indicative of different lepton reconstruction efficiency scale factors for data/MC for the different leptons
     /// 
     /*
+     //30-10-2012
      float SF_trigger_mumu=0.965;// +/- 0.0102;
      float SF_trigger_ee  =0.962;// +/- 0.0130;
      float SF_trigger_mue =0.943;// +/- 0.0120;
@@ -280,9 +281,12 @@ inline float ScaleFactorMC(int Type, int Syst) {
      float SF_IDISO_ee  =0.975;// +/- 0.0006;
      float SF_IDISO_mue =0.986;// +/- 0.0007;
      *////
+    float SFTotal[3], SFSystUp[3], SFSystDown[3];
+    /*
     float SFTotal[3] = {0.962105, 0.9379500, 0.9297980};
     float SFSystUp[3] = {0.0102024, 0.0126881, 0.0185040};
     float SFSystDown[3] = {0.0102024, 0.0126881, 0.0185040};
+     */
     /*
      float SFTotal[3] = {0.987, 0.957, 0.935};
      float SFSystUp[3] = {0.011, 0.015, 0.013};
@@ -328,9 +332,22 @@ float FastSimScaleFactor(Lepton lep0, Lepton lep1) {
 // scale factors taken from slideshttps://indico.cern.ch/getFile.py/access?contribId=2&resId=0&materialId=slides&confId=275431
 }
 */
+inline void METComponents(float &MET, float &METPhi, float &METX, float &METY, int METCompDirection) {
+    // METCompDirection = 1 means take MET/METPhi to METX/METY, = 0 means opposite
+    if (METCompDirection > 0) {
+        METX = MET * TMath::Cos(METPhi);
+        METY = MET * TMath::Sin(METPhi);
+    }
+    else {
+        MET = TMath::Sqrt(METX * METX + METY * METY);
+        METPhi = TMath::ATan2(METY, METX);
+    }
+}
+
 inline void CorrectPlusSetMET(BasicEventInfo * inBEI, EventLepInfo * inELI, EventJetInfo * inEJI, EventMETInfo &inputEMI) {
-    inputEMI.EventMETX_preCorr = inputEMI.EventMET_preCorr * TMath::Cos(inputEMI.EventMETPhi_preCorr);
-    inputEMI.EventMETY_preCorr = inputEMI.EventMET_preCorr * TMath::Sin(inputEMI.EventMETPhi_preCorr);
+    METComponents(inputEMI.EventMET_preCorr, inputEMI.EventMETPhi_preCorr, inputEMI.EventMETX_preCorr, inputEMI.EventMETY_preCorr, 1);
+//    inputEMI.EventMETX_preCorr = inputEMI.EventMET_preCorr * TMath::Cos(inputEMI.EventMETPhi_preCorr);
+//    inputEMI.EventMETY_preCorr = inputEMI.EventMET_preCorr * TMath::Sin(inputEMI.EventMETPhi_preCorr);
     inputEMI.EventMETX = inputEMI.EventMETX_preCorr;
     inputEMI.EventMETY = inputEMI.EventMETY_preCorr;
     if (inBEI->doPhiCorr) MetPhiCorrect(inBEI->doData, inputEMI.EventMETX, inputEMI.EventMETY, inBEI->nVtx, inBEI->doReReco);    
@@ -341,8 +358,9 @@ inline void CorrectPlusSetMET(BasicEventInfo * inBEI, EventLepInfo * inELI, Even
      inputEMI.EventMETY *= rand.Gaus(1, METSF * inputEMI.EventMETY);   
      }
      */
-    inputEMI.EventMETPhi = TMath::ATan2(inputEMI.EventMETY, inputEMI.EventMETX);
-    inputEMI.EventMET = TMath::Sqrt(inputEMI.EventMETX * inputEMI.EventMETX + inputEMI.EventMETY * inputEMI.EventMETY);
+    METComponents(inputEMI.EventMET, inputEMI.EventMETPhi, inputEMI.EventMETX, inputEMI.EventMETY, 0);
+//    inputEMI.EventMETPhi = TMath::ATan2(inputEMI.EventMETY, inputEMI.EventMETX);
+//    inputEMI.EventMET = TMath::Sqrt(inputEMI.EventMETX * inputEMI.EventMETX + inputEMI.EventMETY * inputEMI.EventMETY);
     inputEMI.EventMETdivMeff = inputEMI.EventMET / (inputEMI.EventMET + inEJI->EventJetST + inELI->EventLepST);
 //    inputEMI.PrintVals();
 }
@@ -595,6 +613,9 @@ inline void SetStringKeyMapSmearJets(map<string, float> &stringKeyToVar, EventLe
     stringKeyToVar[string(TString("SmearPassMT2llCut120") + SystStringAppend)]               = (inEMI->EventMT2ll > 120.);
     stringKeyToVar[string(TString("SmearMT2lb") + SystStringAppend)]                         = inEMI->EventMT2lb;
     stringKeyToVar[string(TString("SmearMET") + SystStringAppend)]                           = inEMI->EventMET;
+    stringKeyToVar[string(TString("SmearMETPhi") + SystStringAppend)]                           = inEMI->EventMETPhi;
+    stringKeyToVar[string(TString("SmearMETX") + SystStringAppend)]                           = inEMI->EventMETX;
+    stringKeyToVar[string(TString("SmearMETY") + SystStringAppend)]                           = inEMI->EventMETY;
     stringKeyToVar[string(TString("SmearMETdivMeff") + SystStringAppend)]                    = inEMI->EventMETdivMeff;
     stringKeyToVar[string(TString("SmearMETdivMeff_PassMT2llCut80") + SystStringAppend)]     = inEMI->EventMT2ll > 80 ? inEMI->EventMETdivMeff : -99;
     stringKeyToVar[string(TString("SmearMETdivMeff_PassMT2llCut90") + SystStringAppend)]     = inEMI->EventMT2ll > 90 ? inEMI->EventMETdivMeff : -99;
