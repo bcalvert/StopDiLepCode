@@ -197,8 +197,12 @@ int main( int argc, const char* argv[] ) {
     ////Special Event Structure information for systematics not readily accounted for right now in the "whole" sense (Unclustered Energy's effect on MT2)////
     
     int TGenStopMass0,TGenStopMass1,TGenChi0Mass0,TGenChi0Mass1, TGenCharginoMass0, TGenCharginoMass1;
-    int   grabStopMass, grabChi0Mass, grabCharginoMass;
-    int   massDiffThresh = 5;
+    float TGenCharginoMassFrac0, TGenCharginoMassFrac1;
+    int   grabStopMass, grabChi0Mass;
+    float grabCharginoMassFrac;
+    float   massDiffThresh = 5;
+    float CharginoMassFracDiffThresh = 0.125;
+    bool isT2tt, isT2ttFineBin;
     /*
      float stopWeight    = 0.;
      float stopWeightErr = 0.;
@@ -306,8 +310,8 @@ int main( int argc, const char* argv[] ) {
             BEI.isSignal = 1;
             grabStopMass = strtol(argv[k+1], NULL, 10);
             grabChi0Mass = strtol(argv[k+2], NULL, 10);
-            grabCharginoMass = strtol(argv[k+3], NULL, 10);
-            cout << "Looking for StopMass: " << grabStopMass << ", Chi0Mass: " << grabChi0Mass << ", and CharginoMass: " << grabCharginoMass << endl;
+            grabCharginoMassFrac = strtod(argv[k+3], NULL);
+            cout << "Looking for StopMass: " << grabStopMass << ", Chi0Mass: " << grabChi0Mass << ", and CharginoMassFrac: " << grabCharginoMassFrac << endl;
         }
         else if (strncmp (argv[k],"ReleaseTheKraken", 16) == 0) {
             BEI.blindData = 0;
@@ -375,9 +379,9 @@ int main( int argc, const char* argv[] ) {
         fOutName += grabStopMass;
         fOutName += "_Chi0";
         fOutName += grabChi0Mass;
-        if (grabCharginoMass >= 0) {                        
+        if (grabCharginoMassFrac >= 0) {                        
             fOutName += "_Chargino";
-            fOutName += grabCharginoMass;
+            fOutName += grabCharginoMassFrac;
         }
     }
     if (abs(subLepPtCut - 10.) > 1E-3) {
@@ -800,20 +804,30 @@ int main( int argc, const char* argv[] ) {
     }
     if (fileTree.GetBranch("TGenStopMass0")){
         BEI.hasStopInfo = true;
+        isT2tt = fInName.Contains("T2tt");
+        isT2ttFineBin = (isT2tt && fInName.Contains("FineBin"));
         fileTree.SetBranchAddress( "TGenStopMass0",     &TGenStopMass0 );
         fileTree.SetBranchAddress( "TGenStopMass1",     &TGenStopMass1 );
         fileTree.SetBranchAddress( "TGenChi0Mass0",     &TGenChi0Mass0 );
         fileTree.SetBranchAddress( "TGenChi0Mass1",     &TGenChi0Mass1 );            
         fileTree.SetBranchAddress( "TGenCharginoMass0", &TGenCharginoMass0 );
         fileTree.SetBranchAddress( "TGenCharginoMass1", &TGenCharginoMass1 );
+        if (!isT2tt) {
+            fileTree.SetBranchAddress( "TGenCharginoMassFrac0", &TGenCharginoMassFrac0 );
+            fileTree.SetBranchAddress( "TGenCharginoMassFrac1", &TGenCharginoMassFrac1 );
+        }
         float stopMassToUseForXSec;
-        if (!fInName.Contains("FineBin")) {
-            float roundedStopMass = floor((TGenStopMass0+12.5)/25.)*25.; 
+        float roundedStopMass;
+        if (!isT2ttFineBin) {
+            roundedStopMass = floor((TGenStopMass0+12.5)/25.)*25.;
             stopMassToUseForXSec = roundedStopMass;
-            //                cout << "roundedStopMass " << roundedStopMass << endl;
+            massDiffThresh = 12.5;
+            //                cout << "roundedStopMass " << roundedStopMass << endl;                                                                                         
         }
         else {
-            stopMassToUseForXSec = grabStopMass;
+            roundedStopMass = floor((TGenStopMass0+5)/10.)*10.;
+            stopMassToUseForXSec = roundedStopMass;
+            //      stopMassToUseForXSec = grabStopMass;                                                                                                                     
         }
         cout << "TEMP FIX !!! " << endl;
         stopMassToUseForXSec = grabStopMass;
@@ -833,10 +847,14 @@ int main( int argc, const char* argv[] ) {
     vector<HistogramT> * histVec_2D = TwoDeeHistTVec();
     vector<HistogramT> * histVec_3D = ThreeDeeHistTVec();
     vector<HistogramT> * histVec_1D_Smear, * histVec_1D_Smear_Syst;
+    vector<HistogramT> * histVec_2D_Smear, * histVec_2D_Smear_Syst;    
     
     if (!BEI.doData) {
         histVec_1D_Smear = OneDeeSmearHistTVec(fileContainsTrueSmearedJets);
         histVec_1D_Smear_Syst = new vector<HistogramT>;
+        
+        histVec_2D_Smear = TwoDeeSmearHistTVec();
+        histVec_2D_Smear_Syst = new vector<HistogramT>;
     }
     vector<SampleT> * subSampVec    = SubSampVec();    ///Define things necessary for booking histograms
     vector<SystT> * systVec         = SystVec(true);
@@ -874,6 +892,7 @@ int main( int argc, const char* argv[] ) {
          */
         //        histVec_1D_Smear_Syst = AddSystHists(histVec_1D_Smear, systVec, fInName, BEI.isSignal);
         histVec_1D_Smear_Syst = AddSystHists(histVec_1D_Smear, systVec, fInName, BEI.isSignal);
+        histVec_2D_Smear_Syst = AddSystHists(histVec_2D_Smear, systVec, fInName, BEI.isSignal);
     }
     for (unsigned int i = 0; i < subSampVec->size(); ++i) {
         S_Current = subSampVec->at(i);
@@ -970,6 +989,24 @@ int main( int argc, const char* argv[] ) {
                 h_1DCurr = new TH1F(histTitle, axesTitle, nXBins, xBinMin, xBinMax); h_1DCurr->Sumw2();
                 histMap_1D[histKey(H_Current, S_Current)] = h_1DCurr;
             }
+            for (unsigned int iSmear2D = 0; iSmear2D < histVec_2D_Smear->size(); ++iSmear2D) {
+                H_Current = histVec_2D_Smear->at(iSmear2D);
+                histTitle = H_Current.name + S_Current.histNameSuffix;
+                axesTitle = ";"; axesTitle += H_Current.xLabel;// axesTitle += S_Current.histXaxisSuffix;
+                axesTitle += ";"; axesTitle += H_Current.yLabel;// axesTitle += S_Current.histYaxisSuffix;
+                axesTitle += ";"; axesTitle += H_Current.zLabel;
+                nXBins = H_Current.xBinN;
+                xBinMin = H_Current.xMin;
+                xBinMax = H_Current.xMax;
+                nYBins = H_Current.yBinN;
+                yBinMin = H_Current.yMin;
+                yBinMax = H_Current.yMax;
+                if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !H_Current.name.Contains("PassMT2ll") && !(H_Current.name.Contains("MT2llControl"))) {
+                    xBinMax = xBinMax / 2;
+                }
+                h_2DCurr = new TH2F(histTitle, axesTitle, nXBins, xBinMin, xBinMax, nYBins, yBinMin, yBinMax); h_2DCurr->Sumw2();
+                histMap_2D[histKey(H_Current, S_Current)] = h_2DCurr;
+            } 
             if (doBookSyst) {
                 for (unsigned int iSmearSyst = 0; iSmearSyst < histVec_1D_Smear_Syst->size(); ++iSmearSyst) {
                     H_Current = histVec_1D_Smear_Syst->at(iSmearSyst);
@@ -991,6 +1028,24 @@ int main( int argc, const char* argv[] ) {
                     }
                     h_1DCurr = new TH1F(histTitle, axesTitle, nXBins, xBinMin, xBinMax); h_1DCurr->Sumw2();
                     histMap_1D[histKey(H_Current, S_Current)] = h_1DCurr;
+                }
+                for (unsigned int iSmearSyst_2D = 0; iSmearSyst_2D < histVec_2D_Smear_Syst->size(); ++iSmearSyst_2D) {
+                    H_Current = histVec_2D_Smear_Syst->at(iSmearSyst_2D);
+                    histTitle = H_Current.name + S_Current.histNameSuffix;
+                    axesTitle = ";"; axesTitle += H_Current.xLabel;// axesTitle += S_Current.histXaxisSuffix;
+                    axesTitle += ";"; axesTitle += H_Current.yLabel;// axesTitle += S_Current.histYaxisSuffix;
+                    axesTitle += ";"; axesTitle += H_Current.zLabel;
+                    nXBins = H_Current.xBinN;
+                    xBinMin = H_Current.xMin;
+                    xBinMax = H_Current.xMax;
+                    nYBins = H_Current.yBinN;
+                    yBinMin = H_Current.yMin;
+                    yBinMax = H_Current.yMax;
+                    if (H_Current.xLabel.Contains("MT2_{ll}") && S_Current.blindDataChannel && !H_Current.name.Contains("PassMT2ll") && !(H_Current.name.Contains("MT2llControl"))) {
+                        xBinMax = xBinMax / 2;
+                    }
+                    h_2DCurr = new TH2F(histTitle, axesTitle, nXBins, xBinMin, xBinMax, nYBins, yBinMin, yBinMax); h_2DCurr->Sumw2();
+                    histMap_2D[histKey(H_Current, S_Current)] = h_2DCurr;
                 }
                 
                 for (unsigned int js = 0; js < histVec_1D_Syst->size(); ++js) {                
@@ -1198,12 +1253,15 @@ int main( int argc, const char* argv[] ) {
             EGPI.weight_GenTopReweight = 1.; // set it to 1 for default -- will switch later if "hasTopInfo"
             if (BEI.isSignal) {
                 if (!BEI.hasStopInfo) continue;
+
                 if (fabs(TGenStopMass0 - grabStopMass) > massDiffThresh) continue;
                 if (fabs(TGenStopMass1 - grabStopMass) > massDiffThresh) continue;
                 if (fabs(TGenChi0Mass0 - grabChi0Mass) > massDiffThresh) continue;
                 if (fabs(TGenChi0Mass1 - grabChi0Mass) > massDiffThresh) continue;
-                if (fabs(TGenCharginoMass0 - grabCharginoMass) > massDiffThresh) continue;
-                if (fabs(TGenCharginoMass1 - grabCharginoMass) > massDiffThresh) continue;
+                if (!isT2tt) {
+                    if (fabs(TGenCharginoMassFrac0 - grabCharginoMassFrac) > CharginoMassFracDiffThresh) continue;
+                    if (fabs(TGenCharginoMassFrac1 - grabCharginoMassFrac) > CharginoMassFracDiffThresh) continue;
+                }
             }
             if (BEI.hasMETInfo) {
                 genMETVec.SetPtEtaPhiM(genMET_Pt, 0., genMET_Phi, 0.);
@@ -1279,8 +1337,11 @@ int main( int argc, const char* argv[] ) {
         cout << "EMI_LepESUp.EventMETPhi_preCorr " << EMI_LepESUp.EventMETPhi_preCorr << endl;
         cout << "EMI_LepESDown.EventMETPhi_preCorr " << EMI_LepESDown.EventMETPhi_preCorr << endl;
         */
+        ELI.GrabbedFromTree();
+        EJI.GrabbedFromTree();
         SetEventInformation(&BEI, &ELI, &EJI, EMI, EDSI);
-        
+//        if (EMI.EventMT2ll < 180) continue;
+//        PrintEvent(&BEI, &EMI, &EJI, &ELI, &EDSI, 180);
         ///****************************************
         // Call the code to set up the event information
         ///****************************************        
@@ -1297,18 +1358,61 @@ int main( int argc, const char* argv[] ) {
                 cout << "Type " << ELI.EventDiLepType << endl;
                 cout << "weight pre scale " << BEI.weight << endl;
             }
+            ELI_LepESUp.GrabbedFromTree();
+            ELI_LepESDown.GrabbedFromTree();
+            EJI_JetESUp.GrabbedFromTree();
+            EJI_JetESDown.GrabbedFromTree();
+            SmearEJI.GrabbedFromTree();
+            SmearEJI_JetESUp.GrabbedFromTree();
+            SmearEJI_JetESDown.GrabbedFromTree();
+            SmearEJI_JetSmearUp.GrabbedFromTree();
+            SmearEJI_JetSmearDown.GrabbedFromTree();
+//            cout << "set cent val " << endl;
             SetEventInformation(&BEI_LepESUp,   &ELI_LepESUp,   &EJI,            EMI_LepESUp,    EDSI_LepESUp);
+//            cout << "set LepES Up " << ELI_LepESUp.doEvent << endl;
             SetEventInformation(&BEI_LepESDown, &ELI_LepESDown, &EJI,            EMI_LepESDown,  EDSI_LepESDown);
+//            cout << "set LepES Down " << ELI_LepESDown.doEvent << endl;
             SetEventInformation(&BEI,           &ELI,           &EJI_JetESUp,    EMI_JetESUp,    EDSI_JetESUp);
+//            cout << "set JetES Up " << endl;
             SetEventInformation(&BEI,           &ELI,           &EJI_JetESDown,  EMI_JetESDown,  EDSI_JetESDown);
+//            cout << "set JetES Down " << endl;
             EJI_BTagSFUp.SetNonBTagInfo(&EJI);
             EJI_BTagSFDown.SetNonBTagInfo(&EJI);
             EMI_BTagSFUp = EMI;
             EMI_BTagSFDown = EMI;
+//            cout << "ievent " << ievt << endl;
+//            cout << "testing MET CentVal " << endl;
+//            EMI.PrintVals();
+//            cout << endl;
+//            cout << "testing MET LepESUp " << endl;
+//            EMI_LepESUp.PrintVals();
+//            cout << endl;
+//            cout << "testing MET LepESDown " << endl;
+//            EMI_LepESDown.PrintVals();
+//            cout << endl;
+//            cout << "testing MET BTagSFUp " << endl;
+//            EMI_BTagSFUp.PrintVals();
+//            cout << endl;
+//            cout << "testing MET BTagSFDown " << endl;
+//            EMI_BTagSFDown.PrintVals();
+//            cout << endl;
+//            cout << "testing MET JetESUp " << endl;
+//            EMI_JetESUp.PrintVals();
+//            cout << endl;
+            
             SetEventInformation(&BEI, &ELI,           &EJI_BTagSFUp,   EMI_BTagSFUp,   EDSI_BTagSFUp);
+//            cout << "set EMI_BTagSFUp Up " << endl;
             SetEventInformation(&BEI, &ELI,           &EJI_BTagSFDown, EMI_BTagSFDown, EDSI_BTagSFDown);
+//            cout << "set EMI_BTagSFUp Down " << endl;
+//            cout << "testing MET BTagSFUp " << endl;
+//            EMI_BTagSFUp.PrintVals();
+//            cout << endl;
             
             SetEventInformation(&BEI, &ELI, &SmearEJI,              SmearEMI,              SmearEDSI);
+            
+//            cout << "testing Smear MET " << endl;
+ //           SmearEMI.PrintVals();
+//            cout << endl;
             SetEventInformation(&BEI, &ELI, &SmearEJI,              SmearEMI_LepESUp,      SmearEDSI_LepESUp);
             SetEventInformation(&BEI, &ELI, &SmearEJI,              SmearEMI_LepESDown,    SmearEDSI_LepESDown);
             SetEventInformation(&BEI, &ELI, &SmearEJI_JetESUp,      SmearEMI_JetESUp,      SmearEDSI_JetESUp);
@@ -1546,6 +1650,7 @@ int main( int argc, const char* argv[] ) {
         HistogramFillThreeDee(&subSampBool, &stringKeyToVar, subSampVec, histVec_3D, &histMap_3D, &BEI, &ELI, &EJI, &EMI, &EDSI, doVerbosity);
         if (!BEI.doData) {
             HistogramFillOneDee(&subSampBoolSmear, &stringKeyToVar, subSampVec, histVec_1D_Smear, &histMap_1D, &BEI, &ELI, &SmearEJI, &SmearEMI, &SmearEDSI, doVerbosity);
+            HistogramFillTwoDee(&subSampBoolSmear, &stringKeyToVar, subSampVec, histVec_2D_Smear, &histMap_2D, &BEI, &ELI, &SmearEJI, &SmearEMI, &SmearEDSI, doVerbosity);
             if (doBookSyst) {
                 HistogramFillOneDeeSyst(&subSampBool_LepESUp, &stringKeyToVar, subSampVec, histVec_1D_Syst, &histMap_1D, &BEI_LepESUp, &ELI_LepESUp, &EJI, &EMI_LepESUp, &EDSI_LepESUp, "LepESShiftUp", doVerbosity);
                 HistogramFillTwoDeeSyst(&subSampBool_LepESUp, &stringKeyToVar, subSampVec, histVec_2D_Syst, &histMap_2D, &BEI_LepESUp, &ELI_LepESUp, &EJI, &EMI_LepESUp, &EDSI_LepESUp, "LepESShiftUp", doVerbosity);
@@ -1602,13 +1707,28 @@ int main( int argc, const char* argv[] ) {
                 HistogramFillOneDeeSyst(&subSampBoolSmear, &stringKeyToVar, subSampVec, histVec_1D_Smear_Syst, &histMap_1D, &BEI_LepEffSFDown, &ELI, &SmearEJI, &SmearEMI, &SmearEDSI, "LepEffSFShiftDown", doVerbosity);
                 HistogramFillOneDeeSyst(&subSampBoolSmear, &stringKeyToVar, subSampVec, histVec_1D_Smear_Syst, &histMap_1D, &BEI_GenTopRW, &ELI, &SmearEJI, &SmearEMI, &SmearEDSI, "genTopRW", doVerbosity);
                 HistogramFillOneDeeSyst(&subSampBoolSmear, &stringKeyToVar, subSampVec, histVec_1D_Smear_Syst, &histMap_1D, &BEI_StopXSecUp, &ELI, &SmearEJI, &SmearEMI, &SmearEDSI, "genStopXSecShiftUp", doVerbosity);
-                HistogramFillOneDeeSyst(&subSampBoolSmear, &stringKeyToVar, subSampVec, histVec_1D_Smear_Syst, &histMap_1D, &BEI_StopXSecDown, &ELI, &SmearEJI, &SmearEMI, &SmearEDSI, "genStopXSecShiftDown", doVerbosity);
-
+                HistogramFillOneDeeSyst(&subSampBoolSmear, &stringKeyToVar, subSampVec, histVec_1D_Smear_Syst, &histMap_1D, &BEI_StopXSecDown, &ELI, &SmearEJI, &SmearEMI, &SmearEDSI, "genStopXSecShiftDown", doVerbosity);                                        
                 HistogramFillOneDeeSyst(&subSampBoolSmear_UncESUp, &stringKeyToVar, subSampVec, histVec_1D_Smear_Syst, &histMap_1D, &BEI, &ELI, &SmearEJI, &SmearEMI_UncESUp, &SmearEDSI_UncESUp, "UncESShiftUp", doVerbosity);
                 HistogramFillOneDeeSyst(&subSampBoolSmear_UncESDown, &stringKeyToVar, subSampVec, histVec_1D_Smear_Syst, &histMap_1D, &BEI, &ELI, &SmearEJI, &SmearEMI_UncESDown, &SmearEDSI_UncESDown, "UncESShiftDown", doVerbosity);
-                
                 HistogramFillOneDeeSyst(&subSampBoolSmear_JetSmearUp, &stringKeyToVar, subSampVec, histVec_1D_Smear_Syst, &histMap_1D, &BEI, &ELI, &SmearEJI_JetSmearUp, &SmearEMI_JetSmearUp, &SmearEDSI_JetSmearUp, "JetSmearShiftUp", doVerbosity);
                 HistogramFillOneDeeSyst(&subSampBoolSmear_JetSmearDown, &stringKeyToVar, subSampVec, histVec_1D_Smear_Syst, &histMap_1D, &BEI, &ELI, &SmearEJI_JetSmearDown, &SmearEMI_JetSmearDown, &SmearEDSI_JetSmearDown, "JetSmearShiftDown", doVerbosity);
+
+                
+                HistogramFillTwoDeeSyst(&subSampBoolSmear_LepESUp, &stringKeyToVar, subSampVec, histVec_2D_Smear_Syst, &histMap_2D, &BEI_LepESUp, &ELI_LepESUp, &SmearEJI, &SmearEMI_LepESUp, &SmearEDSI_LepESUp, "LepESShiftUp", doVerbosity);
+                HistogramFillTwoDeeSyst(&subSampBoolSmear_LepESDown, &stringKeyToVar, subSampVec, histVec_2D_Smear_Syst, &histMap_2D, &BEI_LepESDown, &ELI_LepESDown, &SmearEJI, &SmearEMI_LepESDown, &SmearEDSI_LepESDown, "LepESShiftDown", doVerbosity);                
+                HistogramFillTwoDeeSyst(&subSampBoolSmear_LepESDown, &stringKeyToVar, subSampVec, histVec_2D_Smear_Syst, &histMap_2D, &BEI, &ELI, &SmearEJI_JetESUp, &SmearEMI_JetESUp, &SmearEDSI_JetESUp, "JetESShiftUp", doVerbosity);
+                HistogramFillTwoDeeSyst(&subSampBoolSmear_LepESDown, &stringKeyToVar, subSampVec, histVec_2D_Smear_Syst, &histMap_2D, &BEI, &ELI, &SmearEJI_JetESDown, &SmearEMI_JetESDown, &SmearEDSI_JetESDown, "JetESShiftDown", doVerbosity);
+                HistogramFillTwoDeeSyst(&subSampBoolSmear_BTagSFUp, &stringKeyToVar, subSampVec, histVec_2D_Smear_Syst, &histMap_2D, &BEI, &ELI, &SmearEJI_BTagSFUp, &SmearEMI_BTagSFUp, &SmearEDSI_BTagSFUp, "BTagSFShiftUp", doVerbosity);
+                HistogramFillTwoDeeSyst(&subSampBoolSmear_BTagSFDown, &stringKeyToVar, subSampVec, histVec_2D_Smear_Syst, &histMap_2D, &BEI, &ELI, &SmearEJI_BTagSFDown, &SmearEMI_BTagSFDown, &SmearEDSI_BTagSFDown, "BTagSFShiftDown", doVerbosity);
+                HistogramFillTwoDeeSyst(&subSampBoolSmear, &stringKeyToVar, subSampVec, histVec_2D_Smear_Syst, &histMap_2D, &BEI_LepEffSFUp, &ELI, &SmearEJI, &SmearEMI, &SmearEDSI, "LepEffSFShiftUp", doVerbosity);
+                HistogramFillTwoDeeSyst(&subSampBoolSmear, &stringKeyToVar, subSampVec, histVec_2D_Smear_Syst, &histMap_2D, &BEI_LepEffSFDown, &ELI, &SmearEJI, &SmearEMI, &SmearEDSI, "LepEffSFShiftDown", doVerbosity);
+                HistogramFillTwoDeeSyst(&subSampBoolSmear, &stringKeyToVar, subSampVec, histVec_2D_Smear_Syst, &histMap_2D, &BEI_GenTopRW, &ELI, &SmearEJI, &SmearEMI, &SmearEDSI, "genTopRW", doVerbosity);
+                HistogramFillTwoDeeSyst(&subSampBoolSmear, &stringKeyToVar, subSampVec, histVec_2D_Smear_Syst, &histMap_2D, &BEI_StopXSecUp, &ELI, &SmearEJI, &SmearEMI, &SmearEDSI, "genStopXSecShiftUp", doVerbosity);
+                HistogramFillTwoDeeSyst(&subSampBoolSmear, &stringKeyToVar, subSampVec, histVec_2D_Smear_Syst, &histMap_2D, &BEI_StopXSecDown, &ELI, &SmearEJI, &SmearEMI, &SmearEDSI, "genStopXSecShiftDown", doVerbosity);
+                HistogramFillTwoDeeSyst(&subSampBoolSmear_UncESUp, &stringKeyToVar, subSampVec, histVec_2D_Smear_Syst, &histMap_2D, &BEI, &ELI, &SmearEJI, &SmearEMI_UncESUp, &SmearEDSI_UncESUp, "UncESShiftUp", doVerbosity);
+                HistogramFillTwoDeeSyst(&subSampBoolSmear_UncESDown, &stringKeyToVar, subSampVec, histVec_2D_Smear_Syst, &histMap_2D, &BEI, &ELI, &SmearEJI, &SmearEMI_UncESDown, &SmearEDSI_UncESDown, "UncESShiftDown", doVerbosity);
+                HistogramFillTwoDeeSyst(&subSampBoolSmear_JetSmearUp, &stringKeyToVar, subSampVec, histVec_2D_Smear_Syst, &histMap_2D, &BEI, &ELI, &SmearEJI_JetSmearUp, &SmearEMI_JetSmearUp, &SmearEDSI_JetSmearUp, "JetSmearShiftUp", doVerbosity);
+                HistogramFillTwoDeeSyst(&subSampBoolSmear_JetSmearDown, &stringKeyToVar, subSampVec, histVec_2D_Smear_Syst, &histMap_2D, &BEI, &ELI, &SmearEJI_JetSmearDown, &SmearEMI_JetSmearDown, &SmearEDSI_JetSmearDown, "JetSmearShiftDown", doVerbosity);
                 
                 HistogramFillOneDeeSystRemain(&subSampBoolSmear, &stringKeyToVar, subSampVec, histVec_1D_Smear_Syst, &histMap_1D, &BEI, &ELI, &SmearEJI, &SmearEMI, &SmearEDSI, &SmearESMT2I, doVerbosity);
             }

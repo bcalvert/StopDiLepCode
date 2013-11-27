@@ -1,3 +1,45 @@
+========11/26/13========
+Update of things so that Ted can edit scripts in his own local area to facilitate limits/optimal cut maps
+
+====StopFillFunctions.h====
+Added in function, CharginoMassFrac,  to calculate the chargino mass fraction, "x", given input chargino, chi0, and Stop masses.
+Added in function, PassesFullSelection, that returns a boolean if a given event passes the full selection as we've defined it
+Added in function, PrintEvent, that prints out relevant qualities/quantities for the current event when called
+Moved the "inELI->GrabbedFromTree()" call out of SetEventInformation function into the body of the plot filler macro
+Added in the SmearMETPhi, SmearMETX, and SmearMETY to the string:float map
+====StopFunctionDefinitions_v2.h====
+Added a number of histograms that were originally not added to the smearing vector (MT2lb, MET_div_Meff, etc.)
+Added a 2D histogram Smeared MT2ll_vs_MT2lblb
+
+====StopPlotSetup.h====
+Added a set of functions, BadBinCheck, binFinder, PassFailCuts, and PassCutHisto that together work to allow for the creation of arbitrary MT2ll/MT2lblb cuts for a Pass/Fail histogram
+As part of this, have to work some magic so as not to scale things that have already been scaled (so I added in a "doScale" option)
+
+Altered the function, SignalSkimEfficiencyCalc, to utilize the "Histos" files that Javier provided me that contain number of points run per mass point
+
+Added in an ability to look in a custom path for the data files (this allows one to run the local copies of scripts from their local github directory and read in data from my area, for example)
+
+Added some terms, currently turned off, to the two-dimensional FOM histogram function -- a verbosity term and a "penalty" term, which is a uniform systematic that increases the denominator.
+
+Added in ability for handling T2bw cases
+
+====NewOviStopPlotFillerRunOnSkim_wSyst.C====
+Added in things to be able to properly handle signal files (relatively different binning for different samples, T2bw and Chargino Mass fractions, etc.)
+
+Added in the plotting of the 2D smeared histograms
+Moved the calls for "GrabbedFromTree()" to here from StopPlotSetup.h
+====NewOviStopPlotSkimmer.C====
+Added in the T2bw stuff, i.e. Chargino Mass Frac stuff, as well as proper binning checks for the signal samples in general
+Added in bug check to check for "weird" points in the skims
+
+====MT2CutYieldCalc.C====
+Added in ability to calculate custom "Pass/Fail Cut" histograms (see StopPlotSetup.h)
+Added in maximization of FOM histogram checks to calculate optimal MT2ll/MT2lblb cut values
+Added in the custom path stuff described above
+
+====StopPlotsSpectraShowNewDESY_wSyst.C====
+Added in custom path stuff
+
 ========11/14/13========
 Primary update was a final push of stuff needed for unblinding
 

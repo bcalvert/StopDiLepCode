@@ -166,9 +166,6 @@ int main( int argc, const char* argv[] ) {
     TH1F * h_eventCount = new TH1F("h_eventCount", "; numEvents (# of Entries);", 2, -0.5, 1.5);
     TH1F * h_CutFlow = new TH1F("h_CutFlow", "; Cut Stage; N_{evts} passing Cut Stage", 3, 0.5, 3.5);
     TH1F * h_CutFlow_LepESUp, * h_CutFlow_LepESDown;
-    TH1F * h_ElecCharIso = new TH1F("h_ElecCharIso", "; Electron Char. Had. Iso.; N_{evts} / bin", 51, -2, 100);
-    TH1F * h_ElecNeutIso = new TH1F("h_ElecNeutIso", "; Electron Neut. Had. Iso.; N_{evts} / bin", 51, -2, 100);
-    TH1F * h_ElecPhotIso = new TH1F("h_ElecPhotIso", "; Electron Photon Iso.; N_{evts} / bin", 51, -2, 100);
     
     //    TH1F * h_ElecRelIso = new TH1F("h_ElecRelIso", "; Electron Relative Iso.; N_{evts} / bin", 32, 0., 0.16);
     /////Event Variables/////////////////////
@@ -322,17 +319,17 @@ int main( int argc, const char* argv[] ) {
     //SUSY particle Gen Mass stuff
     
     int genStopMass0, genStopMass1, genChi0Mass0, genChi0Mass1, genCharginoMass0, genCharginoMass1;
-    float genStopMassCut, genChi0MassCut, genCharginoMassCut;
-    genStopMassCut = 0;
-    genChi0MassCut = 0;
-    genCharginoMassCut = 0;
+    float MassFrac_Chargino0, MassFrac_Chargino1;
+    float genStopMassCut = 0., genChi0MassCut = 0., genCharginoMassCut = 0.;
+    vector<double> * genStopPolarizationWeights = new vector<double>;
     // Gen info
     vector<float> * genStopMass, * genChi0Mass, * genCharginoMass;
     vector<double> * genPolWeights;
     genStopMass = new vector<float>;
     genChi0Mass = new vector<float>;
     genCharginoMass = new vector<float>;
-    genPolWeights = new vector<double>;  
+    genPolWeights = new vector<double>; 
+    bool doBugCheckSignal;
     
     GenJetEventPointers GJEPs;
     GJEPs.genJetPx = new vector<float>;
@@ -984,9 +981,10 @@ int main( int argc, const char* argv[] ) {
         fileTree.SetBranchAddress( "T_Gen_Elec_MSt", &genElecSt1MomStatus );
         
         //Signal stuff
-        fileTree.SetBranchAddress( "T_Gen_StopMass", &genStopMass );
-        fileTree.SetBranchAddress( "T_Gen_Chi0Mass", &genChi0Mass );
+        fileTree.SetBranchAddress( "T_Gen_StopMass",     &genStopMass );
+        fileTree.SetBranchAddress( "T_Gen_Chi0Mass",     &genChi0Mass );
         fileTree.SetBranchAddress( "T_Gen_CharginoMass", &genCharginoMass );
+        fileTree.SetBranchAddress( "T_Gen_polWeights",   &genPolWeights );
     }
     else if (whichNTupleType == 1) {
         fileTree.SetBranchAddress("runNumber", &RunNum, &b_runNumber);
@@ -1091,14 +1089,18 @@ int main( int argc, const char* argv[] ) {
         else {
             BTagSFSignalString = "";
         }
+        doBugCheckSignal = (fInName.Contains("FineBin") || fInName.Contains("LSP0"));        
         BTagSFUtilSignal = new BTagSFUtil(BTagSFAlgorithm, BTagSFDataPeriod, BTagSFSignalString);
         BTagSFUtilToUse = BTagSFUtilSignal;
-        outTree->Branch("TGenStopMass0",     &genStopMass0);
-        outTree->Branch("TGenStopMass1",     &genStopMass1);
-        outTree->Branch("TGenChi0Mass0",     &genChi0Mass0);
-        outTree->Branch("TGenChi0Mass1",     &genChi0Mass1);
-        outTree->Branch("TGenCharginoMass0", &genCharginoMass0);
-        outTree->Branch("TGenCharginoMass1", &genCharginoMass1);
+        outTree->Branch("TGenStopMass0",         &genStopMass0);
+        outTree->Branch("TGenStopMass1",         &genStopMass1);
+        outTree->Branch("TGenChi0Mass0",         &genChi0Mass0);
+        outTree->Branch("TGenChi0Mass1",         &genChi0Mass1);
+        outTree->Branch("TGenCharginoMass0",     &genCharginoMass0);
+        outTree->Branch("TGenCharginoMass1",     &genCharginoMass1);
+        outTree->Branch("TGenCharginoMassFrac0", &MassFrac_Chargino0);
+        outTree->Branch("TGenCharginoMassFrac1", &MassFrac_Chargino1);
+        outTree->Branch("T_Gen_StopPolWeights",  &genPolWeights);
     }
     else {
         BTagSFUtilToUse = BTagSFUtilBase;
@@ -1573,14 +1575,12 @@ int main( int argc, const char* argv[] ) {
     
     vector<GenJet> * vecGoodGenJets;
     
-    float roundNum = 1.0;
-    int roundMult = 1;
+    float roundNum = 25.0;
+    int roundMult = 25;
     if (doSignal) {
-        roundNum = (fInName.Contains("to") || fInName.Contains("FineBin")) ? 10.0 : 1.0;
-        roundMult = (fInName.Contains("to") || fInName.Contains("FineBin")) ? 10 : 1;
-        if (fInName.Contains("T2bw")) {
-            roundNum = 25.0;
-            roundMult = 25; //Check this for non FineBin T2bw samples            
+        if (fInName.Contains("T2tt") && fInName.Contains("FineBin")) {
+            roundNum = 10.0;
+            roundMult = 10;
         }
     }
     /////Iterate over events  
@@ -1629,6 +1629,8 @@ int main( int argc, const char* argv[] ) {
         genChi0Mass1 = -1.;
         genCharginoMass0 = -1.;
         genCharginoMass1 = -1.;
+        MassFrac_Chargino0 = -1.;
+        MassFrac_Chargino1 = -1.;
         if (doSignal) {
             if (genStopMass->size() > 1) {
                 genStopMass0 = TMath::Nint(genStopMass->at(0)/roundNum) * roundMult;
@@ -1639,19 +1641,29 @@ int main( int argc, const char* argv[] ) {
                 genChi0Mass1 = TMath::Nint(genChi0Mass->at(1)/roundNum) * roundMult;
             }
             if (genCharginoMass->size() > 1) {
-                genCharginoMass0 = TMath::Nint(genCharginoMass->at(0)/roundNum) * roundMult;
-                genCharginoMass0 = TMath::Nint(genCharginoMass->at(1)/roundNum) * roundMult;
-                // Check this for T2bw samples
+                MassFrac_Chargino0 = CharginoMassFrac(genStopMass->at(0), genChi0Mass->at(0), genCharginoMass->at(0));
+                genCharginoMass0 = MassFrac_Chargino0 * genStopMass0 + (1 - MassFrac_Chargino0) * genChi0Mass0;
+                MassFrac_Chargino1 = CharginoMassFrac(genStopMass->at(1), genChi0Mass->at(1), genCharginoMass->at(1));
+                genCharginoMass1 = MassFrac_Chargino1 * genStopMass1 + (1 - MassFrac_Chargino1) * genChi0Mass1;
             }
             if (doMassCut) {
-                if (genStopMass0 >=0 && abs(genStopMassCut - genStopMass0) < 2.5) continue;
-                if (genChi0Mass0 >=0 && abs(genChi0MassCut - genChi0Mass0) < 2.5) continue;
-                if (genCharginoMass0 >=0 && abs(genCharginoMassCut - genCharginoMass0) < 2.5) continue;
+                if (genStopMass0 >=0 && abs(genStopMassCut - genStopMass0) < (roundNum / 2.)) continue;
+                if (genChi0Mass0 >=0 && abs(genChi0MassCut - genChi0Mass0) < (roundNum / 2.)) continue;
+//                if (genCharginoMass0 >=0 && abs(genCharginoMassCut - genCharginoMass0) < (roundNum / 2.)) continue;
+            }
+            if (doBugCheckSignal) {
+                if (!PassesStopBugCheck(genStopMass0, genStopMass1, genChi0Mass0, genChi0Mass1)) continue;
             }
         }
         if (printEventNum && doSignal) {
-            cout << "in format EventNum:genStopMass:genChi0Mass:genCharginoMass ";
-            cout << EventNum << ":" << genStopMass0 << ":" << genChi0Mass0 << ":" <<  genCharginoMass0 << endl;
+            if (fInName.Contains("T2bw")) {
+                cout << "in format EventNum:genStopMass:genChi0Mass:genCharginoMass:genCharginoMassFrac ";
+                cout << EventNum << ":" << genStopMass0 << ":" << genChi0Mass0 << ":" <<  genCharginoMass0 << ":" << MassFrac_Chargino0 << endl;
+            }
+            else if (fInName.Contains("T2tt")) {
+                cout << "in format EventNum:genStopMass:genChi0Mass ";
+                cout << EventNum << ":" << genStopMass0 << ":" << genChi0Mass0 << endl;
+            }
         }
         else if (printEventNum) {
             cout << "Event Prior to Selections: RunNum:EventNum:LumiBlock " << RunNum  << ":" << EventNum << ":" << LumiBlock << endl;
@@ -2170,9 +2182,6 @@ int main( int argc, const char* argv[] ) {
         h_CutFlow_LepESUp->Write();
         h_CutFlow_LepESDown->Write();
     }
-    h_ElecCharIso->Write();
-    h_ElecNeutIso->Write();
-    h_ElecPhotIso->Write();
     cout << "Writing of output file done" << endl;
     outputFile->Close();
     cout << "end of code" << endl;

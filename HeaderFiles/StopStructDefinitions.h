@@ -94,7 +94,7 @@ typedef struct {
     }
     void SetIndAxisLabel(TString inputString, map<TString, TString> * mapVartoLabel, int whichDim = 1) {
         map<TString, TString>::iterator xIter;
-        xIter = mapVartoLabel->Find(inputString);
+        xIter = mapVartoLabel->find(inputString);
         if (xIter != mapVartoLabel->end()) {
             if (whichDim == 1) {
                 xLabel = xIter->second;

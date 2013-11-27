@@ -55,7 +55,6 @@ typedef std::vector<LV> VLV;
 inline void TreeBranchSet(TTree * analTree, int whichNTuple = 0) {
     
 }
-
 inline vector<TH1F *> * OneDProjectionReturnVec(TH1 * inputHist, int numDims, int whichAxisToProjTo, int whichAxisForDist, int axisProjLB, int axisProjUB, TString nameBase) {
     TString name;
     vector<TH1F *> * outHistVector = new vector<TH1F *>;
@@ -3314,16 +3313,14 @@ inline vector<HistogramT> * OneDeeSmearHistTVec(bool fileContainsTrueSmearedJets
     H_MET.yLabel += "NUM"; H_MET.yLabel += " GeV";
     H_MET.xVarKey = "SmearMET";
     H_MET.doXSyst = true;
-    
-    /*
+        
     HistogramT H_METPhi; H_METPhi.name = "h_SmearMETPhi"; 
     H_METPhi.xLabel = "#slash{E}_{T} #phi"; H_METPhi.xBinN = PhiBinN; H_METPhi.xMin = -PI; H_METPhi.xMax = PI; 
     H_METPhi.yLabel = "Number of Events / ";
     numDivs = (H_METPhi.xMax - H_METPhi.xMin) / (float) H_METPhi.xBinN;
     H_METPhi.yLabel += "NUM"; H_METPhi.yLabel += " radians";
     H_METPhi.xVarKey = "SmearMETPhi";
-    H_METPhi.doXSyst = true;
-    */
+    H_METPhi.doXSyst = true;   
     
     HistogramT H_METX; H_METX.name = "h_SmearMETX";
     H_METX.xLabel = "#slash{E}_{x} [GeV]"; H_METX.xBinN = METXYBinN; H_METX.xMin = METXYBinLB; H_METX.xMax = METXYBinUB;
@@ -3376,12 +3373,6 @@ inline vector<HistogramT> * OneDeeSmearHistTVec(bool fileContainsTrueSmearedJets
     H_MET_div_Meff_PassMT2llCut80.xVarKey = "SmearMETdivMeff_PassMT2llCut80";
     H_MET_div_Meff_PassMT2llCut80.doXSyst = true;
     
-    HistogramT H_MET_div_Meff_PassMT2llCut90; H_MET_div_Meff_PassMT2llCut90.name = "h_SmearMET_div_Meff_PassMT2llCut90";
-    H_MET_div_Meff_PassMT2llCut90.xLabel = "#slash{E}_{T} / M_{eff}"; H_MET_div_Meff_PassMT2llCut90.xBinN = 50; H_MET_div_Meff_PassMT2llCut90.xMin = 0.; H_MET_div_Meff_PassMT2llCut90.xMax = 1.;
-    H_MET_div_Meff_PassMT2llCut90.yLabel = "Number of Events / "; H_MET_div_Meff_PassMT2llCut90.yLabel += "NUM";
-    H_MET_div_Meff_PassMT2llCut90.xVarKey = "SmearMETdivMeff_PassMT2llCut90";
-    H_MET_div_Meff_PassMT2llCut90.doXSyst = true;
-    
     HistogramT H_MET_div_Meff_PassMT2llCut100; H_MET_div_Meff_PassMT2llCut100.name = "h_SmearMET_div_Meff_PassMT2llCut100";
     H_MET_div_Meff_PassMT2llCut100.xLabel = "#slash{E}_{T} / M_{eff}"; H_MET_div_Meff_PassMT2llCut100.xBinN = 50; H_MET_div_Meff_PassMT2llCut100.xMin = 0.; H_MET_div_Meff_PassMT2llCut100.xMax = 1.;
     H_MET_div_Meff_PassMT2llCut100.yLabel = "Number of Events / "; H_MET_div_Meff_PassMT2llCut100.yLabel += "NUM";
@@ -3393,12 +3384,6 @@ inline vector<HistogramT> * OneDeeSmearHistTVec(bool fileContainsTrueSmearedJets
     H_MET_div_Meff_PassMT2llCut110.yLabel = "Number of Events / "; H_MET_div_Meff_PassMT2llCut110.yLabel += "NUM";
     H_MET_div_Meff_PassMT2llCut110.xVarKey = "SmearMETdivMeff_PassMT2llCut110";
     H_MET_div_Meff_PassMT2llCut110.doXSyst = true;
-    
-    HistogramT H_MET_div_Meff_PassMT2llCut120; H_MET_div_Meff_PassMT2llCut120.name = "h_SmearMET_div_Meff_PassMT2llCut120";
-    H_MET_div_Meff_PassMT2llCut120.xLabel = "#slash{E}_{T} / M_{eff}"; H_MET_div_Meff_PassMT2llCut120.xBinN = 50; H_MET_div_Meff_PassMT2llCut120.xMin = 0.; H_MET_div_Meff_PassMT2llCut120.xMax = 1.;
-    H_MET_div_Meff_PassMT2llCut120.yLabel = "Number of Events / "; H_MET_div_Meff_PassMT2llCut120.yLabel += "NUM";
-    H_MET_div_Meff_PassMT2llCut120.xVarKey = "SmearMETdivMeff_PassMT2llCut120";
-    H_MET_div_Meff_PassMT2llCut120.doXSyst = true;
     
     HistogramT H_HT; H_HT.name = "h_SmearHT"; 
     H_HT.xLabel = "H_{T} [GeV]"; H_HT.xBinN = EnergyPtBinN; H_HT.xMin = 0; H_HT.xMax = 3 * EnergyPtBinUB; 
@@ -3413,19 +3398,19 @@ inline vector<HistogramT> * OneDeeSmearHistTVec(bool fileContainsTrueSmearedJets
     if (fileContainsTrueSmearedJets) {
         histVecSmear_1D->push_back(H_leadJetPt); histVecSmear_1D->push_back(H_subJetPt);
         histVecSmear_1D->push_back(H_leadBJetPt); histVecSmear_1D->push_back(H_leadBJetEn); histVecSmear_1D->push_back(H_subBJetPt); histVecSmear_1D->push_back(H_subBJetEn);
-        histVecSmear_1D->push_back(H_MT2lb);            
-        histVecSmear_1D->push_back(H_MT2lb_DPhiBLep0BLep1Close); histVecSmear_1D->push_back(H_MT2lb_DPhiBLep0BLep1Mid); histVecSmear_1D->push_back(H_MT2lb_DPhiBLep0BLep1Far);
-        histVecSmear_1D->push_back(H_MT2lb_DPhiJet0Jet1Close); histVecSmear_1D->push_back(H_MT2lb_DPhiJet0Jet1Mid); histVecSmear_1D->push_back(H_MT2lb_DPhiJet0Jet1Far);
         histVecSmear_1D->push_back(H_NJets); histVecSmear_1D->push_back(H_NJetswBTag);
-        histVecSmear_1D->push_back(H_diLepEMinJetE); histVecSmear_1D->push_back(H_HT); 
-        histVecSmear_1D->push_back(H_MET_div_Meff); 
-        histVecSmear_1D->push_back(H_MET_div_Meff_PassMT2llCut80); histVecSmear_1D->push_back(H_MET_div_Meff_PassMT2llCut90); histVecSmear_1D->push_back(H_MET_div_Meff_PassMT2llCut100); histVecSmear_1D->push_back(H_MET_div_Meff_PassMT2llCut110); histVecSmear_1D->push_back(H_MET_div_Meff_PassMT2llCut120);
+        histVecSmear_1D->push_back(H_diLepEMinJetE); histVecSmear_1D->push_back(H_HT);
     }
     histVecSmear_1D->push_back(H_MT2ll); 
     histVecSmear_1D->push_back(H_PassMT2llCut80); histVecSmear_1D->push_back(H_PassMT2llCut90); histVecSmear_1D->push_back(H_PassMT2llCut100); histVecSmear_1D->push_back(H_PassMT2llCut110); histVecSmear_1D->push_back(H_PassMT2llCut120);
     histVecSmear_1D->push_back(H_MT2ll_DPhiZMETClose); histVecSmear_1D->push_back(H_MT2ll_DPhiZMETMid); histVecSmear_1D->push_back(H_MT2ll_DPhiZMETFar);    
     histVecSmear_1D->push_back(H_MT2ll_DPhiLep0Lep1Close); histVecSmear_1D->push_back(H_MT2ll_DPhiLep0Lep1Mid); histVecSmear_1D->push_back(H_MT2ll_DPhiLep0Lep1Far);
-    histVecSmear_1D->push_back(H_MET); histVecSmear_1D->push_back(H_METX); histVecSmear_1D->push_back(H_METY); // histVecSmear_1D->push_back(H_METPhi); 
+    histVecSmear_1D->push_back(H_MET); histVecSmear_1D->push_back(H_METX); histVecSmear_1D->push_back(H_METY); histVecSmear_1D->push_back(H_METPhi);  
+    histVecSmear_1D->push_back(H_MT2lb);            
+    histVecSmear_1D->push_back(H_MT2lb_DPhiBLep0BLep1Close); histVecSmear_1D->push_back(H_MT2lb_DPhiBLep0BLep1Mid); histVecSmear_1D->push_back(H_MT2lb_DPhiBLep0BLep1Far);
+    histVecSmear_1D->push_back(H_MT2lb_DPhiJet0Jet1Close); histVecSmear_1D->push_back(H_MT2lb_DPhiJet0Jet1Mid); histVecSmear_1D->push_back(H_MT2lb_DPhiJet0Jet1Far);
+    histVecSmear_1D->push_back(H_MET_div_Meff); 
+    histVecSmear_1D->push_back(H_MET_div_Meff_PassMT2llCut80); histVecSmear_1D->push_back(H_MET_div_Meff_PassMT2llCut100); histVecSmear_1D->push_back(H_MET_div_Meff_PassMT2llCut110); 
     return histVecSmear_1D;
 }
 
@@ -3655,6 +3640,48 @@ inline vector<HistogramT> * OneDeeHistTVecSpecial(bool doSmearedPlots, bool file
     }
     return histVecSmear_1D;
 }
+
+
+inline vector<HistogramT> * TwoDeeSmearHistTVec() {
+    
+    vector<HistogramT> * histVec_2D = new vector<HistogramT>;
+    
+    const double PI = 3.14159265;
+    //    int EnergyPtBinN = 400;
+    //    int EtaBinN      = 200;
+    int PhiBinN      = 100;
+    int METBinN      = 40;    
+    int METXYBinN    = 100;    
+    //    int NJetsBinN    = 11;
+    int nVtxBinN     = 35;
+    
+    //    float EnergyPtBinLB = 0;
+    //    float EnergyPtBinUB = 400;
+    //    float EtaBinLB      = -6;
+    //    float EtaBinUB      = 6;
+    float METBinLB      = 0;
+    float METBinUB      = 400;
+    float METXYBinLB    = -200;
+    float METXYBinUB    = 200;
+    //    float NJetsBinLB    = -0.5;
+    //    float NJetsBinUB    = 10.5;
+    float nVtxBinLB     = 0.5;
+    float nVtxBinUB     = 35.5;
+    
+    ///////analogous case for 2D histograms///////
+    
+    HistogramT H_MT2ll_vs_MT2lb; H_MT2ll_vs_MT2lb.name = "h_SmearMT2ll_vs_MT2lb";
+    H_MT2ll_vs_MT2lb.xLabel = "MT2_{ll} [GeV]"; H_MT2ll_vs_MT2lb.xBinN = METBinN; H_MT2ll_vs_MT2lb.xMin = METBinLB; H_MT2ll_vs_MT2lb.xMax = METBinUB;
+    H_MT2ll_vs_MT2lb.yLabel = "MT2lb [GeV]"; H_MT2ll_vs_MT2lb.yBinN = METBinN; H_MT2ll_vs_MT2lb.yMin = METBinLB; H_MT2ll_vs_MT2lb.yMax = METBinUB;
+    H_MT2ll_vs_MT2lb.xVarKey = "SmearMT2ll";
+    H_MT2ll_vs_MT2lb.yVarKey = "SmearMT2lb";
+    H_MT2ll_vs_MT2lb.doXSyst = true;
+    H_MT2ll_vs_MT2lb.doYSyst = true;
+    
+    histVec_2D->push_back(H_MT2ll_vs_MT2lb);
+    return histVec_2D;
+}
+
 
 inline vector<SampleT> * SubSampVec() {
     /*

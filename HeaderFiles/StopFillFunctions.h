@@ -38,6 +38,13 @@ typedef std::map<histKey, TH3 *>      HMap_3D;
 
 float    getMT2(TLorentzVector, TLorentzVector, float, float);
 
+float CharginoMassFrac(float genStopMass, float genChi0Mass, float genCharginoMass) {
+    //currently rounding to nearest multiple of 0.25
+    float estX = (genCharginoMass - genChi0Mass)/(genStopMass - genChi0Mass);
+    float returnX = TMath::Nint(estX * 4) * 0.25;
+    return returnX;    
+}
+
 inline float PileupRW(TH1 * nVtxSFHist, int nVtx) {
     int nVtxBin = nVtxSFHist->GetXaxis()->FindBin(nVtx);
     if (nVtxBin > nVtxSFHist->GetNbinsX()) nVtxBin =  nVtxSFHist->GetNbinsX();
@@ -70,6 +77,32 @@ inline float getMT2(TLorentzVector lept1, TLorentzVector lept2, float theMET, fl
     double MT2 = MT2bisect->get_mt2();
     delete MT2bisect;
     return MT2;
+}
+
+inline bool PassesStopBugCheck(float genStopMass0, float genStopMass1, float genChi0Mass0, float genChi0Mass1) {
+    return !(fabs(genStopMass0 -genStopMass1) > 0.1 || fabs(genChi0Mass0 - genChi0Mass1) > 0.1); // || (genChi0Mass0 < 0) || (genChi0Mass1< 0));
+}
+
+inline bool PassesFullSelection(EventMETInfo * inEMI, EventJetInfo * inEJI, EventLepInfo * inELI) {
+    if (inEJI->EventNJets < 2) return false;
+    if (inEJI->EventNBtagJets < 1) return false;
+    if (inELI->EventDiLepType < 2) {
+        if (inELI->EventDiLepinZMass) return false;
+        if (inEMI->EventMET < 40) return false;
+    }
+    return true;
+}
+
+inline void PrintEvent(BasicEventInfo * inBEI, EventMETInfo * inEMI, EventJetInfo * inEJI, EventLepInfo * inELI, EventDiStructureInfo * inEDSI, float MT2llThresh) {
+    if (inEMI->EventMT2ll > MT2llThresh && PassesFullSelection(inEMI, inEJI, inELI)) {
+        cout << "EMI.EventMT2ll " << inEMI->EventMT2ll << endl;
+        cout << "EMI.EventMT2lb " << inEMI->EventMT2lb << endl;
+        inEMI->PrintVals();
+        cout << "DiLepMass " << inEDSI->diLepInvMass << endl;
+        cout << "DiLepPt " << inEDSI->diLepPt << endl;
+        cout << "DPhiZMET " << inEDSI->DPhiZMET << endl;
+        cout << "{run, event, lumiBlock} = {" << inBEI->runNumber << ", " << inBEI->eventNumber << ", " << inBEI->lumiBlock << "}" << endl;
+    }
 }
 
 inline void MetPhiCorrect(bool doData, float &MetX, float &MetY, int nVtx, bool doReReco) {
@@ -362,6 +395,12 @@ inline void CorrectPlusSetMET(BasicEventInfo * inBEI, EventLepInfo * inELI, Even
 //    inputEMI.EventMETPhi = TMath::ATan2(inputEMI.EventMETY, inputEMI.EventMETX);
 //    inputEMI.EventMET = TMath::Sqrt(inputEMI.EventMETX * inputEMI.EventMETX + inputEMI.EventMETY * inputEMI.EventMETY);
     inputEMI.EventMETdivMeff = inputEMI.EventMET / (inputEMI.EventMET + inEJI->EventJetST + inELI->EventLepST);
+    /*
+    cout << "ingredients " << endl;
+    cout << "inputEMI.EventMET " << inputEMI.EventMET << endl;
+    cout << "inEJI->EventJetST " << inEJI->EventJetST << endl;
+    cout << "inELI->EventLepST " << inELI->EventLepST << endl;
+    */
 //    inputEMI.PrintVals();
 }
 inline void CalcMT2(EventLepInfo * inELI, EventJetInfo * inEJI, EventMETInfo &inputEMI) {
@@ -451,12 +490,11 @@ inline float nVtxWeight(BasicEventInfo * inBEI, TH1F * nVtxSFHistOviToDESY, TH1F
     }
     return outNVtxWeight;
 }
-
 inline void SetEventInformation(BasicEventInfo * inBEI, EventLepInfo * inELI, EventJetInfo * inEJI, EventMETInfo &inputEMI, EventDiStructureInfo &inputEDSI) {
 //    cout << "in SetEventInfo " << endl;
-    inELI->GrabbedFromTree();
+//    inELI->GrabbedFromTree();
 //    cout << "inELI->GrabbedFromTree() passed " << endl;
-    inEJI->GrabbedFromTree();
+//    inEJI->GrabbedFromTree();
 //    cout << "inEJI->GrabbedFromTree() passed " << endl;
     CorrectPlusSetMET(inBEI, inELI, inEJI, inputEMI);
 //    cout << "MET Set " << endl;
@@ -503,7 +541,7 @@ inline void SetStringKeyMap(map<string, float> &stringKeyToVar, EventLepInfo * i
     stringKeyToVar[string(TString("METdivMeff") + SystStringAppend)]                    = inEMI->EventMETdivMeff;
     stringKeyToVar[string(TString("METdivMeff_PassMT2llCut80") + SystStringAppend)]     = inEMI->EventMT2ll > 80 ? inEMI->EventMETdivMeff : -99;
     stringKeyToVar[string(TString("METdivMeff_PassMT2llCut90") + SystStringAppend)]     = inEMI->EventMT2ll > 90 ? inEMI->EventMETdivMeff : -99;
-    stringKeyToVar[string(TString("METdivMeff_PassMT2llCut190") + SystStringAppend)]    = inEMI->EventMT2ll > 100 ? inEMI->EventMETdivMeff : -99;
+    stringKeyToVar[string(TString("METdivMeff_PassMT2llCut100") + SystStringAppend)]    = inEMI->EventMT2ll > 100 ? inEMI->EventMETdivMeff : -99;
     stringKeyToVar[string(TString("METdivMeff_PassMT2llCut110") + SystStringAppend)]    = inEMI->EventMT2ll > 110 ? inEMI->EventMETdivMeff : -99;
     stringKeyToVar[string(TString("METdivMeff_PassMT2llCut120") + SystStringAppend)]    = inEMI->EventMT2ll > 120 ? inEMI->EventMETdivMeff : -99;
     
@@ -592,7 +630,7 @@ inline void SetStringKeyMapSpecial(map<string, float> &stringKeyToVar, EventMETI
     stringKeyToVar[string(TString("PassMT2llCut120") + SystStringAppend)]               = (MT2llToUse > 120.);
     stringKeyToVar[string(TString("METdivMeff_PassMT2llCut80") + SystStringAppend)]     = MT2llToUse > 80 ? inEMI->EventMETdivMeff : -99;
     stringKeyToVar[string(TString("METdivMeff_PassMT2llCut90") + SystStringAppend)]     = MT2llToUse > 90 ? inEMI->EventMETdivMeff : -99;
-    stringKeyToVar[string(TString("METdivMeff_PassMT2llCut190") + SystStringAppend)]    = MT2llToUse > 100 ? inEMI->EventMETdivMeff : -99;
+    stringKeyToVar[string(TString("METdivMeff_PassMT2llCut100") + SystStringAppend)]    = MT2llToUse > 100 ? inEMI->EventMETdivMeff : -99;
     stringKeyToVar[string(TString("METdivMeff_PassMT2llCut110") + SystStringAppend)]    = MT2llToUse > 110 ? inEMI->EventMETdivMeff : -99;
     stringKeyToVar[string(TString("METdivMeff_PassMT2llCut120") + SystStringAppend)]    = MT2llToUse > 120 ? inEMI->EventMETdivMeff : -99;
     stringKeyToVar[string(TString("MT2lb") + SystStringAppend)]                         = MT2lbToUse;
@@ -613,13 +651,13 @@ inline void SetStringKeyMapSmearJets(map<string, float> &stringKeyToVar, EventLe
     stringKeyToVar[string(TString("SmearPassMT2llCut120") + SystStringAppend)]               = (inEMI->EventMT2ll > 120.);
     stringKeyToVar[string(TString("SmearMT2lb") + SystStringAppend)]                         = inEMI->EventMT2lb;
     stringKeyToVar[string(TString("SmearMET") + SystStringAppend)]                           = inEMI->EventMET;
-    stringKeyToVar[string(TString("SmearMETPhi") + SystStringAppend)]                           = inEMI->EventMETPhi;
-    stringKeyToVar[string(TString("SmearMETX") + SystStringAppend)]                           = inEMI->EventMETX;
-    stringKeyToVar[string(TString("SmearMETY") + SystStringAppend)]                           = inEMI->EventMETY;
+    stringKeyToVar[string(TString("SmearMETPhi") + SystStringAppend)]                        = inEMI->EventMETPhi;
+    stringKeyToVar[string(TString("SmearMETX") + SystStringAppend)]                          = inEMI->EventMETX;
+    stringKeyToVar[string(TString("SmearMETY") + SystStringAppend)]                          = inEMI->EventMETY;
     stringKeyToVar[string(TString("SmearMETdivMeff") + SystStringAppend)]                    = inEMI->EventMETdivMeff;
     stringKeyToVar[string(TString("SmearMETdivMeff_PassMT2llCut80") + SystStringAppend)]     = inEMI->EventMT2ll > 80 ? inEMI->EventMETdivMeff : -99;
     stringKeyToVar[string(TString("SmearMETdivMeff_PassMT2llCut90") + SystStringAppend)]     = inEMI->EventMT2ll > 90 ? inEMI->EventMETdivMeff : -99;
-    stringKeyToVar[string(TString("SmearMETdivMeff_PassMT2llCut190") + SystStringAppend)]    = inEMI->EventMT2ll > 100 ? inEMI->EventMETdivMeff : -99;
+    stringKeyToVar[string(TString("SmearMETdivMeff_PassMT2llCut100") + SystStringAppend)]    = inEMI->EventMT2ll > 100 ? inEMI->EventMETdivMeff : -99;
     stringKeyToVar[string(TString("SmearMETdivMeff_PassMT2llCut110") + SystStringAppend)]    = inEMI->EventMT2ll > 110 ? inEMI->EventMETdivMeff : -99;
     stringKeyToVar[string(TString("SmearMETdivMeff_PassMT2llCut120") + SystStringAppend)]    = inEMI->EventMT2ll > 120 ? inEMI->EventMETdivMeff : -99;        
     stringKeyToVar[string(TString("SmearNJets") + SystStringAppend)]     = inEJI->EventNJets;
@@ -675,7 +713,7 @@ inline void SetStringKeyMapSpecialSmearJets(map<string, float> &stringKeyToVar, 
     stringKeyToVar[string(TString("SmearPassMT2llCut120") + SystStringAppend)]               = (MT2llToUse > 120.);
     stringKeyToVar[string(TString("SmearMETdivMeff_PassMT2llCut80") + SystStringAppend)]     = MT2llToUse > 80 ? inEMI->EventMETdivMeff : -99;
     stringKeyToVar[string(TString("SmearMETdivMeff_PassMT2llCut90") + SystStringAppend)]     = MT2llToUse > 90 ? inEMI->EventMETdivMeff : -99;
-    stringKeyToVar[string(TString("SmearMETdivMeff_PassMT2llCut190") + SystStringAppend)]    = MT2llToUse > 100 ? inEMI->EventMETdivMeff : -99;
+    stringKeyToVar[string(TString("SmearMETdivMeff_PassMT2llCut100") + SystStringAppend)]    = MT2llToUse > 100 ? inEMI->EventMETdivMeff : -99;
     stringKeyToVar[string(TString("SmearMETdivMeff_PassMT2llCut110") + SystStringAppend)]    = MT2llToUse > 110 ? inEMI->EventMETdivMeff : -99;
     stringKeyToVar[string(TString("SmearMETdivMeff_PassMT2llCut120") + SystStringAppend)]    = MT2llToUse > 120 ? inEMI->EventMETdivMeff : -99;
     stringKeyToVar[string(TString("SmearMT2lb") + SystStringAppend)]                         = MT2lbToUse;

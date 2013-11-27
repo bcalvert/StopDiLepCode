@@ -1,0 +1,105 @@
+Basically, most systematics are handled at the "skimming" level -- that is, when I make a secondary skim from the trees Javier provides I calculate the bulk of the systematics, if not all of them
+
+Lepton Energy Scale
+
+If you look at the function that picks out the isolated electrons and muons, 
+(in the file: 
+https://github.com/bcalvert/StopDiLepCode/blob/master/HeaderFiles/StopFunctionDefinitions_v2.h
+)
+ElectronPickOvi (line 255)
+and
+MuonPickOvi (line 424)
+
+you can find versions of them with "Syst" added on in the name
+
+ElectronPickOviSyst (line 322)
+and
+MuonPickOviSyst (line 494)
+
+These functions more or less follow the same logic as the normal versions (picking out leptons that pass selection cuts and passing them into a vector to make our dilepton selection from) except for two key caveats
+
+First, the leptons are scaled in energy (+ or - depending upon the shift direction). See line 519 which references the function 
+LeptonScaleSystShift (line 130)
+
+Second, if the lepton passes the cuts, two copies of it are saved to two separate vectors; there is the main vector that saves the shifted version and there is an additional vector that saves the central value version. This is done so that the recalculation of MET is not biased (i.e. taking out the central value versions of leptons and replacing with their shifted versions)
+
+You can see these functions (Systematic shift lepton picking functions) get called in 
+https://github.com/bcalvert/StopDiLepCode/blob/master/PlotMakingCode/SkimmingMacro/NewOviStopPlotSkimmer.C
+on lines (1868, 1870, 1878, and 1880).
+As well, you can see the systematic shifts of MET get recalculated on lines 1874 and 1884 (METSystShift -- defined in various fashions from line 98 - 176 of https://github.com/bcalvert/StopDiLepCode/blob/master/HeaderFiles/StopFillFunctions.h -- only major difference between the separate versions is what kind of object they read in)
+
+
+One additional important point to note is that I also do the dilepton selection on the vectors of shifted leptons as well and save three separate booleans for the event (did it pass dilepton selection for central value ES, shift up ES, and/or shift down ES?)
+
+
+Jet Energy Scale
+
+JES uncertainty is handled in a similar fashion to the way the lepton ES is handled
+That is, I iterate through the jets available in the tree, check that they pass cuts, if they do, I slap 'em into a vector (for central value case) or I scale their energy around (for systematic shifted cases). See the function, JetInfo (line 868 of https://github.com/bcalvert/StopDiLepCode/blob/master/HeaderFiles/StopFunctionDefinitions_v2.h), specifically line 896 that calls the function, JESUncertFactor, defined on line 759 of the same file
+
+In https://github.com/bcalvert/StopDiLepCode/blob/master/PlotMakingCode/SkimmingMacro/NewOviStopPlotSkimmer.C, the making of these shifted jets happens in lines 1937 and 1942 and the handling of MET is done on lines 2050 and 2052
+
+Note as well that you need histograms to pass in that contain the energy scale uncertainties
+Look at lines 56-58 of this same Skimmer Macro file
+
+Smearing of MET -- Central Value correction plus "Unclustered Energy" shift systematics as well as "Jet smearing" shift systematics
+Lines 64-83, 122-131, 134-151, 756-780, 2022-2032 are the relevant lines for this in 
+https://github.com/bcalvert/StopDiLepCode/blob/master/PlotMakingCode/SkimmingMacro/NewOviStopPlotSkimmer.C 
+
+Basically, I load in the files containing template smearing functions, I make a vector of TH1Fs to serve as my individual MET dependent smearing functions, where those TH1Fs depend upon what my input file's name is (i.e. what it's MET topology is)
+
+Then, when running on data, I find the appropriate smearing template based on the unsmeared MET and calculate a shift to the MET and MET phi based on the two associated template functions.
+
+The relevant functions called as part of this are defined in the following file
+https://github.com/bcalvert/StopDiLepCode/blob/master/HeaderFiles/StopFunctionDefinitions_v2.h
+line 59: OneDProjectionReturnVec
+line 4547: SmearHist
+line 4570: SetMETSmearHistMap
+line 4634: SetMETSmearHistVec
+line 4679: DeltaMET
+
+BTagging central value scale factors and scale factor systematics
+For this, I load in the BTagging SF utility (the line #include "./BTagSFUtil.C" is in StopFunctionDefinitions_v2.h)
+Lines 208, 209 of https://github.com/bcalvert/StopDiLepCode/blob/master/PlotMakingCode/SkimmingMacro/NewOviStopPlotSkimmer.C
+at the base set-up I set the SM BTagSF Util,
+line 787
+If the file is a signal file, I also set the BTagSFUtil for Signal files (i.e. FastSim) on line 1094
+and then set the "BTagSFUtilToUse" to be that one (if not signal, I set it to be the SM BTagSFUtil)
+
+This BTagSFUtilToUse gets called in the function
+JetKinematicsCut
+which takes the vector of jets that passed ID cuts and does further kinematic cuts as well as BTagging
+https://github.com/bcalvert/StopDiLepCode/blob/master/HeaderFiles/StopFunctionDefinitions_v2.h
+See line 1264 for the central value version
+and line 1306 for the systematics version of it
+
+
+
+Lepton Efficiency Scale Factor central value and systematics
+I load in the scale factor histograms from Jan and Pieter (Jan for trigger, Pieter for ID/Iso for FastSim) in lines 89-115 of 
+https://github.com/bcalvert/StopDiLepCode/blob/master/PlotMakingCode/NewOviStopPlotFillerRunOnSkim_wSyst.C
+
+I set the scale factor for my "EventLeptonInfo" structure on lines 1339-1356 of the same file
+See the functions ScaleFactorTrigMC (line 583), ScaleFactorIDIsoMC (line 602), SetScaleFactors (line 657), SetScaleFactorsFailedEvent (line 685) of the file https://github.com/bcalvert/StopDiLepCode/blob/master/HeaderFiles/StopStructDefinitions.h
+
+And then can retrieve the scale factor with the function GetSF (line 699) in the same header file
+
+This scale factor retrieval is done in lines 1373 - 1395 of the file,
+https://github.com/bcalvert/StopDiLepCode/blob/master/PlotMakingCode/NewOviStopPlotFillerRunOnSkim_wSyst.C
+
+
+Stop XSec uncertainty
+See lines 821 - 824 of 
+https://github.com/bcalvert/StopDiLepCode/blob/master/PlotMakingCode/NewOviStopPlotFillerRunOnSkim_wSyst.C
+
+To see the calculation of the central value and syst. shifted Stop (xsec based) weights
+and lines 1416-1435 of the same file to see where they get called
+
+
+GenTop pT reweighting
+baseline file: https://github.com/bcalvert/StopDiLepCode/blob/master/PlotMakingCode/NewOviStopPlotFillerRunOnSkim_wSyst.C
+In the skim of Javi's trees, I save the genTop information (see branches like "TGenTopSt3_0_Pt")
+When filling plots, if the input file has "genTopInfo" saved and has either "TT" or "ttbar" in the name (line 1215), I calculate the genTop pT weight (line 1240 -- see line 238 https://github.com/bcalvert/StopDiLepCode/blob/master/HeaderFiles/StopFillFunctions.h of the file for the definition of the function, GenLevelTopPtWeight, that is called here)
+otherwise the "genTopweight" is set to 1 (line 1198)
+This weight then gets used in lines 1264 and 1265
+
